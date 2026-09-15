@@ -1,0 +1,1 @@
+export { RequiredDocumentsCard } from "./RequiredDocumentsCard";

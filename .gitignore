@@ -1,0 +1,6 @@
+taxedge-backend/src/main/resources/serviceAccountKey.json
+*.apk
+scratch/
+.env
+.env.*
+!.env.example

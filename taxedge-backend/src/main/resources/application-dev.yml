@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/taxedge1
+    username: root
+    password: anu@1234
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true

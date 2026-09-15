@@ -1,0 +1,2 @@
+.main-layout { min-height: 100vh; background: var(--color-bg); }
+.main-layout__content { padding-block: var(--space-7); }

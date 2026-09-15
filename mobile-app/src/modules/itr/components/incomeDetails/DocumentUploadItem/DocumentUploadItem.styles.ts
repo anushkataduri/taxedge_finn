@@ -1,0 +1,90 @@
+import { StyleSheet, Platform } from "react-native";
+
+export const styles = StyleSheet.create({
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#0B1F3A",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.02,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 1,
+      },
+      default: {},
+    }),
+  },
+  leftGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: 10,
+  },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: "#F8F9FB",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  textGroup: {
+    flex: 1,
+  },
+  docTitle: {
+    fontSize: 13.5,
+    fontWeight: "700",
+    color: "#0B1F3A",
+    letterSpacing: -0.1,
+  },
+  docSubtitle: {
+    fontSize: 11,
+    color: "#64748B",
+    marginTop: 2.5,
+    fontWeight: "500",
+  },
+  uploadButton: {
+    borderWidth: 1.5,
+    borderColor: "#F97316",
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#FFFFFF",
+  },
+  uploadButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#F97316",
+  },
+  uploadedBadge: {
+    borderWidth: 1.5,
+    borderColor: "#F97316",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#FFF7ED",
+  },
+  uploadedText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#F97316",
+  },
+});

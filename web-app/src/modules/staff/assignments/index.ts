@@ -1,0 +1,1 @@
+export { staffAssignmentsRoutes } from './routes'

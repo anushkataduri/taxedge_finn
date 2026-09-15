@@ -1,0 +1,1 @@
+export { staffCustomersRoutes } from './routes'
