@@ -42,7 +42,7 @@ export const authService = {
       user = {
         customerId: `CUST-2026-${clean.slice(-5)}`,
         mobileNumber: clean,
-        name: "Valued Client",
+        name: "",
         email: `${clean}@taxedge.in`,
         customerType: "Individual",
         registrationCompleted: profileCompleted,

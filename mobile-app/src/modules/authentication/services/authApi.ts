@@ -50,7 +50,7 @@ export const authApi = {
     const cleanMobile = mobileNumber.replace(/\D/g, "");
     try {
       console.log(
-        `🚀 [OTP] Sending POST http://192.168.88.41:8088/otp/generate for mobile: ${cleanMobile}`,
+        `🚀 [OTP] Sending POST http://192.168.88.12:8088/otp/generate for mobile: ${cleanMobile}`,
       );
       const res = await apiClient.post<any>("/otp/generate", {
         mobileNumber: cleanMobile,
@@ -69,7 +69,7 @@ export const authApi = {
         error?.message,
       );
       const errorMsg = error?.message?.includes("Network request failed")
-        ? `Network error: Unable to reach backend at 192.168.88.41:8088. Check Wi-Fi connection.`
+        ? `Network error: Unable to reach backend at  192.168.88.12:8088. Check Wi-Fi connection.`
         : error?.message || "Failed to generate OTP";
       return { success: false, message: errorMsg };
     }
@@ -102,16 +102,7 @@ export const authApi = {
           name: res.customer.name,
           email: res.customer.email,
           mobileNumber: res.customer.mobileNumber || cleanMobile,
-          pan: res.customer.pan || "",
-          aadhaar: res.customer.aadhaar || "",
-          dob: res.customer.dob || "",
-          addressLine1: res.customer.addressLine1 || "",
-          addressLine2: res.customer.addressLine2 || "",
-          city: res.customer.city || "",
-          state: res.customer.state || "",
-          pincode: res.customer.pincode || "",
-          address: res.customer.address || "",
-          customerType: res.customer.customerType || "Individual",
+          customerType: res.customer.customerType,
           registrationCompleted: profileCompleted,
         };
       }

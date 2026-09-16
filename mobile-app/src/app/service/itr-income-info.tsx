@@ -1,6 +1,11 @@
-import React from "react";
-import IncomeDetailsScreen from "@/modules/itr/screens/IncomeDetailsScreen/IncomeDetailsScreen";
+import React, { useEffect } from "react";
+import { ItrFilingScreen } from "@/modules/itr/itr-filing";
+import { useITRStore } from "@/modules/itr/store/itrStore";
 
 export default function ItrIncomeInfoRoute() {
-  return <IncomeDetailsScreen />;
+  const setStep = useITRStore((state) => state.setStep);
+  useEffect(() => {
+    setStep(1);
+  }, []);
+  return <ItrFilingScreen />;
 }

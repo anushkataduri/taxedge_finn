@@ -37,7 +37,7 @@ export function GstAcceptedProofs({ isProofsExpanded, setIsProofsExpanded }: Gst
           <TouchableOpacity
             style={styles.viewMoreBtn}
             activeOpacity={0.7}
-            onPress={() => setIsProofsExpanded((p) => !p)}
+            onPress={() => setIsProofsExpanded(!isProofsExpanded)}
           >
             <Text style={styles.viewMoreText}>
               {isProofsExpanded ? "View Less" : "View More"}

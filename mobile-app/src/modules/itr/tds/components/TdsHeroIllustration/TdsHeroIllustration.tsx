@@ -1,4 +1,5 @@
 import React from "react";
+import { View } from "react-native";
 import Svg, {
   Rect,
   Path,
@@ -9,10 +10,12 @@ import Svg, {
   Stop,
   Text as SvgText,
 } from "react-native-svg";
+import { styles } from "./TdsHeroIllustration.styles";
 
 export const TdsHeroIllustration: React.FC = () => {
   return (
-    <Svg width={135} height={135} viewBox="0 0 135 135" fill="none">
+    <View style={styles.container}>
+      <Svg width={135} height={135} viewBox="0 0 135 135" fill="none">
       <Defs>
         <LinearGradient id="walletGrad" x1="0" y1="0" x2="1" y2="1">
           <Stop offset="0%" stopColor="#FB923C" />
@@ -115,6 +118,7 @@ export const TdsHeroIllustration: React.FC = () => {
         <Rect x={0} y={6} width={26} height={6} rx={3} fill="#D97706" />
         <Rect x={0} y={0} width={26} height={6} rx={3} fill="url(#coinGrad)" />
       </G>
-    </Svg>
+      </Svg>
+    </View>
   );
 };

@@ -98,10 +98,20 @@ export function HomeScreen() {
   const applications = useApplicationStore((state) => state.applications);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
 
-  const customerName = Maybe.of(customer)
-    .map((c) => c.name)
-    .map((name) => name.split(" ")[0])
-    .getOrElse("Priya");
+  const rawCustomerName = Maybe.of(customer)
+    .map((c) => c.name?.trim())
+    .getOrElse("");
+
+  const isDefaultOrEmpty =
+    !rawCustomerName ||
+    rawCustomerName.toLowerCase() === "valued" ||
+    rawCustomerName.toLowerCase() === "valued client" ||
+    rawCustomerName.toLowerCase() === "client" ||
+    rawCustomerName.toLowerCase() === "priya";
+
+  const hasRealName = !isDefaultOrEmpty;
+  const firstName = hasRealName ? rawCustomerName.split(" ")[0] : "";
+  const greetingText = hasRealName ? `Hello, ${firstName} 👋` : "Welcome to TaxEdge 👋";
 
   const activeCount = applications.filter((app) => app.status !== "Completed").length;
   const pendingDocsCount = applications.reduce(
@@ -256,7 +266,7 @@ export function HomeScreen() {
 
         <View style={styles.greetingRow}>
           <View style={styles.greetingContainer}>
-            <Text style={styles.welcomeText}>Hello, {customerName} 👋</Text>
+            <Text style={styles.welcomeText}>{greetingText}</Text>
             <Text style={styles.welcomeSubText}>
               What can we help you with today?
             </Text>

@@ -116,38 +116,7 @@ const SERVICE_TILES: ServiceTile[] = [
   { id: "my-filings", label: "My Filings", icon: "folder-open", tint: "#0284C7", tintBg: "#E6F2FA", route: "/(main)/applications" },
 ];
 
-const UPCOMING_DEADLINES: Deadline[] = [
-  {
-    id: "gstr3b",
-    tag: "GST",
-    tint: "#0F766E",
-    tintBg: "#E6F5F2",
-    title: "GSTR-3B Filing Due",
-    date: "20 Sep 2026",
-    urgent: true,
-    route: "/service/gst-filing",
-  },
-  {
-    id: "itr1",
-    tag: "ITR",
-    tint: "#2563EB",
-    tintBg: "#EAF1FE",
-    title: "ITR-1 Filing Deadline",
-    date: "31 Oct 2026",
-    urgent: false,
-    route: "/service/itr-filing",
-  },
-  {
-    id: "emi",
-    tag: "Loan",
-    tint: "#EA580C",
-    tintBg: "#FEF0E6",
-    title: "EMI Due - Business Loan",
-    date: "05 Sep 2026",
-    urgent: false,
-    route: "/service/business-loan",
-  },
-];
+const UPCOMING_DEADLINES: Deadline[] = [];
 
 const SERVICE_ICONS = {
   incorporation: require("../../../assets/images/services/incorporation.png"),
@@ -258,12 +227,21 @@ export default function HomeScreen() {
   const applications = useApplicationStore((state) => state.applications);
   const gstDraft = useApplicationStore((state) => state.gstDraft);
   const gstFilingDraft = useApplicationStore((state) => state.gstFilingDraft);
+  const itrDraft = useApplicationStore((state) => state.itrDraft);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
 
-  const customerName = Maybe.of(customer)
-    .map((c) => c.name)
-    .map((name) => name.split(" ")[0])
-    .getOrElse("Priya");
+  const hasRealName = Boolean(
+    customer?.name &&
+    customer.name.trim() !== "" &&
+    customer.name.toLowerCase() !== "valued client" &&
+    customer.name.toLowerCase() !== "valued" &&
+    customer.name.toLowerCase() !== "priya" &&
+    customer.profileCompleted
+  );
+
+  const greetingTitle = hasRealName
+    ? `Hello, ${customer!.name.trim().split(" ")[0]} 👋`
+    : "Welcome to TaxEdge 👋";
 
   const activeCount = applications.filter((app) => app.status !== "Completed").length;
   const pendingDocsCount = applications.reduce(
@@ -407,7 +385,7 @@ export default function HomeScreen() {
 
         <View style={styles.greetingRow}>
           <View style={styles.greetingContainer}>
-            <Text style={styles.welcomeText}>Hello, {customerName} 👋</Text>
+            <Text style={styles.welcomeText}>{greetingTitle}</Text>
             <Text style={styles.welcomeSubText}>What can we help you with today?</Text>
           </View>
           <SavingsJarAnimation accent={colors.orange} scale={0.8} />
@@ -545,39 +523,41 @@ export default function HomeScreen() {
         </View>
 
         {/* ---------- Upcoming deadlines ---------- */}
-        <View style={[styles.card, styles.cardPadded, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Upcoming Deadlines</Text>
+        {UPCOMING_DEADLINES.length > 0 && (
+          <View style={[styles.card, styles.cardPadded, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Upcoming Deadlines</Text>
 
-          {UPCOMING_DEADLINES.map((item, index) => (
-            <TouchableOpacity
-              key={item.id}
-              activeOpacity={0.75}
-              onPress={() => router.push(item.route)}
-              style={[
-                styles.deadlineRow,
-                index < UPCOMING_DEADLINES.length - 1 && [
-                  styles.deadlineRowBorder,
-                  { borderBottomColor: colors.border },
-                ],
-              ]}
-            >
-              <View style={[styles.deadlineTag, { backgroundColor: isDark ? colors.backgroundSelected : item.tintBg }]}>
-                <Text style={[styles.deadlineTagText, { color: isDark ? colors.text : item.tint }]}>
-                  {item.tag}
-                </Text>
-              </View>
+            {UPCOMING_DEADLINES.map((item, index) => (
+              <TouchableOpacity
+                key={item.id}
+                activeOpacity={0.75}
+                onPress={() => router.push(item.route)}
+                style={[
+                  styles.deadlineRow,
+                  index < UPCOMING_DEADLINES.length - 1 && [
+                    styles.deadlineRowBorder,
+                    { borderBottomColor: colors.border },
+                  ],
+                ]}
+              >
+                <View style={[styles.deadlineTag, { backgroundColor: isDark ? colors.backgroundSelected : item.tintBg }]}>
+                  <Text style={[styles.deadlineTagText, { color: isDark ? colors.text : item.tint }]}>
+                    {item.tag}
+                  </Text>
+                </View>
 
-              <View style={styles.deadlineText}>
-                <Text style={[styles.deadlineTitle, { color: colors.text }]} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                <Text style={[styles.deadlineDate, { color: colors.textSecondary }]}>
-                  {item.date}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+                <View style={styles.deadlineText}>
+                  <Text style={[styles.deadlineTitle, { color: colors.text }]} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  <Text style={[styles.deadlineDate, { color: colors.textSecondary }]}>
+                    {item.date}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         {/* ---------- In-progress draft application banners ---------- */}
         {gstDraft && (
@@ -642,6 +622,39 @@ export default function HomeScreen() {
             <View style={[styles.draftFooter, { borderTopColor: isDark ? colors.border : "#BFDBFE" }]}>
               <Text style={[styles.draftResumeText, { color: colors.primary }]}>Resume Filing</Text>
               <Ionicons name="arrow-forward-circle" size={20} color={colors.primary} />
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {itrDraft && (
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => accessService("/service/itr-filing")}
+            style={[
+              styles.draftBannerCard,
+              getDraftCardThemedStyle(isDark, colors, colors.orange, "#FEF0E6", "#FFD8BF"),
+            ]}
+          >
+            <View style={styles.draftTopRow}>
+              <View style={[styles.draftTag, { backgroundColor: colors.orange }]}>
+                <Ionicons name="time" size={13} color="#FFFFFF" />
+                <Text style={styles.draftTagText}>INCOMPLETE APPLICATION</Text>
+              </View>
+              <Text style={[styles.draftSavedTime, { color: colors.textSecondary }]}>
+                {itrDraft.updatedAt ? `Saved ${itrDraft.updatedAt}` : "Saved as Draft"}
+              </Text>
+            </View>
+
+            <Text style={[styles.draftTitle, { color: colors.text }]}>
+              ITR Filing - {itrDraft.categoryTitle || "Income Tax Return"}
+            </Text>
+            <Text style={[styles.draftSubtitle, { color: colors.textSecondary }]}>
+              Step {(itrDraft.stepIndex || 0) + 1} of 5 • Pick up right where you left off
+            </Text>
+
+            <View style={[styles.draftFooter, { borderTopColor: isDark ? colors.border : "#FFD8BF" }]}>
+              <Text style={[styles.draftResumeText, { color: colors.orange }]}>Resume Application</Text>
+              <Ionicons name="arrow-forward-circle" size={20} color={colors.orange} />
             </View>
           </TouchableOpacity>
         )}

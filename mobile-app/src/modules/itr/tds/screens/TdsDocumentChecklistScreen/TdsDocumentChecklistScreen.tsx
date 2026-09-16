@@ -1,293 +1,161 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  Alert,
-  SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import * as DocumentPicker from "expo-document-picker";
-import * as ImagePicker from "expo-image-picker";
-import { BrandColors } from "@/shared/theme";
-import { TdsChecklistItem, TdsDocumentCategory } from "../../types/checklist.types";
-import { TdsCustomerIncomeFormData } from "../../types/customerIncome.types";
+import { TdsDocumentItem, DocumentUploadPayload } from "../../types/tdsDocuments.types";
+import { INITIAL_TDS_DOCUMENTS } from "../../constants/tdsDocuments.constants";
 import {
-  isFileSizeValid,
-  isFileTypeAllowed,
-  formatFileSize,
-  MAX_FILE_SIZE_BYTES,
-  ALLOWED_EXTENSIONS,
-} from "../../utils/tdsValidation";
-import {
-  getApplicableDocuments,
-  validateDocumentUploads,
-} from "../../validation/tdsDocumentSchema";
-import { tdsDraftService } from "../../services/tdsDraftService";
-import { DocumentUploadBottomSheet } from "../../components/upload/DocumentUploadBottomSheet";
-import { TdsDocumentCard } from "../../components/upload/TdsDocumentCard";
-import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
+  TdsDocumentHeader,
+  TdsUploadProgressBar,
+  TdsDocumentCard,
+} from "../../components/documents";
+import { useApplicationStore } from "@/store/applicationStore";
 import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
-import { styles } from "./TdsDocumentChecklistScreen.styles";
+import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
+import {
+  styles,
+  getContainerInsetsStyle,
+  getScrollContentInsetsStyle,
+  getBottomBarInsetsStyle,
+} from "./TdsDocumentChecklistScreen.styles";
 
 export const TdsDocumentChecklistScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [formData, setFormData] = useState<TdsCustomerIncomeFormData | null>(null);
-  const [documents, setDocuments] = useState<TdsChecklistItem[]>([]);
-  const [activeUploadDoc, setActiveUploadDoc] = useState<TdsChecklistItem | null>(null);
-  const [uploadingDocId, setUploadingDocId] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const [docErrors, setDocErrors] = useState<Record<string, string>>({});
+  const tdsDraft = useApplicationStore((state) => state.tdsDraft);
+  const saveTdsDraft = useApplicationStore((state) => state.saveTdsDraft);
+  const clearTdsDraft = useApplicationStore((state) => state.clearTdsDraft);
 
-  // Draft Guard & dirty tracking
-  const initialDocsSnapshotRef = useRef<string | null>(null);
-  const [hasDocsChanged, setHasDocsChanged] = useState(false);
+  // Pure functional initial state: restore uploaded docs from draft synchronously - zero loops
+  const [documents, setDocuments] = useState<TdsDocumentItem[]>(() => {
+    const draft = useApplicationStore.getState().tdsDraft;
+    if (draft && draft.documents && Array.isArray(draft.documents) && draft.documents.length > 0) {
+      const savedMap = new Map(draft.documents.map((d: any) => [d.id, d]));
+      return INITIAL_TDS_DOCUMENTS.map((doc) => {
+        const saved = savedMap.get(doc.id);
+        if (!saved) return doc;
+        return {
+          ...doc,
+          status: (saved.status === "uploaded" ? "uploaded" : "not_uploaded") as TdsDocumentItem["status"],
+          fileUri: saved.fileUri,
+          fileName: saved.fileName,
+          fileSize: saved.fileSize,
+          mimeType: saved.mimeType,
+          fileTypeLabel: saved.fileTypeLabel,
+        };
+      });
+    }
+    return INITIAL_TDS_DOCUMENTS;
+  });
 
-  // Universal Draft Guard Hook for Back Gesture, Header Back, and Hardware Back Interception
+  // Keep state synchronized with draft store functionally - zero loops
+  useEffect(() => {
+    if (tdsDraft && tdsDraft.documents && Array.isArray(tdsDraft.documents) && tdsDraft.documents.length > 0) {
+      const savedMap = new Map(tdsDraft.documents.map((d: any) => [d.id, d]));
+      setDocuments((prev) =>
+        prev.map((doc) => {
+          const saved = savedMap.get(doc.id);
+          if (!saved) return doc;
+          return {
+            ...doc,
+            status: (saved.status === "uploaded" ? "uploaded" : "not_uploaded") as TdsDocumentItem["status"],
+            fileUri: saved.fileUri,
+            fileName: saved.fileName,
+            fileSize: saved.fileSize,
+            mimeType: saved.mimeType,
+            fileTypeLabel: saved.fileTypeLabel,
+          };
+        })
+      );
+    }
+  }, [tdsDraft?.documents]);
+
+  // Universal draft guard hook (same pattern as GST and ITR)
   const {
     showDraftModal,
-    markSubmitted,
+    openDraftModal,
     handleSaveAndExit,
     handleDiscardAndExit,
     handleCancel,
   } = useUniversalDraftGuard({
-    isDirty: () => {
-      if (!initialDocsSnapshotRef.current) return false;
-      return hasDocsChanged || JSON.stringify(documents) !== initialDocsSnapshotRef.current;
+    isDirty: () =>
+      documents.some((d) => Boolean(d.fileUri || d.status === "uploaded")),
+    onSaveDraft: () => {
+      saveTdsDraft?.({
+        formData: tdsDraft?.formData || {},
+        documents: documents as any,
+        step: "DOCUMENTS",
+        updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      });
     },
-    onSaveDraft: async () => {
-      await tdsDraftService.saveDocumentsDraft(documents);
-    },
-    onDiscardDraft: async () => {
-      if (initialDocsSnapshotRef.current) {
-        await tdsDraftService.saveDocumentsDraft(JSON.parse(initialDocsSnapshotRef.current));
-      }
+    onDiscardDraft: () => {
+      clearTdsDraft?.();
     },
   });
 
-  // Restore draft and compute conditional documents
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      const savedForm = await tdsDraftService.getFormDraft();
-      const savedDocs = await tdsDraftService.getDocumentsDraft();
-      if (isMounted) {
-        setFormData(savedForm);
-        const resolvedDocs = getApplicableDocuments(savedForm, savedDocs || undefined);
-        setDocuments(resolvedDocs);
-        initialDocsSnapshotRef.current = JSON.stringify(resolvedDocs);
-      }
-    })();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  // Functional count of uploaded documents - zero loops
+  const uploadedCount = documents.filter(
+    (d) => d.status === "uploaded" || !!d.fileUri
+  ).length;
+  const totalCount = documents.length;
 
-  // Save documents whenever updated
-  const updateDocuments = async (newDocs: TdsChecklistItem[]) => {
-    setHasDocsChanged(true);
-    setDocuments(newDocs);
-    await tdsDraftService.saveDocumentsDraft(newDocs);
-  };
+  // Check mandatory completeness functionally - zero loops
+  const mandatoryDocs = documents.filter((d) => d.isMandatory);
+  const isMandatoryComplete = mandatoryDocs.every(
+    (d) => d.status === "uploaded" || !!d.fileUri
+  );
 
-  const simulateProgress = (callback: () => void) => {
-    setUploadProgress(15);
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 95) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setUploadProgress(100);
-            callback();
-          }, 80);
-          return 95;
-        }
-        return prev + 25;
-      });
-    }, 60);
-  };
-
-  // Upload handler from Document Picker (Files / Drive)
-  const handlePickFiles = async () => {
-    if (!activeUploadDoc) return;
-    const docToUpload = activeUploadDoc;
-    setActiveUploadDoc(null);
-
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ["application/pdf", "image/jpeg", "image/png"],
-        copyToCacheDirectory: true,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const asset = result.assets[0];
-        const fileName = asset.name || `${docToUpload.title.replace(/\s+/g, "_")}.pdf`;
-        const fileSize = asset.size;
-
-        if (!isFileTypeAllowed(fileName, ALLOWED_EXTENSIONS)) {
-          Alert.alert(
-            "Unsupported File Format",
-            "Unsupported file format. Upload PDF, JPG or PNG."
-          );
-          return;
-        }
-
-        if (!isFileSizeValid(fileSize, MAX_FILE_SIZE_BYTES)) {
-          Alert.alert(
-            "File Size Exceeded",
-            "File size exceeds the allowed 20 MB limit. Please select a smaller file."
-          );
-          return;
-        }
-
-        setUploadingDocId(docToUpload.id);
-        simulateProgress(() => {
-          setUploadingDocId(null);
-          const updated = documents.map((doc) =>
-            doc.id === docToUpload.id
-              ? {
-                  ...doc,
-                  status: "uploaded" as const,
-                  fileName,
-                  fileSize: formatFileSize(fileSize),
-                  fileUri: asset.uri,
-                  mimeType: asset.mimeType || "application/pdf",
-                  uploadedAt: new Date().toISOString(),
-                }
-              : doc
-          );
-          updateDocuments(updated);
-          setDocErrors((prev) => {
-            const next = { ...prev };
-            delete next[docToUpload.id];
-            return next;
-          });
-        });
-      }
-    } catch {
-      Alert.alert("Upload Error", "Unable to upload document. Please try again.");
-    }
-  };
-
-  // Upload handler from Gallery
-  const handlePickGallery = async () => {
-    if (!activeUploadDoc) return;
-    const docToUpload = activeUploadDoc;
-    setActiveUploadDoc(null);
-
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.9,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const asset = result.assets[0];
-        const fileName = asset.fileName || `${docToUpload.title.replace(/\s+/g, "_")}.jpg`;
-        const fileSize = asset.fileSize;
-
-        if (!isFileSizeValid(fileSize, MAX_FILE_SIZE_BYTES)) {
-          Alert.alert("File Size Exceeded", "File size exceeds the allowed 20 MB limit.");
-          return;
-        }
-
-        setUploadingDocId(docToUpload.id);
-        simulateProgress(() => {
-          setUploadingDocId(null);
-          const updated = documents.map((doc) =>
-            doc.id === docToUpload.id
-              ? {
-                  ...doc,
-                  status: "uploaded" as const,
-                  fileName,
-                  fileSize: formatFileSize(fileSize || 1800000),
-                  fileUri: asset.uri,
-                  mimeType: asset.mimeType || "image/jpeg",
-                  uploadedAt: new Date().toISOString(),
-                }
-              : doc
-          );
-          updateDocuments(updated);
-          setDocErrors((prev) => {
-            const next = { ...prev };
-            delete next[docToUpload.id];
-            return next;
-          });
-        });
-      }
-    } catch {
-      Alert.alert("Gallery Error", "Could not open photo gallery. Please try again.");
-    }
-  };
-
-  // Upload handler from Camera
-  const handleTakePhoto = async () => {
-    if (!activeUploadDoc) return;
-    const docToUpload = activeUploadDoc;
-    setActiveUploadDoc(null);
-
-    try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission Required",
-          "Camera access is required to take photos of documents."
-        );
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        quality: 0.9,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const asset = result.assets[0];
-        const fileName = `${docToUpload.title.replace(/\s+/g, "_")}_Photo.jpg`;
-        const fileSize = asset.fileSize;
-
-        if (!isFileSizeValid(fileSize, MAX_FILE_SIZE_BYTES)) {
-          Alert.alert("File Size Exceeded", "Captured photo exceeds 20 MB limit.");
-          return;
-        }
-
-        setUploadingDocId(docToUpload.id);
-        simulateProgress(() => {
-          setUploadingDocId(null);
-          const updated = documents.map((doc) =>
-            doc.id === docToUpload.id
-              ? {
-                  ...doc,
-                  status: "uploaded" as const,
-                  fileName,
-                  fileSize: formatFileSize(fileSize || 1500000),
-                  fileUri: asset.uri,
-                  mimeType: "image/jpeg",
-                  uploadedAt: new Date().toISOString(),
-                }
-              : doc
-          );
-          updateDocuments(updated);
-          setDocErrors((prev) => {
-            const next = { ...prev };
-            delete next[docToUpload.id];
-            return next;
-          });
-        });
-      }
-    } catch {
-      Alert.alert("Camera Error", "Could not capture document photo. Please try again.");
-    }
-  };
-
-  const handleDelete = (docId: string) => {
+  const handleUploadSuccess = (id: string, payload: DocumentUploadPayload) => {
     const updated = documents.map((doc) =>
-      doc.id === docId
+      doc.id === id
+        ? {
+            ...doc,
+            status: "uploaded" as const,
+            fileUri: payload.uri,
+            fileName: payload.name,
+            fileSize: payload.size,
+            mimeType: payload.mimeType,
+            fileTypeLabel: payload.fileTypeLabel,
+            errorMessage: undefined,
+          }
+        : doc
+    );
+    setDocuments(updated);
+
+    // Immediately persist uploaded documents to draft store
+    saveTdsDraft?.({
+      formData: tdsDraft?.formData || {},
+      documents: updated as any,
+      step: "DOCUMENTS",
+      updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    });
+  };
+
+  const handleUploadError = (id: string, errorMessage: string) => {
+    setDocuments((prev) =>
+      prev.map((doc) =>
+        doc.id === id
+          ? {
+              ...doc,
+              status: "not_uploaded",
+              errorMessage,
+            }
+          : doc
+      )
+    );
+  };
+
+  const handleRemove = (id: string) => {
+    const updated = documents.map((doc) =>
+      doc.id === id
         ? {
             ...doc,
             status: "not_uploaded" as const,
@@ -295,168 +163,131 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
             fileName: undefined,
             fileSize: undefined,
             mimeType: undefined,
-            uploadedAt: undefined,
+            fileTypeLabel: undefined,
+            errorMessage: undefined,
           }
         : doc
     );
-    updateDocuments(updated);
+    setDocuments(updated);
+
+    // Immediately persist document removal to draft store
+    saveTdsDraft?.({
+      formData: tdsDraft?.formData || {},
+      documents: updated as any,
+      step: "DOCUMENTS",
+      updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    });
   };
 
-  // Progress metrics
-  const completedCount = documents.filter((d) => d.status === "uploaded" && d.fileUri).length;
-  const totalCount = documents.length;
-  const mandatoryDocs = documents.filter((d) => d.isMandatory);
-  const mandatoryCompleted = mandatoryDocs.filter((d) => d.status === "uploaded" && d.fileUri).length;
-
   const handleContinue = () => {
-    const validation = validateDocumentUploads(documents);
-    if (!validation.isValid) {
-      setDocErrors(validation.errors);
-      Alert.alert(
-        "Mandatory Documents Pending",
-        `Please upload the following required documents before continuing:\n\n• ${validation.missingMandatory.join(
-          "\n• "
-        )}`
+    if (!isMandatoryComplete) {
+      // Mark missing mandatory documents with inline card errors functionally - zero loops
+      setDocuments((prev) =>
+        prev.map((doc) =>
+          doc.isMandatory && !doc.fileUri && doc.status !== "uploaded"
+            ? {
+                ...doc,
+                errorMessage: "This required document must be uploaded to proceed",
+              }
+            : doc
+        )
       );
       return;
     }
 
-    markSubmitted();
+    // Save state into draft store
+    saveTdsDraft?.({
+      formData: tdsDraft?.formData || {},
+      documents: documents as any,
+      step: "DOCUMENTS",
+      updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    });
 
-    // Navigate to Screen 3 (Review & Calculation)
-    router.push("/service/tds-estimate" as any);
+    // Navigate to next screen: TDS Application Status & Tracker Screen
+    router.push({
+      pathname: "/service/tds-status" as any,
+      params: {
+        applicationId: "ITR-2026-00001",
+        serviceName: "ITR Filing",
+        assessmentYear: tdsDraft?.formData?.assessmentYear || "2025-26",
+        appliedDate: "10 Aug 2026",
+        uploadedCount: uploadedCount.toString(),
+      },
+    });
   };
 
-  const requiredDocs = documents.filter((d) => d.isMandatory);
-  const conditionalDocs = documents.filter((d) => !d.isMandatory);
+  const handleBackPress = () => {
+    const isDirty = documents.some((d) => Boolean(d.fileUri || d.status === "uploaded"));
+    if (isDirty) {
+      openDraftModal();
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/service/itr" as any);
+    }
+  };
+
+  const containerInsetsStyle = getContainerInsetsStyle(insets.top);
+  const scrollContentInsetsStyle = getScrollContentInsetsStyle(insets.bottom);
+  const bottomBarInsetsStyle = getBottomBarInsetsStyle(insets.bottom);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerInsetsStyle]}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Screen Header */}
-      <View style={[styles.headerBar, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Ionicons name="chevron-back" size={20} color={BrandColors.PRIMARY_BLUE_DARK} />
-        </TouchableOpacity>
+      {/* Screen Header with back guard */}
+      <TdsDocumentHeader onBack={handleBackPress} />
 
-        <View style={styles.headerTitleGroup}>
-          <Text style={styles.headerTitle}>TDS Refund</Text>
-          <Text style={styles.headerSubtitle}>Step 2 of 5: Documents</Text>
-        </View>
-
-        <View style={styles.headerRightSpacer} />
-      </View>
-
-      {/* Progress Track */}
-      <View style={styles.progressTrack}>
-        <View style={styles.progressFill} />
-      </View>
-
-      {/* Scrollable Document List */}
+      {/* Main Scrollable Content */}
       <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 85 },
-        ]}
+        contentContainerStyle={[styles.scrollContent, scrollContentInsetsStyle]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Short Description */}
-        <Text style={styles.shortDescriptionText}>
-          Upload your income and tax records for CA assessment and refund verification.
-        </Text>
+        {/* Progress Bar Header */}
+        <TdsUploadProgressBar
+          uploadedCount={uploadedCount}
+          totalCount={totalCount}
+        />
 
-        {/* 1. Required Documents */}
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionTitleRow}>
-            <Ionicons name="shield-checkmark" size={16} color={BrandColors.PRIMARY_ORANGE} />
-            <Text style={styles.sectionTitle}>Required Documents</Text>
-          </View>
-          <View style={styles.sectionBadge}>
-            <Text style={styles.sectionBadgeText}>
-              {requiredDocs.filter((d) => d.status === "uploaded").length}/{requiredDocs.length}
-            </Text>
-          </View>
-        </View>
-
-        {requiredDocs.map((doc) => (
+        {/* 9 Document Cards with inline field validation - zero loops */}
+        {documents.map((doc) => (
           <TdsDocumentCard
             key={doc.id}
             item={doc}
-            isUploading={uploadingDocId === doc.id}
-            uploadProgress={uploadProgress}
-            error={docErrors[doc.id]}
-            onUploadPress={() => setActiveUploadDoc(doc)}
-            onChange={() => setActiveUploadDoc(doc)}
-            onDelete={() => handleDelete(doc.id)}
+            onUploadSuccess={handleUploadSuccess}
+            onUploadError={handleUploadError}
+            onRemove={handleRemove}
           />
         ))}
-
-        {/* 2. Conditional Documents (if any applicable) */}
-        {conditionalDocs.length > 0 && (
-          <>
-            <View style={[styles.sectionHeader, { marginTop: 14 }]}>
-              <View style={styles.sectionTitleRow}>
-                <Ionicons name="document-text-outline" size={16} color={BrandColors.PRIMARY_BLUE} />
-                <Text style={styles.sectionTitle}>Conditional Documents</Text>
-              </View>
-              <View style={[styles.sectionBadge, { backgroundColor: "#F1F5F9" }]}>
-                <Text style={[styles.sectionBadgeText, { color: BrandColors.TEXT_SECONDARY }]}>
-                  {conditionalDocs.filter((d) => d.status === "uploaded").length}/{conditionalDocs.length}
-                </Text>
-              </View>
-            </View>
-
-            {conditionalDocs.map((doc) => (
-              <TdsDocumentCard
-                key={doc.id}
-                item={doc}
-                isUploading={uploadingDocId === doc.id}
-                uploadProgress={uploadProgress}
-                error={docErrors[doc.id]}
-                onUploadPress={() => setActiveUploadDoc(doc)}
-                onChange={() => setActiveUploadDoc(doc)}
-                onDelete={() => handleDelete(doc.id)}
-              />
-            ))}
-          </>
-        )}
       </ScrollView>
 
       {/* Sticky Bottom CTA */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom > 0 ? insets.bottom : 12 }]}>
+      <View style={[styles.bottomBar, bottomBarInsetsStyle]}>
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleContinue}
-          style={styles.continueButton}
+          style={[
+            styles.continueButton,
+            isMandatoryComplete
+              ? styles.continueActive
+              : styles.continueDisabled,
+          ]}
         >
-          <Text style={styles.continueButtonText}>Continue to Tax Review</Text>
-          <Ionicons name="arrow-forward" size={18} color={BrandColors.WHITE} />
+          <Text style={styles.continueButtonText}>Continue to Review</Text>
+          <Ionicons
+            name="arrow-forward"
+            size={18}
+            color="#FFFFFF"
+            style={styles.buttonIcon}
+          />
         </TouchableOpacity>
       </View>
 
-      {/* Upload Bottom Sheet Modal */}
-      {activeUploadDoc && (
-        <DocumentUploadBottomSheet
-          visible={Boolean(activeUploadDoc)}
-          documentTitle={activeUploadDoc.title}
-          maxSizeBytesText="20 MB"
-          onClose={() => setActiveUploadDoc(null)}
-          onPickFiles={handlePickFiles}
-          onPickGallery={handlePickGallery}
-          onTakePhoto={handleTakePhoto}
-        />
-      )}
-
-      {/* Universal Save As Draft Confirmation Modal */}
+      {/* Universal Draft Modal (Same as GST & ITR) */}
       <UniversalDraftModal
         visible={showDraftModal}
-        title="Save Application Progress?"
-        message="You have unsaved changes in your TDS refund documents. Save your progress so you can resume anytime without re-uploading."
+        title="Save Document Progress?"
+        message="You have uploaded documents in your TDS refund application. Save your progress so you can resume anytime without re-uploading."
         saveButtonText="Save as Draft & Exit"
         discardButtonText="Discard & Exit"
         cancelButtonText="Keep Editing"

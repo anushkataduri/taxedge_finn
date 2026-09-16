@@ -1,34 +1,49 @@
-import { StyleSheet, Platform } from "react-native";
+import { StyleSheet, Platform, ViewStyle } from "react-native";
 import {
   BrandColors,
   BorderRadius,
   BorderWidth,
   Spacing,
   Typography,
-} from "@/shared/theme";
+} from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BrandColors.BACKGROUND,
+    backgroundColor: "#F8F9FB",
   },
-  headerBar: {
+  header: {
+    minHeight: 58,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.base,
-    paddingBottom: 10,
+    paddingVertical: 6,
     backgroundColor: BrandColors.WHITE,
+    borderBottomWidth: BorderWidth.thin,
+    borderBottomColor: "#F1F5F9",
   },
   backButton: {
     width: 38,
     height: 38,
     borderRadius: BorderRadius.md,
     borderWidth: BorderWidth.thin,
-    borderColor: BrandColors.BORDER,
+    borderColor: "#E5E7EB",
     backgroundColor: BrandColors.WHITE,
     justifyContent: "center",
     alignItems: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#0B1F3A",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 1,
+      },
+      default: {},
+    }),
   },
   headerTitleGroup: {
     alignItems: "center",
@@ -36,74 +51,24 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: Typography.fontSize.base + 1,
+    fontSize: Typography.fontSize.xl,
     fontWeight: Typography.fontWeight.bold,
-    color: BrandColors.TEXT_PRIMARY,
+    color: "#0B1F3A",
+    letterSpacing: -0.2,
   },
   headerSubtitle: {
-    fontSize: Typography.fontSize.xs,
+    fontSize: Typography.fontSize.sm + 0.5,
     fontWeight: Typography.fontWeight.medium,
-    color: BrandColors.PRIMARY_ORANGE,
-    marginTop: 1,
+    color: "#0B1F3A",
+    marginTop: 2,
   },
   headerRightSpacer: {
     width: 38,
   },
-  progressTrack: {
-    height: 3,
-    backgroundColor: "#E2E8F0",
-    width: "100%",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: BrandColors.PRIMARY_ORANGE,
-    width: "40%", // Step 2 of 5
-  },
   scrollContent: {
-    paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.md,
-    paddingBottom: 40,
+    paddingHorizontal: 0,
+    paddingTop: 8,
   },
-
-  // Short Screen Description
-  shortDescriptionText: {
-    fontSize: Typography.fontSize.sm,
-    color: BrandColors.TEXT_SECONDARY,
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-
-  // Section Headers: Required Documents & Conditional Documents
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  sectionTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: Typography.fontSize.base,
-    fontWeight: Typography.fontWeight.bold,
-    color: BrandColors.TEXT_PRIMARY,
-  },
-  sectionBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.xs,
-    backgroundColor: BrandColors.PRIMARY_LIGHT_ORANGE,
-  },
-  sectionBadgeText: {
-    fontSize: Typography.fontSize.xs,
-    fontWeight: Typography.fontWeight.semiBold,
-    color: BrandColors.PRIMARY_ORANGE_DARK,
-  },
-
-  // Sticky Bottom Bar
   bottomBar: {
     position: "absolute",
     bottom: 0,
@@ -118,27 +83,61 @@ export const styles = StyleSheet.create({
       ios: {
         shadowColor: "#0B1F3A",
         shadowOffset: { width: 0, height: -3 },
-        shadowOpacity: 0.06,
+        shadowOpacity: 0.05,
         shadowRadius: 6,
       },
       android: {
-        elevation: 8,
+        elevation: 6,
       },
       default: {},
     }),
   },
   continueButton: {
-    height: 50,
-    borderRadius: BorderRadius.base,
-    backgroundColor: BrandColors.PRIMARY_ORANGE,
+    height: 52,
+    borderRadius: BorderRadius.base - 2,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 8,
+    gap: Spacing.sm,
+  },
+  continueActive: {
+    backgroundColor: BrandColors.PRIMARY_ORANGE,
+    ...Platform.select({
+      ios: {
+        shadowColor: BrandColors.PRIMARY_ORANGE,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+      default: {},
+    }),
+  },
+  continueDisabled: {
+    backgroundColor: "#FDBA74",
+    opacity: 0.9,
   },
   continueButtonText: {
-    fontSize: Typography.fontSize.base,
-    fontWeight: Typography.fontWeight.bold,
     color: BrandColors.WHITE,
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    letterSpacing: 0.2,
   },
+  buttonIcon: {
+    marginLeft: 2,
+  },
+});
+
+export const getContainerInsetsStyle = (topInset: number): ViewStyle => ({
+  paddingTop: topInset,
+});
+
+export const getScrollContentInsetsStyle = (bottomInset: number): ViewStyle => ({
+  paddingBottom: bottomInset + 90,
+});
+
+export const getBottomBarInsetsStyle = (bottomInset: number): ViewStyle => ({
+  paddingBottom: Math.max(bottomInset, 12),
 });

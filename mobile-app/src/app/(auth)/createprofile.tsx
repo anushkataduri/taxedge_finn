@@ -628,7 +628,7 @@ export default function CreateProfileScreen() {
             paddingBottom:
               currentStep === 2
                 ? Math.max(insets.bottom + 90, 110)
-                : Math.max(insets.bottom + 300, 350), // Massive padding to clear keyboard and bottom bar
+                : Math.max(insets.bottom + Spacing.xl, 40),
           },
         ]}
         showsVerticalScrollIndicator={false}

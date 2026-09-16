@@ -5,8 +5,8 @@ import {
   TextInput,
   TouchableOpacity,
   Keyboard,
-  useColorScheme,
 } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { PrimaryButton } from "../../../../shared/components/Button/PrimaryButton";
 import { styles, getThemedStyles } from "./ResetPasscodeSection.styles";
 
@@ -34,13 +34,13 @@ export function ResetPasscodeSection({
   loading,
   error,
 }: ResetPasscodeSectionProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const themed = getThemedStyles(isDark);
+  const themed = getThemedStyles(false);
 
   const newPasscodeRef = useRef<TextInput>(null);
   const confirmPasscodeRef = useRef<TextInput>(null);
   const [activeSection, setActiveSection] = useState<"new" | "confirm">("new");
+  const [showPasscode, setShowPasscode] = useState(false);
+  const [showConfirmPasscode, setShowConfirmPasscode] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -79,6 +79,7 @@ export function ResetPasscodeSection({
     value: string,
     isActive: boolean,
     hasError: boolean,
+    showCode: boolean,
     onPress: () => void
   ) => {
     return (
@@ -92,6 +93,7 @@ export function ResetPasscodeSection({
             const isFilled = i < value.length;
             const isCurrent = isActive && i === value.length;
             const boxTheme = themed.getBoxStyle(isCurrent, isFilled, hasError);
+            const digit = value[i];
 
             return (
               <View
@@ -102,12 +104,16 @@ export function ResetPasscodeSection({
                 ]}
               >
                 {isFilled ? (
-                  <View
-                    style={[
-                      styles.secureDot,
-                      themed.secureDot,
-                    ]}
-                  />
+                  showCode ? (
+                    <Text style={styles.digitText}>{digit}</Text>
+                  ) : (
+                    <View
+                      style={[
+                        styles.secureDot,
+                        themed.secureDot,
+                      ]}
+                    />
+                  )
                 ) : null}
               </View>
             );
@@ -121,10 +127,25 @@ export function ResetPasscodeSection({
     <View style={styles.container}>
       {/* 1. New Passcode Section */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, themed.title]}>
-          New Passcode
-        </Text>
-        {renderBoxes(passcode, activeSection === "new", false, () => {
+        <View style={styles.sectionHeaderRow}>
+          <Text style={[styles.sectionTitle, themed.title]}>
+            New Passcode
+          </Text>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setShowPasscode((prev) => !prev)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={styles.eyeToggleBtn}
+            accessibilityLabel={showPasscode ? "Hide passcode" : "Show passcode"}
+          >
+            <Ionicons
+              name={showPasscode ? "eye-outline" : "eye-off-outline"}
+              size={20}
+              color="#64748B"
+            />
+          </TouchableOpacity>
+        </View>
+        {renderBoxes(passcode, activeSection === "new", false, showPasscode, () => {
           newPasscodeRef.current?.focus();
           setActiveSection("new");
         })}
@@ -132,13 +153,29 @@ export function ResetPasscodeSection({
 
       {/* 2. Confirm Passcode Section */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, themed.title]}>
-          Confirm Passcode
-        </Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={[styles.sectionTitle, themed.title]}>
+            Confirm Passcode
+          </Text>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setShowConfirmPasscode((prev) => !prev)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={styles.eyeToggleBtn}
+            accessibilityLabel={showConfirmPasscode ? "Hide confirm passcode" : "Show confirm passcode"}
+          >
+            <Ionicons
+              name={showConfirmPasscode ? "eye-outline" : "eye-off-outline"}
+              size={20}
+              color="#64748B"
+            />
+          </TouchableOpacity>
+        </View>
         {renderBoxes(
           confirmPasscode,
           activeSection === "confirm",
           showMismatchError,
+          showConfirmPasscode,
           () => {
             confirmPasscodeRef.current?.focus();
             setActiveSection("confirm");
@@ -154,7 +191,7 @@ export function ResetPasscodeSection({
         onFocus={() => setActiveSection("new")}
         keyboardType="number-pad"
         maxLength={6}
-        secureTextEntry
+        secureTextEntry={!showPasscode}
         style={styles.hiddenInput}
       />
 
@@ -165,7 +202,7 @@ export function ResetPasscodeSection({
         onFocus={() => setActiveSection("confirm")}
         keyboardType="number-pad"
         maxLength={6}
-        secureTextEntry
+        secureTextEntry={!showConfirmPasscode}
         style={styles.hiddenInput}
       />
 
