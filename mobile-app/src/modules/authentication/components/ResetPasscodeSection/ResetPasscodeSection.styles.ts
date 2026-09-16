@@ -1,4 +1,4 @@
-﻿import { StyleSheet, Platform } from "react-native";
+import { StyleSheet, Platform } from "react-native";
 import {
   BrandColors,
   BorderRadius,
@@ -15,11 +15,22 @@ export const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
     width: "100%",
   },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.sm + 4,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    marginBottom: Spacing.sm + 4,
     textAlign: "left",
+    color: "#06152D",
+  },
+  eyeToggleBtn: {
+    padding: Spacing.xs,
+    justifyContent: "center",
+    alignItems: "center",
   },
   otpTouchable: {
     width: "100%",
@@ -36,23 +47,31 @@ export const styles = StyleSheet.create({
     borderRadius: BorderRadius.base - 2,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: BrandColors.WHITE,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.08,
-        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
       },
       android: {
-        elevation: 4,
+        elevation: 2,
       },
       default: {},
     }),
+  },
+  digitText: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#0C2340",
+    textAlign: "center",
   },
   secureDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
+    backgroundColor: "#0C2340",
   },
   hiddenInput: {
     position: "absolute",
@@ -87,9 +106,9 @@ export const styles = StyleSheet.create({
   },
 });
 
-export const getThemedStyles = (isDark: boolean) => ({
+export const getThemedStyles = (isDark: boolean = false) => ({
   title: {
-    color: isDark ? "#FFFFFF" : "#06152D",
+    color: "#06152D",
   },
   getBoxStyle: (isCurrent: boolean, isFilled: boolean, hasError: boolean) => {
     const borderColor = hasError
@@ -97,20 +116,16 @@ export const getThemedStyles = (isDark: boolean) => ({
       : isCurrent
       ? BrandColors.PRIMARY_ORANGE
       : isFilled
-      ? (isDark ? "#38BDF8" : BrandColors.PRIMARY_BLUE_DARK)
-      : (isDark ? "#334155" : "#E2E8F0");
-
-    const backgroundColor = isDark
-      ? (isCurrent || isFilled ? "#1E293B" : "#0F172A")
-      : BrandColors.WHITE;
+      ? BrandColors.PRIMARY_BLUE_DARK
+      : "#E2E8F0";
 
     return {
       borderColor,
       borderWidth: isCurrent || isFilled ? BorderWidth.medium : BorderWidth.thin,
-      backgroundColor,
+      backgroundColor: BrandColors.WHITE,
     };
   },
   secureDot: {
-    backgroundColor: isDark ? BrandColors.WHITE : BrandColors.PRIMARY_BLUE_DARK,
+    backgroundColor: "#0C2340",
   },
 });

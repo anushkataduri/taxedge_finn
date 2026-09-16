@@ -12,10 +12,12 @@ export const ApplicationSummaryCard: React.FC<ApplicationSummaryCardProps> = ({
   summary,
 }) => {
   const rows = [
-    { label: "Income Type", value: summary.incomeType },
-    { label: "Form", value: summary.itrForm },
     { label: "Assessment Year", value: summary.assessmentYear },
-    { label: "Documents Uploaded", value: summary.documentsUploaded },
+    { label: "Return Form", value: summary.itrForm },
+    { label: "Income Sources", value: summary.incomeType },
+    { label: "Tax Regime", value: summary.taxRegime || "New Tax Regime" },
+    { label: "Documents", value: summary.documentsUploaded },
+    { label: "Refund Bank", value: summary.refundBank || "HDFC Bank •••• 1234" },
   ];
 
   return (
@@ -41,7 +43,9 @@ export const ApplicationSummaryCard: React.FC<ApplicationSummaryCardProps> = ({
               ]}
             >
               <Text style={styles.rowLabel}>{row.label}</Text>
-              <Text style={styles.rowValue}>{row.value}</Text>
+              <Text style={styles.rowValue} numberOfLines={2}>
+                {row.value}
+              </Text>
             </View>
           );
         })}

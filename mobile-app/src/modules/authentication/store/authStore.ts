@@ -239,7 +239,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             const placeholderUser: DevUser = res.user || authStorage.getUserByMobile(cleanMobile) || {
               customerId: `CUST-2026-${cleanMobile.slice(-5) || "00001"}`,
               mobileNumber: cleanMobile,
-              name: "Valued Client",
+              name: "",
               email: `${cleanMobile}@taxedge.in`,
               customerType: "Individual",
               registrationCompleted: false,
@@ -267,7 +267,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const placeholderUser: DevUser = res.user || authStorage.getUserByMobile(cleanMobile) || {
           customerId: `CUST-2026-${cleanMobile.slice(-5) || "00001"}`,
           mobileNumber: cleanMobile,
-          name: "Valued Client",
+          name: "",
           email: `${cleanMobile}@taxedge.in`,
           customerType: "Individual",
           registrationCompleted: false,

@@ -62,16 +62,78 @@ export interface GstFilingDraft {
   updatedAt: string;
 }
 
+export interface ItrRegistrationDraft {
+  id: string;
+  stepIndex: number;
+  category: string;
+  categoryTitle: string;
+  formType: string;
+  assessmentYear: string;
+  incomeAmount: string;
+  regime: string;
+  bankDetails: {
+    bankName: string;
+    accountNumber: string;
+    confirmAccountNumber?: string;
+    ifscCode: string;
+    accountType: string;
+  };
+  deductions: {
+    sec80c: string;
+    sec80d: string;
+    homeLoan24b: string;
+    educationLoan80e: string;
+    otherDeductions: string;
+  };
+  previousFilingOption: string;
+  previousAckNumber: string;
+  documents: Array<{
+    id: string;
+    name: string;
+    subtitle: string;
+    required: boolean;
+    fileUri?: string;
+    fileName?: string;
+    fileSize?: string;
+    uploadedAt?: string;
+  }>;
+  updatedAt: string;
+}
+
+export interface TdsDraftDocument {
+  id: string;
+  status: "not_uploaded" | "uploaded";
+  fileUri?: string;
+  fileName?: string;
+  fileSize?: string;
+  mimeType?: string;
+  fileTypeLabel?: string;
+}
+
+export interface TdsDraft {
+  id?: string;
+  formData?: Record<string, any>;
+  documents?: TdsDraftDocument[];
+  step?: "FORM" | "DOCUMENTS" | string;
+  updatedAt?: string;
+}
+
 export interface ApplicationState {
   applications: Application[];
   selectedApplicationId: string | null;
   gstDraft: GstRegistrationDraft | null;
   gstFilingDraft: GstFilingDraft | null;
+  itrDraft: ItrRegistrationDraft | null;
+  tdsDraft: TdsDraft | null;
   setSelectedApplicationId: (id: string | null) => void;
   saveGstDraft: (draft: GstRegistrationDraft) => void;
   clearGstDraft: () => void;
   saveGstFilingDraft: (draft: GstFilingDraft) => void;
   clearGstFilingDraft: () => void;
+  saveItrDraft: (draft: ItrRegistrationDraft) => void;
+  clearItrDraft: () => void;
+  saveTdsDraft: (draft: Partial<TdsDraft>) => void;
+  clearTdsDraft: () => void;
   /** Creates an application and returns its generated id. */
   createApplication: (
     serviceId: string,
@@ -96,11 +158,34 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
   selectedApplicationId: null,
   gstDraft: null,
   gstFilingDraft: null,
+  itrDraft: null,
+  tdsDraft: null,
   setSelectedApplicationId: (id) => set({ selectedApplicationId: id }),
   saveGstDraft: (draft) => set({ gstDraft: draft }),
   clearGstDraft: () => set({ gstDraft: null }),
   saveGstFilingDraft: (draft) => set({ gstFilingDraft: draft }),
   clearGstFilingDraft: () => set({ gstFilingDraft: null }),
+  saveItrDraft: (draft) => set({ itrDraft: draft }),
+  clearItrDraft: () => set({ itrDraft: null }),
+  saveTdsDraft: (draft) =>
+    set((state) => ({
+      tdsDraft: state.tdsDraft
+        ? {
+            ...state.tdsDraft,
+            ...draft,
+            formData: draft.formData
+              ? { ...(state.tdsDraft.formData || {}), ...draft.formData }
+              : state.tdsDraft.formData,
+            documents: draft.documents ?? state.tdsDraft.documents,
+          }
+        : {
+            formData: draft.formData || {},
+            documents: draft.documents || [],
+            step: draft.step,
+            updatedAt: draft.updatedAt,
+          },
+    })),
+  clearTdsDraft: () => set({ tdsDraft: null }),
   createApplication: (
     serviceId,
     serviceName,
@@ -146,6 +231,29 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
             { title: "GST Filing", description: "Submission to GST portal", status: "pending" },
             { title: "Acknowledgement Receipt", description: "ARN generated & filed copy delivered", status: "pending" },
             { title: "Completed", description: "Filing process closed", status: "pending" },
+          ]
+        : serviceId === "itr-filing"
+        ? [
+            { title: "Application Submitted", description: "Return information & documents received", status: "completed", date: "Today" },
+            { title: "Staff Verification", description: "Tax Executive verifying documents & Form 26AS/AIS", status: "current", date: "Today" },
+            { title: "ITR Preparation & Tax Calculation", description: "Tax computation & dual-regime optimization", status: "pending" },
+            { title: "Internal Tax Review", description: "Senior CA verification & quality audit", status: "pending" },
+            { title: "Customer Review & Approval", description: "Customer signs off on final computation", status: "pending" },
+            { title: "ITR Submission", description: "Filing return with Income Tax e-Filing portal", status: "pending" },
+            { title: "E-Verification", description: "Aadhaar OTP / EVC verification pending", status: "pending" },
+            { title: "Income Tax Department Processing", description: "Central Processing Center (CPC) return processing & refund/tax closure", status: "pending" },
+          ]
+        : serviceId === "tds-refund"
+        ? [
+            { title: "New Request Received", description: "TDS refund claim initiated", status: "completed", date: "Today" },
+            { title: "Documents Received", description: "All documents uploaded", status: "completed", date: "Today" },
+            { title: "Under Verification", description: "Documents being verified by CA", status: "current", date: "Today" },
+            { title: "ITR Preparation", description: "Return computation by CA", status: "pending" },
+            { title: "Customer Approval", description: "Review and approve the return", status: "pending" },
+            { title: "ITR Filed", description: "Submitted on IT Department portal", status: "pending" },
+            { title: "E-Verification Pending", description: "Verify using Aadhaar OTP / DSC", status: "pending" },
+            { title: "Processing by IT Dept.", description: "Department processing", status: "pending" },
+            { title: "Refund / Tax Payable", description: "Final status communicated", status: "pending" },
           ]
         : [
             {

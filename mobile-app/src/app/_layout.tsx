@@ -34,6 +34,7 @@ export default function RootLayout() {
           <Stack.Screen name="service/itr-filed" />
           <Stack.Screen name="service/itr-success" />
           <Stack.Screen name="service/tds-refund" />
+          <Stack.Screen name="service/tds-form" />
           <Stack.Screen name="service/tds-checklist" />
           <Stack.Screen name="service/tds-estimate" />
           <Stack.Screen name="service/tds-payment" />

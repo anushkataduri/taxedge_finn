@@ -1,150 +1,43 @@
 import { StyleSheet, Platform, ViewStyle } from "react-native";
-import {
-  BrandColors,
-  BorderRadius,
-  BorderWidth,
-  Spacing,
-  Typography,
-} from "../../../../../shared/theme";
+import { BrandColors } from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: BrandColors.BACKGROUND,
-  },
-  header: {
-    minHeight: 58,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: Spacing.base,
-    paddingVertical: 6,
-    backgroundColor: BrandColors.WHITE,
-    borderBottomWidth: BorderWidth.thin,
-    borderBottomColor: "#F1F5F9",
-  },
-  backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: BorderRadius.md,
-    borderWidth: BorderWidth.thin,
-    borderColor: "#E5E7EB",
-    backgroundColor: BrandColors.WHITE,
-    justifyContent: "center",
-    alignItems: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#0B1F3A",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-      },
-      android: {
-        elevation: 1,
-      },
-      default: {},
-    }),
-  },
-  headerTitleGroup: {
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: Typography.fontSize.xl,
-    fontWeight: Typography.fontWeight.bold,
-    color: "#0B1F3A",
-    letterSpacing: -0.2,
-  },
-  headerSubtitle: {
-    fontSize: Typography.fontSize.sm + 0.5,
-    fontWeight: Typography.fontWeight.medium,
-    color: "#0B1F3A",
-    marginTop: 2,
-  },
-  headerRightSpacer: {
-    width: 38,
+    backgroundColor: "#F1F5F9",
   },
   scrollContent: {
-    paddingHorizontal: Spacing.base,
-    paddingTop: Spacing.base,
-  },
-  titleSection: {
-    marginBottom: 2,
-  },
-  pageTitle: {
-    fontSize: Typography.fontSize.lg + 4,
-    fontWeight: Typography.fontWeight.extraBold,
-    color: "#0B1F3A",
-    letterSpacing: -0.2,
-  },
-  pageSubtitle: {
-    fontSize: Typography.fontSize.sm + 0.5,
-    color: BrandColors.TEXT_SECONDARY,
-    marginTop: Spacing.xs,
-    lineHeight: 18,
-    fontWeight: Typography.fontWeight.regular,
+    paddingBottom: 24,
   },
   bottomBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: BrandColors.WHITE,
-    paddingHorizontal: Spacing.base,
-    paddingTop: 10,
-    borderTopWidth: BorderWidth.thin,
-    borderTopColor: "#F1F5F9",
+    backgroundColor: "#F8FAFC",
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
     ...Platform.select({
       ios: {
         shadowColor: "#0B1F3A",
-        shadowOffset: { width: 0, height: -3 },
+        shadowOffset: { width: 0, height: -2 },
         shadowOpacity: 0.05,
         shadowRadius: 6,
       },
       android: {
-        elevation: 6,
+        elevation: 4,
       },
       default: {},
     }),
-  },
-  ctaButton: {
-    height: 52,
-    borderRadius: BorderRadius.base - 2,
-    backgroundColor: BrandColors.PRIMARY_ORANGE,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: Spacing.sm,
-    ...Platform.select({
-      ios: {
-        shadowColor: BrandColors.PRIMARY_ORANGE,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 3,
-      },
-      default: {},
-    }),
-  },
-  ctaButtonText: {
-    color: BrandColors.WHITE,
-    fontSize: Typography.fontSize.md + 0.5,
-    fontWeight: Typography.fontWeight.bold,
-    letterSpacing: 0.2,
   },
 });
 
 export const getContainerInsetsStyle = (topInset: number): ViewStyle => ({
-  paddingTop: topInset,
+  paddingTop: 0, // Handled inside custom top header nav
 });
 
 export const getScrollContentInsetsStyle = (bottomInset: number): ViewStyle => ({
-  paddingBottom: bottomInset + 90,
+  paddingBottom: Math.max(bottomInset, 16) + 70,
 });
 
 export const getBottomBarInsetsStyle = (bottomInset: number): ViewStyle => ({
-  paddingBottom: Math.max(bottomInset, 12),
+  paddingBottom: Math.max(bottomInset, 14),
 });

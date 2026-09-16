@@ -1,4 +1,5 @@
 import React from "react";
+import { View } from "react-native";
 import Svg, {
   Rect,
   Path,
@@ -9,10 +10,12 @@ import Svg, {
   Stop,
   Text as SvgText,
 } from "react-native-svg";
+import { styles } from "./TdsRefundCardIllustration.styles";
 
 export const TdsRefundCardIllustration: React.FC = () => {
   return (
-    <Svg width={120} height={110} viewBox="0 0 120 110" fill="none">
+    <View style={styles.container}>
+      <Svg width={120} height={110} viewBox="0 0 120 110" fill="none">
       <Defs>
         <LinearGradient id="estimateWalletGrad" x1="0" y1="0" x2="1" y2="1">
           <Stop offset="0%" stopColor="#FB923C" />
@@ -109,6 +112,7 @@ export const TdsRefundCardIllustration: React.FC = () => {
           ₹
         </SvgText>
       </G>
-    </Svg>
+      </Svg>
+    </View>
   );
 };

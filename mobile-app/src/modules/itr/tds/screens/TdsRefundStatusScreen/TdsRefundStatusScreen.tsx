@@ -1,24 +1,19 @@
 import React from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StatusBar,
-} from "react-native";
+import { View, ScrollView, StatusBar } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import { useApplicationStore } from "@/store/applicationStore";
 import {
-  RefundProgressTracker,
-  RefundDetailsCard,
-  VerificationStatusCard,
-  NextStepsTimeline,
-  StatusNotificationCard,
-  SupportCard,
-} from "../../components";
-import { DEFAULT_TDS_STATUS_DETAILS } from "../../mock/statusData";
-import { TdsRefundStatusDetails } from "../../types/status.types";
+  TdsStatusTopNav,
+  TdsApplicationHeaderCard,
+  TdsTimelineTrackerCard,
+  TdsContactSupportFooter,
+} from "../../components/status";
+import {
+  DEFAULT_TDS_TIMELINE_STEPS,
+  createApplicationSummary,
+} from "../../constants/tdsStatus.constants";
+import { TdsRefundStatusScreenParams } from "../../types/tdsStatus.types";
 import {
   styles,
   getContainerInsetsStyle,
@@ -29,25 +24,26 @@ import {
 export const TdsRefundStatusScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{
-    applicationId?: string;
-    refundAmount?: string;
-  }>();
+  const params = useLocalSearchParams() as unknown as TdsRefundStatusScreenParams;
+  const tdsDraft = useApplicationStore((state) => state.tdsDraft);
 
-  const details: TdsRefundStatusDetails = {
-    applicationId: params.applicationId || DEFAULT_TDS_STATUS_DETAILS.applicationId,
-    filedOn: DEFAULT_TDS_STATUS_DETAILS.filedOn,
-    estimatedRefund: params.refundAmount || DEFAULT_TDS_STATUS_DETAILS.estimatedRefund,
-    refundToBank: DEFAULT_TDS_STATUS_DETAILS.refundToBank,
-    expectedProcessingTime: DEFAULT_TDS_STATUS_DETAILS.expectedProcessingTime,
-  };
+  // Dynamic application summary built functionally - zero loops
+  const applicationSummary = createApplicationSummary(
+    {
+      applicationId: params.applicationId,
+      serviceName: params.serviceName,
+      assessmentYear: params.assessmentYear,
+      appliedDate: params.appliedDate,
+    },
+    tdsDraft?.formData
+  );
 
   const handleBack = () => {
-    router.replace("/service/itr" as any);
-  };
-
-  const handleTaxServices = () => {
-    router.replace("/service/itr" as any);
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/service/itr" as any);
+    }
   };
 
   const containerInsetsStyle = getContainerInsetsStyle(insets.top);
@@ -56,71 +52,30 @@ export const TdsRefundStatusScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, containerInsetsStyle]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="light-content" backgroundColor="#4338CA" />
 
-      {/* Screen Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={handleBack}
-          style={styles.backButton}
-        >
-          <Ionicons name="chevron-back" size={20} color="#0B1F3A" />
-        </TouchableOpacity>
+      {/* Top Banner Navigation */}
+      <TdsStatusTopNav
+        topInset={insets.top}
+        title="Application Status"
+        subtitle={applicationSummary.applicationId}
+        onBack={handleBack}
+      />
 
-        <View style={styles.headerTitleGroup}>
-          <Text style={styles.headerTitle}>TDS Refund</Text>
-          <Text style={styles.headerSubtitle}>Refund Status</Text>
-        </View>
-
-        <View style={styles.headerRightSpacer} />
-      </View>
-
-      {/* Main Scrollable Content */}
+      {/* Scrollable Main Content */}
       <ScrollView
         contentContainerStyle={[styles.scrollContent, scrollContentInsetsStyle]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Page Title Section */}
-        <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>Your Refund Status</Text>
-          <Text style={styles.pageSubtitle}>
-            Track your refund request in real time. We’ll notify you
-            automatically whenever your application moves to the next stage.
-          </Text>
-        </View>
+        {/* Top Rounded Application Summary Card */}
+        <TdsApplicationHeaderCard data={applicationSummary} />
 
-        {/* 6-Stage Horizontal Progress Tracker */}
-        <RefundProgressTracker />
-
-        {/* 5-Row Refund Details Card */}
-        <RefundDetailsCard details={details} />
-
-        {/* Current Status Card: Under Verification */}
-        <VerificationStatusCard />
-
-        {/* Vertical Next Steps Timeline */}
-        <NextStepsTimeline />
-
-        {/* Automated Notification Notice */}
-        <StatusNotificationCard />
-
-        {/* Need Help Support Card */}
-        <SupportCard />
+        {/* 9-Step Timeline Status Tracker Card */}
+        <TdsTimelineTrackerCard steps={DEFAULT_TDS_TIMELINE_STEPS} />
       </ScrollView>
 
-      {/* Sticky Bottom Action */}
-      <View style={[styles.bottomBar, bottomBarInsetsStyle]}>
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={handleTaxServices}
-          style={styles.ctaButton}
-        >
-          <Ionicons name="business-outline" size={18} color="#FFFFFF" />
-          <Text style={styles.ctaButtonText}>Back to Tax Services</Text>
-          <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
+      {/* Bottom Sticky Contact Support Card */}
+      <TdsContactSupportFooter style={bottomBarInsetsStyle} />
     </View>
   );
 };

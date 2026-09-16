@@ -1,6 +1,11 @@
-import React from "react";
-import DeductionsScreen from "@/modules/itr/screens/DeductionsScreen/DeductionsScreen";
+import React, { useEffect } from "react";
+import { ItrFilingScreen } from "@/modules/itr/itr-filing";
+import { useITRStore } from "@/modules/itr/store/itrStore";
 
 export default function ItrDeductionsRoute() {
-  return <DeductionsScreen />;
+  const setStep = useITRStore((state) => state.setStep);
+  useEffect(() => {
+    setStep(2);
+  }, []);
+  return <ItrFilingScreen />;
 }

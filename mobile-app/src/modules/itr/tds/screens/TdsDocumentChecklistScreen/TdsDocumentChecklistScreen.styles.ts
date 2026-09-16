@@ -66,8 +66,8 @@ export const styles = StyleSheet.create({
     width: 38,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.base,
-    paddingTop: 14,
+    paddingHorizontal: 0,
+    paddingTop: 8,
   },
   bottomBar: {
     position: "absolute",

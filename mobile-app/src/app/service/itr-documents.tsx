@@ -1,6 +1,11 @@
-import React from "react";
-import DocumentUploadScreen from "@/modules/itr/screens/DocumentUploadScreen/DocumentUploadScreen";
+import React, { useEffect } from "react";
+import { ItrFilingScreen } from "@/modules/itr/itr-filing";
+import { useITRStore } from "@/modules/itr/store/itrStore";
 
 export default function ItrDocumentsRoute() {
-  return <DocumentUploadScreen />;
+  const setStep = useITRStore((state) => state.setStep);
+  useEffect(() => {
+    setStep(3);
+  }, []);
+  return <ItrFilingScreen />;
 }
