@@ -1,5 +1,12 @@
 export type PaymentMethodType = "upi" | "debit" | "credit" | "netbanking";
 
+export type PaymentProcessingState =
+  | "idle"
+  | "processing"
+  | "success"
+  | "failed"
+  | "network_error";
+
 export interface PaymentOptionItem {
   id: PaymentMethodType;
   title: string;
@@ -9,6 +16,7 @@ export interface PaymentOptionItem {
 
 export interface TdsFeeBreakdown {
   refundEstimate: number;
+  isAdditionalTaxPayable: boolean;
   serviceFeePercent: number;
   serviceFeeAmount: number;
   gstPercent: number;

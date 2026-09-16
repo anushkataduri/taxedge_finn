@@ -182,7 +182,7 @@ export function AuthenticationScreen() {
           syncFromDevAuth();
           router.replace("/(main)/home" as any);
         }
-      } else if (authRes.error && authRes.error !== "Authentication cancelled") {
+      } else if (!authRes?.cancelled && authRes?.error && authRes.error !== "Authentication cancelled") {
         setError(authRes.error);
       }
     } catch (e: any) {

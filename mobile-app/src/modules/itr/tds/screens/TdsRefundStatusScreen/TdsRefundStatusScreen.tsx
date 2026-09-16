@@ -1,30 +1,22 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  SafeAreaView,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import {
-  RefundProgressTracker,
-  RefundDetailsCard,
-  VerificationStatusCard,
-  NextStepsTimeline,
-  StatusNotificationCard,
-  SupportCard,
-} from "../../components";
-import { DEFAULT_TDS_STATUS_DETAILS } from "../../mock/statusData";
+import { BrandColors } from "@/shared/theme";
 import { TdsRefundStatusDetails } from "../../types/status.types";
-import {
-  styles,
-  getContainerInsetsStyle,
-  getScrollContentInsetsStyle,
-  getBottomBarInsetsStyle,
-} from "./TdsRefundStatusScreen.styles";
+import { tdsApiService } from "../../services/tdsApiService";
+import { tdsDraftService } from "../../services/tdsDraftService";
+import { RefundProgressTracker } from "../../components/status/RefundProgressTracker";
+import { RefundDetailsCard } from "../../components/status/RefundDetailsCard";
+import { styles } from "./TdsRefundStatusScreen.styles";
 
 export const TdsRefundStatusScreen: React.FC = () => {
   const router = useRouter();
@@ -32,93 +24,135 @@ export const TdsRefundStatusScreen: React.FC = () => {
   const params = useLocalSearchParams<{
     applicationId?: string;
     refundAmount?: string;
+    isAdditionalPayable?: string;
   }>();
 
-  const details: TdsRefundStatusDetails = {
-    applicationId: params.applicationId || DEFAULT_TDS_STATUS_DETAILS.applicationId,
-    filedOn: DEFAULT_TDS_STATUS_DETAILS.filedOn,
-    estimatedRefund: params.refundAmount || DEFAULT_TDS_STATUS_DETAILS.estimatedRefund,
-    refundToBank: DEFAULT_TDS_STATUS_DETAILS.refundToBank,
-    expectedProcessingTime: DEFAULT_TDS_STATUS_DETAILS.expectedProcessingTime,
+  const getTodayFormatted = () => {
+    const d = new Date();
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
   };
 
-  const handleBack = () => {
+  const [statusDetails, setStatusDetails] = useState<TdsRefundStatusDetails>({
+    applicationId: params.applicationId || "TDS-2026-PENDING",
+    filedOn: getTodayFormatted(),
+    estimatedRefund: params.refundAmount || "₹0",
+    isAdditionalTaxPayable: params.isAdditionalPayable === "1",
+    refundToBank: "Registered Bank Account",
+    indicativeTimeline: "10–20 Business Days",
+    currentStageIndex: 2, // "Under Verification"
+    stages: [],
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      const appId = params.applicationId || (await tdsDraftService.getApplicationId());
+      if (appId) {
+        try {
+          const remote = await tdsApiService.fetchStatus(appId);
+          if (isMounted && remote) {
+            setStatusDetails((prev) => ({
+              ...prev,
+              applicationId: remote.applicationId,
+              estimatedRefund: `₹${(remote.estimatedRefund || 0).toLocaleString("en-IN")}`,
+              isAdditionalTaxPayable: remote.isAdditionalTaxPayable,
+              refundToBank: remote.maskedAccountNumber || prev.refundToBank,
+              filedOn: remote.createdAt ? remote.createdAt.slice(0, 10) : prev.filedOn,
+            }));
+          }
+        } catch {
+          // Keep parameters passed from screen 4
+        }
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [params.applicationId]);
+
+  const handleBackToServices = () => {
     router.replace("/service/itr" as any);
   };
-
-  const handleTaxServices = () => {
-    router.replace("/service/itr" as any);
-  };
-
-  const containerInsetsStyle = getContainerInsetsStyle(insets.top);
-  const scrollContentInsetsStyle = getScrollContentInsetsStyle(insets.bottom);
-  const bottomBarInsetsStyle = getBottomBarInsetsStyle(insets.bottom);
 
   return (
-    <View style={[styles.container, containerInsetsStyle]}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Screen Header */}
-      <View style={styles.header}>
+      <View style={[styles.headerBar, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={handleBack}
+          onPress={handleBackToServices}
           style={styles.backButton}
         >
-          <Ionicons name="chevron-back" size={20} color="#0B1F3A" />
+          <Ionicons name="close" size={20} color={BrandColors.PRIMARY_BLUE_DARK} />
         </TouchableOpacity>
 
         <View style={styles.headerTitleGroup}>
-          <Text style={styles.headerTitle}>TDS Refund</Text>
-          <Text style={styles.headerSubtitle}>Refund Status</Text>
+          <Text style={styles.headerTitle}>Application Status</Text>
+          <Text style={styles.headerSubtitle}>Step 5 of 5: Tracking</Text>
         </View>
 
         <View style={styles.headerRightSpacer} />
       </View>
 
-      {/* Main Scrollable Content */}
+      {/* Progress Track */}
+      <View style={styles.progressTrack}>
+        <View style={styles.progressFill} />
+      </View>
+
+      {/* Main Content */}
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, scrollContentInsetsStyle]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 85 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Page Title Section */}
-        <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>Your Refund Status</Text>
-          <Text style={styles.pageSubtitle}>
-            Track your refund request in real time. We’ll notify you
-            automatically whenever your application moves to the next stage.
+        {/* Success Confirmation Hero */}
+        <View style={styles.successHero}>
+          <View style={styles.successIconBox}>
+            <Ionicons name="checkmark" size={28} color="#FFFFFF" />
+          </View>
+          <Text style={styles.successTitle}>Application Submitted Successfully</Text>
+          <Text style={styles.successSubtitle}>
+            Your TDS refund claim and documents have been securely submitted. A TaxEdge Chartered Accountant is currently reviewing your application.
           </Text>
         </View>
 
-        {/* 6-Stage Horizontal Progress Tracker */}
-        <RefundProgressTracker />
+        {/* Dynamic Refund Details Card */}
+        <RefundDetailsCard details={statusDetails} />
 
-        {/* 5-Row Refund Details Card */}
-        <RefundDetailsCard details={details} />
+        {/* 9-Stage Progress Timeline */}
+        <RefundProgressTracker currentStageIndex={statusDetails.currentStageIndex} />
 
-        {/* Current Status Card: Under Verification */}
-        <VerificationStatusCard />
-
-        {/* Vertical Next Steps Timeline */}
-        <NextStepsTimeline />
-
-        {/* Automated Notification Notice */}
-        <StatusNotificationCard />
-
-        {/* Need Help Support Card */}
-        <SupportCard />
+        {/* Need Help / Support Card */}
+        <View style={styles.supportCard}>
+          <View style={styles.supportIconBox}>
+            <Ionicons name="headset-outline" size={22} color={BrandColors.PRIMARY_ORANGE} />
+          </View>
+          <View style={styles.supportTextBox}>
+            <Text style={styles.supportTitle}>Need Assistance?</Text>
+            <Text style={styles.supportSubtitle}>
+              Our tax support desk is available Monday to Saturday, 9 AM to 7 PM IST.
+            </Text>
+          </View>
+        </View>
       </ScrollView>
 
-      {/* Sticky Bottom Action */}
-      <View style={[styles.bottomBar, bottomBarInsetsStyle]}>
+      {/* Sticky Bottom CTA */}
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom > 0 ? insets.bottom : 12 }]}>
         <TouchableOpacity
           activeOpacity={0.85}
-          onPress={handleTaxServices}
-          style={styles.ctaButton}
+          onPress={handleBackToServices}
+          style={styles.homeButton}
         >
-          <Ionicons name="business-outline" size={18} color="#FFFFFF" />
-          <Text style={styles.ctaButtonText}>Back to Tax Services</Text>
-          <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+          <Ionicons name="home-outline" size={18} color={BrandColors.WHITE} />
+          <Text style={styles.homeButtonText}>Back to Tax Services</Text>
         </TouchableOpacity>
       </View>
     </View>

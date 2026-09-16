@@ -6,8 +6,7 @@ spring:
     active: dev
 
   flyway:
-    enabled: true
-    locations: classpath:db/migration
+    enabled: false
 
 server:
   port: 8088

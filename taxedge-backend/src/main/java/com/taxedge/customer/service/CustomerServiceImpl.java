@@ -261,4 +261,111 @@ public class CustomerServiceImpl implements CustomerService {
             "hasPasscode", hasPasscode
         );
     }
+
+    @Override
+    public CustomerDto getCustomerProfile(String identifier) {
+        if (identifier == null || identifier.trim().isEmpty()) {
+            return null;
+        }
+        String clean = identifier.trim();
+        String cleanDigits = clean.replaceAll("\\D", "");
+
+        Optional<Customer> opt = Optional.empty();
+        if (cleanDigits.length() == 10) {
+            opt = customerRepository.findByMobileNumber(cleanDigits);
+        }
+        if (opt.isEmpty()) {
+            opt = customerRepository.findById(clean);
+        }
+        if (opt.isEmpty() && !cleanDigits.isEmpty()) {
+            opt = customerRepository.findByMobileNumber(cleanDigits);
+        }
+
+        return opt.map(this::toDto).orElse(null);
+    }
+
+    @Override
+    @Transactional
+    public CustomerDto updateCustomerProfile(CustomerDto updateDto) {
+        if (updateDto == null) {
+            return null;
+        }
+
+        String custId = updateDto.getCustId();
+        String cleanMobile = updateDto.getMobileNumber() != null ? updateDto.getMobileNumber().replaceAll("\\D", "") : "";
+
+        Optional<Customer> opt = Optional.empty();
+        if (custId != null && !custId.isBlank()) {
+            opt = customerRepository.findById(custId);
+        }
+        if (opt.isEmpty() && cleanMobile.length() == 10) {
+            opt = customerRepository.findByMobileNumber(cleanMobile);
+        }
+
+        if (opt.isEmpty()) {
+            return null;
+        }
+
+        Customer c = opt.get();
+
+        if (updateDto.getName() != null && !updateDto.getName().isBlank()) {
+            c.setName(updateDto.getName().trim());
+        }
+        if (updateDto.getEmail() != null && !updateDto.getEmail().isBlank()) {
+            c.setEmail(updateDto.getEmail().trim());
+        }
+        if (updateDto.getPan() != null && !updateDto.getPan().isBlank()) {
+            c.setPan(updateDto.getPan().trim().toUpperCase());
+        }
+        if (updateDto.getAadhaar() != null && !updateDto.getAadhaar().isBlank()) {
+            c.setAadhaar(updateDto.getAadhaar().trim());
+        }
+        if (updateDto.getDob() != null) {
+            c.setDob(updateDto.getDob());
+        }
+        if (updateDto.getAddressLine1() != null) {
+            c.setAddressLine1(updateDto.getAddressLine1().trim());
+        }
+        if (updateDto.getAddressLine2() != null) {
+            c.setAddressLine2(updateDto.getAddressLine2().trim());
+        }
+        if (updateDto.getCity() != null) {
+            c.setCity(updateDto.getCity().trim());
+        }
+        if (updateDto.getState() != null) {
+            c.setState(updateDto.getState().trim());
+        }
+        if (updateDto.getPincode() != null) {
+            c.setPincode(updateDto.getPincode().trim());
+        }
+        if (updateDto.getAddress() != null) {
+            c.setAddress(updateDto.getAddress().trim());
+        }
+
+        Customer saved = customerRepository.save(c);
+        return toDto(saved);
+    }
+
+    private CustomerDto toDto(Customer c) {
+        CustomerDto dto = new CustomerDto();
+        dto.setCustId(c.getCustId());
+        dto.setName(c.getName());
+        dto.setEmail(c.getEmail());
+        dto.setMobileNumber(c.getMobileNumber());
+        dto.setAadhaar(c.getAadhaar());
+        dto.setPan(c.getPan());
+        dto.setDob(c.getDob());
+        dto.setGender(c.getGender());
+        dto.setFatherSpouseName(c.getFatherSpouseName());
+        dto.setCustomerType(c.getCustomerType());
+        dto.setAddressLine1(c.getAddressLine1());
+        dto.setAddressLine2(c.getAddressLine2());
+        dto.setCity(c.getCity());
+        dto.setPincode(c.getPincode());
+        dto.setState(c.getState());
+        dto.setAddress(c.getAddress());
+        dto.setCreatedAt(c.getCreatedAt());
+        dto.setPushToken(c.getPushToken());
+        return dto;
+    }
 }
