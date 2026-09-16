@@ -1,35 +1,34 @@
 import { TdsRefundStatusDetails, NextStepTimelineItem } from "../types/status.types";
 
-export const DEFAULT_TDS_STATUS_DETAILS: TdsRefundStatusDetails = {
-  applicationId: "TDS-2026-00043",
-  filedOn: "02 Sep 2026",
-  estimatedRefund: "₹23,400",
-  refundToBank: "HDFC ••••1826",
-  expectedProcessingTime: "20–45 Days",
+export const EMPTY_TDS_STATUS_DETAILS: TdsRefundStatusDetails = {
+  applicationId: "",
+  filedOn: "",
+  estimatedRefund: "₹0",
+  refundToBank: "",
+  indicativeTimeline: "10–20 Business Days",
+  currentStageIndex: 0,
+  stages: [],
 };
+
+export const DEFAULT_TDS_STATUS_DETAILS = EMPTY_TDS_STATUS_DETAILS;
 
 export const TDS_NEXT_STEPS: NextStepTimelineItem[] = [
   {
     id: 1,
-    title: "Document Verification",
-    status: "Completed",
+    title: "Application & Document Verification",
+    status: "In Progress",
+    description: "Your documents and TDS records are being reconciled by our CA team.",
   },
   {
     id: 2,
-    title: "Refund Filing",
+    title: "Return Preparation & Review",
     status: "Upcoming",
-    description: "Your TDS refund return will be filed with the Income Tax Department.",
+    description: "Your draft return computation will be prepared and verified.",
   },
   {
     id: 3,
-    title: "Income Tax Processing",
+    title: "ITR Filing & Department Processing",
     status: "Upcoming",
-    description: "The Income Tax Department processes your refund.",
-  },
-  {
-    id: 4,
-    title: "Refund Credited",
-    status: "Upcoming",
-    description: "The refund amount will be transferred directly to your registered bank account.",
+    description: "Return is filed on the e-filing portal and processed by CPC Bangalore.",
   },
 ];

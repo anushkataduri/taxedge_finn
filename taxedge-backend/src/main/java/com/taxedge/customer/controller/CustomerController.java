@@ -51,4 +51,76 @@ public class CustomerController {
         java.util.Map<String, Object> status = customerService.checkCustomerStatus(mobileNumber);
         return ResponseEntity.ok(status);
     }
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> getCustomerProfile(
+            @org.springframework.web.bind.annotation.RequestParam(value = "identifier", required = false) String identifier,
+            @org.springframework.web.bind.annotation.RequestParam(value = "mobileNumber", required = false) String mobileNumber,
+            @org.springframework.web.bind.annotation.RequestParam(value = "customerId", required = false) String customerId,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "X-Customer-Mobile", required = false) String headerMobile,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "X-Customer-Id", required = false) String headerCustId,
+            org.springframework.security.core.Authentication authentication) {
+
+        String targetIdentifier = null;
+
+        if (identifier != null && !identifier.isBlank()) {
+            targetIdentifier = identifier;
+        } else if (mobileNumber != null && !mobileNumber.isBlank()) {
+            targetIdentifier = mobileNumber;
+        } else if (customerId != null && !customerId.isBlank()) {
+            targetIdentifier = customerId;
+        } else if (headerMobile != null && !headerMobile.isBlank()) {
+            targetIdentifier = headerMobile;
+        } else if (headerCustId != null && !headerCustId.isBlank()) {
+            targetIdentifier = headerCustId;
+        } else if (authentication != null && authentication.getPrincipal() instanceof com.taxedge.customer.entity.Customer) {
+            targetIdentifier = ((com.taxedge.customer.entity.Customer) authentication.getPrincipal()).getCustId();
+        }
+
+        if (targetIdentifier == null || targetIdentifier.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(java.util.Map.of("message", "Customer identification is required"));
+        }
+
+        CustomerDto profile = customerService.getCustomerProfile(targetIdentifier);
+        if (profile == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(java.util.Map.of("message", "Customer profile not found for: " + targetIdentifier));
+        }
+
+        return ResponseEntity.ok(profile);
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/profile")
+    public ResponseEntity<?> updateCustomerProfile(
+            @RequestBody CustomerDto updateDto,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "X-Customer-Mobile", required = false) String headerMobile,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "X-Customer-Id", required = false) String headerCustId,
+            org.springframework.security.core.Authentication authentication) {
+
+        if (updateDto == null) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Customer data required"));
+        }
+
+        if ((updateDto.getCustId() == null || updateDto.getCustId().isBlank()) && headerCustId != null && !headerCustId.isBlank()) {
+            updateDto.setCustId(headerCustId.trim());
+        }
+
+        if ((updateDto.getMobileNumber() == null || updateDto.getMobileNumber().isBlank()) && headerMobile != null && !headerMobile.isBlank()) {
+            updateDto.setMobileNumber(headerMobile.trim());
+        }
+
+        if ((updateDto.getCustId() == null || updateDto.getCustId().isBlank())
+                && authentication != null && authentication.getPrincipal() instanceof com.taxedge.customer.entity.Customer) {
+            updateDto.setCustId(((com.taxedge.customer.entity.Customer) authentication.getPrincipal()).getCustId());
+        }
+
+        CustomerDto updated = customerService.updateCustomerProfile(updateDto);
+        if (updated == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(java.util.Map.of("message", "Customer not found for update"));
+        }
+
+        return ResponseEntity.ok(updated);
+    }
 }

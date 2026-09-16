@@ -7,6 +7,7 @@ export { TdsDocumentsGrid } from "./TdsDocumentsGrid";
 export { TdsInfoBanner } from "./TdsInfoBanner";
 
 // Sub-folders
+export * from "./personal/TdsRefundPersonalInfoCard";
 export * from "./checklist";
 export * from "./estimate";
 export * from "./payment";

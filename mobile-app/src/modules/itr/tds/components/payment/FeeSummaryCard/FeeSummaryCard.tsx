@@ -1,38 +1,42 @@
 import React from "react";
 import { View, Text } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { TdsFeeBreakdown } from "../../../types/payment.types";
+import { formatCurrency } from "../../../utils/tdsValidation";
 import { styles } from "./FeeSummaryCard.styles";
 
-interface FeeSummaryCardProps {
+export interface FeeSummaryCardProps {
   feeData: TdsFeeBreakdown;
 }
 
 export const FeeSummaryCard: React.FC<FeeSummaryCardProps> = ({ feeData }) => {
   return (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>Fee Summary</Text>
+      <View style={styles.cardHeader}>
+        <Text style={styles.cardTitle}>Payment Summary</Text>
+      </View>
 
       <View style={styles.rowsList}>
         <View style={styles.row}>
-          <Text style={styles.rowLabel}>Refund estimate</Text>
-          <Text style={styles.rowValue}>
-            ₹{feeData.refundEstimate.toLocaleString("en-IN")}
-          </Text>
-        </View>
-
-        <View style={styles.row}>
           <Text style={styles.rowLabel}>
-            Service fee ({feeData.serviceFeePercent}%)
+            {feeData.isAdditionalTaxPayable ? "Estimated Tax Payable" : "Estimated Refund"}
           </Text>
-          <Text style={styles.rowValue}>
-            ₹{feeData.serviceFeeAmount.toLocaleString("en-IN")}
+          <Text style={[styles.rowValue, !feeData.isAdditionalTaxPayable ? styles.refundValue : null]}>
+            {formatCurrency(feeData.refundEstimate)}
           </Text>
         </View>
 
         <View style={styles.row}>
-          <Text style={styles.rowLabel}>GST @ {feeData.gstPercent}%</Text>
+          <Text style={styles.rowLabel}>TaxEdge Service Fee</Text>
           <Text style={styles.rowValue}>
-            ₹{feeData.gstAmount.toLocaleString("en-IN")}
+            {formatCurrency(feeData.serviceFeeAmount)}
+          </Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>GST (18%)</Text>
+          <Text style={styles.rowValue}>
+            {formatCurrency(feeData.gstAmount)}
           </Text>
         </View>
       </View>
@@ -40,11 +44,13 @@ export const FeeSummaryCard: React.FC<FeeSummaryCardProps> = ({ feeData }) => {
       <View style={styles.divider} />
 
       <View style={styles.totalRow}>
-        <Text style={styles.totalLabel}>Total payable</Text>
+        <Text style={styles.totalLabel}>Total Payable</Text>
         <Text style={styles.totalValue}>
-          ₹{feeData.totalPayable.toLocaleString("en-IN")}
+          {formatCurrency(feeData.totalPayable)}
         </Text>
       </View>
     </View>
   );
 };
+
+export default FeeSummaryCard;

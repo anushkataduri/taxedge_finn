@@ -4,41 +4,33 @@ export * from "./types/checklist.types";
 export * from "./types/estimate.types";
 export * from "./types/payment.types";
 export * from "./types/status.types";
+export * from "./types/customerIncome.types";
+export * from "./types/reconciliation.types";
 
-// Mock Data
-export * from "./mock/tdsData";
-export * from "./mock/checklistData";
-export * from "./mock/estimateData";
-export * from "./mock/statusData";
+// Validation & Utils
+export * from "./utils/tdsValidation";
+export * from "./validation/tdsCustomerSchema";
+export * from "./validation/tdsDocumentSchema";
+
+// Services
+export * from "./services/tdsCalculationService";
+export * from "./services/tdsFeeService";
+export * from "./services/tdsReconciliationService";
+export * from "./services/tdsDraftService";
+export * from "./services/tdsApiService";
 
 // Components
-export * from "./components/TdsHeroIllustration";
-export * from "./components/TdsHeroCard";
-export * from "./components/TdsBenefitsGrid";
-export * from "./components/TdsProcessTimeline";
-export * from "./components/TdsDocumentsGrid";
-export * from "./components/TdsInfoBanner";
-export * from "./components/checklist/ChecklistClipboardIllustration";
-export * from "./components/checklist/ChecklistHeaderCard";
-export * from "./components/checklist/ChecklistProgressHeader";
-export * from "./components/checklist/ChecklistDocumentIcons";
-export * from "./components/checklist/ChecklistDocumentCard";
-export * from "./components/checklist/ChecklistImportantBanner";
-export * from "./components/estimate/TdsRefundCardIllustration";
-export * from "./components/estimate/EstimatedRefundHeroCard";
-export * from "./components/estimate/RefundBreakdownCard";
-export * from "./components/estimate/EstimatedCalculationBanner";
-export * from "./components/payment/PaymentMethodCard";
+export * from "./components/upload/DocumentUploadBottomSheet";
+export * from "./components/upload/TdsDocumentCard";
+export * from "./components/estimate/TaxCalculationBreakdownCard";
+export * from "./components/estimate/TdsReconciliationCard";
 export * from "./components/payment/FeeSummaryCard";
-export * from "./components/payment/ApplicationSuccessCard";
-export * from "./components/payment/RefundProgressTimeline";
-export * from "./components/payment/NotificationCard";
+export * from "./components/payment/PaymentMethodCard";
 export * from "./components/status/RefundProgressTracker";
 export * from "./components/status/RefundDetailsCard";
-export * from "./components/status/VerificationStatusCard";
-export * from "./components/status/NextStepsTimeline";
-export * from "./components/status/StatusNotificationCard";
-export * from "./components/status/SupportCard";
+
+// Legacy component exports for backwards compatibility
+export * from "./components/checklist/ChecklistProgressHeader";
 
 // Screens
 export * from "./screens/TdsRefundEntryScreen";
