@@ -1,1 +1,0 @@
-export { ItrProgressBar } from "./ItrProgressBar";

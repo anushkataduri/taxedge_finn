@@ -1,9 +1,12 @@
 import React from "react";
+import { View } from "react-native";
 import Svg, { Rect, Path, Circle, G } from "react-native-svg";
+import { styles } from "./ChecklistClipboardIllustration.styles";
 
 export const ChecklistClipboardIllustration: React.FC = () => {
   return (
-    <Svg width={96} height={96} viewBox="0 0 96 96" fill="none">
+    <View style={styles.container}>
+      <Svg width={96} height={96} viewBox="0 0 96 96" fill="none">
       {/* Background Clipboard Board */}
       <Rect
         x={16}
@@ -95,6 +98,7 @@ export const ChecklistClipboardIllustration: React.FC = () => {
           />
         </G>
       </G>
-    </Svg>
+      </Svg>
+    </View>
   );
 };

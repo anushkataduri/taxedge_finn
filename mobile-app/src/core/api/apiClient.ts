@@ -14,7 +14,7 @@ export interface RequestOptions {
  * Server Network Configuration
  * Change IP and Port here to point the mobile app to your backend.
  */
-export const SERVER_IP = "192.168.88.41";
+export const SERVER_IP = "192.168.88.12";
 
 export const SERVER_PORT = 8088;
 
@@ -47,7 +47,7 @@ export function getDefaultBaseUrl(): string {
     }
   } catch {}
 
-  return `http://${SERVER_IP || "192.168.88.41"}:${SERVER_PORT}`;
+  return `http://192.168.88.12:${SERVER_PORT}`;
 }
 
 export class ApiClient {
@@ -78,10 +78,8 @@ export class ApiClient {
   async loadCustomBaseUrl(): Promise<string> {
     try {
       const saved = await AsyncStorage.getItem(STORAGE_KEY_SERVER_URL);
-      if (saved && saved.trim() && !saved.includes("192.168.88.7")) {
+      if (saved && saved.trim()) {
         this.setBaseUrl(saved.trim());
-      } else {
-        this.setBaseUrl(getDefaultBaseUrl());
       }
     } catch {}
     return this.baseUrl;

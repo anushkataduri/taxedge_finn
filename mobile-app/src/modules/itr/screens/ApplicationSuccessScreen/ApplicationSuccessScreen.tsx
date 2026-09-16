@@ -35,25 +35,36 @@ export const ApplicationSuccessScreen: React.FC<ApplicationSuccessScreenProps> =
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     applicationId?: string;
-    professionTitle?: string;
+    serviceTitle?: string;
     formType?: string;
     assessmentYear?: string;
+    incomeType?: string;
+    regime?: string;
     uploadedDocsCount?: string;
+    totalDocsCount?: string;
+    refundBank?: string;
   }>();
 
-  const appId = params.applicationId || "ITR-2026-00042";
-  const incomeType = params.professionTitle || "Business";
-  const formType = params.formType || "ITR-3";
-  const assessmentYear = params.assessmentYear || "AY 2026-27";
-  const docsUploaded = params.uploadedDocsCount ? `${params.uploadedDocsCount} of 7` : "7 of 7";
+  const appId = params.applicationId || "ITR-2025-00042";
+  const incomeType = params.incomeType || "Salary • Capital Gains • Other Income";
+  const formType = params.formType || "ITR-2";
+  const rawAy = params.assessmentYear || "2025-2026";
+  const formattedAy = rawAy.startsWith("AY") ? rawAy : `AY ${rawAy}`;
+  const uploadedCount = params.uploadedDocsCount || "7";
+  const totalCount = params.totalDocsCount || "7";
+  const docsUploaded = `${uploadedCount} of ${totalCount} received`;
+  const refundBank = params.refundBank || "HDFC Bank •••• 1234";
+  const taxRegime = params.regime || "New Tax Regime";
 
   const summaryData: ApplicationSummaryData = {
     applicationId: appId,
     incomeType,
     itrForm: formType,
-    assessmentYear: assessmentYear.startsWith("AY") ? assessmentYear : `AY ${assessmentYear}`,
+    assessmentYear: formattedAy,
+    taxRegime,
     documentsUploaded: docsUploaded,
-    submissionDate: "10 Aug 2026",
+    refundBank,
+    submissionDate: "16 Sep 2026",
     status: "Received",
   };
 
@@ -76,8 +87,8 @@ export const ApplicationSuccessScreen: React.FC<ApplicationSuccessScreenProps> =
       onDownloadAcknowledgement();
     } else {
       Alert.alert(
-        "Acknowledgement Downloaded",
-        `Acknowledgement for ${appId} has been saved to your device.`
+        "Application Receipt Downloaded",
+        `TaxEdge Application Receipt for ${appId} has been saved to your device.`
       );
     }
   };
@@ -142,7 +153,7 @@ export const ApplicationSuccessScreen: React.FC<ApplicationSuccessScreenProps> =
           style={styles.secondaryButton}
         >
           <Ionicons name="download-outline" size={18} color="#F97316" />
-          <Text style={styles.secondaryButtonText}>Download Acknowledgement</Text>
+          <Text style={styles.secondaryButtonText}>Download TaxEdge Application Receipt</Text>
         </TouchableOpacity>
       </View>
     </View>

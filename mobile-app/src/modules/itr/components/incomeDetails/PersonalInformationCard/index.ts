@@ -1,1 +1,0 @@
-export { PersonalInformationCard } from "./PersonalInformationCard";

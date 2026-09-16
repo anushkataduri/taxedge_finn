@@ -3,7 +3,9 @@ export interface ApplicationSummaryData {
   incomeType: string;
   itrForm: string;
   assessmentYear: string;
+  taxRegime?: string;
   documentsUploaded: string;
+  refundBank?: string;
   submissionDate: string;
   status: string;
 }

@@ -39,9 +39,9 @@ export const SuccessCelebrationHeader: React.FC<SuccessCelebrationHeaderProps> =
       {/* Main Title */}
       <Text style={styles.title}>Your application has been received!</Text>
 
-      {/* Subtitle */}
+      {/* Subtitle distinguishing application received from government filing */}
       <Text style={styles.subtitle}>
-        Your return has entered the ITR queue for a Tax Executive to pick up and verify.
+        Your documents and tax information have been received. A Tax Executive will review them before preparing your return.
       </Text>
 
       {/* Application ID Pill Card */}

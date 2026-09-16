@@ -1,1 +1,0 @@
-export { AdditionalInformationCard } from "./AdditionalInformationCard";
