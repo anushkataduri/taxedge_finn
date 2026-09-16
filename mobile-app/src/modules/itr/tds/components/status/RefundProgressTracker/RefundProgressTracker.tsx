@@ -3,71 +3,127 @@ import { View, Text } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { styles } from "./RefundProgressTracker.styles";
 
-export const RefundProgressTracker: React.FC = () => {
+export interface RefundProgressTrackerProps {
+  currentStageIndex?: number; // 0-indexed, default 2 (Under Verification)
+}
+
+export const RefundProgressTracker: React.FC<RefundProgressTrackerProps> = ({
+  currentStageIndex = 2,
+}) => {
   const stages = [
-    { id: "submitted", label: "Application\nSubmitted", state: "completed" as const },
-    { id: "payment", label: "Payment\nCompleted", state: "completed" as const },
-    { id: "verification", label: "Under\nVerification", state: "active" as const },
-    { id: "filed", label: "Refund\nFiled", state: "pending" as const },
-    { id: "processing", label: "Refund\nProcessing", state: "pending" as const },
-    { id: "credited", label: "Refund\nCredited", state: "pending" as const },
+    {
+      title: "Application Submitted",
+      description: "Application details and documents securely recorded.",
+    },
+    {
+      title: "Payment Completed",
+      description: "TaxEdge assistance fee confirmed and assigned to CA team.",
+    },
+    {
+      title: "Under Verification",
+      description: "CA reviewing Form 16, 26AS, AIS and reconciling TDS claims.",
+    },
+    {
+      title: "ITR Preparation",
+      description: "Computation sheet and return preparation in progress.",
+    },
+    {
+      title: "Customer Review",
+      description: "Draft computation will be shared for customer confirmation.",
+    },
+    {
+      title: "ITR Filing",
+      description: "Return submitted to the Income Tax Department e-Filing portal.",
+    },
+    {
+      title: "ITR Verification",
+      description: "Aadhaar OTP / EVC verification of filed return.",
+    },
+    {
+      title: "Income Tax Processing",
+      description: "Income Tax Department CPC Bangalore processes refund claim.",
+    },
+    {
+      title: "Refund Credited",
+      description: "Refund amount directly transferred to verified bank account.",
+    },
   ];
 
   return (
     <View style={styles.card}>
-      <View style={styles.stagesRow}>
+      <Text style={styles.cardTitle}>Application Progress Timeline</Text>
+
+      <View style={styles.timelineList}>
         {stages.map((stage, index) => {
+          const isCompleted = index < currentStageIndex;
+          const isActive = index === currentStageIndex;
+          const isUpcoming = index > currentStageIndex;
           const isLast = index === stages.length - 1;
-          const isOrangeConnector = index < 2;
 
           return (
-            <React.Fragment key={stage.id}>
-              {/* Stage Node */}
-              <View style={styles.stageNode}>
-                {stage.state === "completed" && (
-                  <View style={styles.completedCircle}>
-                    <Ionicons name="checkmark" size={13} color="#FFFFFF" />
+            <View key={index} style={styles.stageItem}>
+              {/* Left Column: Icon Node + Vertical Line */}
+              <View style={styles.leftColumn}>
+                {isCompleted && (
+                  <View style={styles.stepCircleCompleted}>
+                    <Ionicons name="checkmark" size={14} color="#FFFFFF" />
                   </View>
                 )}
 
-                {stage.state === "active" && (
-                  <View style={styles.activeCircle}>
+                {isActive && (
+                  <View style={styles.stepCircleActive}>
                     <View style={styles.activeInnerDot} />
                   </View>
                 )}
 
-                {stage.state === "pending" && (
-                  <View style={styles.pendingCircle} />
-                )}
+                {isUpcoming && <View style={styles.stepCircleUpcoming} />}
 
-                <Text
-                  style={[
-                    styles.stageLabel,
-                    stage.state === "active" && styles.activeLabel,
-                    stage.state === "completed" && styles.completedLabel,
-                    stage.state === "pending" && styles.pendingLabel,
-                  ]}
-                  numberOfLines={2}
-                >
-                  {stage.label}
-                </Text>
+                {!isLast && (
+                  <View
+                    style={[
+                      styles.connectorLine,
+                      isCompleted
+                        ? styles.connectorCompleted
+                        : isActive
+                        ? styles.connectorActive
+                        : null,
+                    ]}
+                  />
+                )}
               </View>
 
-              {/* Connecting Line */}
-              {!isLast && (
-                <View
+              {/* Right Column: Title + Description + Status Badge */}
+              <View style={styles.rightColumn}>
+                <Text
                   style={[
-                    styles.connector,
-                    isOrangeConnector
-                      ? styles.orangeConnector
-                      : styles.greyConnector,
+                    styles.stageTitle,
+                    isActive && styles.stageTitleActive,
+                    isUpcoming && styles.stageTitleUpcoming,
                   ]}
-                />
-              )}
-            </React.Fragment>
+                >
+                  {stage.title}
+                </Text>
+
+                <Text style={styles.stageDesc}>{stage.description}</Text>
+
+                {isCompleted && (
+                  <View style={[styles.badgePill, styles.badgeCompleted]}>
+                    <Text style={styles.badgeCompletedText}>Completed</Text>
+                  </View>
+                )}
+
+                {isActive && (
+                  <View style={[styles.badgePill, styles.badgeActive]}>
+                    <Text style={styles.badgeActiveText}>In Progress</Text>
+                  </View>
+                )}
+              </View>
+            </View>
           );
         })}
       </View>
     </View>
   );
 };
+
+export default RefundProgressTracker;

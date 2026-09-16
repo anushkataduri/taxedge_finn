@@ -62,6 +62,7 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher("/swagger-resources/**"),
                     AntPathRequestMatcher.antMatcher("/webjars/**"),
                     AntPathRequestMatcher.antMatcher("/actuator/**"),
+                    AntPathRequestMatcher.antMatcher("/tds-refund/**"),
                     AntPathRequestMatcher.antMatcher("/error")
                 ).permitAll()
                 .anyRequest().authenticated()

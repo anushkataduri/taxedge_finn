@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, View, Text, TouchableOpacity } from "react-native";
+import { Modal, View, Text, TouchableOpacity, Platform } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTheme } from "../../../hooks/use-theme";
 import { styles, getThemedStyles } from "./BiometricPromptModal.styles";
@@ -20,10 +20,13 @@ export const BiometricPromptModal: React.FC<BiometricPromptModalProps> = ({
   const colors = useTheme();
   const themed = getThemedStyles(colors);
 
-  const iconName =
-    biometricType.toLowerCase().includes("face")
-      ? "scan-outline"
-      : "finger-print-outline";
+  const iconName = biometricType.toLowerCase().includes("face")
+    ? "scan-outline"
+    : "finger-print-outline";
+
+  const modalTitle = `Enable ${biometricType} Login?`;
+
+  const modalMessage = `Log in faster and more securely using your device ${biometricType.toLowerCase()} next time.`;
 
   return (
     <Modal
@@ -39,11 +42,11 @@ export const BiometricPromptModal: React.FC<BiometricPromptModalProps> = ({
           </View>
 
           <Text style={[styles.title, themed.title]}>
-            Enable {biometricType} Login?
+            {modalTitle}
           </Text>
 
           <Text style={[styles.message, themed.message]}>
-            Log in faster and more securely using your device {biometricType.toLowerCase()} next time.
+            {modalMessage}
           </Text>
 
           <TouchableOpacity

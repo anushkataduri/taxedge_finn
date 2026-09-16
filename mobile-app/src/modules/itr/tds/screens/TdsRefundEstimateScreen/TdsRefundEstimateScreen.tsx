@@ -1,122 +1,468 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import {
-  EstimatedRefundHeroCard,
-  RefundBreakdownCard,
-  EstimatedCalculationBanner,
-} from "../../components";
-import { DEFAULT_TDS_ESTIMATE } from "../../mock/estimateData";
-import {
-  styles,
-  getContainerInsetsStyle,
-  getScrollContentInsetsStyle,
-  getBottomBarInsetsStyle,
-} from "./TdsRefundEstimateScreen.styles";
+import { BrandColors } from "@/shared/theme";
+import { TdsCustomerIncomeFormData } from "../../types/customerIncome.types";
+import { TdsChecklistItem } from "../../types/checklist.types";
+import { TaxCalculationBreakdown } from "../../types/estimate.types";
+import { TdsReconciliationSummary } from "../../types/reconciliation.types";
+import { formatCurrency } from "../../utils/tdsValidation";
+import { tdsDraftService, INITIAL_TDS_FORM_DATA } from "../../services/tdsDraftService";
+import { tdsCalculationService } from "../../services/tdsCalculationService";
+import { tdsReconciliationService } from "../../services/tdsReconciliationService";
+import { tdsApiService } from "../../services/tdsApiService";
+import { TaxCalculationBreakdownCard } from "../../components/estimate/TaxCalculationBreakdownCard";
+import { TdsReconciliationCard } from "../../components/estimate/TdsReconciliationCard";
+import { styles } from "./TdsRefundEstimateScreen.styles";
 
 export const TdsRefundEstimateScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const handleBack = () => {
-    router.back();
+  const [formData, setFormData] = useState<TdsCustomerIncomeFormData>(INITIAL_TDS_FORM_DATA);
+  const [documents, setDocuments] = useState<TdsChecklistItem[]>([]);
+  const [calculation, setCalculation] = useState<TaxCalculationBreakdown | null>(null);
+  const [reconciliation, setReconciliation] = useState<TdsReconciliationSummary | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      const savedForm = await tdsDraftService.getFormDraft();
+      const savedDocs = await tdsDraftService.getDocumentsDraft();
+
+      if (isMounted) {
+        setFormData(savedForm);
+        setDocuments(savedDocs || []);
+
+        const calcResult = tdsCalculationService.calculate(savedForm);
+        setCalculation(calcResult);
+
+        const reconResult = tdsReconciliationService.reconcile(savedForm, savedDocs || []);
+        setReconciliation(reconResult);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleEditPersonalOrIncome = () => {
+    router.push("/service/tds-refund" as any);
   };
 
-  const handleConfirmAndContinue = () => {
-    // Navigate to next screen: Payment & Application Submission
-    router.push({
-      pathname: "/service/tds-payment" as any,
-      params: {
-        refundAmount: "₹23,400",
-        applicationId: "ITR-2026-00043",
-      },
-    });
+  const handleEditDocuments = () => {
+    router.push("/service/tds-checklist" as any);
   };
 
-  const containerInsetsStyle = getContainerInsetsStyle(insets.top);
-  const scrollContentInsetsStyle = getScrollContentInsetsStyle(insets.bottom);
-  const bottomBarInsetsStyle = getBottomBarInsetsStyle(insets.bottom);
+  const handleProceedToPayment = async () => {
+    if (!calculation) return;
+    setIsSubmitting(true);
+
+    try {
+      const existingAppId = await tdsDraftService.getApplicationId();
+      const response = await tdsApiService.submitApplicationDraft(
+        formData,
+        documents,
+        calculation,
+        existingAppId || undefined
+      );
+
+      if (response && response.applicationId) {
+        await tdsDraftService.saveApplicationId(response.applicationId);
+      }
+
+      router.push({
+        pathname: "/service/tds-payment" as any,
+        params: {
+          applicationId: response?.applicationId || existingAppId || "TDS-2026-PENDING",
+          refundAmount: calculation.estimatedRefund.toString(),
+          isAdditionalPayable: calculation.isAdditionalTaxPayable ? "1" : "0",
+          payableAmount: calculation.estimatedTaxPayable.toString(),
+          serviceFee: calculation.serviceFee.toString(),
+          gstAmount: calculation.gstAmount.toString(),
+          totalPayable: calculation.totalPayableFee.toString(),
+        },
+      });
+    } catch (err) {
+      console.warn("Backend draft sync error, proceeding with local calculation data:", err);
+      router.push({
+        pathname: "/service/tds-payment" as any,
+        params: {
+          applicationId: "TDS-2026-TEMP",
+          refundAmount: calculation.estimatedRefund.toString(),
+          isAdditionalPayable: calculation.isAdditionalTaxPayable ? "1" : "0",
+          payableAmount: calculation.estimatedTaxPayable.toString(),
+          serviceFee: calculation.serviceFee.toString(),
+          gstAmount: calculation.gstAmount.toString(),
+          totalPayable: calculation.totalPayableFee.toString(),
+        },
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const uploadedDocs = documents.filter((d) => d.status === "uploaded" && d.fileUri);
+
+  const maskAccount = (num: string) => {
+    if (!num || num.length < 4) return "••••";
+    return `••••${num.slice(-4)}`;
+  };
 
   return (
-    <View style={[styles.container, containerInsetsStyle]}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Screen Header */}
-      <View style={styles.header}>
+      <View style={[styles.headerBar, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={handleBack}
+          onPress={() => router.back()}
           style={styles.backButton}
         >
-          <Ionicons name="chevron-back" size={20} color="#0B1F3A" />
+          <Ionicons name="chevron-back" size={20} color={BrandColors.PRIMARY_BLUE_DARK} />
         </TouchableOpacity>
 
         <View style={styles.headerTitleGroup}>
-          <Text style={styles.headerTitle}>TDS Refund</Text>
-          <Text style={styles.headerSubtitle}>Estimated Refund</Text>
+          <Text style={styles.headerTitle}>Review Application</Text>
+          <Text style={styles.headerSubtitle}>Step 3 of 5: Review & Estimate</Text>
         </View>
 
         <View style={styles.headerRightSpacer} />
       </View>
 
-      {/* Main Content */}
+      {/* Progress Track */}
+      <View style={styles.progressTrack}>
+        <View style={styles.progressFill} />
+      </View>
+
+      {/* Main Scroll Content */}
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, scrollContentInsetsStyle]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 85 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Page Title & Subtitle */}
-        <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>Your Refund Estimate</Text>
-          <Text style={styles.pageSubtitle}>
-            Review the estimated refund calculated from your uploaded documents
-            before proceeding.
-          </Text>
+        {/* ========================================================
+            SECTION 1: PERSONAL DETAILS
+        ======================================================== */}
+        <View style={styles.reviewCard}>
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.cardTitleGroup}>
+              <Ionicons name="person-outline" size={18} color={BrandColors.PRIMARY_BLUE} />
+              <Text style={styles.cardTitle}>Personal Details</Text>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleEditPersonalOrIncome}
+              style={styles.editButton}
+            >
+              <Ionicons name="pencil" size={12} color={BrandColors.PRIMARY_ORANGE_DARK} />
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.infoGrid}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Full Name</Text>
+              <Text style={styles.infoValue}>{formData.personal.fullName || "—"}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>PAN</Text>
+              <Text style={styles.infoValue}>{formData.personal.pan || "—"}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Mobile Number</Text>
+              <Text style={styles.infoValue}>+91 {formData.personal.mobileNumber || "—"}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Email</Text>
+              <Text style={styles.infoValue}>{formData.personal.email || "—"}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Address</Text>
+              <Text style={styles.infoValue} numberOfLines={1}>
+                {formData.personal.city}, {formData.personal.state} - {formData.personal.pinCode}
+              </Text>
+            </View>
+          </View>
         </View>
 
-        {/* Estimated Refund Hero Card */}
-        <EstimatedRefundHeroCard amount={DEFAULT_TDS_ESTIMATE.estimatedRefund} />
+        {/* ========================================================
+            SECTION 2: INCOME DETAILS
+        ======================================================== */}
+        <View style={styles.reviewCard}>
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.cardTitleGroup}>
+              <Ionicons name="trending-up-outline" size={18} color={BrandColors.PRIMARY_BLUE} />
+              <Text style={styles.cardTitle}>Income Details</Text>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleEditPersonalOrIncome}
+              style={styles.editButton}
+            >
+              <Ionicons name="pencil" size={12} color={BrandColors.PRIMARY_ORANGE_DARK} />
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* Refund Breakdown Card */}
-        <RefundBreakdownCard data={DEFAULT_TDS_ESTIMATE} />
+          <View style={styles.infoGrid}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Tax Regime</Text>
+              <Text style={styles.infoValue}>
+                {formData.income.taxRegime === "OLD" ? "Old Regime" : "New Regime"}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Gross Salary</Text>
+              <Text style={styles.infoValue}>
+                {formatCurrency(parseFloat(formData.income.salaryIncome) || 0)}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Other & Interest Income</Text>
+              <Text style={styles.infoValue}>
+                {formatCurrency(
+                  (parseFloat(formData.income.otherIncome) || 0) +
+                    (parseFloat(formData.income.interestIncome) || 0)
+                )}
+              </Text>
+            </View>
+            {formData.income.hasRentalIncome && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Rental Income</Text>
+                <Text style={styles.infoValue}>
+                  {formatCurrency(parseFloat(formData.income.rentalIncome) || 0)}
+                </Text>
+              </View>
+            )}
+            {formData.income.hasBusinessIncome && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Business Profit</Text>
+                <Text style={styles.infoValue}>
+                  {formatCurrency(parseFloat(formData.income.netBusinessProfit) || 0)}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
 
-        {/* Estimated Calculation Banner */}
-        <EstimatedCalculationBanner />
+        {/* ========================================================
+            SECTION 3: TDS DETAILS
+        ======================================================== */}
+        <View style={styles.reviewCard}>
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.cardTitleGroup}>
+              <Ionicons name="receipt-outline" size={18} color={BrandColors.PRIMARY_BLUE} />
+              <Text style={styles.cardTitle}>TDS Details</Text>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleEditPersonalOrIncome}
+              style={styles.editButton}
+            >
+              <Ionicons name="pencil" size={12} color={BrandColors.PRIMARY_ORANGE_DARK} />
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.infoGrid}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Total TDS Deducted</Text>
+              <Text style={styles.infoValue}>
+                {formatCurrency(parseFloat(formData.income.totalTdsDeducted) || 0)}
+              </Text>
+            </View>
+            {parseFloat(formData.income.tcsAmount) > 0 && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>TCS Amount</Text>
+                <Text style={styles.infoValue}>
+                  {formatCurrency(parseFloat(formData.income.tcsAmount) || 0)}
+                </Text>
+              </View>
+            )}
+            {parseFloat(formData.income.advanceTaxPaid) > 0 && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Advance Tax</Text>
+                <Text style={styles.infoValue}>
+                  {formatCurrency(parseFloat(formData.income.advanceTaxPaid) || 0)}
+                </Text>
+              </View>
+            )}
+            {parseFloat(formData.income.selfAssessmentTaxPaid) > 0 && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Self Assessment Tax</Text>
+                <Text style={styles.infoValue}>
+                  {formatCurrency(parseFloat(formData.income.selfAssessmentTaxPaid) || 0)}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* ========================================================
+            SECTION 4: DEDUCTIONS
+        ======================================================== */}
+        <View style={styles.reviewCard}>
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.cardTitleGroup}>
+              <Ionicons name="wallet-outline" size={18} color={BrandColors.PRIMARY_BLUE} />
+              <Text style={styles.cardTitle}>Deductions</Text>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleEditPersonalOrIncome}
+              style={styles.editButton}
+            >
+              <Ionicons name="pencil" size={12} color={BrandColors.PRIMARY_ORANGE_DARK} />
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.infoGrid}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Section 80C</Text>
+              <Text style={styles.infoValue}>
+                {formatCurrency(parseFloat(formData.income.deductions80C) || 0)}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Section 80D</Text>
+              <Text style={styles.infoValue}>
+                {formatCurrency(parseFloat(formData.income.deductions80D) || 0)}
+              </Text>
+            </View>
+            {parseFloat(formData.income.donations80G) > 0 && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>80G Donations</Text>
+                <Text style={styles.infoValue}>
+                  {formatCurrency(parseFloat(formData.income.donations80G) || 0)}
+                </Text>
+              </View>
+            )}
+            {formData.income.hasHomeLoan && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Home Loan Interest</Text>
+                <Text style={styles.infoValue}>
+                  {formatCurrency(parseFloat(formData.income.homeLoanInterestSec24b) || 0)}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* ========================================================
+            SECTION 5: BANK DETAILS
+        ======================================================== */}
+        <View style={styles.reviewCard}>
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.cardTitleGroup}>
+              <Ionicons name="business-outline" size={18} color={BrandColors.PRIMARY_BLUE} />
+              <Text style={styles.cardTitle}>Bank Details</Text>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleEditPersonalOrIncome}
+              style={styles.editButton}
+            >
+              <Ionicons name="pencil" size={12} color={BrandColors.PRIMARY_ORANGE_DARK} />
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.infoGrid}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Bank Name</Text>
+              <Text style={styles.infoValue}>{formData.bank.bankName || "—"}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Branch</Text>
+              <Text style={styles.infoValue}>{formData.bank.branchName || "—"}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Account Number</Text>
+              <Text style={styles.infoValue}>
+                {maskAccount(formData.bank.accountNumber)} ({formData.bank.accountType})
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>IFSC Code</Text>
+              <Text style={styles.infoValue}>{formData.bank.ifscCode || "—"}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* ========================================================
+            SECTION 6: DOCUMENTS
+        ======================================================== */}
+        <View style={styles.reviewCard}>
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.cardTitleGroup}>
+              <Ionicons name="document-attach-outline" size={18} color={BrandColors.PRIMARY_BLUE} />
+              <Text style={styles.cardTitle}>
+                Documents ({uploadedDocs.length})
+              </Text>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleEditDocuments}
+              style={styles.editButton}
+            >
+              <Ionicons name="pencil" size={12} color={BrandColors.PRIMARY_ORANGE_DARK} />
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.docPillList}>
+            {uploadedDocs.length > 0 ? (
+              uploadedDocs.map((doc) => (
+                <View key={doc.id} style={styles.docPill}>
+                  <Ionicons name="checkmark-circle" size={13} color="#16A34A" />
+                  <Text style={styles.docPillText}>{doc.title}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.infoLabel}>No documents uploaded yet</Text>
+            )}
+          </View>
+        </View>
+
+        {/* ========================================================
+            SECTION 7: TAX CALCULATION
+        ======================================================== */}
+        {calculation && <TaxCalculationBreakdownCard breakdown={calculation} />}
       </ScrollView>
 
-      {/* Bottom Sticky Actions */}
-      <View style={[styles.bottomBar, bottomBarInsetsStyle]}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={handleBack}
-          style={styles.backActionButton}
-        >
-          <Text style={styles.backActionText}>Back</Text>
-        </TouchableOpacity>
-
+      {/* Sticky Bottom CTA */}
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom > 0 ? insets.bottom : 12 }]}>
         <TouchableOpacity
           activeOpacity={0.85}
-          onPress={handleConfirmAndContinue}
-          style={styles.confirmButton}
+          onPress={handleProceedToPayment}
+          disabled={isSubmitting}
+          style={styles.proceedButton}
         >
-          <Text style={styles.confirmButtonText}>Confirm & Continue</Text>
-          <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+          {isSubmitting ? (
+            <ActivityIndicator size="small" color={BrandColors.WHITE} />
+          ) : (
+            <>
+              <Text style={styles.proceedButtonText}>Proceed to Payment</Text>
+              <Ionicons name="arrow-forward" size={18} color={BrandColors.WHITE} />
+            </>
+          )}
         </TouchableOpacity>
-
-        {/* Bank-Grade Encryption Notice */}
-        <View style={styles.securityRow}>
-          <Ionicons name="shield-checkmark" size={15} color="#0B1F3A" />
-          <Text style={styles.securityText}>
-            Your data is secure with bank-grade encryption.
-          </Text>
-        </View>
       </View>
     </View>
   );

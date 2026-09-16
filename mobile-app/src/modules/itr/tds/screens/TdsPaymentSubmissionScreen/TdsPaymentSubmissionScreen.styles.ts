@@ -1,49 +1,34 @@
-import { StyleSheet, Platform, ViewStyle } from "react-native";
+import { StyleSheet, Platform } from "react-native";
 import {
   BrandColors,
   BorderRadius,
   BorderWidth,
   Spacing,
   Typography,
-} from "../../../../../shared/theme";
+} from "@/shared/theme";
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: BrandColors.BACKGROUND,
   },
-  header: {
-    minHeight: 58,
+  headerBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.base,
-    paddingVertical: 6,
+    paddingBottom: 10,
     backgroundColor: BrandColors.WHITE,
-    borderBottomWidth: BorderWidth.thin,
-    borderBottomColor: "#F1F5F9",
   },
   backButton: {
     width: 38,
     height: 38,
     borderRadius: BorderRadius.md,
     borderWidth: BorderWidth.thin,
-    borderColor: "#E5E7EB",
+    borderColor: BrandColors.BORDER,
     backgroundColor: BrandColors.WHITE,
     justifyContent: "center",
     alignItems: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#0B1F3A",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-      },
-      android: {
-        elevation: 1,
-      },
-      default: {},
-    }),
   },
   headerTitleGroup: {
     alignItems: "center",
@@ -51,85 +36,115 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: Typography.fontSize.xl,
+    fontSize: Typography.fontSize.base + 1,
     fontWeight: Typography.fontWeight.bold,
-    color: "#0B1F3A",
-    letterSpacing: -0.2,
+    color: BrandColors.TEXT_PRIMARY,
   },
   headerSubtitle: {
-    fontSize: Typography.fontSize.sm + 0.5,
+    fontSize: Typography.fontSize.xs,
     fontWeight: Typography.fontWeight.medium,
-    color: "#0B1F3A",
-    marginTop: 2,
+    color: BrandColors.PRIMARY_ORANGE,
+    marginTop: 1,
   },
   headerRightSpacer: {
     width: 38,
   },
+  progressTrack: {
+    height: 3,
+    backgroundColor: "#E2E8F0",
+    width: "100%",
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: BrandColors.PRIMARY_ORANGE,
+    width: "80%", // Step 4 of 5
+  },
   scrollContent: {
     paddingHorizontal: Spacing.base,
     paddingTop: Spacing.base,
+    paddingBottom: 40,
   },
-  titleSection: {
-    marginBottom: Spacing.base,
+
+  // Payment Methods Section
+  sectionHeader: {
+    marginBottom: 12,
+    marginTop: 8,
   },
-  pageTitle: {
-    fontSize: Typography.fontSize.lg + 4,
-    fontWeight: Typography.fontWeight.extraBold,
-    color: "#0B1F3A",
-    letterSpacing: -0.2,
+  sectionTitle: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.bold,
+    color: BrandColors.TEXT_PRIMARY,
   },
-  pageSubtitle: {
-    fontSize: Typography.fontSize.sm + 0.5,
+  sectionSubtitle: {
+    fontSize: Typography.fontSize.xs,
     color: BrandColors.TEXT_SECONDARY,
-    marginTop: Spacing.xs,
-    lineHeight: 18,
-    fontWeight: Typography.fontWeight.regular,
+    marginTop: 2,
   },
-  splitSection: {
+
+  // Security Badge
+  securityRow: {
     flexDirection: "row",
-    gap: Spacing.md,
-    marginBottom: Spacing.base,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: BrandColors.PRIMARY_LIGHT_BLUE,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: BorderRadius.sm,
+    marginVertical: 16,
+    gap: 6,
   },
-  methodsColumn: {
-    flex: 1.15,
+  securityText: {
+    fontSize: Typography.fontSize.xs,
+    fontWeight: Typography.fontWeight.medium,
+    color: BrandColors.PRIMARY_BLUE,
   },
-  summaryColumn: {
-    flex: 1,
-  },
-  payButton: {
-    height: 52,
-    borderRadius: BorderRadius.base - 2,
-    backgroundColor: BrandColors.PRIMARY_ORANGE,
+
+  // Error / Failure State Banner
+  errorBanner: {
+    backgroundColor: "#FEF2F2",
+    borderRadius: BorderRadius.md,
+    padding: 14,
+    borderWidth: BorderWidth.thin,
+    borderColor: "#FECACA",
+    marginBottom: 16,
     flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  errorIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FEE2E2",
     justifyContent: "center",
     alignItems: "center",
-    gap: Spacing.sm,
-    marginBottom: 10,
-    ...Platform.select({
-      ios: {
-        shadowColor: BrandColors.PRIMARY_ORANGE,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 3,
-      },
-      default: {},
-    }),
   },
-  payButtonDisabled: {
-    backgroundColor: "#FDBA74",
+  errorTextBox: {
+    flex: 1,
   },
-  payButtonText: {
-    color: BrandColors.WHITE,
-    fontSize: Typography.fontSize.lg,
+  errorTitle: {
+    fontSize: Typography.fontSize.sm,
     fontWeight: Typography.fontWeight.bold,
-    letterSpacing: 0.2,
+    color: "#B91C1C",
   },
-  successSection: {
-    marginTop: Spacing.xs,
+  errorDesc: {
+    fontSize: Typography.fontSize.xs,
+    color: "#DC2626",
+    marginTop: 2,
   },
+  retryButton: {
+    backgroundColor: "#DC2626",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.sm,
+  },
+  retryButtonText: {
+    fontSize: Typography.fontSize.xs,
+    fontWeight: Typography.fontWeight.bold,
+    color: BrandColors.WHITE,
+  },
+
+  // Sticky Bottom Bar
   bottomBar: {
     position: "absolute",
     bottom: 0,
@@ -144,52 +159,30 @@ export const styles = StyleSheet.create({
       ios: {
         shadowColor: "#0B1F3A",
         shadowOffset: { width: 0, height: -3 },
-        shadowOpacity: 0.05,
+        shadowOpacity: 0.06,
         shadowRadius: 6,
       },
       android: {
-        elevation: 6,
+        elevation: 8,
       },
       default: {},
     }),
   },
-  trackButton: {
-    height: 52,
-    borderRadius: BorderRadius.base - 2,
+  payButton: {
+    height: 50,
+    borderRadius: BorderRadius.base,
     backgroundColor: BrandColors.PRIMARY_ORANGE,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: Spacing.sm,
-    ...Platform.select({
-      ios: {
-        shadowColor: BrandColors.PRIMARY_ORANGE,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 3,
-      },
-      default: {},
-    }),
+    gap: 8,
   },
-  trackButtonText: {
-    color: BrandColors.WHITE,
-    fontSize: Typography.fontSize.lg,
+  payButtonDisabled: {
+    opacity: 0.65,
+  },
+  payButtonText: {
+    fontSize: Typography.fontSize.base,
     fontWeight: Typography.fontWeight.bold,
-    letterSpacing: 0.2,
+    color: BrandColors.WHITE,
   },
-});
-
-export const getContainerInsetsStyle = (topInset: number): ViewStyle => ({
-  paddingTop: topInset,
-});
-
-export const getScrollContentInsetsStyle = (bottomInset: number): ViewStyle => ({
-  paddingBottom: bottomInset + 90,
-});
-
-export const getBottomBarInsetsStyle = (bottomInset: number): ViewStyle => ({
-  paddingBottom: Math.max(bottomInset, 12),
 });

@@ -14,7 +14,7 @@ export interface RequestOptions {
  * Server Network Configuration
  * Change IP and Port here to point the mobile app to your backend.
  */
-export const SERVER_IP = "192.168.88.20";
+export const SERVER_IP = "192.168.88.41";
 
 export const SERVER_PORT = 8088;
 
@@ -47,7 +47,7 @@ export function getDefaultBaseUrl(): string {
     }
   } catch {}
 
-  return `http://192.168.88.20:${SERVER_PORT}`;
+  return `http://${SERVER_IP || "192.168.88.41"}:${SERVER_PORT}`;
 }
 
 export class ApiClient {

@@ -14,6 +14,8 @@ public interface CustomerService {
     String updatePassword(UpdatePasswordDto updatePasswordDto);
     boolean existsByMobileNumber(String mobileNumber);
     Map<String, Object> checkCustomerStatus(String mobileNumber);
+    CustomerDto getCustomerProfile(String identifier);
+    CustomerDto updateCustomerProfile(CustomerDto updateDto);
 }
 
 

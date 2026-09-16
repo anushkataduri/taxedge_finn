@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -34,7 +35,8 @@ export function SettingsScreen() {
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
-  const [biometricLabel, setBiometricLabel] = useState("Fingerprint / Face ID");
+  const [biometricLabel, setBiometricLabel] = useState("Biometric");
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [showServerModal, setShowServerModal] = useState(false);
   const [currentServerUrl, setCurrentServerUrl] = useState(apiClient.getBaseUrl());
 
@@ -58,6 +60,9 @@ export function SettingsScreen() {
   }, [isBiometricEnabledStore]);
 
   const handleToggleBiometric = async (value: boolean) => {
+    // Prevent duplicate taps while authentication is running
+    if (isAuthenticating) return;
+
     if (value) {
       const hasHardware = await biometricService.checkHardwareSupport();
       if (!hasHardware) {
@@ -72,19 +77,37 @@ export function SettingsScreen() {
       if (!isEnrolled) {
         Alert.alert(
           "Not Configured",
-          "No fingerprint or Face ID has been configured.\n\nPlease add one in your device settings."
+          "No fingerprint or biometric has been configured.\n\nPlease add one in your device settings."
         );
         return;
       }
 
-      const authRes = await biometricService.authenticate(`Confirm ${biometricLabel} to enable`);
-      if (authRes.success) {
-        await setBiometricEnabledStore(true);
-        setBiometricEnabled(true);
-      } else if (authRes.error && authRes.error !== "Authentication cancelled") {
-        Alert.alert("Authentication Failed", authRes.error);
+      try {
+        setIsAuthenticating(true);
+        const authRes = await biometricService.authenticate(`Confirm ${biometricLabel} to enable`);
+        if (authRes && authRes.success === true) {
+          const mobile =
+            useAuthStore.getState().mobileNumber ||
+            useAuthStore.getState().authenticatedUser?.mobileNumber;
+          await setBiometricEnabledStore(true);
+          await biometricService.setBiometricEnabled(true, mobile);
+          setBiometricEnabled(true);
+        } else {
+          setBiometricEnabled(false);
+          if (
+            !authRes?.cancelled &&
+            authRes?.error &&
+            authRes.error !== "Authentication cancelled" &&
+            authRes.error !== "Authentication is already in progress"
+          ) {
+            Alert.alert("Authentication Failed", authRes.error);
+          }
+        }
+      } finally {
+        setIsAuthenticating(false);
       }
     } else {
+      await biometricService.disableBiometric();
       await setBiometricEnabledStore(false);
       setBiometricEnabled(false);
     }
@@ -260,10 +283,10 @@ export function SettingsScreen() {
           </View>
 
           <View style={[styles.card, cardStyle]}>
-            {/* Biometric Login */}
+            {/* Security Biometric Toggle */}
             <View style={styles.row}>
               <View style={styles.switchLabelGroup}>
-                <Text style={[styles.label, { color: colors.text }]}>Biometric Login</Text>
+                <Text style={[styles.label, { color: colors.text }]}>Biometric Authentication</Text>
                 <Text style={[styles.subLabel, { color: colors.textSecondary }]}>
                   Use {biometricLabel}
                 </Text>
@@ -271,6 +294,7 @@ export function SettingsScreen() {
               <Switch
                 value={biometricEnabled}
                 onValueChange={handleToggleBiometric}
+                disabled={isAuthenticating}
                 trackColor={{ false: "#CBD5E1", true: colors.orange }}
               />
             </View>
@@ -317,7 +341,7 @@ export function SettingsScreen() {
           activeOpacity={0.7}
         >
           <Text style={[styles.appInfoText, { color: colors.textSecondary }]}>
-            TaxEdge Fin Solutions • v1.0.0
+            TaxEdge Fin Solutions â€¢ v1.0.0
           </Text>
           <Text style={[styles.backendStatusText, { color: colors.primary }]}>
             ?? Backend: {currentServerUrl}

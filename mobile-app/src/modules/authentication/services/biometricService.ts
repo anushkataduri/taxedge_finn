@@ -55,6 +55,28 @@ const deleteSecureItem = async (key: string): Promise<void> => {
   }
 };
 
+export type BiometricType =
+  | "FINGERPRINT"
+  | "FACE_UNLOCK"
+  | "BIOMETRIC"
+  | "NONE";
+
+export interface AuthenticateOptions {
+  promptMessage?: string;
+  cancelLabel?: string;
+  fallbackLabel?: string;
+  disableDeviceFallback?: boolean;
+}
+
+export interface BiometricAuthResult {
+  success: boolean;
+  error?: string;
+  cancelled?: boolean;
+}
+
+// Global authentication-in-progress guard to prevent concurrent duplicate prompts
+let isAuthenticating = false;
+
 export const biometricService = {
   /**
    * Check whether device hardware supports biometric authentication
@@ -68,7 +90,7 @@ export const biometricService = {
   },
 
   /**
-   * Check whether fingerprints or Face ID are enrolled on the device
+   * Check whether biometrics (fingerprint/face) are enrolled on the device
    */
   async checkEnrollment(): Promise<boolean> {
     try {
@@ -79,43 +101,96 @@ export const biometricService = {
   },
 
   /**
-   * Detect device biometric type and return a user-friendly label (e.g. "Face ID", "Touch ID", "Fingerprint")
+   * Check whether biometrics are available on current device
    */
-  async getBiometricTypeLabel(): Promise<string> {
-    try {
-      const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
-      const hasFace = types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
-      const hasFingerprint = types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
+  async isBiometricAvailable(): Promise<boolean> {
+    const hasHardware = await this.checkHardwareSupport();
+    if (!hasHardware) return false;
+    return await this.checkEnrollment();
+  },
 
-      if (Platform.OS === "ios") {
-        if (hasFace) return "Face ID";
-        if (hasFingerprint) return "Touch ID";
-      } else {
-        if (hasFingerprint) return "Fingerprint";
-        if (hasFace) return "Face Unlock";
-      }
-      return "Biometric";
+  /**
+   * Get the concrete biometric type of the device:
+   * 'FINGERPRINT' | 'FACE_UNLOCK' | 'BIOMETRIC' | 'NONE'
+   */
+  async getBiometricType(): Promise<BiometricType> {
+    try {
+      const isAvailable = await this.isBiometricAvailable();
+      if (!isAvailable) return "NONE";
+
+      const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+      const hasFingerprint = types.includes(
+        LocalAuthentication.AuthenticationType.FINGERPRINT,
+      );
+      const hasFace = types.includes(
+        LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION,
+      );
+
+      if (hasFingerprint) return "FINGERPRINT";
+      if (hasFace) return "FACE_UNLOCK";
+      return "BIOMETRIC";
     } catch {
-      return Platform.OS === "ios" ? "Face ID / Touch ID" : "Fingerprint";
+      return "NONE";
     }
   },
 
   /**
-   * Prompt the OS biometric authentication dialog
+   * Detect device biometric type and return a user-friendly label (e.g. "Fingerprint", "Face Unlock", "Biometric")
    */
-  async authenticate(customPrompt?: string): Promise<{ success: boolean; error?: string }> {
+  async getBiometricTypeLabel(): Promise<string> {
     try {
+      const type = await this.getBiometricType();
+      switch (type) {
+        case "FINGERPRINT":
+          return "Fingerprint";
+        case "FACE_UNLOCK":
+          return "Face Unlock";
+        default:
+          return "Biometric";
+      }
+    } catch {
+      return "Fingerprint";
+    }
+  },
+
+  /**
+   * Authenticate biometrics (Android Biometric Authentication)
+   */
+  async authenticate(
+    promptOrOptions?: string | AuthenticateOptions,
+  ): Promise<BiometricAuthResult> {
+    if (isAuthenticating) {
+      return { success: false, error: "Authentication is already in progress" };
+    }
+
+    try {
+      isAuthenticating = true;
+
       const hasHardware = await this.checkHardwareSupport();
       if (!hasHardware) {
-        return { success: false, error: "Biometric authentication isn't supported on this device." };
+        return {
+          success: false,
+          error: "Biometric authentication isn't supported on this device.",
+        };
       }
 
       const isEnrolled = await this.checkEnrollment();
       if (!isEnrolled) {
         return {
           success: false,
-          error: "No fingerprint or Face ID has been configured. Please add one in your device settings.",
+          error:
+            "No fingerprint or biometric has been configured. Please add one in your device settings.",
         };
+      }
+
+      let customPrompt: string | undefined;
+      let customOptions: AuthenticateOptions = {};
+
+      if (typeof promptOrOptions === "string") {
+        customPrompt = promptOrOptions;
+      } else if (promptOrOptions) {
+        customOptions = promptOrOptions;
+        customPrompt = promptOrOptions.promptMessage;
       }
 
       const typeLabel = await this.getBiometricTypeLabel();
@@ -123,28 +198,34 @@ export const biometricService = {
 
       const res = await LocalAuthentication.authenticateAsync({
         promptMessage: prompt,
-        fallbackLabel: "Use Passcode",
-        cancelLabel: "Cancel",
-        disableDeviceFallback: false,
+        fallbackLabel: customOptions.fallbackLabel ?? "Use Passcode",
+        cancelLabel: customOptions.cancelLabel ?? "Cancel",
+        disableDeviceFallback: customOptions.disableDeviceFallback ?? false,
       });
 
-      if (res.success) {
+      if (res && res.success === true) {
         return { success: true };
       }
 
-      if (res.error === "user_cancel" || res.error === "app_cancel" || res.error === "system_cancel") {
-        return { success: false, error: "Authentication cancelled" };
+      if (
+        res.error === "user_cancel" ||
+        res.error === "app_cancel" ||
+        res.error === "system_cancel"
+      ) {
+        return { success: false, cancelled: true, error: "Authentication cancelled" };
       }
 
       return {
         success: false,
-        error: "Authentication failed. Please try again or use your passcode.",
+        error: "Authentication failed. Please try again.",
       };
     } catch (err: any) {
       return {
         success: false,
-        error: err?.message || "Authentication failed. Please try again or use your passcode.",
+        error: err?.message || "Authentication error occurred. Please try again.",
       };
+    } finally {
+      isAuthenticating = false;
     }
   },
 
@@ -157,7 +238,29 @@ export const biometricService = {
   },
 
   /**
-   * Enable or disable biometric login
+   * Enable biometric authentication after verifying biometrics
+   */
+  async enableBiometric(
+    mobile?: string,
+    customPrompt?: string,
+  ): Promise<BiometricAuthResult> {
+    const authRes = await this.authenticate(customPrompt);
+    if (authRes.success) {
+      await this.setBiometricEnabled(true, mobile);
+      return { success: true };
+    }
+    return authRes;
+  },
+
+  /**
+   * Disable biometric authentication and clear stored credentials
+   */
+  async disableBiometric(): Promise<void> {
+    await this.setBiometricEnabled(false);
+  },
+
+  /**
+   * Set biometric enabled in SecureStore
    */
   async setBiometricEnabled(enabled: boolean, mobile?: string): Promise<void> {
     if (enabled) {

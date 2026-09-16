@@ -1,49 +1,34 @@
-import { StyleSheet, Platform, ViewStyle } from "react-native";
+import { StyleSheet, Platform } from "react-native";
 import {
   BrandColors,
   BorderRadius,
   BorderWidth,
   Spacing,
   Typography,
-} from "../../../../../shared/theme";
+} from "@/shared/theme";
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: BrandColors.BACKGROUND,
   },
-  header: {
-    minHeight: 58,
+  headerBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.base,
-    paddingVertical: 6,
+    paddingBottom: 10,
     backgroundColor: BrandColors.WHITE,
-    borderBottomWidth: BorderWidth.thin,
-    borderBottomColor: "#F1F5F9",
   },
   backButton: {
     width: 38,
     height: 38,
     borderRadius: BorderRadius.md,
     borderWidth: BorderWidth.thin,
-    borderColor: "#E5E7EB",
+    borderColor: BrandColors.BORDER,
     backgroundColor: BrandColors.WHITE,
     justifyContent: "center",
     alignItems: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#0B1F3A",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-      },
-      android: {
-        elevation: 1,
-      },
-      default: {},
-    }),
   },
   headerTitleGroup: {
     alignItems: "center",
@@ -51,40 +36,107 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: Typography.fontSize.xl,
+    fontSize: Typography.fontSize.base + 1,
     fontWeight: Typography.fontWeight.bold,
-    color: "#0B1F3A",
-    letterSpacing: -0.2,
+    color: BrandColors.TEXT_PRIMARY,
   },
   headerSubtitle: {
-    fontSize: Typography.fontSize.sm + 0.5,
+    fontSize: Typography.fontSize.xs,
     fontWeight: Typography.fontWeight.medium,
-    color: "#0B1F3A",
-    marginTop: 2,
+    color: BrandColors.PRIMARY_ORANGE,
+    marginTop: 1,
   },
   headerRightSpacer: {
     width: 38,
   },
+  progressTrack: {
+    height: 3,
+    backgroundColor: "#E2E8F0",
+    width: "100%",
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#16A34A", // Completed green
+    width: "100%", // Step 5 of 5
+  },
   scrollContent: {
     paddingHorizontal: Spacing.base,
     paddingTop: Spacing.base,
+    paddingBottom: 40,
   },
-  titleSection: {
-    marginBottom: 2,
+
+  // Success Hero Card
+  successHero: {
+    backgroundColor: BrandColors.PRIMARY_BLUE_DARK,
+    borderRadius: BorderRadius.base,
+    padding: Spacing.base,
+    alignItems: "center",
+    marginBottom: 16,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  pageTitle: {
-    fontSize: Typography.fontSize.lg + 4,
-    fontWeight: Typography.fontWeight.extraBold,
-    color: "#0B1F3A",
-    letterSpacing: -0.2,
+  successIconBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#16A34A",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
   },
-  pageSubtitle: {
-    fontSize: Typography.fontSize.sm + 0.5,
-    color: BrandColors.TEXT_SECONDARY,
-    marginTop: Spacing.xs,
+  successTitle: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    color: BrandColors.WHITE,
+    textAlign: "center",
+  },
+  successSubtitle: {
+    fontSize: Typography.fontSize.xs + 1,
+    color: "#CBD5E1",
+    textAlign: "center",
+    marginTop: 4,
     lineHeight: 18,
-    fontWeight: Typography.fontWeight.regular,
+    maxWidth: "90%",
   },
+
+  // Support Card
+  supportCard: {
+    backgroundColor: BrandColors.WHITE,
+    borderRadius: BorderRadius.base,
+    padding: Spacing.base,
+    borderWidth: BorderWidth.thin,
+    borderColor: BrandColors.BORDER,
+    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  supportIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: BrandColors.PRIMARY_LIGHT_ORANGE,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  supportTextBox: {
+    flex: 1,
+  },
+  supportTitle: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.bold,
+    color: BrandColors.TEXT_PRIMARY,
+  },
+  supportSubtitle: {
+    fontSize: Typography.fontSize.xs,
+    color: BrandColors.TEXT_SECONDARY,
+    marginTop: 2,
+  },
+
+  // Sticky Bottom Bar
   bottomBar: {
     position: "absolute",
     bottom: 0,
@@ -99,52 +151,27 @@ export const styles = StyleSheet.create({
       ios: {
         shadowColor: "#0B1F3A",
         shadowOffset: { width: 0, height: -3 },
-        shadowOpacity: 0.05,
+        shadowOpacity: 0.06,
         shadowRadius: 6,
       },
       android: {
-        elevation: 6,
+        elevation: 8,
       },
       default: {},
     }),
   },
-  ctaButton: {
-    height: 52,
-    borderRadius: BorderRadius.base - 2,
-    backgroundColor: BrandColors.PRIMARY_ORANGE,
+  homeButton: {
+    height: 50,
+    borderRadius: BorderRadius.base,
+    backgroundColor: BrandColors.PRIMARY_BLUE_DARK,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: Spacing.sm,
-    ...Platform.select({
-      ios: {
-        shadowColor: BrandColors.PRIMARY_ORANGE,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 3,
-      },
-      default: {},
-    }),
+    gap: 8,
   },
-  ctaButtonText: {
-    color: BrandColors.WHITE,
-    fontSize: Typography.fontSize.md + 0.5,
+  homeButtonText: {
+    fontSize: Typography.fontSize.base,
     fontWeight: Typography.fontWeight.bold,
-    letterSpacing: 0.2,
+    color: BrandColors.WHITE,
   },
-});
-
-export const getContainerInsetsStyle = (topInset: number): ViewStyle => ({
-  paddingTop: topInset,
-});
-
-export const getScrollContentInsetsStyle = (bottomInset: number): ViewStyle => ({
-  paddingBottom: bottomInset + 90,
-});
-
-export const getBottomBarInsetsStyle = (bottomInset: number): ViewStyle => ({
-  paddingBottom: Math.max(bottomInset, 12),
 });

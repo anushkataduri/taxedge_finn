@@ -2,48 +2,51 @@ import React from "react";
 import { View, Text } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { TdsRefundStatusDetails } from "../../../types/status.types";
+import { BrandColors } from "@/shared/theme";
 import { styles } from "./RefundDetailsCard.styles";
 
-interface RefundDetailsCardProps {
+export interface RefundDetailsCardProps {
   details: TdsRefundStatusDetails;
 }
 
 export const RefundDetailsCard: React.FC<RefundDetailsCardProps> = ({ details }) => {
+  const isPayable = Boolean(details.isAdditionalTaxPayable);
+
   const rows = [
     {
       id: "appId",
       label: "Application ID",
-      value: details.applicationId,
+      value: details.applicationId || "Pending",
       iconName: "id-card-outline" as const,
-      isOrange: false,
+      isHighlight: false,
     },
     {
-      id: "filedOn",
-      label: "Filed On",
-      value: details.filedOn,
+      id: "submittedOn",
+      label: "Submitted Date",
+      value: details.filedOn || "Today",
       iconName: "calendar-outline" as const,
-      isOrange: false,
+      isHighlight: false,
     },
     {
       id: "refund",
-      label: "Estimated Refund",
-      value: details.estimatedRefund,
+      label: isPayable ? "Estimated Tax Payable" : "Estimated Refund",
+      value: details.estimatedRefund || "₹0",
       iconName: "cash-outline" as const,
-      isOrange: true,
+      isHighlight: true,
     },
     {
       id: "refundTo",
-      label: "Refund To",
-      value: details.refundToBank,
+      label: "Refund Bank",
+      value: details.refundToBank || "Registered Bank Account",
       iconName: "business-outline" as const,
-      isOrange: false,
+      isHighlight: false,
     },
     {
       id: "time",
-      label: "Expected Processing Time",
-      value: details.expectedProcessingTime,
+      label: "Indicative TaxEdge processing timeline",
+      value: details.indicativeTimeline || "10–20 Business Days",
       iconName: "time-outline" as const,
-      isOrange: false,
+      isHighlight: false,
     },
   ];
 
@@ -62,7 +65,7 @@ export const RefundDetailsCard: React.FC<RefundDetailsCardProps> = ({ details })
                 <Ionicons
                   name={row.iconName}
                   size={18}
-                  color={row.isOrange ? "#F97316" : "#0B1F3A"}
+                  color={row.isHighlight ? BrandColors.PRIMARY_ORANGE : BrandColors.PRIMARY_BLUE}
                 />
               </View>
               <Text style={styles.label}>{row.label}</Text>
@@ -71,7 +74,7 @@ export const RefundDetailsCard: React.FC<RefundDetailsCardProps> = ({ details })
             <Text
               style={[
                 styles.value,
-                row.isOrange ? styles.orangeValue : styles.normalValue,
+                row.isHighlight ? styles.orangeValue : styles.normalValue,
               ]}
             >
               {row.value}
@@ -82,3 +85,5 @@ export const RefundDetailsCard: React.FC<RefundDetailsCardProps> = ({ details })
     </View>
   );
 };
+
+export default RefundDetailsCard;

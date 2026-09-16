@@ -65,6 +65,17 @@ public class OtpController {
                     customerSummary.put("name", c.getName());
                     customerSummary.put("email", c.getEmail());
                     customerSummary.put("mobileNumber", c.getMobileNumber());
+                    customerSummary.put("pan", c.getPan());
+                    customerSummary.put("aadhaar", c.getAadhaar());
+                    customerSummary.put("dob", c.getDob() != null ? c.getDob().toString() : null);
+                    customerSummary.put("gender", c.getGender() != null ? c.getGender().name() : null);
+                    customerSummary.put("fatherSpouseName", c.getFatherSpouseName());
+                    customerSummary.put("addressLine1", c.getAddressLine1());
+                    customerSummary.put("addressLine2", c.getAddressLine2());
+                    customerSummary.put("city", c.getCity());
+                    customerSummary.put("state", c.getState());
+                    customerSummary.put("pincode", c.getPincode());
+                    customerSummary.put("address", c.getAddress());
                     customerSummary.put("customerType", c.getCustomerType() != null ? c.getCustomerType().name() : "INDIVIDUAL");
                     response.put("customer", customerSummary);
                 } else {
