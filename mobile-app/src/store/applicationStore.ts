@@ -118,6 +118,25 @@ export interface TdsDraft {
   updatedAt?: string;
 }
 
+export interface TaxNoticeDraftDocument {
+  id: string;
+  title: string;
+  status: "not_uploaded" | "uploaded";
+  fileUri?: string;
+  fileName?: string;
+  fileSize?: string;
+  mimeType?: string;
+}
+
+export interface TaxNoticeDraft {
+  id?: string;
+  formData?: Record<string, any>;
+  documents?: TaxNoticeDraftDocument[];
+  step?: "DETAILS" | "UPLOAD" | "DOCUMENTS" | string;
+  remarks?: string;
+  updatedAt?: string;
+}
+
 export interface ApplicationState {
   applications: Application[];
   selectedApplicationId: string | null;
@@ -125,6 +144,7 @@ export interface ApplicationState {
   gstFilingDraft: GstFilingDraft | null;
   itrDraft: ItrRegistrationDraft | null;
   tdsDraft: TdsDraft | null;
+  taxNoticeDraft: TaxNoticeDraft | null;
   setSelectedApplicationId: (id: string | null) => void;
   saveGstDraft: (draft: GstRegistrationDraft) => void;
   clearGstDraft: () => void;
@@ -134,6 +154,8 @@ export interface ApplicationState {
   clearItrDraft: () => void;
   saveTdsDraft: (draft: Partial<TdsDraft>) => void;
   clearTdsDraft: () => void;
+  saveTaxNoticeDraft: (draft: Partial<TaxNoticeDraft>) => void;
+  clearTaxNoticeDraft: () => void;
   /** Creates an application and returns its generated id. */
   createApplication: (
     serviceId: string,
@@ -160,6 +182,7 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
   gstFilingDraft: null,
   itrDraft: null,
   tdsDraft: null,
+  taxNoticeDraft: null,
   setSelectedApplicationId: (id) => set({ selectedApplicationId: id }),
   saveGstDraft: (draft) => set({ gstDraft: draft }),
   clearGstDraft: () => set({ gstDraft: null }),
@@ -186,6 +209,26 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
           },
     })),
   clearTdsDraft: () => set({ tdsDraft: null }),
+  saveTaxNoticeDraft: (draft) =>
+    set((state) => ({
+      taxNoticeDraft: state.taxNoticeDraft
+        ? {
+            ...state.taxNoticeDraft,
+            ...draft,
+            formData: draft.formData
+              ? { ...(state.taxNoticeDraft.formData || {}), ...draft.formData }
+              : state.taxNoticeDraft.formData,
+            documents: draft.documents ?? state.taxNoticeDraft.documents,
+          }
+        : {
+            formData: draft.formData || {},
+            documents: draft.documents || [],
+            step: draft.step || "DETAILS",
+            remarks: draft.remarks || "",
+            updatedAt: draft.updatedAt || new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          },
+    })),
+  clearTaxNoticeDraft: () => set({ taxNoticeDraft: null }),
   createApplication: (
     serviceId,
     serviceName,
