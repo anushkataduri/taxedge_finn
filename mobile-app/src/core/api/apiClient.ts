@@ -14,57 +14,57 @@ export interface RequestOptions {
  * Server Network Configuration
  * Change IP and Port here to point the mobile app to your backend.
  */
-export const SERVER_IP = "192.168.88.78";
+export const SERVER_IP = "192.168.88.2";
 
 export const SERVER_PORT = 8088;
 
 export const STORAGE_KEY_SERVER_URL = "@taxedge_server_url";
 
 export function getDefaultBaseUrl(): string {
-  // 1. Highest priority: environment-driven URL for production/staging
+  // 1. Highest priority: environment-driven URL for production/staging/EAS build
   if (process.env.EXPO_PUBLIC_API_URL && process.env.EXPO_PUBLIC_API_URL.trim() !== "") {
     return process.env.EXPO_PUBLIC_API_URL.trim();
   }
 
-  // 2. Development fallbacks only
-  if (__DEV__) {
-    if (Platform.OS === "web") {
-      return `http://localhost:${SERVER_PORT}`;
-    }
-
-    try {
-      const hostUri =
-        Constants.expoConfig?.hostUri ||
-        (Constants as any).manifest?.debuggerHost ||
-        (Constants as any).manifest2?.extra?.expoGo?.debuggerHost;
-
-      if (hostUri) {
-        const ip = hostUri.split(":")[0];
-        if (ip && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
-          return `http://${ip}:${SERVER_PORT}`;
-        }
-      }
-    } catch {}
-
-    return `http://${SERVER_IP}:${SERVER_PORT}`;
+  // 2. Web fallback
+  if (Platform.OS === "web") {
+    return `http://localhost:${SERVER_PORT}`;
   }
 
-  return "";
+  // 3. Expo Go host IP detection if running inside Expo Go
+  try {
+    const hostUri =
+      Constants.expoConfig?.hostUri ||
+      (Constants as any).manifest?.debuggerHost ||
+      (Constants as any).manifest2?.extra?.expoGo?.debuggerHost;
+
+    if (hostUri) {
+      const ip = hostUri.split(":")[0];
+      if (ip && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+        return `http://${ip}:${SERVER_PORT}`;
+      }
+    }
+  } catch {}
+
+  // 4. Default fallback: configured SERVER_IP and SERVER_PORT (guarantees non-empty URL in standalone APK)
+  return `http://${SERVER_IP}:${SERVER_PORT}`;
 }
 
 export class ApiClient {
   private baseUrl: string;
+  private baseUrlLoaded = false;
   public interceptors: InterceptorManager;
 
   constructor(baseUrl: string = getDefaultBaseUrl()) {
-    this.baseUrl = baseUrl;
+    this.baseUrl = baseUrl || `http://${SERVER_IP}:${SERVER_PORT}`;
     this.interceptors = new InterceptorManager();
-    if (__DEV__) {
-      this.loadCustomBaseUrl();
-    }
+    this.loadCustomBaseUrl().catch(() => {});
   }
 
   getBaseUrl(): string {
+    if (!this.baseUrl || this.baseUrl.trim() === "") {
+      this.baseUrl = getDefaultBaseUrl();
+    }
     return this.baseUrl;
   }
 
@@ -79,6 +79,18 @@ export class ApiClient {
     this.baseUrl = clean;
   }
 
+  async ensureBaseUrlLoaded(): Promise<string> {
+    if (this.baseUrlLoaded && this.baseUrl && this.baseUrl.trim() !== "") {
+      return this.baseUrl;
+    }
+    await this.loadCustomBaseUrl();
+    if (!this.baseUrl || this.baseUrl.trim() === "") {
+      this.baseUrl = getDefaultBaseUrl();
+    }
+    this.baseUrlLoaded = true;
+    return this.baseUrl;
+  }
+
   async loadCustomBaseUrl(): Promise<string> {
     try {
       const saved = await AsyncStorage.getItem(STORAGE_KEY_SERVER_URL);
@@ -86,6 +98,7 @@ export class ApiClient {
         this.setBaseUrl(saved.trim());
       }
     } catch {}
+    this.baseUrlLoaded = true;
     return this.baseUrl;
   }
 
@@ -105,9 +118,23 @@ export class ApiClient {
     path: string,
     params?: Record<string, string | number | boolean>,
   ): string {
-    const fullUrl = path.startsWith("http")
-      ? path
-      : `${this.baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+    let base = this.baseUrl;
+    if (!base || base.trim() === "") {
+      base = getDefaultBaseUrl();
+      if (!base || base.trim() === "") {
+        base = `http://${SERVER_IP}:${SERVER_PORT}`;
+      }
+      this.baseUrl = base;
+    }
+
+    const cleanBase = base.endsWith("/") ? base.slice(0, -1) : base;
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+
+    const fullUrl =
+      path.startsWith("http://") || path.startsWith("https://")
+        ? path
+        : `${cleanBase}${cleanPath}`;
+
     if (!params || Object.keys(params).length === 0) {
       return fullUrl;
     }
@@ -160,6 +187,7 @@ export class ApiClient {
     options?: RequestOptions,
   ): Promise<T> {
     try {
+      await this.ensureBaseUrlLoaded();
       const initialUrl = this.buildUrl(path, options?.params);
       const initialHeaders: Record<string, string> = {
         "Content-Type": "application/json",
