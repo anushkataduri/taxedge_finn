@@ -1,11 +1,19 @@
-export interface TaxNoticeUploadFormData {
+export interface TaxNoticeFormData {
+  pan: string;
+  assessmentYear: string;
+  noticeType: string;
+  noticeDate: string;
+  noticeNumber: string; // Notice Reference Number / DIN
+  responseDueDate: string;
+  customerExplanation: string;
   noticeFileUri?: string;
   noticeFileName?: string;
   noticeFileSize?: string;
-  noticeNumber: string;
-  noticeDate: string;
-  assessmentYear: string;
+  noticeFileType?: string;
 }
+
+// Backward compatibility alias
+export type TaxNoticeUploadFormData = TaxNoticeFormData;
 
 export interface TaxNoticeSummaryData {
   noticeType: string;
@@ -26,7 +34,18 @@ export interface TaxNoticeSupportingDoc {
   fileUri?: string;
   fileName?: string;
   fileSize?: string;
+  mimeType?: string;
+  fileTypeLabel?: string;
   status: "not_uploaded" | "uploaded";
+  errorMessage?: string;
+}
+
+export interface DocumentUploadPayload {
+  uri: string;
+  name: string;
+  size: string;
+  mimeType?: string;
+  fileTypeLabel?: string;
 }
 
 export interface NoticeTrackingStep {
@@ -44,4 +63,11 @@ export interface NoticeStatusDetails {
   acknowledgementNo: string;
   assignedTaxExecutive: string;
   currentStatus: string;
+}
+
+export interface NoticeTypeOption {
+  label: string;
+  value: string;
+  section: string;
+  description: string;
 }

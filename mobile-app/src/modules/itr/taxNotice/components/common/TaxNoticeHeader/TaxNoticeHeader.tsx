@@ -7,11 +7,13 @@ import { styles } from "./TaxNoticeHeader.styles";
 interface TaxNoticeHeaderProps {
   subtitle: string;
   onBack?: () => void;
+  onSaveDraft?: () => void;
 }
 
 export const TaxNoticeHeader: React.FC<TaxNoticeHeaderProps> = ({
   subtitle,
   onBack,
+  onSaveDraft,
 }) => {
   const router = useRouter();
 
@@ -38,7 +40,18 @@ export const TaxNoticeHeader: React.FC<TaxNoticeHeaderProps> = ({
         <Text style={styles.subtitle}>{subtitle}</Text>
       </View>
 
-      <View style={styles.rightSpacer} />
+      {onSaveDraft ? (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={onSaveDraft}
+          style={styles.draftButton}
+        >
+          <Ionicons name="bookmark-outline" size={14} color="#EA580C" />
+          <Text style={styles.draftButtonText}>Draft</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.rightSpacer} />
+      )}
     </View>
   );
 };

@@ -4,3 +4,9 @@ scratch/
 .env
 .env.*
 !.env.example
+
+node_modules/
+dist/
+build/
+target/
+.gradle/

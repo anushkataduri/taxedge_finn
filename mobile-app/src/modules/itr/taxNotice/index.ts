@@ -6,6 +6,8 @@ export * from "./mock/taxNoticeData";
 
 // Components
 export * from "./components/common/TaxNoticeHeader";
+export * from "./components/common/TaxNoticeDatePickerInput";
+export * from "./components/common/NoticeUploadSourceModal";
 export * from "./components/upload/NoticeUploadCard";
 export * from "./components/summary/NoticeMetadataCard";
 export * from "./components/summary/NoticeExplanationCard";

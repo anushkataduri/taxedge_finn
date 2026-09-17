@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,9 +16,10 @@ import {
   NoticeFilingDetailsCard,
 } from "../../components/status";
 import {
-  MOCK_TRACKING_STEPS,
   MOCK_NOTICE_STATUS_DETAILS,
 } from "../../mock/taxNoticeData";
+import { NoticeTrackingStep } from "../../types/taxNotice.types";
+import { useApplicationStore } from "@/store/applicationStore";
 import {
   styles,
   getContainerInsetsStyle,
@@ -32,12 +34,82 @@ export const NoticeStatusScreen: React.FC = () => {
     applicationId?: string;
     noticeNumber?: string;
     assessmentYear?: string;
+    pan?: string;
   }>();
+
+  const clearTaxNoticeDraft = useApplicationStore((state) => state.clearTaxNoticeDraft);
+
+  // Clear notice draft upon successful submission
+  useEffect(() => {
+    clearTaxNoticeDraft();
+  }, []);
+
+  const todayStr = new Date().toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  const fullLifecycleSteps: NoticeTrackingStep[] = [
+    {
+      id: "step-1",
+      title: "Notice & Details Provided",
+      date: params.assessmentYear || "AY 2025–26",
+      description: "Notice details and primary document submitted",
+      status: "completed",
+    },
+    {
+      id: "step-2",
+      title: "Staff Review & Verification",
+      date: "Verified",
+      description: "Tax Executive examined notice & supporting documents",
+      status: "completed",
+    },
+    {
+      id: "step-3",
+      title: "Response Drafted & Approved",
+      date: "Approved",
+      description: "Legal draft confirmed and signed off by assessee",
+      status: "completed",
+    },
+    {
+      id: "step-4",
+      title: "Response Submitted",
+      date: todayStr,
+      description: "Response successfully filed on Income Tax e-filing portal",
+      status: "completed",
+    },
+    {
+      id: "step-5",
+      title: "Department Resolution",
+      date: "Pending",
+      description: "Awaiting final intimation or closure order from CPC / AO",
+      status: "pending",
+    },
+  ];
+
+  const ackNumber = `RSP${Date.now().toString().slice(-8)}`;
 
   const details = {
     ...MOCK_NOTICE_STATUS_DETAILS,
-    noticeNumber: params.noticeNumber?.trim() || "Notice Response",
-    acknowledgementNo: params.applicationId || "Pending",
+    noticeNumber: params.noticeNumber?.trim() || MOCK_NOTICE_STATUS_DETAILS.noticeNumber || "Notice Response",
+    submittedOn: todayStr,
+    acknowledgementNo: params.applicationId || ackNumber,
+    currentStatus: "Response Submitted",
+  };
+
+  const handleDownloadReceipt = () => {
+    Alert.alert(
+      "Download Acknowledgement",
+      `Filing Acknowledgement Receipt #${ackNumber} has been generated. Would you like to view it?`,
+      [
+        { text: "Close", style: "cancel" },
+        {
+          text: "View Receipt",
+          onPress: () => Alert.alert("Receipt", "Your official e-filing acknowledgement is stored in Documents."),
+        },
+      ]
+    );
   };
 
   const handleBackToServices = () => {
@@ -74,10 +146,33 @@ export const NoticeStatusScreen: React.FC = () => {
         </View>
 
         {/* Vertical Stepper Timeline */}
-        <NoticeTimelineTracker steps={MOCK_TRACKING_STEPS} />
+        <NoticeTimelineTracker steps={fullLifecycleSteps} />
 
         {/* Structured Details Card */}
         <NoticeFilingDetailsCard details={details} />
+
+        {/* Download Acknowledgement Button */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={handleDownloadReceipt}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#EFF6FF",
+            borderWidth: 1,
+            borderColor: "#BFDBFE",
+            borderRadius: 14,
+            paddingVertical: 12,
+            marginBottom: 14,
+            gap: 8,
+          }}
+        >
+          <Ionicons name="download-outline" size={18} color="#2563EB" />
+          <Text style={{ fontSize: 14, fontWeight: "700", color: "#1D4ED8" }}>
+            Download Filing Acknowledgement
+          </Text>
+        </TouchableOpacity>
 
         {/* Info Card */}
         <View style={styles.infoCard}>
@@ -92,12 +187,7 @@ export const NoticeStatusScreen: React.FC = () => {
       </ScrollView>
 
       {/* Sticky Bottom Action Button */}
-      <View
-        style={[
-          styles.bottomBar,
-          getBottomBarInsetsStyle(insets.bottom),
-        ]}
-      >
+      <View style={[styles.bottomBar, getBottomBarInsetsStyle(insets.bottom)]}>
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleBackToServices}
@@ -111,3 +201,4 @@ export const NoticeStatusScreen: React.FC = () => {
 };
 
 export default NoticeStatusScreen;
+

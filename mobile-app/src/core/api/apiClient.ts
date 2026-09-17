@@ -10,6 +10,14 @@ export interface RequestOptions {
   timeoutMs?: number;
 }
 
+/**
+ * Server Network Configuration
+ * Change IP and Port here to point the mobile app to your backend.
+ */
+export const SERVER_IP = "192.168.88.78";
+
+export const SERVER_PORT = 8088;
+
 export const STORAGE_KEY_SERVER_URL = "@taxedge_server_url";
 
 export function getDefaultBaseUrl(): string {
@@ -21,7 +29,7 @@ export function getDefaultBaseUrl(): string {
   // 2. Development fallbacks only
   if (__DEV__) {
     if (Platform.OS === "web") {
-      return "http://localhost:8088";
+      return `http://localhost:${SERVER_PORT}`;
     }
 
     try {
@@ -33,12 +41,12 @@ export function getDefaultBaseUrl(): string {
       if (hostUri) {
         const ip = hostUri.split(":")[0];
         if (ip && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
-          return `http://${ip}:8088`;
+          return `http://${ip}:${SERVER_PORT}`;
         }
       }
     } catch {}
 
-    return "http://localhost:8088";
+    return `http://${SERVER_IP}:${SERVER_PORT}`;
   }
 
   return "";

@@ -51,7 +51,7 @@ export const authApi = {
     const cleanMobile = mobileNumber.replace(/\D/g, "");
     try {
       console.log(
-        `🚀 [OTP] Sending POST http://192.168.88.96:8086/otp/generate for mobile: ${cleanMobile}`,
+        `🚀 [OTP] Sending POST ${apiClient.getBaseUrl()}/otp/generate for mobile: ${cleanMobile}`,
       );
       const res = await apiClient.post<any>("/otp/generate", {
         mobileNumber: cleanMobile,
@@ -70,7 +70,7 @@ export const authApi = {
         error?.message,
       );
       const errorMsg = error?.message?.includes("Network request failed")
-        ? `Network error: Unable to reach backend at  192.168.88.96:8086. Check Wi-Fi connection.`
+        ? `Network error: Unable to reach backend at ${apiClient.getBaseUrl()}. Check connection.`
         : error?.message || "Failed to generate OTP";
       return { success: false, message: errorMsg };
     }
