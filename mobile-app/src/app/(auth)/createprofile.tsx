@@ -218,7 +218,7 @@ export default function CreateProfileScreen() {
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
   ];
 
-  const autoMobile = storeMobileNumber || "9876543210";
+  const autoMobile = storeMobileNumber || "9347074726";
 
   const [form, setForm] = useState<SignupForm>({
     name: "",

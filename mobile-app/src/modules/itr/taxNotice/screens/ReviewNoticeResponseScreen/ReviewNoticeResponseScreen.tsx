@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { TaxNoticeHeader } from "../../components/common";
 import { DraftedResponseCard } from "../../components/review";
+import { generateNoticeDraftResponse } from "../../mock/taxNoticeData";
 import { useApplicationStore } from "@/store/applicationStore";
 import { useAuthStore } from "@/modules/authentication/store/authStore";
 import {
@@ -27,6 +28,10 @@ import {
 export const ReviewNoticeResponseScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const createApplication = useApplicationStore((state) => state.createApplication);
+  const customer = useAuthStore((state) => state.customer);
+  const authUser = useAuthStore((state) => state.authenticatedUser);
+
   const params = useLocalSearchParams<{
     pan?: string;
     noticeNumber?: string;
@@ -36,8 +41,6 @@ export const ReviewNoticeResponseScreen: React.FC = () => {
   }>();
 
   const taxNoticeDraft = useApplicationStore((state) => state.taxNoticeDraft);
-  const authUser = useAuthStore((state) => state.authenticatedUser);
-  const customer = useAuthStore((state) => state.customer);
 
   const customerName =
     customer?.name || authUser?.name || "Assessee";
@@ -95,10 +98,35 @@ Meera Iyer, Tax Executive`;
       return;
     }
 
+    const createdAppId = createApplication(
+      "tax-notice-assistance",
+      `Tax Notice Response (${noticeNumber || "Section 143(1)(a)"})`,
+      "ITR",
+      {
+        noticeNumber,
+        assessmentYear,
+        noticeDate,
+        section: "143(1)(a)",
+        assesseeName: customerName,
+        pan,
+        status: "Response Submitted",
+      },
+      [
+        "Notice Copy",
+        "AIS Statement",
+        "Form 26AS",
+        "Bank Statement",
+        "Supporting Proof",
+      ],
+      1499, // service fee
+      "Paid"
+    );
+
     // Navigate to Screen 6: Response Submission & Notice Status
     router.push({
       pathname: "/service/tax-notice-status" as any,
       params: {
+        applicationId: createdAppId,
         noticeNumber,
         assessmentYear,
         pan,

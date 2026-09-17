@@ -1,4 +1,5 @@
 import { apiClient } from "../../../core/api/apiClient";
+import { tokenManager } from "../../../core/authentication/tokenManager";
 import type { DevUser, RegistrationData } from "../types/auth.types";
 
 export interface SendOtpResponse {
@@ -50,7 +51,7 @@ export const authApi = {
     const cleanMobile = mobileNumber.replace(/\D/g, "");
     try {
       console.log(
-        `🚀 [OTP] Sending POST http://192.168.88.78:8088/otp/generate for mobile: ${cleanMobile}`,
+        `🚀 [OTP] Sending POST ${apiClient.getBaseUrl()}/otp/generate for mobile: ${cleanMobile}`,
       );
       const res = await apiClient.post<any>("/otp/generate", {
         mobileNumber: cleanMobile,
@@ -69,7 +70,7 @@ export const authApi = {
         error?.message,
       );
       const errorMsg = error?.message?.includes("Network request failed")
-        ? `Network error: Unable to reach backend at  192.168.88.78:8088. Check Wi-Fi connection.`
+        ? `Network error: Unable to reach backend at ${apiClient.getBaseUrl()}. Check connection.`
         : error?.message || "Failed to generate OTP";
       return { success: false, message: errorMsg };
     }
@@ -245,6 +246,13 @@ export const authApi = {
       const response = await apiClient.post<any>("/customer/register", payload);
       console.log("✅ Backend Registration Response:", response);
 
+      if (response.accessToken) {
+        tokenManager.setAccessToken(response.accessToken).catch(() => {});
+      }
+      if (response.refreshToken) {
+        tokenManager.setRefreshToken(response.refreshToken).catch(() => {});
+      }
+
       return {
         success: true,
         user: {
@@ -292,6 +300,13 @@ export const authApi = {
         password: passcode,
       });
       console.log("✅ Backend Login Response:", response);
+
+      if (response.accessToken) {
+        tokenManager.setAccessToken(response.accessToken).catch(() => {});
+      }
+      if (response.refreshToken) {
+        tokenManager.setRefreshToken(response.refreshToken).catch(() => {});
+      }
 
       return {
         success: true,
@@ -359,6 +374,18 @@ export const authApi = {
       success: res.success,
       message: res.message,
     };
+  },
+
+  revokeRefreshToken: async (refreshToken: string): Promise<boolean> => {
+    try {
+      console.log("🚀 [API] Revoking refresh token on server POST /auth/revoke");
+      await apiClient.post("/auth/revoke", { refreshToken });
+      console.log("✅ [API] Refresh token revoked successfully on backend");
+      return true;
+    } catch (err: any) {
+      console.warn("⚠️ [API] Failed to revoke refresh token on backend:", err?.message);
+      return false;
+    }
   },
 };
 

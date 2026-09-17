@@ -140,20 +140,11 @@ export default function PaymentScreen() {
     }
 
     setProcessing(true);
-    setTimeout(() => {
-      payApplication(app.id);
-      addNotification(
-        "Payment Successful",
-        `Received ${rupees(total)} for ${app.serviceName} (${app.id}).`,
-        "payment",
-      );
-      setProcessing(false);
-      Alert.alert(
-        "Payment Successful",
-        `${rupees(total)} paid for ${app.serviceName}. The receipt is in your payment history.`,
-        [{ text: "Done", onPress: () => router.back() }],
-      );
-    }, 1600);
+    Alert.alert(
+      "Payment Gateway Unavailable",
+      "Online payment processing is not yet available. Please contact support or pay via bank transfer.",
+      [{ text: "OK", onPress: () => setProcessing(false) }],
+    );
   };
 
   const summaryRow = (label: string, value: string, muted = true) => (

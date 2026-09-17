@@ -8,7 +8,6 @@ import Svg, {
   Defs,
   LinearGradient,
   Stop,
-  Text as SvgText,
 } from "react-native-svg";
 import { styles } from "./TdsHeroIllustration.styles";
 
@@ -61,16 +60,13 @@ export const TdsHeroIllustration: React.FC = () => {
       {/* Blue Rupee Circular Badge (Floating) */}
       <G transform="translate(18, 55)">
         <Circle cx={18} cy={18} r={18} fill="url(#rupeeCircleGrad)" />
-        <SvgText
-          x={18}
-          y={23}
-          fontSize={16}
-          fontWeight="900"
-          fill="#FFFFFF"
-          textAnchor="middle"
-        >
-          ₹
-        </SvgText>
+        <Path
+          d="M12 11h12 M12 14.5h11 M12 11v14 M12 11h5c3.8 0 5.8 1.4 5.8 3.5s-2 3.5-5.8 3.5H12 M16 18l7 7"
+          stroke="#FFFFFF"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </G>
 
       {/* Orange Wallet in Foreground */}

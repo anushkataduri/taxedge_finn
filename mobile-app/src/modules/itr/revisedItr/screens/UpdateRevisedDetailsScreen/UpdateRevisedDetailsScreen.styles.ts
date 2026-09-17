@@ -55,6 +55,26 @@ export const styles = StyleSheet.create({
       default: {},
     }),
   },
+  sectionHeader: {
+    marginBottom: 12,
+    marginTop: 4,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0B1F3A",
+  },
+  reasonNotice: {
+    backgroundColor: "#F1F5F9",
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 14,
+  },
+  reasonNoticeText: {
+    fontSize: 12,
+    color: "#475569",
+    fontWeight: "500",
+  },
   continueButton: {
     height: 52,
     borderRadius: BorderRadius.base,

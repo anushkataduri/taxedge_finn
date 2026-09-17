@@ -6,7 +6,7 @@ export const paymentService = {
     try {
       return await apiClient.post<{ orderId: string }>('/payments/order', { amount, serviceId });
     } catch {
-      return { orderId: 'ORD_' + Date.now() };
+      return null;
     }
   },
   verifyPayment: async (paymentDetails: any): Promise<boolean> => {
@@ -14,7 +14,7 @@ export const paymentService = {
       await apiClient.post('/payments/verify', paymentDetails);
       return true;
     } catch {
-      return true;
+      return false;
     }
   },
 };

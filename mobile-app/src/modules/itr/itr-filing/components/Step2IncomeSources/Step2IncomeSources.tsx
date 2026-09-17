@@ -40,8 +40,6 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
   sources,
   determinedForm,
   gstReconciliation,
-  category,
-  onSwitchCategory,
   onUpdateSalary,
   onUpdateHouseProperty,
   onUpdateBusiness,
@@ -49,17 +47,6 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
   onUpdateOtherSources,
   onContinue,
 }) => {
-  const isMultiple = !category || category === "multiple";
-  const showSalary = isMultiple || category === "salaried";
-  const showHouseProperty = isMultiple || category === "rental";
-  const showBusiness =
-    isMultiple ||
-    category === "business" ||
-    category === "professional" ||
-    category === "freelancer";
-  const showCapitalGains =
-    isMultiple || category === "trader_investor" || category === "capital_gains";
-  const showOtherSources = isMultiple;
   const handleProceed = () => {
     const hasAnyIncome =
       sources.salary.enabled ||
@@ -106,48 +93,120 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
 
       <Text style={styles.sectionTitle}>Income Sources & Activity</Text>
       <Text style={styles.sectionSubtitle}>
-        TaxEdge imports data from Form 16, AIS, and GST filings. Verify or modify declared income below.
+        Select all sources of income you earned this year. Fields will adjust automatically.
       </Text>
 
-      {/* 1. Salary Income */}
-      {showSalary && (
-        <View style={[styles.card, sources.salary.enabled && styles.cardActive]}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.sourceHeaderRow}
-          onPress={() => onUpdateSalary({ enabled: !sources.salary.enabled })}
-        >
-          <View style={styles.sourceHeaderLeft}>
-            <View style={[styles.sourceIconBox, sources.salary.enabled && styles.sourceIconBoxActive]}>
-              <Ionicons
-                name="briefcase-outline"
-                size={20}
-                color={sources.salary.enabled ? BrandColors.PRIMARY_ORANGE : "#64748B"}
-              />
-            </View>
-            <View style={styles.sourceTitleCol}>
-              <View style={styles.sourceTitleRow}>
-                <Text style={styles.sourceTitle}>Salary Income</Text>
-                {sources.salary.isVerified && sources.salary.source === "FORM_16" && (
-                  <View style={styles.sourceTagVerified}>
-                    <Ionicons name="shield-checkmark" size={10} color="#166534" />
-                    <Text style={styles.sourceTagVerifiedText}>Form 16 Imported</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.sourceSubtitle}>Employer Form 16, payslips, TDS credits</Text>
-            </View>
-          </View>
-          <View style={styles.checkboxBtn}>
+      {/* Income Source Selector Chips */}
+      <View style={styles.sourceSelectorCard}>
+        <Text style={styles.sourceSelectorTitle}>Select your income sources:</Text>
+        <View style={styles.sourceChipsRow}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.sourceChip, sources.salary.enabled && styles.sourceChipActive]}
+            onPress={() => onUpdateSalary({ enabled: !sources.salary.enabled })}
+          >
             <Ionicons
-              name={sources.salary.enabled ? "checkbox" : "square-outline"}
-              size={22}
-              color={sources.salary.enabled ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
+              name={sources.salary.enabled ? "checkmark-circle" : "add-circle-outline"}
+              size={16}
+              color={sources.salary.enabled ? BrandColors.PRIMARY_ORANGE : "#64748B"}
             />
-          </View>
-        </TouchableOpacity>
+            <Text style={[styles.sourceChipText, sources.salary.enabled && styles.sourceChipTextActive]}>
+              Salary / Pension
+            </Text>
+          </TouchableOpacity>
 
-        {sources.salary.enabled && (
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.sourceChip, sources.houseProperty.enabled && styles.sourceChipActive]}
+            onPress={() => onUpdateHouseProperty({ enabled: !sources.houseProperty.enabled })}
+          >
+            <Ionicons
+              name={sources.houseProperty.enabled ? "checkmark-circle" : "add-circle-outline"}
+              size={16}
+              color={sources.houseProperty.enabled ? BrandColors.PRIMARY_ORANGE : "#64748B"}
+            />
+            <Text style={[styles.sourceChipText, sources.houseProperty.enabled && styles.sourceChipTextActive]}>
+              House Property
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.sourceChip, sources.business.enabled && styles.sourceChipActive]}
+            onPress={() => onUpdateBusiness({ enabled: !sources.business.enabled })}
+          >
+            <Ionicons
+              name={sources.business.enabled ? "checkmark-circle" : "add-circle-outline"}
+              size={16}
+              color={sources.business.enabled ? BrandColors.PRIMARY_ORANGE : "#64748B"}
+            />
+            <Text style={[styles.sourceChipText, sources.business.enabled && styles.sourceChipTextActive]}>
+              Business / Profession
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.sourceChip, sources.capitalGains.enabled && styles.sourceChipActive]}
+            onPress={() => onUpdateCapitalGains({ enabled: !sources.capitalGains.enabled })}
+          >
+            <Ionicons
+              name={sources.capitalGains.enabled ? "checkmark-circle" : "add-circle-outline"}
+              size={16}
+              color={sources.capitalGains.enabled ? BrandColors.PRIMARY_ORANGE : "#64748B"}
+            />
+            <Text style={[styles.sourceChipText, sources.capitalGains.enabled && styles.sourceChipTextActive]}>
+              Capital Gains
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.sourceChip, sources.otherSources.enabled && styles.sourceChipActive]}
+            onPress={() => onUpdateOtherSources({ enabled: !sources.otherSources.enabled })}
+          >
+            <Ionicons
+              name={sources.otherSources.enabled ? "checkmark-circle" : "add-circle-outline"}
+              size={16}
+              color={sources.otherSources.enabled ? BrandColors.PRIMARY_ORANGE : "#64748B"}
+            />
+            <Text style={[styles.sourceChipText, sources.otherSources.enabled && styles.sourceChipTextActive]}>
+              Other Sources
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* 1. Salary Income */}
+      {sources.salary.enabled && (
+        <View style={[styles.card, styles.cardActive]}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.sourceHeaderRow}
+            onPress={() => onUpdateSalary({ enabled: !sources.salary.enabled })}
+          >
+            <View style={styles.sourceHeaderLeft}>
+              <View style={[styles.sourceIconBox, styles.sourceIconBoxActive]}>
+                <Ionicons name="briefcase-outline" size={20} color={BrandColors.PRIMARY_ORANGE} />
+              </View>
+              <View style={styles.sourceTitleCol}>
+                <View style={styles.sourceTitleRow}>
+                  <Text style={styles.sourceTitle}>Salary Income</Text>
+                  {sources.salary.isVerified && sources.salary.source === "FORM_16" && (
+                    <View style={styles.sourceTagVerified}>
+                      <Ionicons name="shield-checkmark" size={10} color="#166534" />
+                      <Text style={styles.sourceTagVerifiedText}>Form 16 Imported</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.sourceSubtitle}>Employer Form 16, payslips, TDS credits</Text>
+              </View>
+            </View>
+            <View style={styles.checkboxBtn}>
+              <Ionicons name="checkbox" size={22} color={BrandColors.PRIMARY_ORANGE} />
+            </View>
+          </TouchableOpacity>
+
           <View style={styles.expandedForm}>
             {/* Form 16 Import Snapshot Card */}
             {sources.salary.isVerified && sources.salary.source === "FORM_16" && Boolean(sources.salary.employerName) && (
@@ -185,7 +244,7 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
               <View style={styles.inputBox}>
                 <TextInput
                   style={styles.textInput}
-                  placeholder="e.g. Infosys Technologies Ltd"
+                  placeholder="e.g. Acme Technologies Ltd"
                   placeholderTextColor="#94A3B8"
                   value={sources.salary.employerName}
                   onChangeText={(employerName) => onUpdateSalary({ employerName })}
@@ -212,13 +271,13 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
               </View>
 
               <View style={styles.inputGroupHalf}>
-                <Text style={styles.inputLabel}>Exempt Allowances</Text>
+                <Text style={styles.inputLabel}>Exempt Allowances (HRA, LTA)</Text>
                 <View style={styles.inputBox}>
                   <Text style={styles.currencyPrefix}>₹</Text>
                   <TextInput
                     style={styles.textInput}
                     keyboardType="numeric"
-                    placeholder="HRA, LTA..."
+                    placeholder="e.g. 50,000"
                     placeholderTextColor="#94A3B8"
                     value={sources.salary.allowances}
                     onChangeText={(val) =>
@@ -230,7 +289,7 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>TDS Deducted by Employer (Form 26AS)</Text>
+              <Text style={styles.inputLabel}>TDS Deducted by Employer</Text>
               <View style={styles.inputBox}>
                 <Text style={styles.currencyPrefix}>₹</Text>
                 <TextInput
@@ -246,41 +305,31 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
               </View>
             </View>
           </View>
-        )}
-      </View>
+        </View>
       )}
 
       {/* 2. House Property Income */}
-      {showHouseProperty && (
-        <View style={[styles.card, sources.houseProperty.enabled && styles.cardActive]}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.sourceHeaderRow}
-          onPress={() => onUpdateHouseProperty({ enabled: !sources.houseProperty.enabled })}
-        >
-          <View style={styles.sourceHeaderLeft}>
-            <View style={[styles.sourceIconBox, sources.houseProperty.enabled && styles.sourceIconBoxActive]}>
-              <Ionicons
-                name="home-outline"
-                size={20}
-                color={sources.houseProperty.enabled ? BrandColors.PRIMARY_ORANGE : "#64748B"}
-              />
+      {sources.houseProperty.enabled && (
+        <View style={[styles.card, styles.cardActive]}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.sourceHeaderRow}
+            onPress={() => onUpdateHouseProperty({ enabled: !sources.houseProperty.enabled })}
+          >
+            <View style={styles.sourceHeaderLeft}>
+              <View style={[styles.sourceIconBox, styles.sourceIconBoxActive]}>
+                <Ionicons name="home-outline" size={20} color={BrandColors.PRIMARY_ORANGE} />
+              </View>
+              <View style={styles.sourceTitleCol}>
+                <Text style={styles.sourceTitle}>House Property</Text>
+                <Text style={styles.sourceSubtitle}>Self-occupied home loan or rental income</Text>
+              </View>
             </View>
-            <View style={styles.sourceTitleCol}>
-              <Text style={styles.sourceTitle}>House Property</Text>
-              <Text style={styles.sourceSubtitle}>Self-occupied home loan or rental income</Text>
+            <View style={styles.checkboxBtn}>
+              <Ionicons name="checkbox" size={22} color={BrandColors.PRIMARY_ORANGE} />
             </View>
-          </View>
-          <View style={styles.checkboxBtn}>
-            <Ionicons
-              name={sources.houseProperty.enabled ? "checkbox" : "square-outline"}
-              size={22}
-              color={sources.houseProperty.enabled ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
-            />
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
 
-        {sources.houseProperty.enabled && (
           <View style={styles.expandedForm}>
             <Text style={styles.inputLabel}>Property Classification</Text>
             <View style={styles.pillRow}>
@@ -366,7 +415,7 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
                 <TextInput
                   style={styles.textInput}
                   keyboardType="numeric"
-                  placeholder="Max 2,00,000"
+                  placeholder="Max ₹2,00,000 for self-occupied"
                   placeholderTextColor="#94A3B8"
                   value={sources.houseProperty.homeLoanInterest}
                   onChangeText={(val) =>
@@ -376,54 +425,46 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
               </View>
             </View>
           </View>
-        )}
-      </View>
+        </View>
       )}
 
       {/* 3. Business / Profession & GST Bridge */}
-      {showBusiness && (
-        <View style={[styles.card, sources.business.enabled && styles.cardActive]}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.sourceHeaderRow}
-          onPress={() => onUpdateBusiness({ enabled: !sources.business.enabled })}
-        >
-          <View style={styles.sourceHeaderLeft}>
-            <View style={[styles.sourceIconBox, sources.business.enabled && styles.sourceIconBoxActive]}>
-              <Ionicons
-                name="storefront-outline"
-                size={20}
-                color={sources.business.enabled ? BrandColors.PRIMARY_ORANGE : "#64748B"}
-              />
-            </View>
-            <View style={styles.sourceTitleCol}>
-              <View style={styles.sourceTitleRow}>
-                <Text style={styles.sourceTitle}>Business / Profession</Text>
-                <View style={styles.sourceTagImported}>
-                  <Ionicons name="document-text" size={10} color="#083B75" />
-                  <Text style={styles.sourceTagImportedText}>GST Connected</Text>
-                </View>
+      {sources.business.enabled && (
+        <View style={[styles.card, styles.cardActive]}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.sourceHeaderRow}
+            onPress={() => onUpdateBusiness({ enabled: !sources.business.enabled })}
+          >
+            <View style={styles.sourceHeaderLeft}>
+              <View style={[styles.sourceIconBox, styles.sourceIconBoxActive]}>
+                <Ionicons name="storefront-outline" size={20} color={BrandColors.PRIMARY_ORANGE} />
               </View>
-              <Text style={styles.sourceSubtitle}>Presumptive (44AD/ADA) or Regular Books</Text>
+              <View style={styles.sourceTitleCol}>
+                <View style={styles.sourceTitleRow}>
+                  <Text style={styles.sourceTitle}>Business / Profession</Text>
+                  {gstReconciliation && (
+                    <View style={styles.sourceTagImported}>
+                      <Ionicons name="document-text" size={10} color="#083B75" />
+                      <Text style={styles.sourceTagImportedText}>GST Connected</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.sourceSubtitle}>Presumptive (44AD/ADA) or Regular Books</Text>
+              </View>
             </View>
-          </View>
-          <View style={styles.checkboxBtn}>
-            <Ionicons
-              name={sources.business.enabled ? "checkbox" : "square-outline"}
-              size={22}
-              color={sources.business.enabled ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
-            />
-          </View>
-        </TouchableOpacity>
+            <View style={styles.checkboxBtn}>
+              <Ionicons name="checkbox" size={22} color={BrandColors.PRIMARY_ORANGE} />
+            </View>
+          </TouchableOpacity>
 
-        {sources.business.enabled && (
           <View style={styles.expandedForm}>
             {/* Embedded GST Reconciliation Card */}
             {gstReconciliation && (
               <GstReconciliationCard reconciliation={gstReconciliation} />
             )}
 
-            {/* Scheme Selection: 44AD / 44ADA / Regular / I'm Not Sure */}
+            {/* Scheme Selection */}
             <Text style={styles.inputLabel}>How do you report this business?</Text>
             <View style={styles.schemeRadioGroup}>
               <TouchableOpacity
@@ -440,8 +481,8 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
                   color={sources.business.businessType === "presumptive_44ad" ? BrandColors.PRIMARY_ORANGE : "#64748B"}
                 />
                 <View style={styles.schemeRadioTextCol}>
-                  <Text style={styles.schemeRadioTitle}>Presumptive Taxation (Section 44AD)</Text>
-                  <Text style={styles.schemeRadioSub}>Traders, retailers & small businesses (6%/8% deemed profit)</Text>
+                  <Text style={styles.schemeRadioTitle}>Presumptive Business (Section 44AD)</Text>
+                  <Text style={styles.schemeRadioSub}>Small traders & retailers (ITR-4 Sugam)</Text>
                 </View>
               </TouchableOpacity>
 
@@ -460,7 +501,7 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
                 />
                 <View style={styles.schemeRadioTextCol}>
                   <Text style={styles.schemeRadioTitle}>Presumptive Profession (Section 44ADA)</Text>
-                  <Text style={styles.schemeRadioSub}>Doctors, lawyers, engineers, IT consultants (50% deemed profit)</Text>
+                  <Text style={styles.schemeRadioSub}>Doctors, IT consultants, lawyers (ITR-4 Sugam)</Text>
                 </View>
               </TouchableOpacity>
 
@@ -479,7 +520,7 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
                 />
                 <View style={styles.schemeRadioTextCol}>
                   <Text style={styles.schemeRadioTitle}>Regular Books of Accounts (ITR-3)</Text>
-                  <Text style={styles.schemeRadioSub}>P&L, Balance Sheet, and statutory business audit</Text>
+                  <Text style={styles.schemeRadioSub}>Maintaining P&L, Balance Sheet, or Audit</Text>
                 </View>
               </TouchableOpacity>
 
@@ -498,20 +539,20 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
                 />
                 <View style={styles.schemeRadioTextCol}>
                   <Text style={styles.schemeRadioTitle}>I'm Not Sure</Text>
-                  <Text style={styles.schemeRadioSub}>TaxEdge will flag this for your assigned CA to determine</Text>
+                  <Text style={styles.schemeRadioSub}>TaxEdge CA will review and select the best option</Text>
                 </View>
               </TouchableOpacity>
             </View>
 
             <View style={styles.inputRow}>
               <View style={styles.inputGroupHalf}>
-                <Text style={styles.inputLabel}>Business Turnover</Text>
+                <Text style={styles.inputLabel}>Gross Turnover / Receipts</Text>
                 <View style={styles.inputBox}>
                   <Text style={styles.currencyPrefix}>₹</Text>
                   <TextInput
                     style={styles.textInput}
                     keyboardType="numeric"
-                    placeholder="e.g. 24,60,000"
+                    placeholder="e.g. 25,00,000"
                     placeholderTextColor="#94A3B8"
                     value={sources.business.grossTurnover}
                     onChangeText={(val) =>
@@ -539,56 +580,46 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
               </View>
             </View>
           </View>
-        )}
-      </View>
+        </View>
       )}
 
       {/* 4. Capital Gains & Trading Activity */}
-      {showCapitalGains && (
-        <View style={[styles.card, sources.capitalGains.enabled && styles.cardActive]}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.sourceHeaderRow}
-          onPress={() => onUpdateCapitalGains({ enabled: !sources.capitalGains.enabled })}
-        >
-          <View style={styles.sourceHeaderLeft}>
-            <View style={[styles.sourceIconBox, sources.capitalGains.enabled && styles.sourceIconBoxActive]}>
-              <Ionicons
-                name="trending-up-outline"
-                size={20}
-                color={sources.capitalGains.enabled ? BrandColors.PRIMARY_ORANGE : "#64748B"}
-              />
-            </View>
-            <View style={styles.sourceTitleCol}>
-              <View style={styles.sourceTitleRow}>
-                <Text style={styles.sourceTitle}>Capital Gains & Trading</Text>
-                {sources.capitalGains.statementUploaded && (
-                  <View style={styles.sourceTagVerified}>
-                    <Ionicons name="checkmark-circle" size={10} color="#166534" />
-                    <Text style={styles.sourceTagVerifiedText}>Broker Parsed</Text>
-                  </View>
-                )}
+      {sources.capitalGains.enabled && (
+        <View style={[styles.card, styles.cardActive]}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.sourceHeaderRow}
+            onPress={() => onUpdateCapitalGains({ enabled: !sources.capitalGains.enabled })}
+          >
+            <View style={styles.sourceHeaderLeft}>
+              <View style={[styles.sourceIconBox, styles.sourceIconBoxActive]}>
+                <Ionicons name="trending-up-outline" size={20} color={BrandColors.PRIMARY_ORANGE} />
               </View>
-              <Text style={styles.sourceSubtitle}>Stocks, mutual funds, F&O, crypto, real estate</Text>
+              <View style={styles.sourceTitleCol}>
+                <View style={styles.sourceTitleRow}>
+                  <Text style={styles.sourceTitle}>Capital Gains & Trading</Text>
+                  {sources.capitalGains.statementUploaded && (
+                    <View style={styles.sourceTagVerified}>
+                      <Ionicons name="checkmark-circle" size={10} color="#166534" />
+                      <Text style={styles.sourceTagVerifiedText}>Broker Parsed</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.sourceSubtitle}>Stocks, mutual funds, F&O, crypto, property</Text>
+              </View>
             </View>
-          </View>
-          <View style={styles.checkboxBtn}>
-            <Ionicons
-              name={sources.capitalGains.enabled ? "checkbox" : "square-outline"}
-              size={22}
-              color={sources.capitalGains.enabled ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
-            />
-          </View>
-        </TouchableOpacity>
+            <View style={styles.checkboxBtn}>
+              <Ionicons name="checkbox" size={22} color={BrandColors.PRIMARY_ORANGE} />
+            </View>
+          </TouchableOpacity>
 
-        {sources.capitalGains.enabled && (
           <View style={styles.expandedForm}>
             {/* Broker Statement Card */}
             {sources.capitalGains.statementUploaded && Boolean(sources.capitalGains.brokerName) && (
               <View style={styles.brokerStatementCard}>
                 <View style={styles.brokerTopRow}>
                   <Text style={styles.brokerTitle}>
-                    Parsed: {sources.capitalGains.brokerName} Capital Gains Statement
+                    {sources.capitalGains.brokerName} Statement
                   </Text>
                   <View style={styles.sourceTagImported}>
                     <Text style={styles.sourceTagImportedText}>
@@ -596,9 +627,6 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
                     </Text>
                   </View>
                 </View>
-                <Text style={styles.sourceSubtitle}>
-                  Consolidated short-term and long-term gain calculation imported for reconciliation.
-                </Text>
               </View>
             )}
 
@@ -659,7 +687,7 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
               <View style={styles.fnoWarningBox}>
                 <Ionicons name="information-circle" size={16} color="#1D4ED8" />
                 <Text style={styles.fnoWarningText}>
-                  F&O and intraday trades are treated as business income under Section 43(5). TaxEdge will prepare your return under ITR-3.
+                  F&O and intraday trades are treated as business income under Section 43(5). ITR-3 will apply.
                 </Text>
               </View>
             )}
@@ -669,7 +697,7 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
               <View style={styles.cryptoWarningBox}>
                 <Ionicons name="alert-circle" size={16} color="#DC2626" />
                 <Text style={styles.cryptoWarningText}>
-                  Virtual Digital Assets (VDA) are taxed at a flat 30% u/s 115BBH without standard deductions or loss set-off.
+                  Virtual Digital Assets (VDA) are taxed at 30% u/s 115BBH.
                 </Text>
               </View>
             )}
@@ -682,7 +710,7 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
                   <TextInput
                     style={styles.textInput}
                     keyboardType="numeric"
-                    placeholder="e.g. 32,000"
+                    placeholder="e.g. 30,000"
                     placeholderTextColor="#94A3B8"
                     value={sources.capitalGains.shortTermGains}
                     onChangeText={(val) =>
@@ -699,7 +727,7 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
                   <TextInput
                     style={styles.textInput}
                     keyboardType="numeric"
-                    placeholder="e.g. 45,000"
+                    placeholder="e.g. 50,000"
                     placeholderTextColor="#94A3B8"
                     value={sources.capitalGains.longTermGains}
                     onChangeText={(val) =>
@@ -710,51 +738,40 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
               </View>
             </View>
           </View>
-        )}
-      </View>
+        </View>
       )}
 
-      {/* 5. Other Sources Income (AIS Table) */}
-      {showOtherSources && (
-        <View style={[styles.card, sources.otherSources.enabled && styles.cardActive]}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.sourceHeaderRow}
-          onPress={() => onUpdateOtherSources({ enabled: !sources.otherSources.enabled })}
-        >
-          <View style={styles.sourceHeaderLeft}>
-            <View style={[styles.sourceIconBox, sources.otherSources.enabled && styles.sourceIconBoxActive]}>
-              <Ionicons
-                name="wallet-outline"
-                size={20}
-                color={sources.otherSources.enabled ? BrandColors.PRIMARY_ORANGE : "#64748B"}
-              />
-            </View>
-            <View style={styles.sourceTitleCol}>
-              <View style={styles.sourceTitleRow}>
-                <Text style={styles.sourceTitle}>Income from Other Sources</Text>
-                {sources.otherSources.source === "AIS_TIS" && (
-                  <View style={styles.sourceTagWarning}>
-                    <Ionicons name="alert-circle" size={10} color="#B45309" />
-                    <Text style={styles.sourceTagWarningText}>AIS Imported</Text>
-                  </View>
-                )}
+      {/* 5. Other Sources Income */}
+      {sources.otherSources.enabled && (
+        <View style={[styles.card, styles.cardActive]}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.sourceHeaderRow}
+            onPress={() => onUpdateOtherSources({ enabled: !sources.otherSources.enabled })}
+          >
+            <View style={styles.sourceHeaderLeft}>
+              <View style={[styles.sourceIconBox, styles.sourceIconBoxActive]}>
+                <Ionicons name="wallet-outline" size={20} color={BrandColors.PRIMARY_ORANGE} />
               </View>
-              <Text style={styles.sourceSubtitle}>Bank interest, dividends, family pension</Text>
+              <View style={styles.sourceTitleCol}>
+                <View style={styles.sourceTitleRow}>
+                  <Text style={styles.sourceTitle}>Income from Other Sources</Text>
+                  {sources.otherSources.source === "AIS_TIS" && (
+                    <View style={styles.sourceTagWarning}>
+                      <Ionicons name="alert-circle" size={10} color="#B45309" />
+                      <Text style={styles.sourceTagWarningText}>AIS Imported</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.sourceSubtitle}>Bank interest, dividends, family pension</Text>
+              </View>
             </View>
-          </View>
-          <View style={styles.checkboxBtn}>
-            <Ionicons
-              name={sources.otherSources.enabled ? "checkbox" : "square-outline"}
-              size={22}
-              color={sources.otherSources.enabled ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
-            />
-          </View>
-        </TouchableOpacity>
+            <View style={styles.checkboxBtn}>
+              <Ionicons name="checkbox" size={22} color={BrandColors.PRIMARY_ORANGE} />
+            </View>
+          </TouchableOpacity>
 
-        {sources.otherSources.enabled && (
           <View style={styles.expandedForm}>
-            {/* AIS Pre-filled Table */}
             {sources.otherSources.source === "AIS_TIS" &&
               (Number(sources.otherSources.savingsInterest || 0) > 0 ||
                 Number(sources.otherSources.fdInterest || 0) > 0 ||
@@ -770,7 +787,7 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
                   )}
                   {Number(sources.otherSources.fdInterest || 0) > 0 && (
                     <View style={styles.aisRow}>
-                      <Text style={styles.aisLabel}>Term Deposit / FD Interest (AIS)</Text>
+                      <Text style={styles.aisLabel}>FD / Term Interest (AIS)</Text>
                       <Text style={styles.aisValue}>
                         ₹ {Number(sources.otherSources.fdInterest).toLocaleString("en-IN")}
                       </Text>
@@ -784,11 +801,10 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
                       </Text>
                     </View>
                   )}
-
                   <View style={styles.aisNotice}>
                     <Ionicons name="information-circle-outline" size={14} color="#64748B" />
                     <Text style={styles.aisNoticeText}>
-                      Please verify these values against your bank account passbooks.
+                      Please verify these values against your bank account statements.
                     </Text>
                   </View>
                 </View>
@@ -866,22 +882,7 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({
               </View>
             </View>
           </View>
-        )}
-      </View>
-      )}
-
-      {/* Switch to Multiple Sources if not already */}
-      {!isMultiple && onSwitchCategory && (
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.switchCategoryCard}
-          onPress={() => onSwitchCategory("multiple")}
-        >
-          <Ionicons name="add-circle-outline" size={18} color="#083B75" />
-          <Text style={styles.switchCategoryText}>
-            Have additional income to declare? Tap to switch to Multiple Sources
-          </Text>
-        </TouchableOpacity>
+        </View>
       )}
 
       {/* Continue Button */}

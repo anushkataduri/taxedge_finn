@@ -88,6 +88,11 @@ export const ItrFilingScreen: React.FC = () => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   }, [currentStep]);
 
+  // Pre-fetch live customer profile from database on entry
+  useEffect(() => {
+    useITRStore.getState().fetchAndPopulateUserProfile();
+  }, []);
+
   const handleBack = () => {
     if (!isCategoryConfirmed) {
       openDraftModal();
@@ -100,98 +105,97 @@ export const ItrFilingScreen: React.FC = () => {
     }
   };
 
-  const handleSubmitApplication = () => {
+  const handleSubmitApplication = async () => {
     setIsSubmitting(true);
+    try {
+      const uploadedDocItems = formData.documents
+        .filter((d) => Boolean(d.fileUri) || d.isProfileVerified)
+        .map((d) => ({
+          id: d.id,
+          name: d.name,
+          fileUri: d.fileUri || "verified://profile",
+          status: "Uploaded" as const,
+          uploadedAt: d.uploadedAt || new Date().toISOString(),
+        }));
 
-    setTimeout(() => {
-      try {
-        const uploadedDocItems = formData.documents
-          .filter((d) => Boolean(d.fileUri) || d.isProfileVerified)
-          .map((d) => ({
-            id: d.id,
-            name: d.name,
-            fileUri: d.fileUri || "verified://profile",
-            status: "Uploaded" as const,
-            uploadedAt: d.uploadedAt || new Date().toISOString(),
-          }));
+      const serviceTitle = `ITR Filing - ${formData.determinedForm.formTitle}`;
 
-        const serviceTitle = `ITR Filing - ${formData.determinedForm.formTitle}`;
+      const generatedAppId = createApplication(
+        "itr-filing",
+        serviceTitle,
+        "ITR",
+        {
+          assessmentYear: formData.personalInfo.assessmentYear,
+          filingType: formData.personalInfo.filingType,
+          formType: formData.determinedForm.form,
+          formTitle: formData.determinedForm.formTitle,
+          pan: formData.personalInfo.pan,
+          name: formData.personalInfo.name,
+          mobile: formData.personalInfo.mobile,
+          email: formData.personalInfo.email,
+          residentialStatus: formData.personalInfo.residentialStatus,
+          bankName: formData.bankDetails.bankName,
+          accountNumber: formData.bankDetails.accountNumber,
+          ifscCode: formData.bankDetails.ifscCode,
+          accountType: formData.bankDetails.accountType,
+          regime: formData.regime,
+          grossTotalIncome: formData.calculation.grossTotalIncome,
+          totalDeductions: formData.calculation.totalDeductions,
+          taxableIncome: formData.calculation.taxableIncome,
+          totalTaxLiability: formData.calculation.totalTaxLiability,
+          totalTaxesPaid: formData.calculation.totalTaxesPaid,
+          finalAmount: formData.calculation.finalAmount,
+          finalType: formData.calculation.finalType,
+          hasPreviousItr: formData.priorItrNotice.hasPreviousItr,
+          previousAckNumber: formData.priorItrNotice.previousAckNumber,
+          hasTaxNotice: formData.priorItrNotice.hasTaxNotice,
+        },
+        uploadedDocItems,
+        999, // service fee
+        "Pending"
+      );
 
-        const generatedAppId = createApplication(
-          "itr-filing",
+      markSubmitted();
+      clearItrDraft();
+      setIsSubmitting(false);
+
+      // Derive active income sources for summary
+      const activeIncomeLabels = [
+        formData.incomeSources.salary.enabled ? "Salary" : null,
+        formData.incomeSources.business.enabled ? "Business" : null,
+        formData.incomeSources.houseProperty.enabled ? "House Property" : null,
+        formData.incomeSources.capitalGains.enabled ? "Capital Gains" : null,
+        formData.incomeSources.otherSources.enabled ? "Other Income" : null,
+      ].filter(Boolean) as string[];
+
+      const incomeSourcesSummary = activeIncomeLabels.join(" • ") || "Declared Income";
+      const verifiedOrUploadedCount = formData.documents.filter(
+        (d) => Boolean(d.fileUri) || d.isProfileVerified
+      ).length;
+      const totalDocsCount = formData.documents.length;
+      const maskedBank = formData.bankDetails.bankName
+        ? `${formData.bankDetails.bankName} •••• ${formData.bankDetails.accountNumber.slice(-4)}`
+        : "Primary Refund Bank";
+
+      // Navigate to Success Screen with synchronized parameters
+      router.replace({
+        pathname: "/service/itr-success" as any,
+        params: {
+          applicationId: generatedAppId,
           serviceTitle,
-          "ITR",
-          {
-            assessmentYear: formData.personalInfo.assessmentYear,
-            filingType: formData.personalInfo.filingType,
-            formType: formData.determinedForm.form,
-            formTitle: formData.determinedForm.formTitle,
-            pan: formData.personalInfo.pan,
-            name: formData.personalInfo.name,
-            mobile: formData.personalInfo.mobile,
-            email: formData.personalInfo.email,
-            residentialStatus: formData.personalInfo.residentialStatus,
-            bankName: formData.bankDetails.bankName,
-            accountNumber: formData.bankDetails.accountNumber,
-            ifscCode: formData.bankDetails.ifscCode,
-            accountType: formData.bankDetails.accountType,
-            regime: formData.regime,
-            grossTotalIncome: formData.calculation.grossTotalIncome,
-            totalDeductions: formData.calculation.totalDeductions,
-            taxableIncome: formData.calculation.taxableIncome,
-            totalTaxLiability: formData.calculation.totalTaxLiability,
-            totalTaxesPaid: formData.calculation.totalTaxesPaid,
-            finalAmount: formData.calculation.finalAmount,
-            finalType: formData.calculation.finalType,
-            hasPreviousItr: formData.priorItrNotice.hasPreviousItr,
-            previousAckNumber: formData.priorItrNotice.previousAckNumber,
-            hasTaxNotice: formData.priorItrNotice.hasTaxNotice,
-          },
-          uploadedDocItems,
-          999, // service fee
-          "Pending"
-        );
-
-        markSubmitted();
-        clearItrDraft();
-        setIsSubmitting(false);
-
-        // Derive active income sources for summary
-        const activeIncomeLabels = [
-          formData.incomeSources.salary.enabled ? "Salary" : null,
-          formData.incomeSources.business.enabled ? "Business" : null,
-          formData.incomeSources.houseProperty.enabled ? "House Property" : null,
-          formData.incomeSources.capitalGains.enabled ? "Capital Gains" : null,
-          formData.incomeSources.otherSources.enabled ? "Other Income" : null,
-        ].filter(Boolean) as string[];
-
-        const incomeSourcesSummary = activeIncomeLabels.join(" • ") || "Business Income";
-        const verifiedOrUploadedCount = formData.documents.filter(
-          (d) => Boolean(d.fileUri) || d.isProfileVerified
-        ).length;
-        const totalDocsCount = formData.documents.length;
-        const maskedBank = `${formData.bankDetails.bankName} •••• ${formData.bankDetails.accountNumber.slice(-4)}`;
-
-        // Navigate to Success Screen with synchronized parameters
-        router.replace({
-          pathname: "/service/itr-success" as any,
-          params: {
-            applicationId: generatedAppId,
-            serviceTitle,
-            assessmentYear: formData.personalInfo.assessmentYear,
-            formType: formData.determinedForm.form,
-            incomeType: incomeSourcesSummary,
-            regime: formData.regime === "new" ? "New Tax Regime" : "Old Tax Regime",
-            uploadedDocsCount: String(verifiedOrUploadedCount),
-            totalDocsCount: String(totalDocsCount),
-            refundBank: maskedBank,
-          },
-        });
-      } catch (err: any) {
-        setIsSubmitting(false);
-        Alert.alert("Submission Error", err?.message || "Could not submit application. Please try again.");
-      }
-    }, 1000);
+          assessmentYear: formData.personalInfo.assessmentYear,
+          formType: formData.determinedForm.form,
+          incomeType: incomeSourcesSummary,
+          regime: formData.regime === "new" ? "New Tax Regime" : "Old Tax Regime",
+          uploadedDocsCount: String(verifiedOrUploadedCount),
+          totalDocsCount: String(totalDocsCount),
+          refundBank: maskedBank,
+        },
+      });
+    } catch (err: any) {
+      setIsSubmitting(false);
+      Alert.alert("Submission Error", err?.message || "Could not submit application. Please try again.");
+    }
   };
 
   if (!isCategoryConfirmed) {

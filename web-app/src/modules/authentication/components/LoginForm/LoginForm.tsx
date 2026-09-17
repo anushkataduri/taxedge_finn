@@ -24,7 +24,7 @@ export const LoginForm = ({ onSubmit }: LoginFormProps) => {
         maxLength={10}
         autoComplete="tel-national"
         prefix="+91"
-        placeholder="9876543210"
+        placeholder="9347074726"
         value={form.values.mobile}
         error={form.errors.mobile}
         onChange={form.handleChange}

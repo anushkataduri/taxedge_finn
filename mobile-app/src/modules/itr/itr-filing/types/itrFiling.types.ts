@@ -202,7 +202,7 @@ export interface ItrStructuredDeductions {
   otherDeductionsList: AdditionalDeductionItem[];
 }
 
-export type DocumentRequirementTier = "REQUIRED" | "RECOMMENDED" | "NOT_REQUIRED";
+export type DocumentRequirementTier = "REQUIRED" | "RECOMMENDED" | "NOT_REQUIRED" | "ONLY_IF_APPLICABLE";
 
 export interface ItrDocumentItem {
   id: string;

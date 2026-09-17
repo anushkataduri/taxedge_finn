@@ -1,5 +1,6 @@
 import { authStorage } from "./authStorage";
 import { authApi } from "./authApi";
+import { tokenManager } from "../../../core/authentication/tokenManager";
 import { registerForPushNotificationsAsync } from "../../../utils/pushNotificationService";
 import type { DevUser, RegistrationData, AuthResult } from "../types/auth.types";
  
@@ -33,11 +34,12 @@ export const authService = {
       };
     }
 
+    // Direct check in Customer table from backend response
     const customerExists = apiRes.customerExists === true || apiRes.isExistingUser === true;
-    const profileCompleted = apiRes.profileCompleted === true;
-    const hasPasscode = apiRes.hasPasscode === true;
+    const profileCompleted = customerExists && (apiRes.profileCompleted === true || apiRes.hasPasscode === true);
+    const hasPasscode = customerExists;
 
-    let user = apiRes.user || authStorage.getUserByMobile(clean);
+    let user = apiRes.user;
     if (customerExists && !user) {
       user = {
         customerId: `CUST-2026-${clean.slice(-5)}`,
@@ -47,9 +49,6 @@ export const authService = {
         customerType: "Individual",
         registrationCompleted: profileCompleted,
       };
-      authStorage.saveUser(user);
-    } else if (user) {
-      user.registrationCompleted = profileCompleted;
       authStorage.saveUser(user);
     }
 
@@ -68,26 +67,21 @@ export const authService = {
     try {
       const checkRes = await authApi.checkUser(clean);
       if (checkRes && checkRes.success) {
-        const local = authStorage.getUserByMobile(clean);
         return {
           exists: checkRes.exists,
           customerExists: checkRes.customerExists ?? checkRes.exists,
-          profileCompleted: checkRes.profileCompleted ?? false,
-          hasPasscode: checkRes.hasPasscode ?? false,
-          user: local || undefined,
+          profileCompleted: checkRes.exists,
+          hasPasscode: checkRes.exists,
         };
       }
     } catch (e) {
       console.warn("Error calling backend checkUser:", e);
     }
-    const existing = authStorage.getUserByMobile(clean);
-    const hasPass = Boolean(existing && existing.passcode);
     return {
-      exists: hasPass,
-      customerExists: hasPass,
-      profileCompleted: Boolean(existing?.registrationCompleted),
-      hasPasscode: hasPass,
-      user: existing || undefined,
+      exists: false,
+      customerExists: false,
+      profileCompleted: false,
+      hasPasscode: false,
     };
   },
  
@@ -278,7 +272,19 @@ export const authService = {
   },
  
   login: (m: string, p: string) => authService.loginWithPasscode(m, p),
-  logout: () => authStorage.clearSession(),
+  logout: async () => {
+    authStorage.clearSession();
+    try {
+      const refreshToken = await tokenManager.getRefreshToken();
+      if (refreshToken) {
+        authApi.revokeRefreshToken(refreshToken).catch(() => {});
+      }
+    } catch (e) {
+      console.warn("Error during logout token revocation:", e);
+    } finally {
+      await tokenManager.clearTokens();
+    }
+  },
   isAuthenticated: () => Boolean(authStorage.getSession().isLoggedIn && authStorage.getSession().activeMobile),
   getActiveMobile: () => authStorage.getSession().activeMobile,
   getCurrentUser: (): DevUser | null => {

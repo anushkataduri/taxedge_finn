@@ -162,37 +162,55 @@ export const MOCK_NOTICE_SUMMARY: TaxNoticeSummaryData = {
     "You need to confirm whether the income was already reported, agree with the adjustment, or provide an explanation with supporting documents.",
 };
 
-export const MOCK_DRAFT_RESPONSE_TEXT = `Respected Sir/Madam,
+export const generateNoticeDraftResponse = (params: {
+  name?: string;
+  pan?: string;
+  noticeNumber?: string;
+  noticeDate?: string;
+  assessmentYear?: string;
+  section?: string;
+}): string => {
+  const assesseeName = params.name?.trim() || "Assessee";
+  const panStr = params.pan?.trim() ? ` (PAN ${params.pan.trim()})` : "";
+  const nNumber = params.noticeNumber?.trim() || "CPC/ITD/NOTICE";
+  const nDate = params.noticeDate?.trim() || "the notice";
+  const ay = params.assessmentYear?.trim() || "AY 2025–26";
+  const sec = params.section?.trim() || "143(1)(a)";
 
-With reference to the intimation under section 143(1)(a) bearing number CPC/2526/A3/284419260 dated 18 August 2026, we respectfully submit the following response on behalf of the assessee, Ms. Anjali Deshmukh (PAN AXTPD4419K), for Assessment Year 2025–26.
+  return `Respected Sir/Madam,
 
-The proposed adjustment relates to interest income of ₹42,000 reflected in the Annual Information Statement. The assessee confirms that this interest was received and was inadvertently omitted from Schedule OS of the return. The assessee therefore agrees with the proposed adjustment. The resulting additional tax of ₹8,736 including cess has been paid vide challan dated 1 September 2026, a copy of which is enclosed.
+With reference to the notice under section ${sec} bearing reference number ${nNumber} dated ${nDate}, we respectfully submit this response on behalf of ${assesseeName}${panStr} for Assessment Year ${ay}.
 
-We request that the return be processed accordingly.
+The assessee has reviewed the particulars stated in the notice. The reconciliation of income and taxes paid has been verified with Form 26AS, AIS, and underlying financial statements. 
+
+Supporting documents and explanations are attached herewith for your kind perusal. We request that the assessment/intimation be finalized taking these records into account.
 
 Yours faithfully,
 For TaxEdge Fin Solutions
-Meera Iyer, Tax Executive`;
+Tax Compliance Division`;
+};
+
+export const MOCK_DRAFT_RESPONSE_TEXT = generateNoticeDraftResponse({});
 
 export const MOCK_TRACKING_STEPS: NoticeTrackingStep[] = [
   {
     id: "step-1",
     title: "Received",
-    date: "18 Aug 2026",
-    description: "Notice received from Income Tax Department",
+    date: "Notice Uploaded",
+    description: "Notice received and indexed in system",
     status: "completed",
   },
   {
     id: "step-2",
     title: "Under Review",
-    date: "20 Aug 2026",
-    description: "Our team is reviewing your documents",
+    date: "Active",
+    description: "Tax Executive reviewing notice and supporting documents",
     status: "completed",
   },
   {
     id: "step-3",
     title: "Response Submitted",
-    date: "2 Sep 2026",
+    date: "Submitted",
     description: "Response submitted to Income Tax Department",
     status: "completed",
   },
@@ -200,16 +218,16 @@ export const MOCK_TRACKING_STEPS: NoticeTrackingStep[] = [
     id: "step-4",
     title: "Resolved",
     date: "Pending",
-    description: "We'll update you once the notice is closed",
+    description: "Awaiting IT Department acknowledgment and closure",
     status: "pending",
   },
 ];
 
 export const MOCK_NOTICE_STATUS_DETAILS: NoticeStatusDetails = {
-  noticeNumber: "CPC/2526/A3/284419260",
+  noticeNumber: "",
   section: "143(1)(a)",
-  submittedOn: "2 Sep 2026",
-  acknowledgementNo: "RSP284419260902",
-  assignedTaxExecutive: "Meera Iyer",
+  submittedOn: "Today",
+  acknowledgementNo: "",
+  assignedTaxExecutive: "Tax Executive",
   currentStatus: "Response Submitted",
 };

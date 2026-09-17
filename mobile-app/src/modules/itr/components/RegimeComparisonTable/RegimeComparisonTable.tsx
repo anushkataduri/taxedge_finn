@@ -138,18 +138,20 @@ export const RegimeComparisonTable: React.FC<RegimeComparisonTableProps> = ({
         ))}
       </View>
 
-      {/* Savings Summary Banner */}
-      <View style={styles.savingsBanner}>
-        <Ionicons name="sparkles" size={18} color="#166534" />
-        <View style={styles.savingsBannerTextCol}>
-          <Text style={styles.savingsBannerTitle}>
-            {calculation.savingsAmount > 0
-              ? `${calculation.recommendedRegime === "new" ? "New Tax Regime" : "Old Tax Regime"} saves ₹ ${calculation.savingsAmount.toLocaleString("en-IN")}`
-              : "Both regimes result in equal tax"}
-          </Text>
-          <Text style={styles.savingsBannerSub}>{calculation.savingsExplanation}</Text>
+      {/* Savings Summary Banner - only show when actual income exists and there are savings */}
+      {calculation.grossTotalIncome > 0 && calculation.savingsAmount > 0 && (
+        <View style={styles.savingsBanner}>
+          <Ionicons name="sparkles" size={18} color="#166534" />
+          <View style={styles.savingsBannerTextCol}>
+            <Text style={styles.savingsBannerTitle}>
+              {`${calculation.recommendedRegime === "new" ? "New Tax Regime" : "Old Tax Regime"} estimated to save ₹ ${calculation.savingsAmount.toLocaleString("en-IN")}`}
+            </Text>
+            {Boolean(calculation.savingsExplanation) && (
+              <Text style={styles.savingsBannerSub}>{calculation.savingsExplanation}</Text>
+            )}
+          </View>
         </View>
-      </View>
+      )}
 
       {/* User Selection Radio Cards */}
       <Text style={styles.selectionSectionTitle}>Your Regime Selection</Text>

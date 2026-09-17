@@ -12,4 +12,5 @@ public interface TdsRefundApplicationRepository extends JpaRepository<TdsRefundA
     Optional<TdsRefundApplication> findByApplicationId(String applicationId);
     Optional<TdsRefundApplication> findByPan(String pan);
     Optional<TdsRefundApplication> findByMobileNumber(String mobileNumber);
+    java.util.List<TdsRefundApplication> findAllByMobileNumber(String mobileNumber);
 }

@@ -203,17 +203,8 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
       updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     });
 
-    // Navigate to next screen: TDS Application Status & Tracker Screen
-    router.push({
-      pathname: "/service/tds-status" as any,
-      params: {
-        applicationId: "ITR-2026-00001",
-        serviceName: "ITR Filing",
-        assessmentYear: tdsDraft?.formData?.assessmentYear || "2025-26",
-        appliedDate: "10 Aug 2026",
-        uploadedCount: uploadedCount.toString(),
-      },
-    });
+    // Navigate to next screen: TDS Refund Estimate & Review Screen
+    router.push("/service/tds-estimate" as any);
   };
 
   const handleBackPress = () => {
@@ -273,7 +264,7 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
               : styles.continueDisabled,
           ]}
         >
-          <Text style={styles.continueButtonText}>Continue to Review</Text>
+          <Text style={styles.continueButtonText}>Proceed to Review</Text>
           <Ionicons
             name="arrow-forward"
             size={18}

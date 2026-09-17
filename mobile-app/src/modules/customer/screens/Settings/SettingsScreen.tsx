@@ -332,29 +332,39 @@ export function SettingsScreen() {
         </View>
 
         {/* ---------- App Information ---------- */}
-        <TouchableOpacity
-          style={styles.appInfoContainer}
-          onPress={() => {
-            setCurrentServerUrl(apiClient.getBaseUrl());
-            setShowServerModal(true);
-          }}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.appInfoText, { color: colors.textSecondary }]}>
-            TaxEdge Fin Solutions • v1.0.0
-          </Text>
-          <Text style={[styles.backendStatusText, { color: colors.primary }]}>
-            ?? Backend: {currentServerUrl}
-          </Text>
-        </TouchableOpacity>
+        {__DEV__ ? (
+          <TouchableOpacity
+            style={styles.appInfoContainer}
+            onPress={() => {
+              setCurrentServerUrl(apiClient.getBaseUrl());
+              setShowServerModal(true);
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.appInfoText, { color: colors.textSecondary }]}>
+              TaxEdge Fin Solutions • v1.0.0
+            </Text>
+            <Text style={[styles.backendStatusText, { color: colors.primary }]}>
+              Backend: {currentServerUrl}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.appInfoContainer}>
+            <Text style={[styles.appInfoText, { color: colors.textSecondary }]}>
+              TaxEdge Fin Solutions • v1.0.0
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
-      {/* Server Configuration Modal */}
-      <ServerConfigModal
-        visible={showServerModal}
-        onClose={() => setShowServerModal(false)}
-        onSaved={(newUrl) => setCurrentServerUrl(newUrl)}
-      />
+      {/* Server Configuration Modal — dev only */}
+      {__DEV__ && (
+        <ServerConfigModal
+          visible={showServerModal}
+          onClose={() => setShowServerModal(false)}
+          onSaved={(newUrl) => setCurrentServerUrl(newUrl)}
+        />
+      )}
     </ScreenLayout>
   );
 }

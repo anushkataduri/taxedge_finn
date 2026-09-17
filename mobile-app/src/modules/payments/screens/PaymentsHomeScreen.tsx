@@ -90,10 +90,11 @@ export function PaymentsHomeScreen() {
     }
 
     setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
-      setCurrentView("success");
-    }, 1000);
+    Alert.alert(
+      "Payment Gateway Unavailable",
+      "Online payment processing is not yet available. Please contact support or pay via bank transfer.",
+      [{ text: "OK", onPress: () => setIsProcessing(false) }],
+    );
   };
 
   return (

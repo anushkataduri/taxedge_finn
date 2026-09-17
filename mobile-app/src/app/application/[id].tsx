@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,7 +13,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import * as DocumentPicker from "expo-document-picker";
 import { useApplicationStore } from "../../store/applicationStore";
 import { useAuthStore } from "../../store/authStore";
-import type { TimelineStep } from "../../types/domain";
+import { applicationService } from "../../modules/applications/services/applicationService";
+import type { Application, TimelineStep } from "../../types/domain";
 import { styles } from "../../styles/app/application/[id].styles";
 
 type DetailTab = "OVERVIEW" | "STATUS" | "DOCUMENTS" | "PAYMENTS";
@@ -48,66 +50,6 @@ function calculateExpectedDate(dateStr?: string): string {
   return "1–2 Business Days";
 }
 
-const SUBMITTED_BANK_AMENDMENT: any = {
-  id: "AA29944099962",
-  serviceId: "gst-amendment",
-  serviceName: "GST Amendment — Bank Accounts",
-  category: "GST",
-  status: "Under Verification",
-  progress: 30,
-  assignedExecutive: "Auto-Verification Engine",
-  paymentAmount: 0,
-  paymentStatus: "Paid",
-  createdAt: "2026-09-09T09:00:00.000Z",
-  documents: [
-    {
-      id: "doc-proof-1",
-      name: "pavan.Resume .pdf",
-      category: "Supporting Proof",
-      status: "Uploaded",
-      required: true,
-      fileUri: "file://documents/pavan.Resume.pdf",
-    },
-  ],
-  formData: {
-    gstin: "—",
-    arn: "AA29944099962",
-    section: "Bank Accounts",
-    amendmentCategory: "Non-core (auto-approved)",
-    isCore: false,
-    applicantName: "Akhil Kumar",
-    submissionDate: "9/9/2026",
-    currentValue: "HDFC Bank (XXXXX1234)",
-    requestedValue: "ICICI Bank (564687459478974516)",
-    currentValues: JSON.stringify({
-      "Bank Name": "HDFC Bank",
-      "Account Number": "XXXXX1234",
-      "IFSC Code": "HDFC0001234",
-      "Account Type": "Current",
-    }),
-    requestedValues: JSON.stringify({
-      "Bank Name": "ICICI Bank",
-      "Account Number": "564687459478974516",
-      "Confirm Account Number": "564687459478974516",
-      "IFSC Code": "ICIC0004587",
-      "Account Type": "Current",
-    }),
-    supportingDocName: "pavan.Resume .pdf",
-    document: {
-      name: "pavan.Resume .pdf",
-      size: "0.1 MB",
-    },
-  },
-  timeline: [
-    { title: "Submitted", description: "Amendment request created", status: "completed", date: "9/9/2026" },
-    { title: "Under Verification", description: "TaxEdge review in progress", status: "current", date: "9/9/2026" },
-    { title: "Officer Review", description: "Assessing officer reviewing the change", status: "pending" },
-    { title: "Action Required", description: "If clarification is requested", status: "pending" },
-    { title: "Approved / Updated", description: "Amended registration issued", status: "pending" },
-  ],
-};
-
-
 export default function ApplicationDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -115,9 +57,34 @@ export default function ApplicationDetailScreen() {
 
   const applications = useApplicationStore((state) => state.applications);
   const uploadDocument = useApplicationStore((state) => state.uploadDocument);
-  const app = applications.find((a) => a.id === id || a.formData?.arn === id) || (id === "AA29944099962" ? SUBMITTED_BANK_AMENDMENT : null);
+  const [remoteApp, setRemoteApp] = useState<Application | null>(null);
+  const [isLoadingRemote, setIsLoadingRemote] = useState(false);
+
+  const app = applications.find((a) => a.id === id || a.formData?.arn === id) || remoteApp;
+
+  useEffect(() => {
+    if (!app && id) {
+      setIsLoadingRemote(true);
+      applicationService
+        .getApplicationById(id)
+        .then((fetched) => {
+          if (fetched) setRemoteApp(fetched);
+        })
+        .finally(() => setIsLoadingRemote(false));
+    }
+  }, [id, app]);
 
   const [activeTab, setActiveTab] = useState<DetailTab>("OVERVIEW");
+
+  if (isLoadingRemote) {
+    return (
+      <View style={[styles.container, { backgroundColor: "#0A2346", paddingTop: insets.top + 20, justifyContent: "center", alignItems: "center" }]}>
+        <StatusBar barStyle="light-content" backgroundColor="#0A2346" />
+        <ActivityIndicator size="large" color="#FF5722" />
+        <Text style={{ color: "#FFF", marginTop: 12, fontSize: 14 }}>Loading application details...</Text>
+      </View>
+    );
+  }
 
   if (!app) {
     return (
