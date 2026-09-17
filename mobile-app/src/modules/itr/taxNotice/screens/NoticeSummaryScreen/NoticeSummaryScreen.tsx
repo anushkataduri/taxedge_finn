@@ -14,6 +14,7 @@ import {
   NoticeExplanationCard,
 } from "../../components/summary";
 import { MOCK_NOTICE_SUMMARY } from "../../mock/taxNoticeData";
+import { TaxNoticeSummaryData } from "../../types/taxNotice.types";
 import {
   styles,
   getContainerInsetsStyle,
@@ -30,13 +31,24 @@ export const NoticeSummaryScreen: React.FC = () => {
     assessmentYear?: string;
   }>();
 
+  const noticeDate = params.noticeDate || "Notice Date";
+  const assessmentYear = params.assessmentYear || "AY 2025–26";
+
+  const summaryData: TaxNoticeSummaryData = {
+    ...MOCK_NOTICE_SUMMARY,
+    issuedDate: noticeDate,
+    responseDueDate: "Within 30 Days",
+    daysLeft: 30,
+  };
+
   const handleContinue = () => {
     // Navigate to Screen 3: Upload Supporting Documents
     router.push({
       pathname: "/service/tax-notice-documents" as any,
       params: {
         noticeNumber: params.noticeNumber,
-        assessmentYear: params.assessmentYear || "AY 2025–26",
+        noticeDate: params.noticeDate,
+        assessmentYear,
       },
     });
   };
@@ -65,7 +77,7 @@ export const NoticeSummaryScreen: React.FC = () => {
         </View>
 
         {/* Notice Metadata Card */}
-        <NoticeMetadataCard summary={MOCK_NOTICE_SUMMARY} />
+        <NoticeMetadataCard summary={summaryData} />
 
         {/* Explanation Card 1: What this notice means */}
         <NoticeExplanationCard

@@ -18,39 +18,39 @@ export const MOCK_ORIGINAL_RETURN: OriginalReturnDetails = {
 export const REVISION_REASONS: RevisionReasonOption[] = [
   {
     id: "missed_income",
-    title: "Missed income",
-    subtitle: "Income you did not report in the original return",
+    title: "Missed Income",
+    subtitle: "Income not included in the original return",
     iconName: "cash-outline",
   },
   {
     id: "wrong_deduction",
-    title: "Wrong deduction claimed",
-    subtitle: "A deduction claimed in error, or one you missed",
+    title: "Wrong Deduction",
+    subtitle: "Incorrect or missed deduction",
     iconName: "document-text-outline",
   },
   {
     id: "incorrect_bank",
-    title: "Incorrect bank details",
-    subtitle: "Refund could not be credited to the account given",
+    title: "Incorrect Bank Details",
+    subtitle: "Refund account needs correction",
     iconName: "business-outline",
   },
   {
     id: "other",
     title: "Other",
-    subtitle: "Something else — tell us in your own words",
+    subtitle: "Something else",
     iconName: "pencil-outline",
   },
 ];
 
 export const DEFAULT_REVISED_FORM_FIELDS: RevisedFormFields = {
-  salaryBusinessIncome: "6,18,400",
-  otherIncome: "2,79,280",
-  sec80c: "1,50,000",
-  sec80d: "28,000",
-  homeLoanInterest: "1,42,000",
-  bankAccount: "HDFC ••••1826",
-  ifsc: "HDFC0000412",
-  taxableIncome: "5,17,680",
+  salaryBusinessIncome: "",
+  otherIncome: "",
+  sec80c: "",
+  sec80d: "",
+  homeLoanInterest: "",
+  bankAccount: "",
+  ifsc: "",
+  taxableIncome: "",
 };
 
 export const REVISED_SUPPORTING_DOCUMENTS: RevisedDocumentItem[] = [

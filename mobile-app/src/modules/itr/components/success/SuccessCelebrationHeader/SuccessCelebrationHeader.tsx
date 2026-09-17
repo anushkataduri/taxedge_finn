@@ -6,10 +6,12 @@ import { styles } from "./SuccessCelebrationHeader.styles";
 
 interface SuccessCelebrationHeaderProps {
   applicationId: string;
+  isRevised?: boolean;
 }
 
 export const SuccessCelebrationHeader: React.FC<SuccessCelebrationHeaderProps> = ({
   applicationId,
+  isRevised = false,
 }) => {
   return (
     <View style={styles.container}>
@@ -37,11 +39,17 @@ export const SuccessCelebrationHeader: React.FC<SuccessCelebrationHeaderProps> =
       </View>
 
       {/* Main Title */}
-      <Text style={styles.title}>Your application has been received!</Text>
+      <Text style={styles.title}>
+        {isRevised
+          ? "Your Revised ITR application has been received."
+          : "Your application has been received!"}
+      </Text>
 
       {/* Subtitle distinguishing application received from government filing */}
       <Text style={styles.subtitle}>
-        Your documents and tax information have been received. A Tax Executive will review them before preparing your return.
+        {isRevised
+          ? "Your documents and revised tax information have been received. A Tax Executive will review them before preparing your return."
+          : "Your documents and tax information have been received. A Tax Executive will review them before preparing your return."}
       </Text>
 
       {/* Application ID Pill Card */}

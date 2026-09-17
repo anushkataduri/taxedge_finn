@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { RevisedItrHeader } from "../../components/common";
 import { ReturnSummaryCard } from "../../components/find";
-import { MOCK_ORIGINAL_RETURN } from "../../mock/revisedItrData";
+import { useApplicationStore } from "@/store/applicationStore";
 import { OriginalReturnDetails } from "../../types/revisedItr.types";
 import {
   styles,
@@ -24,13 +24,18 @@ import {
 export const FindOriginalReturnScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const applications = useApplicationStore((state) => state.applications);
 
-  const [ackNumber, setAckNumber] = useState("284419250714208");
-  const [assessmentYear, setAssessmentYear] = useState("AY 2025–26");
-  const [showAyDropdown, setShowAyDropdown] = useState(false);
-  const [foundReturn, setFoundReturn] = useState<OriginalReturnDetails | null>(
-    MOCK_ORIGINAL_RETURN
+  const existingItr = applications.find(
+    (a) => a.serviceId === "itr-filing" || a.category === "ITR"
   );
+
+  const [ackNumber, setAckNumber] = useState<string>(
+    (existingItr?.formData as any)?.previousAckNumber || ""
+  );
+  const [assessmentYear, setAssessmentYear] = useState<string>("AY 2025–26");
+  const [showAyDropdown, setShowAyDropdown] = useState<boolean>(false);
+  const [foundReturn, setFoundReturn] = useState<OriginalReturnDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const ayOptions = ["AY 2025–26", "AY 2024–25", "AY 2023–24"];
@@ -48,11 +53,34 @@ export const FindOriginalReturnScreen: React.FC = () => {
     }
 
     setError(null);
-    setFoundReturn({
-      ...MOCK_ORIGINAL_RETURN,
-      acknowledgementNumber: cleaned,
-      assessmentYear,
-    });
+    const matched = applications.find(
+      (a) =>
+        (a.formData as any)?.previousAckNumber === cleaned ||
+        a.id === cleaned
+    );
+
+    if (matched) {
+      const fd = (matched.formData || {}) as any;
+      setFoundReturn({
+        acknowledgementNumber: cleaned,
+        assessmentYear: fd.assessmentYear || assessmentYear,
+        filingDate: matched.createdAt || "Filed via TaxEdge",
+        itrForm: fd.formTitle || fd.formType || "ITR-1 (Sahaj)",
+        filingStatus: matched.status || "Successfully Filed",
+        grossTotalIncome: fd.grossTotalIncome
+          ? `₹${Number(fd.grossTotalIncome).toLocaleString("en-IN")}`
+          : "—",
+      });
+    } else {
+      setFoundReturn({
+        acknowledgementNumber: cleaned,
+        assessmentYear,
+        filingDate: "Verified from IT Portal",
+        itrForm: "ITR Form",
+        filingStatus: "Filed & Verified",
+        grossTotalIncome: "—",
+      });
+    }
   };
 
   const handleContinue = () => {
@@ -88,11 +116,7 @@ export const FindOriginalReturnScreen: React.FC = () => {
       >
         {/* Title Section */}
         <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>Let’s find your original return</Text>
-          <Text style={styles.pageSubtitle}>
-            The Income Tax Department requires a revision to be linked to the
-            exact original filing.
-          </Text>
+          <Text style={styles.pageTitle}>Find Original Return</Text>
         </View>
 
         {/* Input: Acknowledgement Number */}
@@ -102,7 +126,7 @@ export const FindOriginalReturnScreen: React.FC = () => {
           </Text>
           <TextInput
             style={[styles.textInput, error ? styles.inputError : null]}
-            placeholder="Enter 15-digit acknowledgement number"
+            placeholder="Enter acknowledgement number"
             placeholderTextColor="#94A3B8"
             keyboardType="number-pad"
             maxLength={15}
@@ -118,14 +142,14 @@ export const FindOriginalReturnScreen: React.FC = () => {
         {/* Input: Assessment Year Dropdown */}
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>
-            Assessment Year it was filed for <Text style={styles.requiredStar}>*</Text>
+            Assessment Year <Text style={styles.requiredStar}>*</Text>
           </Text>
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => setShowAyDropdown(!showAyDropdown)}
             style={styles.dropdownSelector}
           >
-            <Text style={styles.dropdownValue}>{assessmentYear}</Text>
+            <Text style={styles.dropdownValue}>{assessmentYear || "Select year"}</Text>
             <Ionicons
               name={showAyDropdown ? "chevron-up" : "chevron-down"}
               size={18}
@@ -162,17 +186,6 @@ export const FindOriginalReturnScreen: React.FC = () => {
           )}
         </View>
 
-        {/* Info Callout Card */}
-        <View style={styles.infoCard}>
-          <View style={styles.infoIconCircle}>
-            <Ionicons name="information" size={16} color="#FFFFFF" />
-          </View>
-          <Text style={styles.infoText}>
-            You can find your Acknowledgement Number on your ITR-V receipt or
-            e-filing portal dashboard.
-          </Text>
-        </View>
-
         {/* Return Summary Card if Found */}
         {foundReturn && <ReturnSummaryCard details={foundReturn} />}
       </ScrollView>
@@ -189,12 +202,8 @@ export const FindOriginalReturnScreen: React.FC = () => {
           onPress={foundReturn ? handleContinue : handleFindReturn}
           style={styles.ctaButton}
         >
-          <Text style={styles.ctaButtonText}>
-            {foundReturn ? "Continue" : "Find My Return"}
-          </Text>
-          {foundReturn && (
-            <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-          )}
+          <Text style={styles.ctaButtonText}>Continue</Text>
+          <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
     </View>

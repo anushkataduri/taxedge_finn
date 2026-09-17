@@ -23,12 +23,12 @@ export const TdsContactSupportFooter: React.FC<TdsContactSupportFooterProps> = (
       [
         {
           text: "Call Support",
-          onPress: () => Linking.openURL("tel:18001030025").catch(() => {}),
+          onPress: () => Linking.openURL("tel:9347074726").catch(() => { }),
         },
         {
           text: "WhatsApp Chat",
           onPress: () =>
-            Linking.openURL("https://wa.me/919876543210").catch(() => {}),
+            Linking.openURL("https://wa.me/919347074726").catch(() => { }),
         },
         {
           text: "Cancel",

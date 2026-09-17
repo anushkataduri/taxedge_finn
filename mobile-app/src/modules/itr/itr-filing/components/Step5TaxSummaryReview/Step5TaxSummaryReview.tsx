@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -42,23 +42,11 @@ export const Step5TaxSummaryReview: React.FC<Step5TaxSummaryReviewProps> = ({
     declarationAccepted,
   } = formData;
 
-  const [declarationReviewAccepted, setDeclarationReviewAccepted] = useState(true);
-
   // Filter uploaded or profile verified documents
   const verifiedOrUploadedDocs = documents.filter((d) => d.fileUri || d.isProfileVerified);
 
   // Derive Missing Information / Discrepancy list
   const missingItems: MissingInfoItem[] = [];
-
-  if (!personalInfo.residentialStatusConfirmed) {
-    missingItems.push({
-      id: "miss-res",
-      severity: "WARNING",
-      title: "Residential status requires taxpayer confirmation",
-      actionLabel: "Confirm",
-      targetStep: 0,
-    });
-  }
 
   if (gstReconciliation && gstReconciliation.hasVariance) {
     missingItems.push({
@@ -75,17 +63,17 @@ export const Step5TaxSummaryReview: React.FC<Step5TaxSummaryReviewProps> = ({
     missingItems.push({
       id: "miss-doc",
       severity: "REQUIRED",
-      title: `${missingRequiredDocs.length} mandatory documents missing`,
+      title: `${missingRequiredDocs.length} required documents missing`,
       actionLabel: "Upload",
       targetStep: 3,
     });
   }
 
   const handleSubmitPress = () => {
-    if (!declarationAccepted || !declarationReviewAccepted) {
+    if (!declarationAccepted) {
       Alert.alert(
         "Declaration Required",
-        "Please accept the confirmation checkboxes below to verify that your provided information and documents are true and complete."
+        "Please accept the declaration below before submitting your application for CA review."
       );
       return;
     }
@@ -97,12 +85,12 @@ export const Step5TaxSummaryReview: React.FC<Step5TaxSummaryReviewProps> = ({
     ? `•••• ${bankDetails.accountNumber.slice(-4)}`
     : "";
 
-  // Pre-Calculation Reconciliation Data
-  const baseReconciliationRows = [
+  // Summary Rows for declared items
+  const baseSummaryRows = [
     {
       id: "rec-personal",
       title: "Taxpayer Identity",
-      sub: `PAN: ${personalInfo.pan} • Aadhaar: •••• ${personalInfo.aadhaar.slice(-4)}`,
+      sub: `PAN: ${personalInfo.pan || "Not provided"} • Name: ${personalInfo.name || "Client"}`,
       tagText: "Profile Verified",
       tagType: "verified" as const,
       visible: true,
@@ -112,41 +100,37 @@ export const Step5TaxSummaryReview: React.FC<Step5TaxSummaryReviewProps> = ({
       title: "Refund Bank Account",
       sub: bankDetails.bankName
         ? `${bankDetails.bankName} (${maskedBankNumber})`
-        : "Primary Refund Account Selected",
-      tagText: "Pre-Validated",
+        : "Bank account selected",
+      tagText: bankDetails.isPrimaryRefund ? "Selected" : "Bank Added",
       tagType: "verified" as const,
-      visible: true,
+      visible: Boolean(bankDetails.bankName),
     },
     {
       id: "rec-salary",
       title: "Salary Income",
-      sub: `${incomeSources.salary.employerName || "Employer"} (TDS: ₹${Number(incomeSources.salary.tdsDeducted || 0).toLocaleString("en-IN")})`,
+      sub: `${incomeSources.salary.employerName || "Salary"} (TDS: ₹${Number(incomeSources.salary.tdsDeducted || 0).toLocaleString("en-IN")})`,
       amount: `₹ ${Number(incomeSources.salary.grossSalary || 0).toLocaleString("en-IN")}`,
-      tagText: incomeSources.salary.source === "FORM_16" ? "Form 16 Matched" : "User Declared",
+      tagText: incomeSources.salary.source === "FORM_16" ? "Form 16 Matched" : "Declared",
       tagType: incomeSources.salary.source === "FORM_16" ? ("verified" as const) : ("imported" as const),
       visible: incomeSources.salary.enabled && Number(incomeSources.salary.grossSalary || 0) > 0,
     },
     {
       id: "rec-business",
       title: "Business Turnover",
-      sub: incomeSources.business.enabled
-        ? `GSTIN: ${incomeSources.business.gstin || "29ABCDE1234F1Z5"}`
-        : "No business declared",
-      amount: incomeSources.business.enabled
-        ? `₹ ${Number(incomeSources.business.grossTurnover || 0).toLocaleString("en-IN")}`
-        : undefined,
-      tagText: gstReconciliation?.hasVariance ? "Variance Noted" : "GST Reconciled",
+      sub: incomeSources.business.businessName || "Business / Profession Declared",
+      amount: `₹ ${Number(incomeSources.business.grossTurnover || 0).toLocaleString("en-IN")}`,
+      tagText: gstReconciliation?.hasVariance ? "Variance Noted" : "Declared",
       tagType: gstReconciliation?.hasVariance ? ("warning" as const) : ("verified" as const),
-      visible: incomeSources.business.enabled,
+      visible: incomeSources.business.enabled && Number(incomeSources.business.grossTurnover || 0) > 0,
     },
     {
       id: "rec-cg",
       title: "Capital Gains",
       sub: incomeSources.capitalGains.brokerName
-        ? `Broker: ${incomeSources.capitalGains.brokerName} (${incomeSources.capitalGains.totalTransactions || 0} trades)`
+        ? `${incomeSources.capitalGains.brokerName} statement`
         : "Capital gains declared",
       amount: `₹ ${(Number(incomeSources.capitalGains.shortTermGains || 0) + Number(incomeSources.capitalGains.longTermGains || 0)).toLocaleString("en-IN")}`,
-      tagText: incomeSources.capitalGains.statementUploaded ? "Broker Parsed" : "User Declared",
+      tagText: incomeSources.capitalGains.statementUploaded ? "Broker Parsed" : "Declared",
       tagType: "imported" as const,
       visible:
         incomeSources.capitalGains.enabled &&
@@ -158,7 +142,7 @@ export const Step5TaxSummaryReview: React.FC<Step5TaxSummaryReviewProps> = ({
       title: "Other Sources (Interest & Dividends)",
       sub: "Savings interest, FD interest, dividends",
       amount: `₹ ${(Number(incomeSources.otherSources.savingsInterest || 0) + Number(incomeSources.otherSources.fdInterest || 0) + Number(incomeSources.otherSources.dividendIncome || 0)).toLocaleString("en-IN")}`,
-      tagText: incomeSources.otherSources.source === "AIS_TIS" ? "AIS Imported" : "User Declared",
+      tagText: incomeSources.otherSources.source === "AIS_TIS" ? "AIS Imported" : "Declared",
       tagType: "imported" as const,
       visible:
         incomeSources.otherSources.enabled &&
@@ -170,15 +154,15 @@ export const Step5TaxSummaryReview: React.FC<Step5TaxSummaryReviewProps> = ({
     {
       id: "rec-tds",
       title: "Taxes Deducted (TDS Credits)",
-      sub: "Matched with Form 26AS tax credit statement",
+      sub: "Form 26AS / Employer TDS credits",
       amount: `₹ ${calculation.tdsCredits.toLocaleString("en-IN")}`,
-      tagText: "26AS Matched",
+      tagText: "Tax Credit",
       tagType: "verified" as const,
       visible: calculation.tdsCredits > 0,
     },
   ];
 
-  const reconciliationRows = baseReconciliationRows.filter((r) => r.visible);
+  const summaryRows = baseSummaryRows.filter((r) => r.visible);
 
   return (
     <View style={styles.container}>
@@ -186,9 +170,9 @@ export const Step5TaxSummaryReview: React.FC<Step5TaxSummaryReviewProps> = ({
       <View style={styles.bannerCard}>
         <Ionicons name="shield-checkmark" size={24} color="#059669" />
         <View style={styles.bannerTextCol}>
-          <Text style={styles.bannerTitle}>Review Your ITR Filing Return</Text>
+          <Text style={styles.bannerTitle}>Review Your ITR Application</Text>
           <Text style={styles.bannerSubtitle}>
-            Please review the comprehensive return summary below before submitting to your Tax Executive.
+            Review your declared income, deductions, and tax summary before submitting for CA review.
           </Text>
         </View>
       </View>
@@ -198,17 +182,17 @@ export const Step5TaxSummaryReview: React.FC<Step5TaxSummaryReviewProps> = ({
         <MissingInfoBanner items={missingItems} onResolve={onEditStep} />
       )}
 
-      {/* 1. Pre-Calculation Review & Reconciliation Summary */}
+      {/* 1. Summary & Declared Income */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.cardHeaderLeft}>
             <Ionicons name="git-network-outline" size={18} color="#083B75" />
-            <Text style={styles.cardHeaderTitle}>Review & Reconciliation Audit</Text>
+            <Text style={styles.cardHeaderTitle}>Summary & Declared Income</Text>
           </View>
         </View>
 
         <View style={styles.reconciliationTable}>
-          {reconciliationRows.map((row) => (
+          {summaryRows.map((row) => (
             <View key={row.id} style={styles.reconciliationRow}>
               <View style={styles.reconciliationColLeft}>
                 <Text style={styles.reconciliationTitle}>{row.title}</Text>
@@ -268,7 +252,7 @@ export const Step5TaxSummaryReview: React.FC<Step5TaxSummaryReviewProps> = ({
         <View style={styles.taxHeroHeader}>
           <View style={styles.taxHeroHeaderLeft}>
             <Ionicons name="calculator-outline" size={20} color="#083B75" />
-            <Text style={styles.taxHeroTitle}>Tax Calculation Summary</Text>
+            <Text style={styles.taxHeroTitle}>Estimated Tax Summary</Text>
           </View>
           <View style={styles.regimeBadge}>
             <Text style={styles.regimeBadgeText}>
@@ -361,8 +345,8 @@ export const Step5TaxSummaryReview: React.FC<Step5TaxSummaryReviewProps> = ({
             </Text>
             <Text style={styles.netResultSub}>
               {isRefund
-                ? `Directly credited to ${bankDetails.bankName} (${maskedBankNumber})`
-                : "Payable via ITNS 280 challan before filing"}
+                ? `Directly credited to ${bankDetails.bankName || "Bank Account"} (${maskedBankNumber})`
+                : "Payable before return filing"}
             </Text>
           </View>
           <Text
@@ -378,7 +362,7 @@ export const Step5TaxSummaryReview: React.FC<Step5TaxSummaryReviewProps> = ({
         <View style={styles.disclaimerBox}>
           <Ionicons name="information-circle" size={16} color="#92400E" />
           <Text style={styles.disclaimerText}>
-            Final tax liability is subject to CA review, verification of tax credits, and statutory portal validation.
+            This is an initial estimation based on your declared figures. Your assigned CA will thoroughly review your documents, verify TDS credits with the Income Tax Department, and prepare the final return for your confirmation before e-filing.
           </Text>
         </View>
       </View>
@@ -407,12 +391,12 @@ export const Step5TaxSummaryReview: React.FC<Step5TaxSummaryReviewProps> = ({
 
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Full Name</Text>
-          <Text style={styles.detailValue}>{personalInfo.name}</Text>
+          <Text style={styles.detailValue}>{personalInfo.name || "Client"}</Text>
         </View>
 
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>PAN Number</Text>
-          <Text style={styles.detailValue}>{personalInfo.pan}</Text>
+          <Text style={styles.detailValue}>{personalInfo.pan || "Not provided"}</Text>
         </View>
 
         <View style={styles.detailRow}>
@@ -427,7 +411,7 @@ export const Step5TaxSummaryReview: React.FC<Step5TaxSummaryReviewProps> = ({
           <View style={styles.cardHeaderLeft}>
             <Ionicons name="attach-outline" size={18} color="#083B75" />
             <Text style={styles.cardHeaderTitle}>
-              Verified & Uploaded Documents ({verifiedOrUploadedDocs.length})
+              Uploaded Documents ({verifiedOrUploadedDocs.length})
             </Text>
           </View>
           <TouchableOpacity activeOpacity={0.7} onPress={() => onEditStep(3)}>
@@ -454,22 +438,7 @@ export const Step5TaxSummaryReview: React.FC<Step5TaxSummaryReviewProps> = ({
         </View>
       </View>
 
-      {/* 5. Confirmation Checkboxes */}
-      <TouchableOpacity
-        activeOpacity={0.8}
-        style={styles.declarationBox}
-        onPress={() => setDeclarationReviewAccepted(!declarationReviewAccepted)}
-      >
-        <Ionicons
-          name={declarationReviewAccepted ? "checkbox" : "square-outline"}
-          size={22}
-          color={declarationReviewAccepted ? BrandColors.PRIMARY_ORANGE : "#64748B"}
-        />
-        <Text style={styles.declarationText}>
-          I confirm that the information provided by me is true and complete to the best of my knowledge, and I have reviewed the income, deductions, bank details, and documents shown above.
-        </Text>
-      </TouchableOpacity>
-
+      {/* 5. Single Confirmation Checkbox */}
       <TouchableOpacity
         activeOpacity={0.8}
         style={styles.declarationBox}
@@ -481,7 +450,7 @@ export const Step5TaxSummaryReview: React.FC<Step5TaxSummaryReviewProps> = ({
           color={declarationAccepted ? BrandColors.PRIMARY_ORANGE : "#64748B"}
         />
         <Text style={styles.declarationText}>
-          I confirm and submit my application for TaxEdge review.
+          I confirm that the income details, deductions, bank account, and documents provided are correct and complete to the best of my knowledge.
         </Text>
       </TouchableOpacity>
 

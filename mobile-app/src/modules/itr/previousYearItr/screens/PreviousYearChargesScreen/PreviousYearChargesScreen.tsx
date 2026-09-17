@@ -14,6 +14,7 @@ import { GovernmentChargesCard } from "../../components/charges/GovernmentCharge
 import { ServiceFeeCard } from "../../components/charges/ServiceFeeCard";
 import { ChargesEstimateWarningBanner } from "../../components/charges/ChargesEstimateWarningBanner";
 import { DEFAULT_PREVIOUS_YEAR_CHARGES } from "../../mock/chargesData";
+import { useApplicationStore } from "@/store/applicationStore";
 import {
   styles,
   getContainerInsetsStyle,
@@ -24,6 +25,7 @@ import {
 export const PreviousYearChargesScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const createApplication = useApplicationStore((state) => state.createApplication);
   const params = useLocalSearchParams<{
     assessmentYear?: string;
   }>();
@@ -36,10 +38,28 @@ export const PreviousYearChargesScreen: React.FC = () => {
   };
 
   const handleContinue = () => {
+    const createdAppId = createApplication(
+      "previous-year-itr",
+      `Previous Year ITR - ${assessmentYear}`,
+      "ITR",
+      {
+        assessmentYear,
+        governmentCharges: DEFAULT_PREVIOUS_YEAR_CHARGES.governmentCharges,
+        serviceFee: DEFAULT_PREVIOUS_YEAR_CHARGES.serviceFee,
+      },
+      [
+        `Form 16 / Form 16A (${assessmentYear})`,
+        `Form 26AS (${assessmentYear})`,
+        `Bank Statement (${assessmentYear})`,
+      ],
+      DEFAULT_PREVIOUS_YEAR_CHARGES.serviceFee.totalServiceFee,
+      "Paid"
+    );
+
     router.push({
       pathname: "/service/previous-year-success" as any,
       params: {
-        applicationId: "ITR-2026-00046",
+        applicationId: createdAppId,
         assessmentYear: assessmentYear,
       },
     });

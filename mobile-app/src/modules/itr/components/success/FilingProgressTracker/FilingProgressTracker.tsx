@@ -12,127 +12,132 @@ interface ItrProgressStage {
   description: string;
 }
 
-export const FilingProgressTracker: React.FC = () => {
-  const stages: ItrProgressStage[] = [
+interface FilingProgressTrackerProps {
+  isRevised?: boolean;
+}
+
+export const FilingProgressTracker: React.FC<FilingProgressTrackerProps> = ({
+  isRevised = false,
+}) => {
+  const revisedStages: ItrProgressStage[] = [
+    {
+      id: "rev-stage-1",
+      stageNumber: 1,
+      label: "Application\nReceived",
+      icon: "document-text-outline",
+      status: "completed",
+      description: "Your Revised ITR application has been received.",
+    },
+    {
+      id: "rev-stage-2",
+      stageNumber: 2,
+      label: "Payment\nCompleted",
+      icon: "card-outline",
+      status: "completed",
+      description: "Payment has been successfully verified.",
+    },
+    {
+      id: "rev-stage-3",
+      stageNumber: 3,
+      label: "CA\nVerification",
+      icon: "search-outline",
+      status: "active",
+      description: "Certified CA verifying original filing and revised declaration.",
+    },
+    {
+      id: "rev-stage-4",
+      stageNumber: 4,
+      label: "Revised ITR\nPreparation",
+      icon: "create-outline",
+      status: "pending",
+      description: "CA preparing revised computation and optimal regime.",
+    },
+    {
+      id: "rev-stage-5",
+      stageNumber: 5,
+      label: "Filing",
+      icon: "paper-plane-outline",
+      status: "pending",
+      description: "Revised return will be filed with Income Tax Department.",
+    },
+    {
+      id: "rev-stage-6",
+      stageNumber: 6,
+      label: "Income Tax\nProcessing",
+      icon: "sync-outline",
+      status: "pending",
+      description: "CPC processing and intimation issuance.",
+    },
+  ];
+
+  const standardStages: ItrProgressStage[] = [
     {
       id: "stage-1",
       stageNumber: 1,
-      label: "New\nRequest",
+      label: "Application\nReceived",
       icon: "document-text-outline",
       status: "completed",
-      description: "Filing request initiated and customer profile confirmed.",
+      description: "Your application and declared details have been received.",
     },
     {
       id: "stage-2",
       stageNumber: 2,
-      label: "Docs\nPending",
-      icon: "cloud-upload-outline",
-      status: "completed",
-      description: "Key tax documents identified for upload.",
+      label: "Documents\nUnder Review",
+      icon: "search-outline",
+      status: "active",
+      description: "Assigned CA is reviewing your Form 16, AIS, and uploaded records.",
     },
     {
       id: "stage-3",
       stageNumber: 3,
-      label: "Docs\nReceived",
-      icon: "file-tray-full-outline",
-      status: "active",
-      description: "Your uploaded documents and data have been received by TaxEdge.",
+      label: "CA Preparing\nReturn",
+      icon: "create-outline",
+      status: "pending",
+      description: "Computation of total income, deductions, and tax calculation.",
     },
     {
       id: "stage-4",
       stageNumber: 4,
-      label: "Docs Under\nVerify",
-      icon: "search-outline",
+      label: "Ready for\nConfirmation",
+      icon: "shield-checkmark-outline",
       status: "pending",
-      description: "Certified CA verifying Form 16, AIS/TIS against declared sources.",
+      description: "Draft return prepared for your review and approval before filing.",
     },
     {
       id: "stage-5",
       stageNumber: 5,
-      label: "ITR\nPreparation",
-      icon: "create-outline",
+      label: "Return Filed\n& e-Verified",
+      icon: "paper-plane-outline",
       status: "pending",
-      description: "CA preparing the draft computation and optimal regime selection.",
+      description: "Return filed and e-verified with the Income Tax Department.",
     },
     {
       id: "stage-6",
       stageNumber: 6,
-      label: "Tax\nCalculation",
-      icon: "calculator-outline",
-      status: "pending",
-      description: "Final tax computation, TDS reconciliation, and rebate validation.",
-    },
-    {
-      id: "stage-7",
-      stageNumber: 7,
-      label: "Customer\nApproval",
-      icon: "person-outline",
-      status: "pending",
-      description: "Review and approve the CA-prepared computation before portal submission.",
-    },
-    {
-      id: "stage-8",
-      stageNumber: 8,
-      label: "ITR\nFiled",
-      icon: "paper-plane-outline",
-      status: "pending",
-      description: "Return submitted to the Income Tax Department portal.",
-    },
-    {
-      id: "stage-9",
-      stageNumber: 9,
-      label: "E-Verify\nPending",
-      icon: "time-outline",
-      status: "pending",
-      description: "Pending Aadhaar OTP or net-banking e-verification.",
-    },
-    {
-      id: "stage-10",
-      stageNumber: 10,
-      label: "E-Verified",
-      icon: "shield-checkmark-outline",
-      status: "pending",
-      description: "Successfully e-verified with the Income Tax Department.",
-    },
-    {
-      id: "stage-11",
-      stageNumber: 11,
-      label: "Processing",
+      label: "Processing &\nRefund",
       icon: "sync-outline",
       status: "pending",
-      description: "Return currently processing by CPC Bangalore.",
-    },
-    {
-      id: "stage-12",
-      stageNumber: 12,
-      label: "Refund /\nPayable",
-      icon: "cash-outline",
-      status: "pending",
-      description: "Intimation u/s 143(1) issued; refund credited or tax settled.",
-    },
-    {
-      id: "stage-13",
-      stageNumber: 13,
-      label: "Completed",
-      icon: "checkmark-done-circle-outline",
-      status: "pending",
-      description: "ITR filing lifecycle fully completed and archived.",
+      description: "CPC Bangalore processing and direct refund credit.",
     },
   ];
 
-  const activeStage = stages.find((s) => s.status === "active") || stages[2];
+  const stages = isRevised ? revisedStages : standardStages;
+  const totalStageCount = stages.length;
+  const activeStage = stages.find((s) => s.status === "active") || stages[1];
 
   return (
     <View style={styles.card}>
       {/* Tracker Header */}
       <View style={styles.trackerHeaderRow}>
-        <Text style={styles.trackerTitle}>ITR Lifecycle Tracker</Text>
+        <Text style={styles.trackerTitle}>
+          {isRevised ? "Revised ITR Timeline" : "Filing Progress Tracker"}
+        </Text>
         <View style={styles.trackerBadge}>
-          <Text style={styles.trackerBadgeText}>Stage {activeStage.stageNumber} of 13</Text>
+          <Text style={styles.trackerBadgeText}>Stage {activeStage.stageNumber} of {totalStageCount}</Text>
         </View>
       </View>
 
-      {/* 13 Step Nodes in Horizontal Scroll */}
+      {/* Step Nodes */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

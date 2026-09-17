@@ -1,37 +1,60 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { DevUser } from "../types/auth.types";
 
 const KEY_USERS = "taxEdgeDevUsersMap";
 const KEY_SESSION = "taxEdgeDevSession";
 const memory: Record<string, string> = {};
 
+// Eagerly pre-populate in-memory cache from AsyncStorage on app launch
+AsyncStorage.getItem(KEY_SESSION).then((val) => {
+  if (val) memory[KEY_SESSION] = val;
+}).catch(() => {});
+
+AsyncStorage.getItem(KEY_USERS).then((val) => {
+  if (val) memory[KEY_USERS] = val;
+}).catch(() => {});
+
 const get = (k: string) => {
+  if (memory[k]) return memory[k];
   try {
     if (typeof window !== "undefined" && window.localStorage) {
       return window.localStorage.getItem(k);
     }
   } catch {}
-  return memory[k] || null;
+  return null;
 };
 
 const set = (k: string, v: string) => {
+  memory[k] = v;
   try {
     if (typeof window !== "undefined" && window.localStorage) {
       window.localStorage.setItem(k, v);
     }
   } catch {}
-  memory[k] = v;
+  AsyncStorage.setItem(k, v).catch(() => {});
 };
 
 const del = (k: string) => {
+  delete memory[k];
   try {
     if (typeof window !== "undefined" && window.localStorage) {
       window.localStorage.removeItem(k);
     }
   } catch {}
-  delete memory[k];
+  AsyncStorage.removeItem(k).catch(() => {});
 };
 
 export const authStorage = {
+  initAsync: async (): Promise<void> => {
+    try {
+      const [session, users] = await Promise.all([
+        AsyncStorage.getItem(KEY_SESSION),
+        AsyncStorage.getItem(KEY_USERS),
+      ]);
+      if (session) memory[KEY_SESSION] = session;
+      if (users) memory[KEY_USERS] = users;
+    } catch {}
+  },
   getUsersMap: (): Record<string, DevUser> => {
     try {
       return JSON.parse(get(KEY_USERS) || "{}");

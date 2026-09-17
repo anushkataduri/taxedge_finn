@@ -29,13 +29,15 @@ export const NoticeStatusScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
+    applicationId?: string;
     noticeNumber?: string;
     assessmentYear?: string;
   }>();
 
   const details = {
     ...MOCK_NOTICE_STATUS_DETAILS,
-    noticeNumber: params.noticeNumber || MOCK_NOTICE_STATUS_DETAILS.noticeNumber,
+    noticeNumber: params.noticeNumber?.trim() || "Notice Response",
+    acknowledgementNo: params.applicationId || "Pending",
   };
 
   const handleBackToServices = () => {

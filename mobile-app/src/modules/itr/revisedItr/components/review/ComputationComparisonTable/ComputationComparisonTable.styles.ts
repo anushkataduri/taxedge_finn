@@ -3,11 +3,10 @@ import { StyleSheet, Platform } from "react-native";
 export const styles = StyleSheet.create({
   card: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    borderColor: "#E2E8F0",
+    padding: 16,
     marginBottom: 14,
     ...Platform.select({
       ios: {
@@ -22,50 +21,51 @@ export const styles = StyleSheet.create({
       default: {},
     }),
   },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0B1F3A",
+    marginBottom: 12,
+  },
+  itemBlock: {
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: "#F1F5F9",
   },
-  headerCell: {
-    fontSize: 11.5,
+  itemBlockLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 2,
+  },
+  particularTitle: {
+    fontSize: 13.5,
     fontWeight: "700",
-    color: "#64748B",
+    color: "#0B1F3A",
+    marginBottom: 6,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 11,
+    justifyContent: "space-between",
+    paddingVertical: 2.5,
   },
-  rowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-  },
-  cell: {
+  label: {
     fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
+  },
+  value: {
+    fontSize: 12.5,
     color: "#0B1F3A",
     fontWeight: "600",
   },
-  particularCol: {
-    flex: 1.4,
-    paddingRight: 4,
-  },
-  valueCol: {
-    flex: 1,
-    textAlign: "right",
-    paddingRight: 6,
-  },
-  changeCol: {
-    flex: 1,
-    textAlign: "right",
-  },
-  highlightText: {
+  changeValue: {
+    fontSize: 12.5,
+    fontWeight: "700",
     color: "#EA580C",
-    fontWeight: "800",
   },
-  neutralText: {
+  neutralChange: {
+    fontSize: 12.5,
+    fontWeight: "600",
     color: "#64748B",
   },
 });

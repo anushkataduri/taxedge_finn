@@ -26,6 +26,7 @@ export const NoticeDocumentsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     noticeNumber?: string;
+    noticeDate?: string;
     assessmentYear?: string;
   }>();
 
@@ -76,6 +77,7 @@ export const NoticeDocumentsScreen: React.FC = () => {
       pathname: "/service/tax-notice-review" as any,
       params: {
         noticeNumber: params.noticeNumber,
+        noticeDate: params.noticeDate,
         assessmentYear,
       },
     });

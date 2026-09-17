@@ -10,44 +10,38 @@ export interface RequestOptions {
   timeoutMs?: number;
 }
 
-/**
- * Server Network Configuration
- * Change IP and Port here to point the mobile app to your backend.
- */
-export const SERVER_IP = "192.168.88.12";
-
-export const SERVER_PORT = 8088;
-
 export const STORAGE_KEY_SERVER_URL = "@taxedge_server_url";
 
 export function getDefaultBaseUrl(): string {
-  if (SERVER_IP && SERVER_IP.trim() !== "") {
-    return `http://${SERVER_IP}:${SERVER_PORT}`;
+  // 1. Highest priority: environment-driven URL for production/staging
+  if (process.env.EXPO_PUBLIC_API_URL && process.env.EXPO_PUBLIC_API_URL.trim() !== "") {
+    return process.env.EXPO_PUBLIC_API_URL.trim();
   }
 
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
-  }
-
-  if (Platform.OS === "web") {
-    return `http://localhost:${SERVER_PORT}`;
-  }
-
-  try {
-    const hostUri =
-      Constants.expoConfig?.hostUri ||
-      (Constants as any).manifest?.debuggerHost ||
-      (Constants as any).manifest2?.extra?.expoGo?.debuggerHost;
-
-    if (hostUri) {
-      const ip = hostUri.split(":")[0];
-      if (ip && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
-        return `http://${ip}:${SERVER_PORT}`;
-      }
+  // 2. Development fallbacks only
+  if (__DEV__) {
+    if (Platform.OS === "web") {
+      return "http://localhost:8088";
     }
-  } catch {}
 
-  return `http://192.168.88.12:${SERVER_PORT}`;
+    try {
+      const hostUri =
+        Constants.expoConfig?.hostUri ||
+        (Constants as any).manifest?.debuggerHost ||
+        (Constants as any).manifest2?.extra?.expoGo?.debuggerHost;
+
+      if (hostUri) {
+        const ip = hostUri.split(":")[0];
+        if (ip && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+          return `http://${ip}:8088`;
+        }
+      }
+    } catch {}
+
+    return "http://localhost:8088";
+  }
+
+  return "";
 }
 
 export class ApiClient {
@@ -57,7 +51,9 @@ export class ApiClient {
   constructor(baseUrl: string = getDefaultBaseUrl()) {
     this.baseUrl = baseUrl;
     this.interceptors = new InterceptorManager();
-    this.loadCustomBaseUrl();
+    if (__DEV__) {
+      this.loadCustomBaseUrl();
+    }
   }
 
   getBaseUrl(): string {
@@ -67,7 +63,7 @@ export class ApiClient {
   setBaseUrl(url: string): void {
     let clean = url.trim();
     if (!clean.startsWith("http://") && !clean.startsWith("https://")) {
-      clean = `http://${clean}`;
+      clean = `https://${clean}`;
     }
     if (clean.endsWith("/")) {
       clean = clean.slice(0, -1);
@@ -169,10 +165,9 @@ export class ApiClient {
         method,
       });
 
-      console.log(
-        `🌐 [API] ${interceptedConfig.method} ${interceptedConfig.url}`,
-        body ? JSON.stringify(body) : "",
-      );
+      if (__DEV__) {
+        console.log(`🌐 [API] ${interceptedConfig.method} ${interceptedConfig.url}`);
+      }
 
       const controller = new AbortController();
       const timeoutMs = options?.timeoutMs || 10000;
@@ -190,9 +185,11 @@ export class ApiClient {
         clearTimeout(timeoutId);
       }
 
-      console.log(
-        `🌐 [API] Response status: ${response.status} for ${interceptedConfig.url}`,
-      );
+      if (__DEV__) {
+        console.log(
+          `🌐 [API] Response status: ${response.status} for ${interceptedConfig.url}`,
+        );
+      }
 
       if (!response.ok) {
         let errorData: any = {};
@@ -239,7 +236,7 @@ export class ApiClient {
         errMessage.includes("Network request failed") ||
         errMessage.includes("fetch failed")
       ) {
-        errMessage = `Unable to connect to server (${this.baseUrl}). Please verify your Wi-Fi and server IP.`;
+        errMessage = "Unable to connect to server. Please check your internet connection.";
       }
       return this.interceptors.runErrorInterceptors(
         new ApiError(errMessage, 500, "NETWORK_ERROR"),

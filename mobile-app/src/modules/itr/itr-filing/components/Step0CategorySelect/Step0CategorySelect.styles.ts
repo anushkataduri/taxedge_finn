@@ -111,7 +111,7 @@ export const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#E2E8F0",
     position: "relative",
-    minHeight: 132,
+    minHeight: 116,
     justifyContent: "space-between",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -164,31 +164,9 @@ export const styles = StyleSheet.create({
     fontSize: 11,
     color: "#64748B",
     lineHeight: 15,
-    marginBottom: 8,
   },
   cardSubtitleSelected: {
     color: "#94A3B8",
-  },
-  formTag: {
-    alignSelf: "flex-start",
-    backgroundColor: "#FFFBEB",
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: "#FDE68A",
-  },
-  formTagSelected: {
-    backgroundColor: "#1E3A5F",
-    borderColor: "#334E68",
-  },
-  formTagText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#D97706",
-  },
-  formTagTextSelected: {
-    color: BrandColors.PRIMARY_ORANGE,
   },
   // Bottom Fixed Button Bar
   bottomBar: {

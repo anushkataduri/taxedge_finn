@@ -50,6 +50,70 @@ export const styles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: Typography.fontWeight.regular,
   },
+  reviewCard: {
+    backgroundColor: BrandColors.WHITE,
+    borderRadius: 16,
+    borderWidth: BorderWidth.thin,
+    borderColor: "#E2E8F0",
+    padding: 14,
+    marginBottom: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#0B1F3A",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 1,
+      },
+      default: {},
+    }),
+  },
+  cardHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0B1F3A",
+  },
+  editBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 3.5,
+    borderRadius: 6,
+    backgroundColor: "#FFF7ED",
+  },
+  editBtnText: {
+    fontSize: 11.5,
+    fontWeight: "700",
+    color: "#EA580C",
+  },
+  infoList: {
+    gap: 6,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 2,
+  },
+  infoLabel: {
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
+  },
+  infoVal: {
+    fontSize: 12.5,
+    color: "#0B1F3A",
+    fontWeight: "600",
+    textAlign: "right",
+    flexShrink: 1,
+    marginLeft: 10,
+  },
   infoCard: {
     backgroundColor: "#EFF6FF",
     borderRadius: BorderRadius.base,

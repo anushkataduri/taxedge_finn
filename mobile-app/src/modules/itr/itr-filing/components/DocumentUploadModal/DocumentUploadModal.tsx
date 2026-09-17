@@ -1,17 +1,9 @@
 import React from "react";
-import {
-  View,
-  Text,
-  Modal,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  Alert,
-} from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import { Alert } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
-import { styles } from "./DocumentUploadModal.styles";
+import { DocumentUploadBottomSheet } from "@/modules/itr/tds/components/upload/DocumentUploadBottomSheet/DocumentUploadBottomSheet";
 
 const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
 
@@ -159,84 +151,14 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
   };
 
   return (
-    <Modal
+    <DocumentUploadBottomSheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <View style={styles.sheetContainer}>
-              <View style={styles.dragHandle} />
-
-              <Text style={styles.sheetTitle}>Upload {docTitle}</Text>
-              <Text style={styles.sheetSubtitle}>
-                Select file source • Maximum file size: 2 MB
-              </Text>
-
-              <View style={styles.optionsList}>
-                {/* 1. Drive / Files */}
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  style={styles.optionRow}
-                  onPress={handlePickDocument}
-                >
-                  <View style={[styles.iconBox, styles.iconBoxFiles]}>
-                    <Ionicons name="folder-open-outline" size={22} color="#0284C7" />
-                  </View>
-                  <View style={styles.optionTextCol}>
-                    <Text style={styles.optionTitle}>Choose from Files / Drive</Text>
-                    <Text style={styles.optionDesc}>PDF, JPG or PNG (up to 2 MB)</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-                </TouchableOpacity>
-
-                {/* 2. Photo Gallery */}
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  style={styles.optionRow}
-                  onPress={handlePickGallery}
-                >
-                  <View style={[styles.iconBox, styles.iconBoxGallery]}>
-                    <Ionicons name="images-outline" size={22} color="#7E22CE" />
-                  </View>
-                  <View style={styles.optionTextCol}>
-                    <Text style={styles.optionTitle}>Select from Gallery</Text>
-                    <Text style={styles.optionDesc}>Upload existing photo from gallery</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-                </TouchableOpacity>
-
-                {/* 3. Camera */}
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  style={styles.optionRow}
-                  onPress={handlePickCamera}
-                >
-                  <View style={[styles.iconBox, styles.iconBoxCamera]}>
-                    <Ionicons name="camera-outline" size={22} color="#16A34A" />
-                  </View>
-                  <View style={styles.optionTextCol}>
-                    <Text style={styles.optionTitle}>Take Photo with Camera</Text>
-                    <Text style={styles.optionDesc}>Directly capture document clearly</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-                </TouchableOpacity>
-              </View>
-
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={styles.cancelButton}
-                onPress={onClose}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
-    </Modal>
+      documentTitle={docTitle}
+      maxSizeBytesText="2 MB"
+      onClose={onClose}
+      onPickFiles={handlePickDocument}
+      onPickGallery={handlePickGallery}
+      onTakePhoto={handlePickCamera}
+    />
   );
 };

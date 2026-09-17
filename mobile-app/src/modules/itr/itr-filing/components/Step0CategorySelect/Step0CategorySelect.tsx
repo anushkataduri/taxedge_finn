@@ -21,7 +21,6 @@ interface CategoryOption {
   id: ItrCategoryType;
   title: string;
   subtitle: string;
-  formBadge: string;
   iconName: keyof typeof Ionicons.glyphMap;
   disallowedAccountTypes?: string[];
 }
@@ -30,8 +29,7 @@ const ALL_CATEGORIES: CategoryOption[] = [
   {
     id: "salaried",
     title: "Salaried",
-    subtitle: "Form 16 available",
-    formBadge: "ITR-1",
+    subtitle: "Salary income with Form 16",
     iconName: "person-outline",
     disallowedAccountTypes: [
       "Proprietorship",
@@ -45,23 +43,20 @@ const ALL_CATEGORIES: CategoryOption[] = [
   {
     id: "business",
     title: "Business Income",
-    subtitle: "Proprietor / Business",
-    formBadge: "ITR-3/4",
+    subtitle: "Trading, manufacturing & sales",
     iconName: "storefront-outline",
   },
   {
     id: "professional",
     title: "Professional",
-    subtitle: "Doctor, Lawyer, CA etc.",
-    formBadge: "ITR-3",
+    subtitle: "Doctor, Lawyer, Consultant, CA",
     iconName: "medkit-outline",
     disallowedAccountTypes: ["Private Limited", "Public Limited", "HUF"],
   },
   {
     id: "freelancer",
     title: "Freelancer",
-    subtitle: "Independent Contractor",
-    formBadge: "ITR-3/4",
+    subtitle: "Independent contractor & gigs",
     iconName: "laptop-outline",
     disallowedAccountTypes: [
       "Partnership",
@@ -74,15 +69,13 @@ const ALL_CATEGORIES: CategoryOption[] = [
   {
     id: "trader_investor",
     title: "Trader / Investor",
-    subtitle: "Stock & F&O Trading",
-    formBadge: "ITR-3",
+    subtitle: "Stocks, F&O & Intraday",
     iconName: "trending-up-outline",
   },
   {
     id: "rental",
     title: "Rental Income",
-    subtitle: "House / Property Income",
-    formBadge: "ITR-1/2",
+    subtitle: "House & commercial property",
     iconName: "home-outline",
     disallowedAccountTypes: [
       "Partnership",
@@ -94,15 +87,13 @@ const ALL_CATEGORIES: CategoryOption[] = [
   {
     id: "capital_gains",
     title: "Capital Gains",
-    subtitle: "Property / Shares / MF",
-    formBadge: "ITR-2",
+    subtitle: "Property, shares & mutual funds",
     iconName: "document-text-outline",
   },
   {
     id: "multiple",
     title: "Multiple Sources",
-    subtitle: "Salary + Business etc.",
-    formBadge: "ITR-2/3",
+    subtitle: "Combination of income sources",
     iconName: "link-outline",
   },
 ];
@@ -113,7 +104,6 @@ export const Step0CategorySelect: React.FC<Step0CategorySelectProps> = ({
   onSelectCategory,
   onStartApplication,
 }) => {
-  // Pure functional filtering based on accountType
   const visibleCategories = useMemo(() => {
     return ALL_CATEGORIES.filter((cat) => {
       if (!cat.disallowedAccountTypes) return true;
@@ -121,7 +111,6 @@ export const Step0CategorySelect: React.FC<Step0CategorySelectProps> = ({
     });
   }, [accountType]);
 
-  // Ensure an active category is always selected
   const currentSelected = useMemo(() => {
     if (selectedCategory && visibleCategories.some((c) => c.id === selectedCategory)) {
       return selectedCategory;
@@ -135,7 +124,7 @@ export const Step0CategorySelect: React.FC<Step0CategorySelectProps> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Card (Replicating Image 1) */}
+        {/* Header Card */}
         <View style={styles.headerCard}>
           <View style={styles.headerRow}>
             <View style={styles.headerIconBox}>
@@ -143,23 +132,12 @@ export const Step0CategorySelect: React.FC<Step0CategorySelectProps> = ({
             </View>
             <View style={styles.headerTitleCol}>
               <Text style={styles.headerTitle}>ITR Filing</Text>
-              <Text style={styles.headerCategoryTag}>ITR CATEGORY</Text>
+              <Text style={styles.headerCategoryTag}>Select Primary Income</Text>
             </View>
           </View>
           <Text style={styles.headerSubtitle}>
-            We'll recommend the right ITR form for you.
+            Select your main source of income. We will automatically determine the applicable ITR form for you.
           </Text>
-
-          {/* Account Type context notice */}
-          <View style={styles.accountTypeRow}>
-            <View style={styles.accountTypeBadge}>
-              <Ionicons name="shield-outline" size={12} color="#1D4ED8" />
-              <Text style={styles.accountTypeBadgeText}>{accountType}</Text>
-            </View>
-            <Text style={styles.accountTypeNotice}>
-              Categories customized for your legal account type
-            </Text>
-          </View>
         </View>
 
         {/* 2-Column Grid */}
@@ -174,14 +152,12 @@ export const Step0CategorySelect: React.FC<Step0CategorySelectProps> = ({
                 style={[styles.card, isSelected && styles.cardSelected]}
                 onPress={() => onSelectCategory(cat.id)}
               >
-                {/* Top Right Checkmark when selected */}
                 {isSelected && (
                   <View style={styles.cardCheckmarkBox}>
                     <Ionicons name="checkmark" size={13} color="#FFFFFF" />
                   </View>
                 )}
 
-                {/* Card Icon */}
                 <View
                   style={[
                     styles.cardIconBox,
@@ -195,7 +171,6 @@ export const Step0CategorySelect: React.FC<Step0CategorySelectProps> = ({
                   />
                 </View>
 
-                {/* Card Titles */}
                 <View>
                   <Text
                     style={[styles.cardTitle, isSelected && styles.cardTitleSelected]}
@@ -208,23 +183,9 @@ export const Step0CategorySelect: React.FC<Step0CategorySelectProps> = ({
                       styles.cardSubtitle,
                       isSelected && styles.cardSubtitleSelected,
                     ]}
-                    numberOfLines={1}
+                    numberOfLines={2}
                   >
                     {cat.subtitle}
-                  </Text>
-                </View>
-
-                {/* Form Badge */}
-                <View
-                  style={[styles.formTag, isSelected && styles.formTagSelected]}
-                >
-                  <Text
-                    style={[
-                      styles.formTagText,
-                      isSelected && styles.formTagTextSelected,
-                    ]}
-                  >
-                    {cat.formBadge}
                   </Text>
                 </View>
               </TouchableOpacity>

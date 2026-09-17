@@ -3,26 +3,26 @@ import { TdsBenefitItem, TdsProcessStep, TdsDocumentItem } from "../types/tds.ty
 export const TDS_BENEFITS: TdsBenefitItem[] = [
   {
     id: "maximization",
-    title: "Refund Maximization",
-    description: "We identify all eligible refunds before filing.",
+    title: "Maximum Refund",
+    description: "Identifies all eligible tax credits to maximize refund.",
     iconName: "wallet-outline",
   },
   {
     id: "expert_filing",
-    title: "Expert Filing",
-    description: "Prepared and reviewed by experienced Tax Executives.",
+    title: "Expert CA Review",
+    description: "Verified by certified tax professionals.",
     iconName: "ribbon-outline",
   },
   {
     id: "quick_processing",
-    title: "Quick Processing",
-    description: "Fast document verification and filing process.",
+    title: "Fast Filing",
+    description: "Prompt verification and swift return submission.",
     iconName: "time-outline",
   },
   {
     id: "live_tracking",
     title: "Live Tracking",
-    description: "Track your refund request from submission until refund credit.",
+    description: "Real-time updates from filing to refund credit.",
     iconName: "analytics-outline",
   },
 ];

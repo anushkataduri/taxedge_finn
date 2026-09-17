@@ -25,11 +25,11 @@ export const UploadNoticeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
 
   const [formData, setFormData] = useState<TaxNoticeUploadFormData>({
-    noticeNumber: "CPC/2526/A3/284419260",
-    noticeDate: "18 Aug 2026",
+    noticeNumber: "",
+    noticeDate: "",
     assessmentYear: "AY 2025–26",
-    noticeFileName: "IT_Notice_143_1_a.pdf",
-    noticeFileSize: "2.4 MB",
+    noticeFileName: "",
+    noticeFileSize: "",
   });
 
   const [showAyDropdown, setShowAyDropdown] = useState(false);

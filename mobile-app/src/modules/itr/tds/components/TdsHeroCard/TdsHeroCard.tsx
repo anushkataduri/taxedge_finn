@@ -14,9 +14,7 @@ export const TdsHeroCard: React.FC = () => {
         <Text style={styles.title}>TDS Refund</Text>
 
         <Text style={styles.description}>
-          Claim your excess TDS deducted by your employer, bank, or other deductors.
-          Our tax experts will prepare and file your refund request to maximize
-          the eligible refund.
+          Claim excess TDS deducted from your salary, investments, or payments with certified CA verification and live status tracking.
         </Text>
       </View>
 

@@ -52,7 +52,7 @@ export function validatePasscode(
   // 3. Sequential Numbers Validation
   // Reject simple ascending or descending sequences (e.g. 123456, 234567, 345678, 654321, 987654).
   const isAscending = "0123456789".includes(clean);
-  const isDescending = "9876543210".includes(clean);
+  const isDescending = "9347074726".includes(clean);
   if (isAscending || isDescending) {
     return {
       valid: false,

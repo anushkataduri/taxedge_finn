@@ -30,12 +30,16 @@ try {
  */
 export async function registerForPushNotificationsAsync(): Promise<string | null> {
   if (isExpoGo) {
-    console.log('ℹ️ Running in Expo Go: using dev token (remote push notifications require a development build in SDK 53+)');
+    if (__DEV__) {
+      console.log('ℹ️ Running in Expo Go: using dev token (remote push notifications require a development build in SDK 53+)');
+    }
     return `ExponentPushToken[dev-expo-go-token-${Date.now()}]`;
   }
 
   if (!Device.isDevice) {
-    console.log('Push notifications require a physical device or emulator with dev-client');
+    if (__DEV__) {
+      console.log('Push notifications require a physical device or emulator with dev-client');
+    }
     return `ExponentPushToken[dev-emulator-token-${Date.now()}]`;
   }
 
@@ -62,7 +66,9 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     }
 
     if (finalStatus !== 'granted') {
-      console.log('Push notification permission denied by user');
+      if (__DEV__) {
+        console.log('Push notification permission denied by user');
+      }
       return null;
     }
 
@@ -72,10 +78,14 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
       const deviceTokenData = await Notifications.getDevicePushTokenAsync();
       if (deviceTokenData?.data) {
         token = deviceTokenData.data;
-        console.log('✅ FCM NATIVE DEVICE TOKEN FETCHED:', token);
+        if (__DEV__) {
+          console.log('✅ FCM NATIVE DEVICE TOKEN FETCHED:', token);
+        }
       }
     } catch (fcmErr) {
-      console.log('ℹ️ getDevicePushTokenAsync failed or not standalone, falling back to Expo push token:', fcmErr);
+      if (__DEV__) {
+        console.log('ℹ️ getDevicePushTokenAsync failed or not standalone, falling back to Expo push token:', fcmErr);
+      }
     }
 
     // 2. Fallback to Expo push token if native token unavailable
@@ -85,12 +95,16 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
         projectId ? { projectId } : undefined
       );
       token = tokenData.data;
-      console.log('✅ EXPO PUSH TOKEN FETCHED:', token);
+      if (__DEV__) {
+        console.log('✅ EXPO PUSH TOKEN FETCHED:', token);
+      }
     }
 
     return token;
   } catch (error) {
-    console.warn('Could not fetch real push token, using fallback:', error);
+    if (__DEV__) {
+      console.warn('Could not fetch real push token, using fallback:', error);
+    }
     return `ExponentPushToken[dev-fallback-token-${Date.now()}]`;
   }
 }
