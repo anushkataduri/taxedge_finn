@@ -35,14 +35,20 @@ export const ReturnFiledScreen: React.FC = () => {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
 
+  const todayFormatted = new Date().toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
   const filingData: FilingVerificationData = {
     acknowledgementNumber:
-      params.acknowledgementNumber || DEFAULT_FILING_DATA.acknowledgementNumber,
-    filedDate: DEFAULT_FILING_DATA.filedDate,
-    itrForm: params.formType || DEFAULT_FILING_DATA.itrForm,
-    assessmentYear: params.assessmentYear || DEFAULT_FILING_DATA.assessmentYear,
-    refundClaimed: params.refundAmount || DEFAULT_FILING_DATA.refundClaimed,
-    isRefund: true,
+      params.acknowledgementNumber || "ITR Filing Completed",
+    filedDate: todayFormatted,
+    itrForm: params.formType || "ITR Form",
+    assessmentYear: params.assessmentYear || "Current AY",
+    refundClaimed: params.refundAmount || "—",
+    isRefund: Boolean(params.refundAmount && params.refundAmount !== "—"),
   };
 
   const handleBack = () => {
@@ -63,11 +69,13 @@ export const ReturnFiledScreen: React.FC = () => {
   const handleNetBankingVerify = () => {
     Alert.alert(
       "Net Banking Verification",
-      "Redirecting to ITD Net Banking portal gateway for authentication...",
+      "Connecting to Income Tax Department e-Filing Net Banking gateway...",
       [
         {
-          text: "Simulate Verification",
-          onPress: () => setIsVerified(true),
+          text: "Proceed to Bank",
+          onPress: () => {
+            Alert.alert("E-Filing Portal", "Please log in to your bank's net banking portal to authenticate your return filing.");
+          },
         },
         { text: "Cancel", style: "cancel" },
       ]

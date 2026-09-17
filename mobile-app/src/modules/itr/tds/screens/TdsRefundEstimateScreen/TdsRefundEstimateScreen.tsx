@@ -7,6 +7,7 @@ import {
   StatusBar,
   SafeAreaView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -58,7 +59,7 @@ export const TdsRefundEstimateScreen: React.FC = () => {
   }, []);
 
   const handleEditPersonalOrIncome = () => {
-    router.push("/service/tds-refund" as any);
+    router.push("/service/tds-form" as any);
   };
 
   const handleEditDocuments = () => {
@@ -78,14 +79,17 @@ export const TdsRefundEstimateScreen: React.FC = () => {
         existingAppId || undefined
       );
 
-      if (response && response.applicationId) {
-        await tdsDraftService.saveApplicationId(response.applicationId);
+      const targetAppId = response?.applicationId || existingAppId;
+      if (!targetAppId) {
+        throw new Error("Unable to create application record on server. Please try again.");
       }
+
+      await tdsDraftService.saveApplicationId(targetAppId);
 
       router.push({
         pathname: "/service/tds-payment" as any,
         params: {
-          applicationId: response?.applicationId || existingAppId || "TDS-2026-PENDING",
+          applicationId: targetAppId,
           refundAmount: calculation.estimatedRefund.toString(),
           isAdditionalPayable: calculation.isAdditionalTaxPayable ? "1" : "0",
           payableAmount: calculation.estimatedTaxPayable.toString(),
@@ -94,20 +98,11 @@ export const TdsRefundEstimateScreen: React.FC = () => {
           totalPayable: calculation.totalPayableFee.toString(),
         },
       });
-    } catch (err) {
-      console.warn("Backend draft sync error, proceeding with local calculation data:", err);
-      router.push({
-        pathname: "/service/tds-payment" as any,
-        params: {
-          applicationId: "TDS-2026-TEMP",
-          refundAmount: calculation.estimatedRefund.toString(),
-          isAdditionalPayable: calculation.isAdditionalTaxPayable ? "1" : "0",
-          payableAmount: calculation.estimatedTaxPayable.toString(),
-          serviceFee: calculation.serviceFee.toString(),
-          gstAmount: calculation.gstAmount.toString(),
-          totalPayable: calculation.totalPayableFee.toString(),
-        },
-      });
+    } catch (err: any) {
+      Alert.alert(
+        "Application Submission Failed",
+        err?.message || "Failed to submit application to the server. Please check your network and try again."
+      );
     } finally {
       setIsSubmitting(false);
     }

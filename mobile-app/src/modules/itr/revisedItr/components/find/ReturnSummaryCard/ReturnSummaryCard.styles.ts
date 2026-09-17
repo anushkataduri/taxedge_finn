@@ -25,33 +25,12 @@ export const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  iconCircle: {
-    marginRight: 10,
-  },
-  headerTextGroup: {
-    flex: 1,
+    justifyContent: "space-between",
   },
   cardTitle: {
-    fontSize: 14.5,
+    fontSize: 15,
     fontWeight: "700",
     color: "#0B1F3A",
-  },
-  ackNumber: {
-    fontSize: 11,
-    color: "#64748B",
-    marginTop: 1.5,
-  },
-  statusBadge: {
-    backgroundColor: "#DCFCE7",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  statusBadgeText: {
-    fontSize: 10.5,
-    fontWeight: "700",
-    color: "#16A34A",
   },
   divider: {
     height: 1,

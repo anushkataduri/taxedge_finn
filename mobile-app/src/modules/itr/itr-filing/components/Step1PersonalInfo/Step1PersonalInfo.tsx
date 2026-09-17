@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -15,8 +15,9 @@ import {
   ResidentialStatus,
   FilingType,
 } from "../../types/itrFiling.types";
-import { SUPPORTED_ASSESSMENT_YEARS, getSupportedAssessmentYears } from "../../../taxRules";
+import { getSupportedAssessmentYears } from "../../../taxRules";
 import { BankSelectorModal } from "../../../components/BankSelectorModal";
+import { useITRStore } from "../../../store/itrStore";
 import { styles } from "./Step1PersonalInfo.styles";
 
 interface Step1PersonalInfoProps {
@@ -49,25 +50,25 @@ const FILING_TYPES: { id: FilingType; title: string; section: string; sub: strin
     id: "139_1_original",
     title: "Original Return",
     section: "u/s 139(1)",
-    sub: "Filing for the current assessment year on or before the statutory due date.",
+    sub: "Filing on or before statutory due date.",
   },
   {
     id: "139_4_belated",
     title: "Belated Return",
     section: "u/s 139(4)",
-    sub: "Filing after the original due date has elapsed with applicable late fees.",
+    sub: "Filing after statutory due date with applicable late fees.",
   },
   {
     id: "139_5_revised",
     title: "Revised Return",
     section: "u/s 139(5)",
-    sub: "Revising a previously filed return to correct omission or wrong statement.",
+    sub: "Correct omission or error in previously filed return.",
   },
   {
     id: "139_8a_updated",
     title: "Updated Return (ITR-U)",
     section: "u/s 139(8A)",
-    sub: "Filing within 24 months from the end of the relevant assessment year.",
+    sub: "Filing within 24 months from the end of relevant AY.",
   },
 ];
 
@@ -84,28 +85,34 @@ export const Step1PersonalInfo: React.FC<Step1PersonalInfoProps> = ({
   onContinue,
 }) => {
   const [showBankModal, setShowBankModal] = useState(false);
-  const [showResidencyDetails, setShowResidencyDetails] = useState(false);
   const [isPreviousItrExpanded, setIsPreviousItrExpanded] = useState(false);
+
+  useEffect(() => {
+    useITRStore.getState().fetchAndPopulateUserProfile();
+  }, []);
 
   const supportedAYs = getSupportedAssessmentYears();
 
   const maskedAadhaar = personalInfo.aadhaar
     ? `•••• •••• ${personalInfo.aadhaar.slice(-4)}`
-    : "•••• •••• 1098";
+    : "Not provided";
+
+  const formattedMobile = personalInfo.mobile
+    ? personalInfo.mobile.startsWith("+")
+      ? personalInfo.mobile
+      : `+91 ${personalInfo.mobile}`
+    : "Not provided";
+
+  const formattedAddress =
+    personalInfo.address ||
+    [personalInfo.city, personalInfo.state].filter(Boolean).join(", ") ||
+    "Not provided";
 
   const handleValidateAndContinue = () => {
     if (!personalInfo.residentialStatus) {
       Alert.alert(
         "Residential Status Required",
-        "Please select your residential status (Resident, NRI, or RNOR) from the options above."
-      );
-      return;
-    }
-
-    if (!personalInfo.residentialStatusConfirmed) {
-      Alert.alert(
-        "Residency Confirmation Required",
-        "Please confirm your residential status for tax determination."
+        "Please select your residential status (Resident, NRI, or RNOR)."
       );
       return;
     }
@@ -113,7 +120,7 @@ export const Step1PersonalInfo: React.FC<Step1PersonalInfoProps> = ({
     if (!personalInfo.filingType) {
       Alert.alert(
         "Filing Type Required",
-        "Please select your applicable filing type (Original, Belated, Revised, or Updated Return)."
+        "Please select your applicable filing type."
       );
       return;
     }
@@ -121,7 +128,7 @@ export const Step1PersonalInfo: React.FC<Step1PersonalInfoProps> = ({
     if (!bankDetails.bankName.trim() || !bankDetails.accountNumber.trim()) {
       Alert.alert(
         "Missing Refund Bank Account",
-        "Please select a validated bank account to receive direct income tax refund credit."
+        "Please select or add a bank account to receive direct income tax refund credit."
       );
       return;
     }
@@ -145,13 +152,13 @@ export const Step1PersonalInfo: React.FC<Step1PersonalInfoProps> = ({
         </View>
 
         <Text style={styles.cardDescription}>
-          Auto-filled from your TaxEdge profile. Please verify your legal PAN, masked Aadhaar, and address.
+          Information verified from your TaxEdge profile. Please verify your legal PAN, Aadhaar, and registered details.
         </Text>
 
         <View style={styles.readOnlyGrid}>
           <View style={styles.readOnlyRow}>
             <Text style={styles.fieldLabel}>PAN Number</Text>
-            <Text style={styles.fieldValueHighlight}>{personalInfo.pan}</Text>
+            <Text style={styles.fieldValueHighlight}>{personalInfo.pan || "Not provided"}</Text>
           </View>
           <View style={styles.readOnlyRow}>
             <Text style={styles.fieldLabel}>Aadhaar Number</Text>
@@ -159,25 +166,25 @@ export const Step1PersonalInfo: React.FC<Step1PersonalInfoProps> = ({
           </View>
           <View style={styles.readOnlyRow}>
             <Text style={styles.fieldLabel}>Full Legal Name</Text>
-            <Text style={styles.fieldValue}>{personalInfo.name}</Text>
+            <Text style={styles.fieldValue}>{personalInfo.name || "Not provided"}</Text>
           </View>
-          <View style={styles.readOnlyRow}>
-            <Text style={styles.fieldLabel}>Date of Birth</Text>
-            <Text style={styles.fieldValue}>{personalInfo.dob || "01/01/1990"}</Text>
-          </View>
+          {Boolean(personalInfo.dob) && (
+            <View style={styles.readOnlyRow}>
+              <Text style={styles.fieldLabel}>Date of Birth</Text>
+              <Text style={styles.fieldValue}>{personalInfo.dob}</Text>
+            </View>
+          )}
           <View style={styles.readOnlyRow}>
             <Text style={styles.fieldLabel}>Mobile Number</Text>
-            <Text style={styles.fieldValue}>+91 {personalInfo.mobile}</Text>
+            <Text style={styles.fieldValue}>{formattedMobile}</Text>
           </View>
           <View style={styles.readOnlyRow}>
             <Text style={styles.fieldLabel}>Email Address</Text>
-            <Text style={styles.fieldValue}>{personalInfo.email}</Text>
+            <Text style={styles.fieldValue}>{personalInfo.email || "Not provided"}</Text>
           </View>
           <View style={styles.readOnlyRow}>
             <Text style={styles.fieldLabel}>Registered Address</Text>
-            <Text style={styles.fieldValue}>
-              {personalInfo.city}, {personalInfo.state}
-            </Text>
+            <Text style={styles.fieldValue}>{formattedAddress}</Text>
           </View>
         </View>
 
@@ -187,7 +194,7 @@ export const Step1PersonalInfo: React.FC<Step1PersonalInfoProps> = ({
           onPress={() =>
             Alert.alert(
               "Update Profile Details",
-              "To change your legal name, PAN, or permanent address, update your TaxEdge account profile or contact support."
+              "To change your legal name, PAN, or address, update your TaxEdge profile or contact support."
             )
           }
         >
@@ -205,7 +212,7 @@ export const Step1PersonalInfo: React.FC<Step1PersonalInfoProps> = ({
         </View>
 
         <Text style={styles.cardDescription}>
-          Select the assessment year. Tax rules, standard deductions, and tax slabs are dynamically loaded for the chosen year.
+          Select the assessment year for which you are filing this income tax return.
         </Text>
 
         <View style={styles.pickerRow}>
@@ -226,6 +233,14 @@ export const Step1PersonalInfo: React.FC<Step1PersonalInfoProps> = ({
                 >
                   {ay.label}
                 </Text>
+                <Text
+                  style={[
+                    styles.pickerPillSubText,
+                    isSelected && styles.pickerPillSubTextSelected,
+                  ]}
+                >
+                  FY {ay.financialYear}
+                </Text>
               </TouchableOpacity>
             );
           })}
@@ -242,11 +257,9 @@ export const Step1PersonalInfo: React.FC<Step1PersonalInfoProps> = ({
         </View>
 
         <Text style={styles.cardDescription}>
-          Select your residential status for the assessment year.
+          Select your residential status in India for the selected financial year.
         </Text>
 
-        {/* Top: Select Status with Options */}
-        <Text style={styles.inputLabel}>Select Status</Text>
         <View style={styles.pickerRow}>
           {RESIDENTIAL_STATUS_OPTIONS.map((res) => {
             const isSelected = personalInfo.residentialStatus === res.id;
@@ -258,7 +271,7 @@ export const Step1PersonalInfo: React.FC<Step1PersonalInfoProps> = ({
                 onPress={() =>
                   onUpdatePersonalInfo({
                     residentialStatus: res.id,
-                    residentialStatusConfirmed: false,
+                    residentialStatusConfirmed: true,
                   })
                 }
               >
@@ -275,71 +288,19 @@ export const Step1PersonalInfo: React.FC<Step1PersonalInfoProps> = ({
           })}
         </View>
 
-        {/* Below: TaxEdge Status Identification & Confirmation Box */}
-        <View style={styles.residencyConfirmCardTopSpaced}>
-          <View style={styles.residencyPromptRow}>
-            <Ionicons name="information-circle" size={18} color="#083B75" />
-            <Text style={styles.residencyPromptText}>
-              {personalInfo.residentialStatus ? (
-                <>
-                  TaxEdge has identified your likely status as:{" "}
-                  <Text style={styles.residencyPromptHighlight}>
-                    {personalInfo.residentialStatus}
-                  </Text>
-                </>
-              ) : (
-                "Please select your residential status from the options above."
-              )}
+        {Boolean(personalInfo.residentialStatus) && (
+          <View style={styles.residencyInfoBox}>
+            <Text style={styles.residencyInfoText}>
+              Selected Status:{" "}
+              <Text style={styles.residencyInfoHighlight}>
+                {RESIDENTIAL_STATUS_OPTIONS.find((r) => r.id === personalInfo.residentialStatus)?.label || personalInfo.residentialStatus}
+              </Text>
+              {personalInfo.residentialStatus === "Resident"
+                ? " — Applicable to individuals residing primarily in India during the financial year."
+                : " — Special provisions for foreign income and DTAA apply."}
             </Text>
           </View>
-
-          {Boolean(personalInfo.residentialStatus) && (
-            <>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={styles.confirmCheckRow}
-                onPress={() =>
-                  onUpdatePersonalInfo({
-                    residentialStatusConfirmed: !personalInfo.residentialStatusConfirmed,
-                  })
-                }
-              >
-                <Ionicons
-                  name={personalInfo.residentialStatusConfirmed ? "checkbox" : "square-outline"}
-                  size={20}
-                  color={personalInfo.residentialStatusConfirmed ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
-                />
-                <Text style={styles.confirmCheckText}>I confirm this residential status is correct</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={styles.residencyDetailToggle}
-                onPress={() => setShowResidencyDetails(!showResidencyDetails)}
-              >
-                <Text style={styles.residencyDetailToggleText}>
-                  {showResidencyDetails ? "Hide residency conditions" : "View residency conditions"}
-                </Text>
-                <Ionicons
-                  name={showResidencyDetails ? "chevron-up" : "chevron-down"}
-                  size={14}
-                  color="#083B75"
-                />
-              </TouchableOpacity>
-
-              {showResidencyDetails && (
-                <View style={styles.residencyCriteriaBox}>
-                  <Text style={styles.criteriaLine}>
-                    {"• In India for >= 182 days during the financial year, OR"}
-                  </Text>
-                  <Text style={styles.criteriaLine}>
-                    {"• In India for >= 60 days during the financial year AND >= 365 days across the preceding 4 years."}
-                  </Text>
-                </View>
-              )}
-            </>
-          )}
-        </View>
+        )}
       </View>
 
       {/* 4. Filing Type Selection */}
@@ -352,7 +313,7 @@ export const Step1PersonalInfo: React.FC<Step1PersonalInfoProps> = ({
         </View>
 
         <Text style={styles.cardDescription}>
-          Select your return filing type for the assessment year.
+          Select your return filing type according to the Income Tax Act, 1961.
         </Text>
 
         <View style={styles.radioList}>
@@ -382,67 +343,76 @@ export const Step1PersonalInfo: React.FC<Step1PersonalInfoProps> = ({
         </View>
       </View>
 
-      {/* 5. Refund Bank Account (Selectable Pre-Validated List) */}
+      {/* 5. Refund Bank Account */}
       <View style={styles.card}>
         <View style={styles.cardHeaderRow}>
           <View style={styles.cardHeaderLeft}>
             <Ionicons name="card-outline" size={18} color="#083B75" />
             <Text style={styles.cardTitle}>Refund Bank Account</Text>
           </View>
-          <View style={styles.verifiedTag}>
-            <Ionicons name="shield-checkmark" size={12} color="#166534" />
-            <Text style={styles.verifiedTagText}>Pre-Validated</Text>
-          </View>
         </View>
 
         <Text style={styles.cardDescription}>
-          Select the bank account where you want your tax refund credited by CPC Bengaluru. Account numbers are securely masked.
+          Select the bank account to receive direct tax refund credit from the Income Tax Department.
         </Text>
 
-        {/* Direct selectable cards */}
-        <View style={styles.bankList}>
-          {bankAccountsList.map((bank) => {
-            const isSelected =
-              bankDetails.accountNumber === bank.accountNumber &&
-              Boolean(bankDetails.accountNumber);
-            return (
-              <TouchableOpacity
-                key={bank.id}
-                activeOpacity={0.8}
-                style={[
-                  styles.bankSelectableCard,
-                  isSelected && styles.bankSelectableCardSelected,
-                ]}
-                onPress={() => onSelectRefundBank(bank.id)}
-              >
-                <View style={styles.bankInfoCol}>
-                  <View style={styles.bankTitleRow}>
-                    <Text style={styles.bankNameText}>{bank.bankName}</Text>
-                    {isSelected && (
-                      <View style={styles.verifiedTag}>
-                        <Ionicons name="checkmark-circle" size={11} color="#166534" />
-                        <Text style={styles.verifiedTagText}>Selected</Text>
-                      </View>
-                    )}
+        {bankAccountsList.length === 0 ? (
+          <View style={styles.emptyBankCard}>
+            <Text style={styles.emptyBankText}>
+              No bank accounts added yet. Please add a bank account for refund credit.
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.bankList}>
+            {bankAccountsList.map((bank) => {
+              const isSelected =
+                bankDetails.accountNumber === bank.accountNumber &&
+                Boolean(bankDetails.accountNumber);
+              return (
+                <TouchableOpacity
+                  key={bank.id}
+                  activeOpacity={0.8}
+                  style={[
+                    styles.bankSelectableCard,
+                    isSelected && styles.bankSelectableCardSelected,
+                  ]}
+                  onPress={() => onSelectRefundBank(bank.id)}
+                >
+                  <View style={styles.bankInfoCol}>
+                    <View style={styles.bankTitleRow}>
+                      <Text style={styles.bankNameText}>{bank.bankName}</Text>
+                      {bank.validationStatus === "Validated" && (
+                        <View style={styles.verifiedTag}>
+                          <Ionicons name="shield-checkmark" size={11} color="#166534" />
+                          <Text style={styles.verifiedTagText}>Validated</Text>
+                        </View>
+                      )}
+                      {isSelected && (
+                        <View style={styles.verifiedTag}>
+                          <Ionicons name="checkmark-circle" size={11} color="#166534" />
+                          <Text style={styles.verifiedTagText}>Selected</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.bankMaskedNumber}>
+                      {bank.maskedAccountNumber || `•••• •••• ${bank.accountNumber.slice(-4)}`}
+                    </Text>
+                    <Text style={styles.bankSubText}>
+                      IFSC: {bank.ifscCode} {bank.accountType ? `• ${bank.accountType}` : ""}
+                    </Text>
                   </View>
-                  <Text style={styles.bankMaskedNumber}>
-                    {bank.maskedAccountNumber || `•••• •••• ${bank.accountNumber.slice(-4)}`}
-                  </Text>
-                  <Text style={styles.bankSubText}>
-                    IFSC: {bank.ifscCode} • {bank.accountType}
-                  </Text>
-                </View>
-                <View style={styles.bankRadioCol}>
-                  <Ionicons
-                    name={isSelected ? "radio-button-on" : "radio-button-off"}
-                    size={22}
-                    color={isSelected ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
-                  />
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                  <View style={styles.bankRadioCol}>
+                    <Ionicons
+                      name={isSelected ? "radio-button-on" : "radio-button-off"}
+                      size={22}
+                      color={isSelected ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
+                    />
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
 
         <TouchableOpacity
           activeOpacity={0.7}
@@ -480,80 +450,94 @@ export const Step1PersonalInfo: React.FC<Step1PersonalInfoProps> = ({
         {isPreviousItrExpanded && (
           <>
             <Text style={styles.cardDescriptionAccordion}>
-              Optional — We found a previous return in your TaxEdge account from AY {priorItrNotice.previousAssessmentYear || "2024-25"}. You can import eligible data below.
+              Optional — If you filed a return through TaxEdge previously, you can import carry-forward loss and deduction records.
             </Text>
 
             <View style={styles.priorItrBox}>
-              <View style={styles.priorItrTopRow}>
-                <Text style={styles.priorItrTitle}>
-                  Return AY {priorItrNotice.previousAssessmentYear || "2024-25"} ({priorItrNotice.previousItrForm || "ITR-2"})
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.priorItrToggleRow}
+                onPress={() =>
+                  onUpdatePriorItrNotice({
+                    hasPreviousItr: !priorItrNotice.hasPreviousItr,
+                  })
+                }
+              >
+                <Text style={styles.priorItrToggleText}>
+                  I have previously filed return details
                 </Text>
-                <Text style={styles.criteriaLine}>
-                  Filed: {priorItrNotice.previousFiledDate || "28-Jul-2025"}
-                </Text>
-              </View>
-
-              <Text style={styles.importSectionTitle}>Import eligible information:</Text>
-
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={styles.importCheckRow}
-                onPress={() =>
-                  onImportPriorItrData({ income: !priorItrNotice.importedIncomeDetails })
-                }
-              >
                 <Ionicons
-                  name={priorItrNotice.importedIncomeDetails ? "checkbox" : "square-outline"}
-                  size={18}
-                  color={priorItrNotice.importedIncomeDetails ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
+                  name={priorItrNotice.hasPreviousItr ? "checkbox" : "square-outline"}
+                  size={20}
+                  color={priorItrNotice.hasPreviousItr ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
                 />
-                <Text style={styles.importCheckText}>Previous income & salary details</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={styles.importCheckRow}
-                onPress={() =>
-                  onImportPriorItrData({ deductions: !priorItrNotice.importedDeductions })
-                }
-              >
-                <Ionicons
-                  name={priorItrNotice.importedDeductions ? "checkbox" : "square-outline"}
-                  size={18}
-                  color={priorItrNotice.importedDeductions ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
-                />
-                <Text style={styles.importCheckText}>Previous deduction records (80C, 80D)</Text>
-              </TouchableOpacity>
+              {priorItrNotice.hasPreviousItr && (
+                <>
+                  <Text style={styles.importSectionTitle}>Select details to import:</Text>
 
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={styles.importCheckRow}
-                onPress={() =>
-                  onImportPriorItrData({ losses: !priorItrNotice.importedLosses })
-                }
-              >
-                <Ionicons
-                  name={priorItrNotice.importedLosses ? "checkbox" : "square-outline"}
-                  size={18}
-                  color={priorItrNotice.importedLosses ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
-                />
-                <Text style={styles.importCheckText}>Carried-forward business & capital losses</Text>
-              </TouchableOpacity>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    style={styles.importCheckRow}
+                    onPress={() =>
+                      onImportPriorItrData({ income: !priorItrNotice.importedIncomeDetails })
+                    }
+                  >
+                    <Ionicons
+                      name={priorItrNotice.importedIncomeDetails ? "checkbox" : "square-outline"}
+                      size={18}
+                      color={priorItrNotice.importedIncomeDetails ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
+                    />
+                    <Text style={styles.importCheckText}>Salary & employer details</Text>
+                  </TouchableOpacity>
 
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={styles.importCheckRow}
-                onPress={() =>
-                  onImportPriorItrData({ bank: !priorItrNotice.importedBankDetails })
-                }
-              >
-                <Ionicons
-                  name={priorItrNotice.importedBankDetails ? "checkbox" : "square-outline"}
-                  size={18}
-                  color={priorItrNotice.importedBankDetails ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
-                />
-                <Text style={styles.importCheckText}>Bank account & ECS details</Text>
-              </TouchableOpacity>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    style={styles.importCheckRow}
+                    onPress={() =>
+                      onImportPriorItrData({ deductions: !priorItrNotice.importedDeductions })
+                    }
+                  >
+                    <Ionicons
+                      name={priorItrNotice.importedDeductions ? "checkbox" : "square-outline"}
+                      size={18}
+                      color={priorItrNotice.importedDeductions ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
+                    />
+                    <Text style={styles.importCheckText}>Deduction records (80C, 80D)</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    style={styles.importCheckRow}
+                    onPress={() =>
+                      onImportPriorItrData({ losses: !priorItrNotice.importedLosses })
+                    }
+                  >
+                    <Ionicons
+                      name={priorItrNotice.importedLosses ? "checkbox" : "square-outline"}
+                      size={18}
+                      color={priorItrNotice.importedLosses ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
+                    />
+                    <Text style={styles.importCheckText}>Carried-forward business & capital losses</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    style={styles.importCheckRow}
+                    onPress={() =>
+                      onImportPriorItrData({ bank: !priorItrNotice.importedBankDetails })
+                    }
+                  >
+                    <Ionicons
+                      name={priorItrNotice.importedBankDetails ? "checkbox" : "square-outline"}
+                      size={18}
+                      color={priorItrNotice.importedBankDetails ? BrandColors.PRIMARY_ORANGE : "#94A3B8"}
+                    />
+                    <Text style={styles.importCheckText}>Bank account details</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
           </>
         )}

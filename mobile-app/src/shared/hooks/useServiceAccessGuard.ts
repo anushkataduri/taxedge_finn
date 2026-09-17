@@ -14,7 +14,8 @@ export function useServiceAccessGuard() {
     profileCompleted ||
     customer?.profileCompleted ||
     (customer as any)?.registrationCompleted ||
-    authenticatedUser?.registrationCompleted
+    authenticatedUser?.registrationCompleted ||
+    (authenticatedUser?.passcode && authenticatedUser.passcode.length === 6)
   );
 
   const accessService = useCallback(
@@ -66,7 +67,8 @@ export function useServiceProtection(targetRoute?: any) {
     profileCompleted ||
     customer?.profileCompleted ||
     (customer as any)?.registrationCompleted ||
-    authenticatedUser?.registrationCompleted
+    authenticatedUser?.registrationCompleted ||
+    (authenticatedUser?.passcode && authenticatedUser.passcode.length === 6)
   );
 
   useEffect(() => {

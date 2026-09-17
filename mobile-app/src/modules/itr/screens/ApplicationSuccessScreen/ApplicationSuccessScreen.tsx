@@ -35,6 +35,7 @@ export const ApplicationSuccessScreen: React.FC<ApplicationSuccessScreenProps> =
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     applicationId?: string;
+    serviceType?: string;
     serviceTitle?: string;
     formType?: string;
     assessmentYear?: string;
@@ -45,15 +46,16 @@ export const ApplicationSuccessScreen: React.FC<ApplicationSuccessScreenProps> =
     refundBank?: string;
   }>();
 
-  const appId = params.applicationId || "ITR-2025-00042";
-  const incomeType = params.incomeType || "Salary • Capital Gains • Other Income";
-  const formType = params.formType || "ITR-2";
-  const rawAy = params.assessmentYear || "2025-2026";
-  const formattedAy = rawAy.startsWith("AY") ? rawAy : `AY ${rawAy}`;
-  const uploadedCount = params.uploadedDocsCount || "7";
-  const totalCount = params.totalDocsCount || "7";
+  const isRevised = params.serviceType === "revised" || params.serviceTitle === "Revised ITR";
+  const appId = params.applicationId || "Application Received";
+  const incomeType = isRevised ? "Revised Return Filing" : (params.incomeType || "Declared Income");
+  const formType = params.formType || (isRevised ? "Revised ITR" : "ITR Form");
+  const rawAy = params.assessmentYear || "";
+  const formattedAy = rawAy ? (rawAy.startsWith("AY") ? rawAy : `AY ${rawAy}`) : "Current AY";
+  const uploadedCount = params.uploadedDocsCount || "0";
+  const totalCount = params.totalDocsCount || "0";
   const docsUploaded = `${uploadedCount} of ${totalCount} received`;
-  const refundBank = params.refundBank || "HDFC Bank •••• 1234";
+  const refundBank = params.refundBank || "Verified Primary Bank";
   const taxRegime = params.regime || "New Tax Regime";
 
   const summaryData: ApplicationSummaryData = {
@@ -63,13 +65,20 @@ export const ApplicationSuccessScreen: React.FC<ApplicationSuccessScreenProps> =
     assessmentYear: formattedAy,
     taxRegime,
     documentsUploaded: docsUploaded,
-    refundBank,
-    submissionDate: "16 Sep 2026",
+    submissionDate: new Date().toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }),
     status: "Received",
   };
 
   const handleBack = () => {
-    router.replace("/service/itr" as any);
+    if (isRevised) {
+      router.replace("/service/revised-itr" as any);
+    } else {
+      router.replace("/service/itr" as any);
+    }
   };
 
   const handleTrackStatus = () => {
@@ -108,7 +117,9 @@ export const ApplicationSuccessScreen: React.FC<ApplicationSuccessScreenProps> =
         </TouchableOpacity>
 
         <View style={styles.headerTitleGroup}>
-          <Text style={styles.headerTitle}>ITR Filing</Text>
+          <Text style={styles.headerTitle}>
+            {isRevised ? "Revised ITR" : (params.serviceTitle || "ITR Filing")}
+          </Text>
           <Text style={styles.headerSubtitle}>Application Received</Text>
         </View>
 
@@ -124,10 +135,10 @@ export const ApplicationSuccessScreen: React.FC<ApplicationSuccessScreenProps> =
         showsVerticalScrollIndicator={false}
       >
         {/* Celebration Header & ID Card */}
-        <SuccessCelebrationHeader applicationId={appId} />
+        <SuccessCelebrationHeader applicationId={appId} isRevised={isRevised} />
 
         {/* 6-Stage Progress Tracker */}
-        <FilingProgressTracker />
+        <FilingProgressTracker isRevised={isRevised} />
 
         {/* What We Have Summary Card */}
         <ApplicationSummaryCard summary={summaryData} />

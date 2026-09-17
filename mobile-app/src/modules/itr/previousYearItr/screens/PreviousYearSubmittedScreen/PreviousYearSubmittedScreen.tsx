@@ -29,8 +29,8 @@ export const PreviousYearSubmittedScreen: React.FC = () => {
     assessmentYear?: string;
   }>();
 
-  const applicationId = params.applicationId || "ITR-2026-00046";
-  const assessmentYear = params.assessmentYear || "AY 2023–24";
+  const applicationId = params.applicationId || "Pending";
+  const assessmentYear = params.assessmentYear || "";
 
   const details: PreviousYearSubmissionDetails = {
     applicationId,

@@ -14,33 +14,54 @@ import { styles } from "./DocumentUploadBottomSheet.styles";
 
 export interface DocumentUploadBottomSheetProps {
   visible: boolean;
-  documentTitle: string;
+  documentTitle?: string;
+  documentName?: string;
   maxSizeBytesText?: string;
-  onClose: () => void;
-  onPickFiles: () => void;
-  onPickGallery: () => void;
-  onTakePhoto: () => void;
+  maxSizeText?: string;
+  onClose?: () => void;
+  onCancel?: () => void;
+  onPickFiles?: () => void;
+  onChooseFiles?: () => void;
+  onPickGallery?: () => void;
+  onSelectGallery?: () => void;
+  onTakePhoto?: () => void;
 }
 
 export const DocumentUploadBottomSheet: React.FC<DocumentUploadBottomSheetProps> = ({
   visible,
   documentTitle,
-  maxSizeBytesText = "20 MB",
+  documentName,
+  maxSizeBytesText,
+  maxSizeText,
   onClose,
+  onCancel,
   onPickFiles,
+  onChooseFiles,
   onPickGallery,
+  onSelectGallery,
   onTakePhoto,
 }) => {
   const insets = useSafeAreaInsets();
+
+  const rawTitle = documentTitle || documentName || "Document";
+  const displayTitle = rawTitle.toLowerCase().startsWith("upload")
+    ? rawTitle
+    : `Upload ${rawTitle}`;
+
+  const resolvedMaxSize = maxSizeBytesText || maxSizeText || "10 MB";
+  const handleClose = onClose || onCancel || (() => {});
+  const handlePickFiles = onPickFiles || onChooseFiles || (() => {});
+  const handlePickGallery = onPickGallery || onSelectGallery || (() => {});
+  const handleTakePhoto = onTakePhoto || (() => {});
 
   return (
     <Modal
       visible={visible}
       transparent
       animationType="slide"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
-      <TouchableWithoutFeedback onPress={onClose}>
+      <TouchableWithoutFeedback onPress={handleClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
             <View
@@ -57,16 +78,16 @@ export const DocumentUploadBottomSheet: React.FC<DocumentUploadBottomSheetProps>
                 <View style={styles.headerRow}>
                   <View style={styles.titleGroup}>
                     <Text style={styles.sheetTitle} numberOfLines={1}>
-                      Upload {documentTitle}
+                      {displayTitle}
                     </Text>
                     <Text style={styles.sheetSubtitle}>
-                      Select file source • Max size: {maxSizeBytesText}
+                      Select file source • Max size: {resolvedMaxSize}
                     </Text>
                   </View>
 
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    onPress={onClose}
+                    onPress={handleClose}
                     style={styles.closeButton}
                   >
                     <Ionicons name="close" size={18} color={BrandColors.TEXT_SECONDARY} />
@@ -78,7 +99,7 @@ export const DocumentUploadBottomSheet: React.FC<DocumentUploadBottomSheetProps>
                   {/* 1. Files / Drive */}
                   <TouchableOpacity
                     activeOpacity={0.75}
-                    onPress={onPickFiles}
+                    onPress={handlePickFiles}
                     style={styles.optionItem}
                   >
                     <View style={styles.optionIconBox}>
@@ -98,7 +119,7 @@ export const DocumentUploadBottomSheet: React.FC<DocumentUploadBottomSheetProps>
                   {/* 2. Gallery */}
                   <TouchableOpacity
                     activeOpacity={0.75}
-                    onPress={onPickGallery}
+                    onPress={handlePickGallery}
                     style={styles.optionItem}
                   >
                     <View style={styles.optionIconBox}>
@@ -118,7 +139,7 @@ export const DocumentUploadBottomSheet: React.FC<DocumentUploadBottomSheetProps>
                   {/* 3. Camera */}
                   <TouchableOpacity
                     activeOpacity={0.75}
-                    onPress={onTakePhoto}
+                    onPress={handleTakePhoto}
                     style={styles.optionItem}
                   >
                     <View style={styles.optionIconBox}>
@@ -139,7 +160,7 @@ export const DocumentUploadBottomSheet: React.FC<DocumentUploadBottomSheetProps>
                 {/* Cancel Button */}
                 <TouchableOpacity
                   activeOpacity={0.75}
-                  onPress={onClose}
+                  onPress={handleClose}
                   style={styles.cancelButton}
                 >
                   <Text style={styles.cancelText}>Cancel</Text>

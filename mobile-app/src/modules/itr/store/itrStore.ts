@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { useAuthStore } from "@/store/authStore";
 import { useApplicationStore } from "@/store/applicationStore";
+import { customerApi } from "@/modules/customer/services/customerApi";
 import {
   ItrFilingFormData,
   ItrPersonalInfo,
@@ -70,59 +71,41 @@ interface ITRState {
   restoreItrDraft: () => boolean;
   clearItrDraft: () => void;
   resetForm: () => void;
+  fetchAndPopulateUserProfile: () => Promise<void>;
 }
 
 const getInitialFormData = (): ItrFilingFormData => {
   // 1. Pull user profile from authStore
-  const customer = useAuthStore.getState().customer;
+  const authState = useAuthStore.getState();
+  const customer = authState.customer;
+  const user = authState.authenticatedUser;
 
   // 2. Pull GST draft data if available from applicationStore
   const gstDraft = useApplicationStore.getState().gstDraft;
   const gstBusiness = gstDraft?.businessData || {};
 
   const personalInfo: ItrPersonalInfo = {
-    pan: customer?.pan || "ABCDE1234F",
-    aadhaar: customer?.aadhaar || "987654321098",
-    name: customer?.name || "Client Name",
-    dob: customer?.dob || "1990-01-01",
-    gender: customer?.gender || "Male",
+    pan: customer?.pan || (user as any)?.pan || "",
+    aadhaar: customer?.aadhaar || (user as any)?.aadhaar || "",
+    name: customer?.name || user?.name || "",
+    dob: customer?.dob || (user as any)?.dob || "",
+    gender: customer?.gender || (user as any)?.gender || "Male",
     fatherSpouseName: customer?.fatherSpouseName || "",
-    address: customer?.address || customer?.addressLine1 || "123 Business Parkway",
-    city: customer?.city || "Bangalore",
-    state: customer?.state || "Karnataka",
-    pincode: customer?.pincode || "560001",
-    mobile: customer?.mobile || "9876543210",
-    email: customer?.email || "taxpayer@taxedge.in",
-    residentialStatus: "",
-    residentialStatusConfirmed: false,
+    address: customer?.address || customer?.addressLine1 || (user as any)?.address || "",
+    city: customer?.city || (user as any)?.city || "",
+    state: customer?.state || (user as any)?.state || "",
+    pincode: customer?.pincode || (user as any)?.pincode || "",
+    mobile: customer?.mobile || user?.mobileNumber || "",
+    email: customer?.email || user?.email || "",
+    residentialStatus: "Resident",
+    residentialStatusConfirmed: true,
     assessmentYear: getCurrentAssessmentYear(),
-    filingType: "",
-    filingTypeSuggested: "",
-    isAutoVerified: true,
+    filingType: "139_1_original",
+    filingTypeSuggested: "139_1_original",
+    isAutoVerified: Boolean(customer?.pan || (user as any)?.pan),
   };
 
-  const initialBankAccounts: ItrSelectableBank[] = [
-    {
-      id: "bank-1",
-      bankName: "HDFC Bank",
-      accountNumber: "50100234891234",
-      maskedAccountNumber: "•••• •••• 1234",
-      ifscCode: "HDFC0001234",
-      accountType: "Savings",
-      isPrimaryRefund: false,
-      validationStatus: "Validated",
-    },
-    {
-      id: "bank-2",
-      bankName: "ICICI Bank",
-      accountNumber: "00240156789056",
-      maskedAccountNumber: "•••• •••• 9056",
-      ifscCode: "ICIC0000024",
-      accountType: "Current",
-      isPrimaryRefund: false,
-      validationStatus: "Validated",
-    },
-  ];
+  const initialBankAccounts: ItrSelectableBank[] = [];
 
   const bankDetails: ItrBankDetails = {
     bankName: "",
@@ -135,11 +118,11 @@ const getInitialFormData = (): ItrFilingFormData => {
   };
 
   const priorItrNotice: ItrPriorFilingAndNotice = {
-    hasPreviousItr: true,
-    previousAckNumber: "84729104928104",
-    previousAssessmentYear: "2024-2025",
-    previousItrForm: "ITR-2",
-    previousFiledDate: "28-Jul-2025",
+    hasPreviousItr: false,
+    previousAckNumber: "",
+    previousAssessmentYear: "",
+    previousItrForm: undefined,
+    previousFiledDate: "",
     importedIncomeDetails: false,
     importedDeductions: false,
     importedLosses: false,
@@ -153,21 +136,20 @@ const getInitialFormData = (): ItrFilingFormData => {
   };
 
   const hasGst = Boolean(gstBusiness.gstin || gstBusiness.businessName);
-  const gstTurnoverNum = Number(gstBusiness.annualTurnover || 2480000);
 
   const gstReconciliation: GstReconciliationSummary = {
-    gstin: gstBusiness.gstin || "29ABCDE1234F1Z5",
-    legalName: gstBusiness.businessName || "ABC Enterprises",
-    tradeName: gstBusiness.tradeName || "ABC Traders",
-    businessActivity: "Trading & Outward Supplies",
-    registrationDate: "15-Apr-2021",
-    gstr1Turnover: 2480000,
-    gstr3bTurnover: 2475000,
-    booksTurnover: 2460000,
-    proposedItrTurnover: 2460000,
-    variance: 20000,
-    hasVariance: true,
-    varianceExplanation: "Difference of ₹20,000 between GSTR-1 outward supplies (₹24.8L) and financial books (₹24.6L) due to credit notes issued in Q4.",
+    gstin: gstBusiness.gstin || "",
+    legalName: gstBusiness.businessName || "",
+    tradeName: gstBusiness.tradeName || "",
+    businessActivity: "",
+    registrationDate: "",
+    gstr1Turnover: Number(gstBusiness.annualTurnover || 0),
+    gstr3bTurnover: Number(gstBusiness.annualTurnover || 0),
+    booksTurnover: Number(gstBusiness.annualTurnover || 0),
+    proposedItrTurnover: Number(gstBusiness.annualTurnover || 0),
+    variance: 0,
+    hasVariance: false,
+    varianceExplanation: "",
   };
 
   const registeredAccountType = customer?.customerType || "Individual";
@@ -176,20 +158,20 @@ const getInitialFormData = (): ItrFilingFormData => {
     registeredAccountType === "Public Limited" ||
     registeredAccountType === "LLP" ||
     registeredAccountType === "Partnership";
-  const initialCategory: ItrCategoryType = isCorporate ? "business" : "salaried";
+  let initialCategory: ItrCategoryType = (isCorporate ? "business" : "salaried") as ItrCategoryType;
 
   const incomeSources = {
     salary: {
       enabled: initialCategory === "salaried",
-      employerName: initialCategory === "salaried" ? "Acme Corporation India" : "",
-      grossSalary: initialCategory === "salaried" ? "850000" : "",
+      employerName: "",
+      grossSalary: "",
       allowances: "",
       tdsDeducted: "",
       source: "USER_DECLARED" as const,
       isVerified: false,
     },
     houseProperty: {
-      enabled: false,
+      enabled: initialCategory === "rental",
       propertyType: "self_occupied" as const,
       annualRentReceived: "",
       municipalTaxesPaid: "",
@@ -197,23 +179,23 @@ const getInitialFormData = (): ItrFilingFormData => {
       source: "USER_DECLARED" as const,
     },
     business: {
-      enabled: initialCategory === "business",
+      enabled: initialCategory === "business" || initialCategory === "professional" || initialCategory === "freelancer",
       businessType: "presumptive_44ad" as const,
-      businessName: gstBusiness.businessName || "ABC Enterprises",
-      gstin: gstBusiness.gstin || "29ABCDE1234F1Z5",
-      businessActivity: "Trading",
-      grossTurnover: String(gstReconciliation.proposedItrTurnover),
-      declaredProfit: initialCategory === "business" ? "200000" : "",
-      source: "GST_FILING" as const,
-      hasGstActivity: true,
-      gstr1Turnover: "2480000",
-      gstr3bTurnover: "2475000",
-      gstReconciliationRequired: true,
+      businessName: gstBusiness.businessName || "",
+      gstin: gstBusiness.gstin || "",
+      businessActivity: "",
+      grossTurnover: gstBusiness.annualTurnover ? String(gstBusiness.annualTurnover) : "",
+      declaredProfit: "",
+      source: hasGst ? ("GST_FILING" as const) : ("USER_DECLARED" as const),
+      hasGstActivity: hasGst,
+      gstr1Turnover: "",
+      gstr3bTurnover: "",
+      gstReconciliationRequired: false,
     },
     capitalGains: {
-      enabled: false,
+      enabled: initialCategory === "capital_gains" || initialCategory === "trader_investor",
       hasEquityMf: false,
-      hasFnoIntraday: false,
+      hasFnoIntraday: initialCategory === "trader_investor",
       hasPropertyAssets: false,
       hasCryptoVda: false,
       shortTermGains: "",
@@ -325,62 +307,41 @@ export const useITRStore = create<ITRState>((set, get) => ({
         newSources.salary = {
           ...newSources.salary,
           enabled: true,
-          grossSalary: newSources.salary.grossSalary || "850000",
-          employerName: newSources.salary.employerName || "Acme Corporation India",
-        };
-        newSources.business = {
-          ...newSources.business,
-          declaredProfit: "",
-          grossTurnover: "",
         };
       } else if (category === "business") {
         newSources.business = {
           ...newSources.business,
           enabled: true,
           businessType: "presumptive_44ad",
-          grossTurnover: newSources.business.grossTurnover || "2460000",
-          declaredProfit: newSources.business.declaredProfit || "200000",
         };
       } else if (category === "professional") {
         newSources.business = {
           ...newSources.business,
           enabled: true,
           businessType: "presumptive_44ada",
-          grossTurnover: newSources.business.grossTurnover || "1500000",
-          declaredProfit: newSources.business.declaredProfit || "750000",
         };
       } else if (category === "freelancer") {
         newSources.business = {
           ...newSources.business,
           enabled: true,
           businessType: "presumptive_44ada",
-          grossTurnover: newSources.business.grossTurnover || "1200000",
-          declaredProfit: newSources.business.declaredProfit || "600000",
         };
       } else if (category === "trader_investor") {
         newSources.capitalGains = {
           ...newSources.capitalGains,
           enabled: true,
           hasFnoIntraday: true,
-          hasEquityMf: true,
-          shortTermGains: newSources.capitalGains.shortTermGains || "150000",
-          longTermGains: newSources.capitalGains.longTermGains || "80000",
         };
       } else if (category === "rental") {
         newSources.houseProperty = {
           ...newSources.houseProperty,
           enabled: true,
           propertyType: "let_out",
-          annualRentReceived: newSources.houseProperty.annualRentReceived || "360000",
-          municipalTaxesPaid: newSources.houseProperty.municipalTaxesPaid || "20000",
         };
       } else if (category === "capital_gains") {
         newSources.capitalGains = {
           ...newSources.capitalGains,
           enabled: true,
-          hasEquityMf: true,
-          shortTermGains: newSources.capitalGains.shortTermGains || "120000",
-          longTermGains: newSources.capitalGains.longTermGains || "250000",
         };
       } else if (category === "multiple") {
         newSources = {
@@ -945,4 +906,45 @@ export const useITRStore = create<ITRState>((set, get) => ({
       formData: getInitialFormData(),
       itrDraft: null,
     }),
+
+  fetchAndPopulateUserProfile: async () => {
+    try {
+      const res = await customerApi.getProfile();
+      const profile = res?.data || res;
+      if (profile) {
+        const pan = profile.pan || profile.panNumber || "";
+        const aadhaar = profile.aadhaar || profile.aadhaarNumber || "";
+        const name = profile.name || profile.fullName || "";
+        const dob = profile.dob || profile.dateOfBirth || "";
+        const mobile = profile.mobileNumber || profile.mobile || "";
+        const email = profile.email || "";
+        const address = profile.address || profile.addressLine1 || "";
+        const city = profile.city || "";
+        const userState = profile.state || "";
+        const pincode = profile.pincode || profile.pinCode || "";
+
+        set((prev) => ({
+          formData: {
+            ...prev.formData,
+            personalInfo: {
+              ...prev.formData.personalInfo,
+              pan: pan || prev.formData.personalInfo.pan,
+              aadhaar: aadhaar || prev.formData.personalInfo.aadhaar,
+              name: name || prev.formData.personalInfo.name,
+              dob: dob || prev.formData.personalInfo.dob,
+              mobile: mobile || prev.formData.personalInfo.mobile,
+              email: email || prev.formData.personalInfo.email,
+              address: address || prev.formData.personalInfo.address,
+              city: city || prev.formData.personalInfo.city,
+              state: userState || prev.formData.personalInfo.state,
+              pincode: pincode || prev.formData.personalInfo.pincode,
+              isAutoVerified: Boolean(pan || prev.formData.personalInfo.pan),
+            },
+          },
+        }));
+      }
+    } catch {
+      // Graceful fallback to existing state
+    }
+  },
 }));

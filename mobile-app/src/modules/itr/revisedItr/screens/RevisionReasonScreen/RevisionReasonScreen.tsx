@@ -74,11 +74,7 @@ export const RevisionReasonScreen: React.FC = () => {
       >
         {/* Title Section */}
         <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>What needs to be corrected?</Text>
-          <Text style={styles.pageSubtitle}>
-            Selecting the primary reason helps us pre-fill and focus on the
-            sections that need changes.
-          </Text>
+          <Text style={styles.pageTitle}>Why are you revising your ITR?</Text>
         </View>
 
         {/* Reason Cards List */}
@@ -105,7 +101,7 @@ export const RevisionReasonScreen: React.FC = () => {
                 styles.otherTextInput,
                 otherError ? styles.inputError : null,
               ]}
-              placeholder="Describe briefly what needs to be revised..."
+              placeholder="Enter description"
               placeholderTextColor="#94A3B8"
               multiline
               numberOfLines={3}
@@ -120,17 +116,6 @@ export const RevisionReasonScreen: React.FC = () => {
             ) : null}
           </View>
         )}
-
-        {/* Info Callout Card */}
-        <View style={styles.infoCard}>
-          <View style={styles.infoIconCircle}>
-            <Ionicons name="information" size={16} color="#FFFFFF" />
-          </View>
-          <Text style={styles.infoText}>
-            You can still update any other fields on the next screen. Selecting a
-            reason helps highlight relevant fields.
-          </Text>
-        </View>
       </ScrollView>
 
       {/* Sticky Bottom Action Button */}

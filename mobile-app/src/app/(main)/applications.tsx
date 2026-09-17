@@ -1,12 +1,14 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   View,
   Text,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
   StatusBar,
+  RefreshControl,
+  ActivityIndicator,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Svg, { Path, Rect } from "react-native-svg";
@@ -83,7 +85,7 @@ function ApplicationCardAvatar({ category }: { category: ServiceCategoryId }) {
 }
 
 function formatDisplayDate(dateStr?: string): string {
-  if (!dateStr) return "15 Aug 2026";
+  if (!dateStr) return "";
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   if (months.some((m) => dateStr.includes(m))) return dateStr;
   try {
@@ -93,70 +95,65 @@ function formatDisplayDate(dateStr?: string): string {
   return dateStr;
 }
 
-function getStatusBadgeStyle(status: string) {
-  const lower = status.toLowerCase();
-  if (lower.includes("complete") || lower.includes("disbursed") || lower.includes("active") || lower.includes("approved")) return { bg: "#E0F2FE", text: "#083B75", label: "Completed" };
-  if (lower.includes("submit")) return { bg: "#E0F2FE", text: "#083B75", label: "Submitted" };
-  if (lower.includes("officer")) return { bg: "#FFF1E8", text: "#EA580C", label: "Officer Review" };
-  if (lower.includes("verification")) return { bg: "#F3E8FF", text: "#7E22CE", label: "Under Verification" };
-  if (lower.includes("process") || lower.includes("calculation") || lower.includes("quote")) return { bg: "#E0F2FE", text: "#0284C7", label: "Processing" };
-  if (lower.includes("credit")) return { bg: "#FFF1E8", text: "#EA580C", label: "Credit Review" };
-  return { bg: "#EAF2FF", text: "#083B75", label: status };
+function getStatusBadgeStyle(status?: string) {
+  const lower = (status || "").toLowerCase();
+  if (lower.includes("complete") || lower.includes("disbursed") || lower.includes("active") || lower.includes("approved")) {
+    return { bg: "#E0F2FE", text: "#083B75", label: "Completed" };
+  }
+  if (lower.includes("submit")) {
+    return { bg: "#E0F2FE", text: "#083B75", label: "Submitted" };
+  }
+  if (lower.includes("officer")) {
+    return { bg: "#FFF1E8", text: "#EA580C", label: "Officer Review" };
+  }
+  if (lower.includes("verification")) {
+    return { bg: "#F3E8FF", text: "#7E22CE", label: "Under Verification" };
+  }
+  if (lower.includes("process") || lower.includes("calculation") || lower.includes("quote") || lower.includes("progress")) {
+    return { bg: "#E0F2FE", text: "#0284C7", label: "Processing" };
+  }
+  if (lower.includes("credit")) {
+    return { bg: "#FFF1E8", text: "#EA580C", label: "Credit Review" };
+  }
+  return { bg: "#EAF2FF", text: "#083B75", label: status || "Submitted" };
 }
 
-const SUBMITTED_BANK_AMENDMENT: Application = {
-  id: "AA29944099962",
-  serviceId: "gst-amendment",
-  serviceName: "GST Amendment — Bank Accounts",
-  category: "GST",
-  status: "Under Verification",
-  progress: 30,
-  assignedExecutive: "Auto-Verification Engine",
-  paymentAmount: 0,
-  paymentStatus: "Paid",
-  createdAt: "2026-09-09T09:00:00.000Z",
-  documents: [
-    {
-      name: "pavan.Resume .pdf",
-      status: "Uploaded",
-      fileUri: "file://documents/pavan.Resume.pdf",
-    },
-  ],
-  formData: {
-    gstin: "—",
-    arn: "AA29944099962",
-    section: "Bank Accounts",
-    amendmentCategory: "Non-core (auto-approved)",
-    isCore: "false",
-    applicantName: "Akhil Kumar",
-    submissionDate: "9/9/2026",
-    currentValue: "HDFC Bank (XXXXX1234)",
-    requestedValue: "ICICI Bank (564687459478974516)",
-    currentValues: JSON.stringify({
-      "Bank Name": "HDFC Bank",
-      "Account Number": "XXXXX1234",
-      "IFSC Code": "HDFC0001234",
-      "Account Type": "Current",
-    }),
-    requestedValues: JSON.stringify({
-      "Bank Name": "ICICI Bank",
-      "Account Number": "564687459478974516",
-      "Confirm Account Number": "564687459478974516",
-      "IFSC Code": "ICIC0004587",
-      "Account Type": "Current",
-    }),
-    supportingDocName: "pavan.Resume .pdf",
-    documentSize: "0.1 MB",
-  },
-  timeline: [
-    { title: "Submitted", description: "Amendment request created", status: "completed", date: "9/9/2026" },
-    { title: "Under Verification", description: "TaxEdge review in progress", status: "current", date: "9/9/2026" },
-    { title: "Officer Review", description: "Assessing officer reviewing the change", status: "pending" },
-    { title: "Action Required", description: "If clarification is requested", status: "pending" },
-    { title: "Approved / Updated", description: "Amended registration issued", status: "pending" },
-  ],
-  chatHistory: [],
-};
+function isItrApplication(app: Application): boolean {
+  const cat = (app.category || "").toUpperCase();
+  const sid = (app.serviceId || "").toLowerCase();
+  return (
+    cat === "ITR" ||
+    sid === "itr-filing" ||
+    sid === "tds-refund" ||
+    sid === "previous-year-itr" ||
+    sid === "revised-itr" ||
+    sid === "tax-notice-assistance"
+  );
+}
+
+function isGstApplication(app: Application): boolean {
+  const cat = (app.category || "").toUpperCase();
+  const sid = (app.serviceId || "").toLowerCase();
+  return cat === "GST" || sid.startsWith("gst");
+}
+
+function isLoansApplication(app: Application): boolean {
+  const cat = (app.category || "").toUpperCase();
+  const sid = (app.serviceId || "").toLowerCase();
+  return cat === "LOANS" || sid.startsWith("loan");
+}
+
+function isBusinessApplication(app: Application): boolean {
+  const cat = (app.category || "").toUpperCase();
+  const sid = (app.serviceId || "").toLowerCase();
+  return cat === "BUSINESS" || sid.startsWith("business") || sid.startsWith("company");
+}
+
+function isInsuranceApplication(app: Application): boolean {
+  const cat = (app.category || "").toUpperCase();
+  const sid = (app.serviceId || "").toLowerCase();
+  return cat === "INSURANCE" || sid.startsWith("insurance");
+}
 
 export default function ApplicationsScreen() {
   const colors = useTheme();
@@ -165,36 +162,101 @@ export default function ApplicationsScreen() {
   const insets = useSafeAreaInsets();
   useResponsive();
 
-  const rawApplications = useApplicationStore((state) => state.applications);
+  const applications = useApplicationStore((state) => state.applications);
+  const isLoading = useApplicationStore((state) => state.isLoading);
+  const error = useApplicationStore((state) => state.error);
+  const loadApplications = useApplicationStore((state) => state.loadApplications);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
 
-  const applications = useMemo(() => {
-    const hasBankAmendment = rawApplications.some(
-      (a) => a.id === "AA29944099962" || (a.serviceId === "gst-amendment" && a.formData?.section === "Bank Accounts")
-    );
-    if (!hasBankAmendment) {
-      return [SUBMITTED_BANK_AMENDMENT, ...rawApplications];
-    }
-    return rawApplications;
-  }, [rawApplications]);
-
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<"ALL" | ServiceCategoryId>("ALL");
   const [statusFilter, setStatusFilter] = useState<StatusFilterType>("ALL");
 
+  const fetchApplications = useCallback(async () => {
+    try {
+      await loadApplications();
+    } catch {
+      // Handled via store state
+    }
+  }, [loadApplications]);
+
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchApplications();
+    }, [fetchApplications])
+  );
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadApplications();
+    } catch {
+      // Handled via store state
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadApplications]);
+
+  // Dynamic calculations from real API response
   const totalCount = applications.length;
-  const inProgressCount = useMemo(() => applications.filter((a) => a.status !== "Completed" && !a.status.toLowerCase().includes("verification")).length, [applications]);
-  const completedCount = useMemo(() => applications.filter((a) => a.status === "Completed").length, [applications]);
-  const underVerificationCount = useMemo(() => applications.filter((a) => a.status.toLowerCase().includes("verification")).length, [applications]);
+
+  const inProgressCount = useMemo(() => {
+    return applications.filter((a) => {
+      const s = (a.status || "").toLowerCase();
+      return (
+        s.includes("progress") ||
+        (!s.includes("complete") && !s.includes("approved") && !s.includes("verification") && !s.includes("reject"))
+      );
+    }).length;
+  }, [applications]);
+
+  const completedCount = useMemo(() => {
+    return applications.filter((a) => {
+      const s = (a.status || "").toLowerCase();
+      return s.includes("complete") || s.includes("approved") || s.includes("disbursed");
+    }).length;
+  }, [applications]);
+
+  const underVerificationCount = useMemo(() => {
+    return applications.filter((a) => {
+      const s = (a.status || "").toLowerCase();
+      return s.includes("verification") || s.includes("review");
+    }).length;
+  }, [applications]);
 
   const filteredApplications = useMemo(() => {
-    return applications.filter((app) => {
-      const matchesCategory = selectedCategory === "ALL" || app.category === selectedCategory;
-      let matchesStatus = true;
-      if (statusFilter === "IN_PROGRESS") matchesStatus = app.status !== "Completed" && !app.status.toLowerCase().includes("verification");
-      else if (statusFilter === "COMPLETED") matchesStatus = app.status === "Completed";
-      else if (statusFilter === "UNDER_VERIFICATION") matchesStatus = app.status.toLowerCase().includes("verification");
-      return matchesCategory && matchesStatus;
-    });
+    return applications
+      .filter((app) => {
+        let matchesCategory = true;
+        if (selectedCategory === "GST") matchesCategory = isGstApplication(app);
+        else if (selectedCategory === "ITR") matchesCategory = isItrApplication(app);
+        else if (selectedCategory === "LOANS") matchesCategory = isLoansApplication(app);
+        else if (selectedCategory === "BUSINESS") matchesCategory = isBusinessApplication(app);
+        else if (selectedCategory === "INSURANCE") matchesCategory = isInsuranceApplication(app);
+
+        let matchesStatus = true;
+        const s = (app.status || "").toLowerCase();
+        if (statusFilter === "IN_PROGRESS") {
+          matchesStatus =
+            s.includes("progress") ||
+            (!s.includes("complete") && !s.includes("approved") && !s.includes("verification") && !s.includes("reject"));
+        } else if (statusFilter === "COMPLETED") {
+          matchesStatus = s.includes("complete") || s.includes("approved") || s.includes("disbursed");
+        } else if (statusFilter === "UNDER_VERIFICATION") {
+          matchesStatus = s.includes("verification") || s.includes("review");
+        }
+
+        return matchesCategory && matchesStatus;
+      })
+      .sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
+      });
   }, [applications, selectedCategory, statusFilter]);
 
   const overviewItems: { key: StatusFilterType; count: number; label: string; color: string; isAll?: boolean }[] = [
@@ -215,7 +277,12 @@ export default function ApplicationsScreen() {
             <Text style={styles.headerTitle}>My Applications</Text>
             <Text style={styles.headerSubtitle}>Track all your service applications</Text>
           </View>
-          <TouchableOpacity activeOpacity={0.8} onPress={() => router.push("/notifications")} style={styles.bellButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => router.push("/notifications")}
+            style={styles.bellButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Ionicons name="notifications" size={24} color="#FF5722" />
             {unreadCount > 0 && <View style={styles.bellDotBadge} />}
           </TouchableOpacity>
@@ -227,11 +294,23 @@ export default function ApplicationsScreen() {
             {CATEGORY_TABS.map((tab) => {
               const isActive = selectedCategory === tab.id;
               return (
-                <TouchableOpacity key={tab.id} activeOpacity={0.7} onPress={() => setSelectedCategory(tab.id)} style={styles.categoryTabItem}>
+                <TouchableOpacity
+                  key={tab.id}
+                  activeOpacity={0.7}
+                  onPress={() => setSelectedCategory(tab.id)}
+                  style={styles.categoryTabItem}
+                >
                   <View style={[styles.categoryIconWrap, isActive && styles.activeCategoryIconWrap]}>
                     <CategoryTabIcon id={tab.id} isActive={isActive} />
                   </View>
-                  <Text style={[styles.categoryTabLabel, { color: isActive ? "#FF5722" : "#0A2346", fontWeight: isActive ? "700" : "600" }]} numberOfLines={1} adjustsFontSizeToFit>
+                  <Text
+                    style={[
+                      styles.categoryTabLabel,
+                      { color: isActive ? "#FF5722" : "#0A2346", fontWeight: isActive ? "700" : "600" },
+                    ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
                     {tab.label}
                   </Text>
                   <View style={isActive ? styles.activeTabIndicator : styles.inactiveTabIndicator} />
@@ -242,165 +321,287 @@ export default function ApplicationsScreen() {
         </View>
       </View>
 
-      {/* ---------------- SCROLLABLE BODY ---------------- */}
-      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: SCREEN_BOTTOM_PADDING }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.sectionHeaderRow}>
-          <Text style={[styles.sectionTitle, { color: isDark ? colors.text : "#0F172A" }]}>Application Overview</Text>
-        </View>
+      {/* ---------------- SCROLLABLE BODY — FlatList for virtualized app cards ---------------- */}
+      <FlatList
+        data={filteredApplications}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: SCREEN_BOTTOM_PADDING }]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#FF5722"
+            colors={["#FF5722"]}
+          />
+        }
+        ListHeaderComponent={
+          <>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={[styles.sectionTitle, { color: isDark ? colors.text : "#0F172A" }]}>
+                Application Overview
+              </Text>
+            </View>
 
-        {/* Overview Metric Boxes */}
-        <View style={[styles.overviewCard, { backgroundColor: isDark ? colors.backgroundElement : "#FFFFFF", borderColor: isDark ? colors.border : "#F1F5F9" }]}>
-          {overviewItems.map((item, idx) => {
-            const isSelected = item.isAll ? statusFilter === "ALL" && selectedCategory === "ALL" : statusFilter === item.key;
-            return (
-              <React.Fragment key={item.key}>
-                {idx > 0 && <View style={[styles.overviewDivider, { backgroundColor: isDark ? colors.border : "#F1F5F9" }]} />}
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => setStatusFilter(statusFilter === item.key && item.key !== "ALL" ? "ALL" : item.key)}
-                  style={[
-                    styles.overviewCol,
-                    isSelected && (isDark ? { backgroundColor: "#1E293B", borderWidth: 1, borderColor: "#FF5722" } : styles.activeOverviewCol),
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.overviewVal,
-                      {
-                        color: isSelected
-                          ? (isDark ? "#FF7A00" : (item.isAll ? "#083B75" : item.color))
-                          : (isDark ? (item.isAll ? "#FFFFFF" : item.color) : item.color),
-                      },
-                    ]}
-                  >
-                    {item.count}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.overviewSub,
-                      {
-                        color: isDark
-                          ? (isSelected ? "#FFFFFF" : colors.textSecondary)
-                          : (isSelected ? "#0A2346" : "#64748B"),
-                        fontWeight: isSelected ? "700" : "500",
-                      },
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                  <View style={isSelected ? styles.activeOverviewIndicator : styles.inactiveOverviewIndicator} />
-                </TouchableOpacity>
-              </React.Fragment>
-            );
-          })}
-        </View>
+            {/* Overview Metric Boxes */}
+            <View
+              style={[
+                styles.overviewCard,
+                {
+                  backgroundColor: isDark ? colors.backgroundElement : "#FFFFFF",
+                  borderColor: isDark ? colors.border : "#F1F5F9",
+                },
+              ]}
+            >
+              {overviewItems.map((item, idx) => {
+                const isSelected = item.isAll
+                  ? statusFilter === "ALL" && selectedCategory === "ALL"
+                  : statusFilter === item.key;
+                return (
+                  <React.Fragment key={item.key}>
+                    {idx > 0 && (
+                      <View
+                        style={[styles.overviewDivider, { backgroundColor: isDark ? colors.border : "#F1F5F9" }]}
+                      />
+                    )}
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() =>
+                        setStatusFilter(statusFilter === item.key && item.key !== "ALL" ? "ALL" : item.key)
+                      }
+                      style={[
+                        styles.overviewCol,
+                        isSelected &&
+                          (isDark
+                            ? { backgroundColor: "#1E293B", borderWidth: 1, borderColor: "#FF5722" }
+                            : styles.activeOverviewCol),
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.overviewVal,
+                          {
+                            color: isSelected
+                              ? isDark
+                                ? "#FF7A00"
+                                : item.isAll
+                                ? "#083B75"
+                                : item.color
+                              : isDark
+                              ? item.isAll
+                                ? "#FFFFFF"
+                                : item.color
+                              : item.color,
+                          },
+                        ]}
+                      >
+                        {item.count}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.overviewSub,
+                          {
+                            color: isDark
+                              ? isSelected
+                                ? "#FFFFFF"
+                                : colors.textSecondary
+                              : isSelected
+                              ? "#0A2346"
+                              : "#64748B",
+                            fontWeight: isSelected ? "700" : "500",
+                          },
+                        ]}
+                      >
+                        {item.label}
+                      </Text>
+                      <View style={isSelected ? styles.activeOverviewIndicator : styles.inactiveOverviewIndicator} />
+                    </TouchableOpacity>
+                  </React.Fragment>
+                );
+              })}
+            </View>
 
-        {/* Recent Applications Header */}
-        <View style={styles.recentHeaderRow}>
-          <Text style={[styles.sectionTitle, { color: isDark ? colors.text : "#0F172A" }]}>Recent Applications</Text>
-        </View>
+            {/* Recent Applications Header */}
+            <View style={styles.recentHeaderRow}>
+              <Text style={[styles.sectionTitle, { color: isDark ? colors.text : "#0F172A" }]}>
+                Recent Applications
+              </Text>
+            </View>
+          </>
+        }
+        ListEmptyComponent={
+          isLoading && applications.length === 0 ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#FF5722" />
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                Loading applications...
+              </Text>
+            </View>
+          ) : error && applications.length === 0 ? (
+            <View
+              style={[
+                styles.errorContainer,
+                {
+                  backgroundColor: isDark ? colors.backgroundElement : "#FFFFFF",
+                  borderColor: isDark ? colors.border : "#FEE2E2",
+                },
+              ]}
+            >
+              <Ionicons name="alert-circle-outline" size={44} color="#EA580C" />
+              <Text style={[styles.errorTitle, { color: isDark ? colors.text : "#0F172A" }]}>
+                Failed to load applications
+              </Text>
+              <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
+              <TouchableOpacity activeOpacity={0.8} onPress={fetchApplications} style={styles.retryButton}>
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="folder-open-outline" size={48} color={colors.textSecondary} style={{ marginBottom: 12 }} />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                {applications.length === 0 ? "No applications yet" : "No applications match this filter"}
+              </Text>
+              {applications.length === 0 && (
+                <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                  Your real-time submitted applications will appear here
+                </Text>
+              )}
+            </View>
+          )
+        }
+        renderItem={({ item }) => {
+          const badge = getStatusBadgeStyle(item.status);
+          const isGstAmendment = item.serviceId === "gst-amendment";
+          const isGstCancellation = item.serviceId === "gst-cancellation";
+          const idColor = item.category === "BUSINESS" || item.category === "LOANS" ? "#EA580C" : "#083B75";
+          const formattedDate = formatDisplayDate(item.createdAt);
+          const displayId =
+            (isGstAmendment || isGstCancellation) && item.formData?.arn ? item.formData.arn : item.id;
+          const displayName = isGstCancellation
+            ? "GST Cancellation (REG-16)"
+            : isGstAmendment && item.formData?.section
+            ? `GST Amendment — ${item.formData.section}`
+            : item.serviceName;
 
-        {/* Application Cards List */}
-        {filteredApplications.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="folder-open-outline" size={48} color={colors.textSecondary} style={{ marginBottom: 12 }} />
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No applications match this filter</Text>
-          </View>
-        ) : (
-          filteredApplications.map((item: Application) => {
-            const badge = getStatusBadgeStyle(item.status);
-            const isGstAmendment = item.serviceId === "gst-amendment";
-            const isGstCancellation = item.serviceId === "gst-cancellation";
-            const idColor = item.category === "BUSINESS" || item.category === "LOANS" ? "#EA580C" : "#083B75";
-            const formattedDate = formatDisplayDate(item.createdAt);
-            const displayId = (isGstAmendment || isGstCancellation) && item.formData?.arn ? item.formData.arn : item.id;
-            const displayName = isGstCancellation
-              ? "GST Cancellation (REG-16)"
-              : isGstAmendment && item.formData?.section
-              ? `GST Amendment — ${item.formData.section}`
-              : item.serviceName;
+          const isNonCore =
+            String(item.formData?.isCore).toLowerCase() === "false" ||
+            Boolean(item.formData?.amendmentCategory?.toLowerCase().includes("non-core")) ||
+            (item.formData?.section
+              ? ["Bank Accounts", "Authorised Signatories", "Contact Details"].some((s) =>
+                  item.formData?.section?.includes(s)
+                )
+              : false);
+          const isCore = !isNonCore;
 
-            const isNonCore =
-              String(item.formData?.isCore).toLowerCase() === "false" ||
-              Boolean(item.formData?.amendmentCategory?.toLowerCase().includes("non-core")) ||
-              (item.formData?.section
-                ? ["Bank Accounts", "Authorised Signatories", "Contact Details"].some((s) => item.formData?.section?.includes(s))
-                : false);
-            const isCore = !isNonCore;
-
-            return (
-              <TouchableOpacity
-                key={item.id}
-                activeOpacity={0.85}
-                onPress={() => {
-                  useApplicationStore.getState().setSelectedApplicationId(item.id);
-                  router.push(`/application/${item.id}`);
-                }}
-                style={[styles.appCard, { backgroundColor: isDark ? colors.backgroundElement : "#FFFFFF", borderColor: isDark ? colors.border : "#F1F5F9" }]}
-              >
-                <ApplicationCardAvatar category={item.category} />
-                <View style={styles.cardContent}>
-                  <View style={styles.cardTopRow}>
-                    <Text style={[styles.appIdText, { color: idColor }]}>{displayId}</Text>
-                    <View style={styles.cardBadgeWithArrow}>
-                      <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
-                        <Text style={[styles.statusBadgeText, { color: badge.text }]}>{badge.label}</Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={17} color="#EA580C" style={styles.cardChevron} />
+          return (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => {
+                useApplicationStore.getState().setSelectedApplicationId(item.id);
+                router.push(`/application/${item.id}`);
+              }}
+              style={[
+                styles.appCard,
+                {
+                  backgroundColor: isDark ? colors.backgroundElement : "#FFFFFF",
+                  borderColor: isDark ? colors.border : "#F1F5F9",
+                },
+              ]}
+            >
+              <ApplicationCardAvatar category={item.category} />
+              <View style={styles.cardContent}>
+                <View style={styles.cardTopRow}>
+                  <Text style={[styles.appIdText, { color: idColor }]}>{displayId}</Text>
+                  <View style={styles.cardBadgeWithArrow}>
+                    <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
+                      <Text style={[styles.statusBadgeText, { color: badge.text }]}>{badge.label}</Text>
                     </View>
+                    <Ionicons name="chevron-forward" size={17} color="#EA580C" style={styles.cardChevron} />
                   </View>
-                  <Text style={[styles.serviceNameText, { color: isDark ? colors.text : "#0F172A" }]} numberOfLines={1}>{displayName}</Text>
-                  <View style={styles.cardBottomRow}>
+                </View>
+                <Text
+                  style={[styles.serviceNameText, { color: isDark ? colors.text : "#0F172A" }]}
+                  numberOfLines={1}
+                >
+                  {displayName}
+                </Text>
+                <View style={styles.cardBottomRow}>
+                  {formattedDate ? (
                     <View style={styles.dateWrap}>
                       <Ionicons name="calendar-outline" size={13.5} color="#64748B" />
                       <Text style={styles.dateText}>{formattedDate}</Text>
                     </View>
-                    {isGstAmendment && item.formData?.gstin ? (
-                      <View style={{ flexDirection: "row", alignItems: "center", marginLeft: 10, backgroundColor: isDark ? "#1E293B" : "#EFF6FF", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, borderWidth: 0.5, borderColor: "#BFDBFE" }}>
-                        <Text style={{ fontSize: 10.5, fontWeight: "600", color: isDark ? "#93C5FD" : "#083B75" }}>{item.formData.gstin}</Text>
-                      </View>
-                    ) : null}
-                    {isGstAmendment ? (
-                      <View
+                  ) : null}
+                  {isGstAmendment && item.formData?.gstin ? (
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginLeft: 10,
+                        backgroundColor: isDark ? "#1E293B" : "#EFF6FF",
+                        paddingHorizontal: 6,
+                        paddingVertical: 2,
+                        borderRadius: 4,
+                        borderWidth: 0.5,
+                        borderColor: "#BFDBFE",
+                      }}
+                    >
+                      <Text style={{ fontSize: 10.5, fontWeight: "600", color: isDark ? "#93C5FD" : "#083B75" }}>
+                        {item.formData.gstin}
+                      </Text>
+                    </View>
+                  ) : null}
+                  {isGstAmendment ? (
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginLeft: 6,
+                        backgroundColor: isCore
+                          ? isDark
+                            ? "rgba(234, 88, 12, 0.18)"
+                            : "#FFF7ED"
+                          : isDark
+                          ? "rgba(2, 132, 199, 0.18)"
+                          : "#EFF6FF",
+                        paddingHorizontal: 6,
+                        paddingVertical: 2.5,
+                        borderRadius: 4,
+                        borderWidth: 0.5,
+                        borderColor: isCore
+                          ? isDark
+                            ? "rgba(234, 88, 12, 0.4)"
+                            : "#FED7AA"
+                          : isDark
+                          ? "rgba(2, 132, 199, 0.4)"
+                          : "#BFDBFE",
+                      }}
+                    >
+                      <Text
                         style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          marginLeft: 6,
-                          backgroundColor: isCore
-                            ? (isDark ? "rgba(234, 88, 12, 0.18)" : "#FFF7ED")
-                            : (isDark ? "rgba(2, 132, 199, 0.18)" : "#EFF6FF"),
-                          paddingHorizontal: 6,
-                          paddingVertical: 2.5,
-                          borderRadius: 4,
-                          borderWidth: 0.5,
-                          borderColor: isCore
-                            ? (isDark ? "rgba(234, 88, 12, 0.4)" : "#FED7AA")
-                            : (isDark ? "rgba(2, 132, 199, 0.4)" : "#BFDBFE"),
+                          fontSize: 10,
+                          fontWeight: "800",
+                          letterSpacing: 0.3,
+                          color: isCore
+                            ? isDark
+                              ? "#FB923C"
+                              : "#EA580C"
+                            : isDark
+                            ? "#38BDF8"
+                              : "#0284C7",
                         }}
                       >
-                        <Text
-                          style={{
-                            fontSize: 10,
-                            fontWeight: "800",
-                            letterSpacing: 0.3,
-                            color: isCore
-                              ? (isDark ? "#FB923C" : "#EA580C")
-                              : (isDark ? "#38BDF8" : "#0284C7"),
-                          }}
-                        >
-                          {isCore ? "CORE" : "NON-CORE"}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
+                        {isCore ? "CORE" : "NON-CORE"}
+                      </Text>
+                    </View>
+                  ) : null}
                 </View>
-              </TouchableOpacity>
-            );
-          })
-        )}
-      </ScrollView>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
+      />
     </View>
   );
 }
-
-

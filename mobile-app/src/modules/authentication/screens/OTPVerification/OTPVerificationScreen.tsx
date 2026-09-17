@@ -54,10 +54,10 @@ export function OTPVerificationScreen() {
       const res = await verifyOtp(code);
       setLoading(false);
       if (res.success) {
-        if (res.isExistingUser) {
+        if (res.isExistingUser || res.requiresPasscode) {
           router.replace("/(auth)/passcode" as any);
         } else {
-          router.replace("/(auth)/createprofile" as any);
+          router.replace("/(main)/home" as any);
         }
       } else {
         setError("Invalid OTP. Please check the code and try again.");

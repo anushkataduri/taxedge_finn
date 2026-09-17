@@ -113,7 +113,12 @@ export const TdsPaymentSubmissionScreen: React.FC = () => {
     setProcessingState("processing");
     setErrorMessage(null);
 
-    const targetAppId = applicationId || `TDS-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+    const targetAppId = applicationId.trim();
+    if (!targetAppId) {
+      setProcessingState("idle");
+      setErrorMessage("Application draft not found. Please navigate back to review your application.");
+      return;
+    }
 
     try {
       const response = await tdsApiService.payAndConfirm(
@@ -137,23 +142,15 @@ export const TdsPaymentSubmissionScreen: React.FC = () => {
         },
       });
     } catch (err: any) {
-      console.warn("Payment API attempt encountered issue, attempting offline/network recovery:", err);
-      // In offline/test mode or if server failed:
+      if (__DEV__) {
+        console.warn("Payment API error:", err);
+      }
       if (err?.message?.toLowerCase().includes("network")) {
         setProcessingState("network_error");
         setErrorMessage("Network error connecting to payment gateway. Please check your internet connection.");
       } else {
-        // Fallback gracefully to confirmed status so CA workflow proceeds
-        setProcessingState("success");
-        await tdsDraftService.clearDraft();
-        router.replace({
-          pathname: "/service/tds-status" as any,
-          params: {
-            applicationId: targetAppId,
-            refundAmount: formatCurrency(refundEstimate),
-            isAdditionalPayable: isAdditionalPayable ? "1" : "0",
-          },
-        });
+        setProcessingState("network_error");
+        setErrorMessage(err?.message || "Payment could not be processed. Please try again.");
       }
     }
   };

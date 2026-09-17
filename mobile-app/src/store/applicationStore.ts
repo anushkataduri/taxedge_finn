@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import { mockApplications } from "../data/applications";
+import { applicationService } from "../modules/applications/services/applicationService";
 import { notificationService } from "../modules/notifications/services/notificationService";
 import type {
   Application,
@@ -139,6 +139,8 @@ export interface TaxNoticeDraft {
 
 export interface ApplicationState {
   applications: Application[];
+  isLoading: boolean;
+  error: string | null;
   selectedApplicationId: string | null;
   gstDraft: GstRegistrationDraft | null;
   gstFilingDraft: GstFilingDraft | null;
@@ -146,6 +148,8 @@ export interface ApplicationState {
   tdsDraft: TdsDraft | null;
   taxNoticeDraft: TaxNoticeDraft | null;
   setSelectedApplicationId: (id: string | null) => void;
+  setApplications: (apps: Application[]) => void;
+  loadApplications: () => Promise<void>;
   saveGstDraft: (draft: GstRegistrationDraft) => void;
   clearGstDraft: () => void;
   saveGstFilingDraft: (draft: GstFilingDraft) => void;
@@ -176,7 +180,9 @@ const timeStamp = (): string =>
   new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 export const useApplicationStore = create<ApplicationState>((set) => ({
-  applications: mockApplications,
+  applications: [],
+  isLoading: false,
+  error: null,
   selectedApplicationId: null,
   gstDraft: null,
   gstFilingDraft: null,
@@ -184,6 +190,20 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
   tdsDraft: null,
   taxNoticeDraft: null,
   setSelectedApplicationId: (id) => set({ selectedApplicationId: id }),
+  setApplications: (apps) => set({ applications: apps, error: null }),
+  loadApplications: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const apps = await applicationService.getApplications();
+      set({ applications: apps, isLoading: false, error: null });
+    } catch (err: any) {
+      set({
+        isLoading: false,
+        error: err?.message || "Failed to load applications. Please try again.",
+      });
+      throw err;
+    }
+  },
   saveGstDraft: (draft) => set({ gstDraft: draft }),
   clearGstDraft: () => set({ gstDraft: null }),
   saveGstFilingDraft: (draft) => set({ gstFilingDraft: draft }),
@@ -333,8 +353,13 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
     };
 
     set((state) => ({
-      applications: [newApp, ...state.applications],
+      applications: [newApp, ...state.applications.filter((a) => a.id !== appId)],
     }));
+
+    // Asynchronously persist to backend database
+    applicationService.createApplication(newApp).catch((err) => {
+      console.warn("Backend application persistence error:", err);
+    });
 
     if (!skipNotification) {
       notificationService.notifyApplicationSubmitted(serviceName, appId);

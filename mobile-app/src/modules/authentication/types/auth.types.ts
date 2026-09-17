@@ -138,7 +138,7 @@ export interface AuthStoreActions {
   login: (p?: string) => Promise<{ success: boolean; error?: string }>;
   register: (profile: CustomerProfile, passcode?: string, autoLogin?: boolean) => Promise<{ success: boolean; error?: string }>;
   setAvatar: (uri: string | null) => void;
-  logout: () => void;
+  logout: () => void | Promise<void>;
   syncFromDevAuth: () => void;
 }
 

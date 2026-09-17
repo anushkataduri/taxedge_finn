@@ -109,17 +109,6 @@ export const TdsRefundPersonalInfoCard: React.FC<TdsRefundPersonalInfoCardProps>
     return { text: lines.join("\n"), isMissing: false };
   };
 
-  const hasMissingMandatory =
-    !personalData.fullName?.trim() ||
-    !personalData.pan?.trim() ||
-    !personalData.dob?.trim() ||
-    !personalData.mobileNumber?.trim() ||
-    !personalData.email?.trim() ||
-    !personalData.residentialAddress?.trim() ||
-    !personalData.city?.trim() ||
-    !personalData.state?.trim() ||
-    !personalData.pinCode?.trim();
-
   const handleStartEdit = () => {
     setEditForm({ ...personalData });
     setEditErrors({});
@@ -273,7 +262,7 @@ export const TdsRefundPersonalInfoCard: React.FC<TdsRefundPersonalInfoCardProps>
               <Text style={styles.fieldLabel}>Aadhaar Number</Text>
               <TextInput
                 style={[styles.textInput, editErrors.aadhaar ? styles.textInputError : null]}
-                placeholder="12-digit Aadhaar"
+                placeholder="Enter Aadhaar"
                 placeholderTextColor="#94A3B8"
                 keyboardType="number-pad"
                 maxLength={12}
@@ -311,7 +300,7 @@ export const TdsRefundPersonalInfoCard: React.FC<TdsRefundPersonalInfoCardProps>
               </Text>
               <TextInput
                 style={[styles.textInput, editErrors.mobileNumber ? styles.textInputError : null]}
-                placeholder="10-digit mobile"
+                placeholder="Enter mobile"
                 placeholderTextColor="#94A3B8"
                 keyboardType="phone-pad"
                 maxLength={10}
@@ -349,7 +338,7 @@ export const TdsRefundPersonalInfoCard: React.FC<TdsRefundPersonalInfoCardProps>
             </Text>
             <TextInput
               style={[styles.textInput, editErrors.residentialAddress ? styles.textInputError : null]}
-              placeholder="House/Flat, Street address"
+              placeholder="Enter address"
               placeholderTextColor="#94A3B8"
               value={editForm.residentialAddress}
               onChangeText={(t) => updateEditField("residentialAddress", t)}
@@ -367,7 +356,7 @@ export const TdsRefundPersonalInfoCard: React.FC<TdsRefundPersonalInfoCardProps>
               </Text>
               <TextInput
                 style={[styles.textInput, editErrors.city ? styles.textInputError : null]}
-                placeholder="City"
+                placeholder="Enter city"
                 placeholderTextColor="#94A3B8"
                 value={editForm.city}
                 onChangeText={(t) => updateEditField("city", t)}
@@ -383,7 +372,7 @@ export const TdsRefundPersonalInfoCard: React.FC<TdsRefundPersonalInfoCardProps>
               </Text>
               <TextInput
                 style={[styles.textInput, editErrors.state ? styles.textInputError : null]}
-                placeholder="State"
+                placeholder="Enter state"
                 placeholderTextColor="#94A3B8"
                 value={editForm.state}
                 onChangeText={(t) => updateEditField("state", t)}
@@ -399,7 +388,7 @@ export const TdsRefundPersonalInfoCard: React.FC<TdsRefundPersonalInfoCardProps>
               </Text>
               <TextInput
                 style={[styles.textInput, editErrors.pinCode ? styles.textInputError : null]}
-                placeholder="PIN code"
+                placeholder="Enter PIN"
                 placeholderTextColor="#94A3B8"
                 keyboardType="number-pad"
                 maxLength={6}
@@ -558,25 +547,6 @@ export const TdsRefundPersonalInfoCard: React.FC<TdsRefundPersonalInfoCardProps>
           </Text>
         </View>
       </View>
-
-      {/* Missing mandatory fields banner */}
-      {hasMissingMandatory && (
-        <View style={styles.missingBanner}>
-          <View style={styles.missingBannerLeft}>
-            <Ionicons name="alert-circle-outline" size={16} color="#B45309" />
-            <Text style={styles.missingText}>
-              Required profile details are missing for TDS refund.
-            </Text>
-          </View>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={handleStartEdit}
-            style={styles.completeProfileBtn}
-          >
-            <Text style={styles.completeProfileBtnText}>Complete Profile</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 };

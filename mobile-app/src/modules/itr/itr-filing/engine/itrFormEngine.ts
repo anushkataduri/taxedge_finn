@@ -54,17 +54,17 @@ export function determineApplicableItrForm(
       },
       {
         id: "residency",
-        label: isResident ? "Resident individual" : `${residentialStatus} individual`,
+        label: isResident ? "Resident individual" : `${residentialStatus} individual status`,
         met: true,
       },
     ];
 
     return {
       form: "ITR-3",
-      formTitle: `ITR-3 (Business & Professional - AY ${assessmentYear.replace("20", "")})`,
+      formTitle: `ITR-3 (Business & Professional Income)`,
       rationale: hasFnoIntraday
-        ? "ITR-3 is mandatory because Futures & Options (F&O) and Intraday trading are treated as business income under Section 43(5) of the Income Tax Act."
-        : "ITR-3 is required for individuals maintaining books of accounts or declaring business and professional income.",
+        ? "Based on your F&O or Intraday trading activity, ITR-3 applies."
+        : "Based on business or professional income with regular books, ITR-3 applies.",
       criteriaChecks: checks,
     };
   }
@@ -98,9 +98,9 @@ export function determineApplicableItrForm(
 
     return {
       form: "ITR-4",
-      formTitle: `ITR-4 (Sugam - Presumptive Scheme)`,
+      formTitle: `ITR-4 (Sugam - Presumptive Income)`,
       rationale:
-        "ITR-4 (Sugam) is applicable for resident individuals declaring business or professional income under presumptive taxation (Section 44AD / 44ADA) with income up to ₹50 Lakhs.",
+        "Based on presumptive business or professional income under Section 44AD / 44ADA up to ₹50 Lakhs, ITR-4 applies.",
       criteriaChecks: checks,
     };
   }
@@ -112,33 +112,39 @@ export function determineApplicableItrForm(
     const checks: ItrCriteriaCheck[] = [
       {
         id: "no_biz",
-        label: "No business or professional income detected",
+        label: "No business or professional income declared",
         met: true,
       },
       {
         id: "cg_or_status",
         label: hasCapitalGains
-          ? "Capital gains from stocks / mutual funds / property detected"
+          ? "Capital gains from investments or property declared"
           : !isResident
-          ? `Non-Resident (${residentialStatus}) tax status`
+          ? `${residentialStatus} tax status applies`
           : "Total gross income exceeds ₹50 Lakhs",
         met: true,
       },
       {
-        id: "crypto_flag",
-        label: hasCrypto ? "Virtual Digital Assets (Crypto / VDA) detected" : "Resident individual status verified",
+        id: "status_check",
+        label: hasCrypto
+          ? "Virtual Digital Assets (Crypto / VDA) declared"
+          : isResident
+          ? "Resident individual status"
+          : `${residentialStatus} status verified`,
         met: true,
       },
     ];
 
     return {
       form: "ITR-2",
-      formTitle: `ITR-2 (Capital Gains & High Net-Worth)`,
+      formTitle: `ITR-2 (Capital Gains & Other Incomes)`,
       rationale: hasCapitalGains
-        ? "ITR-2 is applicable because you have capital gains from equity, mutual funds, or sale of assets without business income."
+        ? "Based on your capital gains without business income, ITR-2 applies."
         : !isResident
-        ? `ITR-2 is mandatory for ${residentialStatus} taxpayers.`
-        : "ITR-2 is applicable because gross income exceeds ₹50 Lakhs or multiple properties are held.",
+        ? `Based on your ${residentialStatus} tax status, ITR-2 applies.`
+        : isHighIncome
+        ? "Based on total income exceeding ₹50 Lakhs, ITR-2 applies."
+        : "Based on your income profile, ITR-2 applies.",
       criteriaChecks: checks,
     };
   }
@@ -148,17 +154,17 @@ export function determineApplicableItrForm(
   const checks: ItrCriteriaCheck[] = [
     {
       id: "salary_other",
-      label: hasSalary ? "Salary / Pension income verified" : "Other sources income verified",
+      label: hasSalary ? "Salary / Pension income declared" : "Other sources income declared",
       met: true,
     },
     {
       id: "no_biz",
-      label: "No business or professional income detected",
+      label: "No business or professional income declared",
       met: true,
     },
     {
       id: "no_cg",
-      label: "No capital gains or trading detected",
+      label: "No capital gains or trading declared",
       met: true,
     },
     {
@@ -170,9 +176,9 @@ export function determineApplicableItrForm(
 
   return {
     form: "ITR-1",
-    formTitle: `ITR-1 (Sahaj - Salaried & Simple Income)`,
+    formTitle: `ITR-1 (Sahaj - Salary & Other Income)`,
     rationale:
-      "ITR-1 (Sahaj) is the standard return for resident individuals having income from salary, one house property, and other sources (interest/dividends) up to ₹50 Lakhs.",
+      "Based on your salary and interest income up to ₹50 Lakhs as a resident, ITR-1 applies.",
     criteriaChecks: checks,
   };
 }

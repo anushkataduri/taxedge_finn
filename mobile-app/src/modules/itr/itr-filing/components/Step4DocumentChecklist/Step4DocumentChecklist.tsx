@@ -29,7 +29,12 @@ export const Step4DocumentChecklist: React.FC<Step4DocumentChecklistProps> = ({
   const [activeUploadDoc, setActiveUploadDoc] = useState<ItrDocumentItem | null>(null);
   const [previewDoc, setPreviewDoc] = useState<ItrDocumentItem | null>(null);
 
-  // Pure functional progress computation - starts at 0 of X uploaded (0% Ready)
+  const requiredDocs = documents.filter((d) => d.tier === "REQUIRED");
+  const recommendedDocs = documents.filter((d) => d.tier === "RECOMMENDED");
+  const applicableDocs = documents.filter(
+    (d) => d.tier === "ONLY_IF_APPLICABLE" || (!["REQUIRED", "RECOMMENDED"].includes(d.tier) && d.tier !== "NOT_REQUIRED")
+  );
+
   const uploadedCount = documents.reduce(
     (count, doc) => (Boolean(doc.fileUri) ? count + 1 : count),
     0
@@ -63,13 +68,13 @@ export const Step4DocumentChecklist: React.FC<Step4DocumentChecklistProps> = ({
   };
 
   const handleContinuePress = () => {
-    const missingRequired = documents.filter((doc) => doc.required && !doc.fileUri);
+    const missingRequired = requiredDocs.filter((doc) => !doc.fileUri);
 
     if (missingRequired.length > 0) {
       const missingNames = missingRequired.map((d) => `• ${d.name} *`).join("\n");
       Alert.alert(
-        "Mandatory Documents Required",
-        `Please upload the following required documents (marked with *) before proceeding:\n\n${missingNames}`
+        "Required Documents Missing",
+        `Please upload the following required documents before proceeding:\n\n${missingNames}`
       );
       return;
     }
@@ -187,7 +192,7 @@ export const Step4DocumentChecklist: React.FC<Step4DocumentChecklistProps> = ({
       <View style={styles.progressCard}>
         <View style={styles.progressHeaderRow}>
           <Text style={styles.progressCounterText}>
-            Checklist Status: {uploadedCount} of {totalCount} uploaded
+            Documents Uploaded: {uploadedCount} of {totalCount}
           </Text>
           <View style={styles.statusBadge}>
             <Text style={styles.statusBadgeText}>{progressPercent}% Ready</Text>
@@ -203,19 +208,50 @@ export const Step4DocumentChecklist: React.FC<Step4DocumentChecklistProps> = ({
           <View style={styles.instructionTextCol}>
             <Text style={styles.instructionTitle}>Document Checklist</Text>
             <Text style={styles.instructionDetail}>
-              Documents are dynamically determined from your declared income sources. PAN and Aadhaar are auto-verified from your profile.
+              Upload applicable documents for CA review. PAN and Aadhaar identity are pre-verified from your profile.
             </Text>
           </View>
         </View>
       </View>
 
-      {/* Unified Documents Checklist */}
-      <View style={styles.groupSection}>
-        <View style={styles.groupHeader}>
-          <Text style={styles.groupTitle}>Documents Checklist</Text>
+      {/* 1. Required Documents */}
+      {requiredDocs.length > 0 && (
+        <View style={styles.groupSection}>
+          <View style={styles.groupHeader}>
+            <Text style={styles.groupTitle}>Required Documents</Text>
+            <View style={[styles.groupTag, styles.groupTagRequired]}>
+              <Text style={styles.groupTagTextRequired}>Mandatory ({requiredDocs.length})</Text>
+            </View>
+          </View>
+          <View style={styles.docsList}>{requiredDocs.map(renderDocCard)}</View>
         </View>
-        <View style={styles.docsList}>{documents.map(renderDocCard)}</View>
-      </View>
+      )}
+
+      {/* 2. Recommended Documents */}
+      {recommendedDocs.length > 0 && (
+        <View style={styles.groupSection}>
+          <View style={styles.groupHeader}>
+            <Text style={styles.groupTitle}>Recommended Documents</Text>
+            <View style={[styles.groupTag, styles.groupTagRecommended]}>
+              <Text style={styles.groupTagTextRecommended}>Recommended ({recommendedDocs.length})</Text>
+            </View>
+          </View>
+          <View style={styles.docsList}>{recommendedDocs.map(renderDocCard)}</View>
+        </View>
+      )}
+
+      {/* 3. Only If Applicable */}
+      {applicableDocs.length > 0 && (
+        <View style={styles.groupSection}>
+          <View style={styles.groupHeader}>
+            <Text style={styles.groupTitle}>Only If Applicable</Text>
+            <View style={styles.groupTag}>
+              <Text style={styles.groupTagText}>Optional ({applicableDocs.length})</Text>
+            </View>
+          </View>
+          <View style={styles.docsList}>{applicableDocs.map(renderDocCard)}</View>
+        </View>
+      )}
 
       {/* Continue Button */}
       <TouchableOpacity

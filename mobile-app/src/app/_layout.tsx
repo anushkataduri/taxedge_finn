@@ -1,18 +1,26 @@
+import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ThemeProvider } from "../design-system/theme";
 import { AnimatedSplashOverlay } from "../components/animated-icon";
 import { CompleteProfileModal } from "../shared/components/CompleteProfileModal";
+import { ErrorBoundary } from "../core/error-handling/ErrorBoundary";
+import { AppBootstrap } from "./bootstrap/AppBootstrap";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  useEffect(() => {
+    AppBootstrap.init().catch(() => {});
+  }, []);
+
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <AnimatedSplashOverlay />
-        <Stack screenOptions={{ headerShown: false }}>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <AnimatedSplashOverlay />
+          <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(main)" />
@@ -63,9 +71,10 @@ export default function RootLayout() {
           <Stack.Screen name="chat/support" />
           <Stack.Screen name="chat/[id]" />
           <Stack.Screen name="notifications" />
-        </Stack>
-        <CompleteProfileModal />
-      </ThemeProvider>
-    </SafeAreaProvider>
+          </Stack>
+          <CompleteProfileModal />
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }

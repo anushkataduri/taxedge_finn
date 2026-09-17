@@ -31,6 +31,7 @@ export const NoticeStatusScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
+    applicationId?: string;
     noticeNumber?: string;
     assessmentYear?: string;
     pan?: string;
@@ -91,9 +92,9 @@ export const NoticeStatusScreen: React.FC = () => {
 
   const details = {
     ...MOCK_NOTICE_STATUS_DETAILS,
-    noticeNumber: params.noticeNumber || MOCK_NOTICE_STATUS_DETAILS.noticeNumber,
+    noticeNumber: params.noticeNumber?.trim() || MOCK_NOTICE_STATUS_DETAILS.noticeNumber || "Notice Response",
     submittedOn: todayStr,
-    acknowledgementNo: ackNumber,
+    acknowledgementNo: params.applicationId || ackNumber,
     currentStatus: "Response Submitted",
   };
 

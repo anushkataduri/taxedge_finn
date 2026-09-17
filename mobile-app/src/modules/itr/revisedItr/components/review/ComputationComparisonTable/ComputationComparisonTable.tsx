@@ -6,37 +6,40 @@ import { styles } from "./ComputationComparisonTable.styles";
 export const ComputationComparisonTable: React.FC = () => {
   return (
     <View style={styles.card}>
-      {/* Table Header */}
-      <View style={styles.headerRow}>
-        <Text style={[styles.headerCell, styles.particularCol]}>Particulars</Text>
-        <Text style={[styles.headerCell, styles.valueCol]}>Original</Text>
-        <Text style={[styles.headerCell, styles.valueCol]}>Revised</Text>
-        <Text style={[styles.headerCell, styles.changeCol]}>Change</Text>
-      </View>
+      <Text style={styles.cardTitle}>Tax Summary</Text>
 
-      {/* Table Body */}
       {COMPARISON_TABLE_ROWS.map((row, idx) => {
         const isLast = idx === COMPARISON_TABLE_ROWS.length - 1;
 
         return (
           <View
             key={row.particular}
-            style={[styles.row, !isLast && styles.rowBorder]}
+            style={[styles.itemBlock, isLast ? styles.itemBlockLast : null]}
           >
-            <Text style={[styles.cell, styles.particularCol]} numberOfLines={2}>
-              {row.particular}
-            </Text>
-            <Text style={[styles.cell, styles.valueCol]}>{row.original}</Text>
-            <Text style={[styles.cell, styles.valueCol]}>{row.revised}</Text>
-            <Text
-              style={[
-                styles.cell,
-                styles.changeCol,
-                row.isHighlight ? styles.highlightText : styles.neutralText,
-              ]}
-            >
-              {row.change}
-            </Text>
+            <Text style={styles.particularTitle}>{row.particular}</Text>
+
+            <View style={styles.row}>
+              <Text style={styles.label}>Original</Text>
+              <Text style={styles.value}>{row.original}</Text>
+            </View>
+
+            <View style={styles.row}>
+              <Text style={styles.label}>Revised</Text>
+              <Text style={styles.value}>{row.revised}</Text>
+            </View>
+
+            <View style={styles.row}>
+              <Text style={styles.label}>Change</Text>
+              <Text
+                style={
+                  row.change === "—" || row.change === "₹0"
+                    ? styles.neutralChange
+                    : styles.changeValue
+                }
+              >
+                {row.change}
+              </Text>
+            </View>
           </View>
         );
       })}

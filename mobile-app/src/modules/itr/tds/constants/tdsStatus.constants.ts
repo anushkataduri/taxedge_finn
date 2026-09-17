@@ -1,16 +1,15 @@
 import { TdsTimelineStepItem, TdsApplicationSummary } from "../types/tdsStatus.types";
 
 /**
- * Exact 9-step timeline matching user application tracker screenshot
+ * Exact 9-step timeline matching user application tracker
  */
 export const DEFAULT_TDS_TIMELINE_STEPS: TdsTimelineStepItem[] = [
   {
     id: "step-1",
     stepNumber: 1,
     title: "New Request Received",
-    subtitle: "10 Aug 2026, 2:15 PM",
+    subtitle: "Application submitted",
     status: "completed",
-    timestamp: "10 Aug 2026, 2:15 PM",
   },
   {
     id: "step-2",
@@ -71,19 +70,19 @@ export const DEFAULT_TDS_TIMELINE_STEPS: TdsTimelineStepItem[] = [
 ];
 
 /**
- * Default Application Summary matching user screenshot
+ * Default Application Summary template
  */
 export const DEFAULT_APPLICATION_SUMMARY: TdsApplicationSummary = {
-  applicationId: "ITR-2026-00001",
+  applicationId: "",
   statusBadge: {
-    label: "Processing",
+    label: "Under Verification",
     textColor: "#7C3AED",
     bgColor: "#EDE9FE",
     dotColor: "#7C3AED",
   },
-  service: "ITR Filing",
-  assessmentYear: "2025-26",
-  appliedDate: "10 Aug 2026",
+  service: "TDS Refund",
+  assessmentYear: "",
+  appliedDate: "",
   progressPercent: 30,
 };
 
@@ -109,18 +108,18 @@ export const createApplicationSummary = (
     applicationId:
       params?.applicationId ||
       draftData?.applicationId ||
-      DEFAULT_APPLICATION_SUMMARY.applicationId,
+      "",
     statusBadge: DEFAULT_APPLICATION_SUMMARY.statusBadge,
     service:
       params?.serviceName ||
-      (draftData?.serviceName ? String(draftData.serviceName) : "ITR Filing"),
+      (draftData?.serviceName ? String(draftData.serviceName) : "TDS Refund"),
     assessmentYear:
       params?.assessmentYear ||
       draftData?.assessmentYear ||
-      DEFAULT_APPLICATION_SUMMARY.assessmentYear,
+      "",
     appliedDate:
       params?.appliedDate ||
-      DEFAULT_APPLICATION_SUMMARY.appliedDate ||
+      draftData?.appliedDate ||
       formattedToday,
     progressPercent: 30,
   };

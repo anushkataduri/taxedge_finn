@@ -51,4 +51,12 @@ export const styles = StyleSheet.create({
   dateText: { fontSize: 12.5, color: "#64748B", fontWeight: "500" },
   emptyContainer: { alignItems: "center", justifyContent: "center", paddingVertical: 48, paddingHorizontal: 20 },
   emptyText: { fontSize: 15, fontWeight: "600", textAlign: "center" },
+  emptySubtitle: { fontSize: 13, fontWeight: "400", textAlign: "center", marginTop: 4 },
+  loadingContainer: { alignItems: "center", justifyContent: "center", paddingVertical: 60, paddingHorizontal: 20 },
+  loadingText: { fontSize: 14, fontWeight: "500", marginTop: 12, textAlign: "center" },
+  errorContainer: { alignItems: "center", justifyContent: "center", paddingVertical: 40, paddingHorizontal: 24, marginHorizontal: 16, marginTop: 16, borderRadius: 16, borderWidth: 1, backgroundColor: "#FFF" },
+  errorTitle: { fontSize: 16, fontWeight: "700", marginTop: 10, textAlign: "center" },
+  errorText: { fontSize: 13, fontWeight: "400", textAlign: "center", marginTop: 6, lineHeight: 18 },
+  retryButton: { marginTop: 16, backgroundColor: "#0A2346", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  retryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
 });
