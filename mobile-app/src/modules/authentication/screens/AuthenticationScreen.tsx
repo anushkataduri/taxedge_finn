@@ -145,7 +145,7 @@ export function AuthenticationScreen() {
           setShowBiometricModal(true);
           return;
         }
-      } catch {}
+      } catch { }
 
       router.replace("/(main)/home" as any);
     }
@@ -158,7 +158,7 @@ export function AuthenticationScreen() {
       if (authRes.success) {
         await useAuthStore.getState().setBiometricEnabled(true);
       }
-    } catch {}
+    } catch { }
     router.replace("/(main)/home" as any);
   };
 
@@ -263,10 +263,8 @@ export function AuthenticationScreen() {
           {/* Welcome Title - Only shown on initial Mobile Number Login Screen */}
           {authFlowState === "ENTER_MOBILE" && (
             <View style={styles.welcome}>
-              <Text style={[styles.welcomeTitle, themed.welcomeTitle]}>Welcome Back ??</Text>
-              <Text style={[styles.welcomeSub, themed.welcomeSub]}>
-                Enter your mobile number
-              </Text>
+              <Text style={[styles.welcomeTitle, themed.welcomeTitle]}>Welcome Back 👋</Text>
+
             </View>
           )}
 
@@ -274,17 +272,23 @@ export function AuthenticationScreen() {
           {authFlowState !== "RESET_PASSCODE" && (
             <>
               <ErrorBanner error={error} onDismiss={() => setError(null)} />
-              {error && (error.includes("server") || error.includes("connect") || error.includes("Network")) && (
-                <TouchableOpacity
-                  onPress={() => setShowServerModal(true)}
-                  style={styles.serverConfigBtn}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.serverConfigBtnText}>
-                    ?? Tap to change Server IP / URL
-                  </Text>
-                </TouchableOpacity>
-              )}
+              {error && (
+                error.toLowerCase().includes("server") ||
+                error.toLowerCase().includes("connect") ||
+                error.toLowerCase().includes("network") ||
+                error.toLowerCase().includes("url") ||
+                error.toLowerCase().includes("fetch")
+              ) && (
+                  <TouchableOpacity
+                    onPress={() => setShowServerModal(true)}
+                    style={styles.serverConfigBtn}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.serverConfigBtnText}>
+                      ⚙️ Tap to change Server IP / URL
+                    </Text>
+                  </TouchableOpacity>
+                )}
             </>
           )}
 
@@ -334,7 +338,7 @@ export function AuthenticationScreen() {
                 <MobileNumberSection
                   mobile={mobileNumber}
                   onChangeMobile={setMobileNumber}
-                  onSubmit={() => {}}
+                  onSubmit={() => { }}
                   isReadOnly={true}
                   onChangeNumber={changeNumber}
                   loading={false}
@@ -362,7 +366,7 @@ export function AuthenticationScreen() {
                 <MobileNumberSection
                   mobile={mobileNumber}
                   onChangeMobile={setMobileNumber}
-                  onSubmit={() => {}}
+                  onSubmit={() => { }}
                   isReadOnly={true}
                   onChangeNumber={() => setAuthFlowState("PASSCODE_LOGIN")}
                   loading={false}

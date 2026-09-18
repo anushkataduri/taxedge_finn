@@ -41,6 +41,10 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
 
   const handleTest = async () => {
     let target = url.trim();
+    if (target.includes(":8081")) {
+      target = target.replace(":8081", ":8088");
+      setUrl(target);
+    }
     if (!target.startsWith("http://") && !target.startsWith("https://")) {
       target = `http://${target}`;
     }
@@ -76,6 +80,10 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
 
   const handleSave = async () => {
     let clean = url.trim();
+    if (clean.includes(":8081")) {
+      clean = clean.replace(":8081", ":8088");
+      setUrl(clean);
+    }
     if (!clean) {
       Alert.alert("Invalid URL", "Please enter a valid IP address or server URL.");
       return;
@@ -114,7 +122,7 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
               setUrl(txt);
               setTestResult(null);
             }}
-            placeholder="http://192.168.88.2:8088"
+            placeholder="http://192.168.88.47:8088"
             placeholderTextColor="#94A3B8"
             autoCapitalize="none"
             autoCorrect={false}
