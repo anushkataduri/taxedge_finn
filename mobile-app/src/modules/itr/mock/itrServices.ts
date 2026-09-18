@@ -8,7 +8,8 @@ export const ITR_SERVICES: ItrServiceItem[] = [
     description: "File your income tax return with expert help",
     iconName: "clipboard",
     iconColor: BrandColors.PRIMARY_BLUE,
-    iconBg: BrandColors.PRIMARY_LIGHT_BLUE,
+    iconBg: "#EAF2FF",
+    iconImage: require("../../../../assets/images/services/itr/itr_filing.png"),
     route: "/service/itr-filing",
   },
   {
@@ -17,7 +18,8 @@ export const ITR_SERVICES: ItrServiceItem[] = [
     description: "Claim your TDS refund and file TDS returns efficiently",
     iconName: "calculator",
     iconColor: BrandColors.PRIMARY_ORANGE,
-    iconBg: BrandColors.PRIMARY_LIGHT_ORANGE,
+    iconBg: "#FFF1E6",
+    iconImage: require("../../../../assets/images/services/itr/tds_refund.png"),
     route: "/service/tds-refund",
   },
   {
@@ -26,7 +28,8 @@ export const ITR_SERVICES: ItrServiceItem[] = [
     description: "File pending ITRs for previous years",
     iconName: "calendar",
     iconColor: BrandColors.PRIMARY_BLUE,
-    iconBg: BrandColors.PRIMARY_LIGHT_BLUE,
+    iconBg: "#EAF2FF",
+    iconImage: require("../../../../assets/images/services/itr/previous_year_itr.png"),
     route: "/service/previous-year-itr",
   },
   {
@@ -35,7 +38,8 @@ export const ITR_SERVICES: ItrServiceItem[] = [
     description: "Revise your already filed return",
     iconName: "create",
     iconColor: BrandColors.PRIMARY_ORANGE,
-    iconBg: BrandColors.PRIMARY_LIGHT_ORANGE,
+    iconBg: "#FFF1E6",
+    iconImage: require("../../../../assets/images/services/itr/revised_itr.png"),
     route: "/service/revised-itr",
   },
   {
@@ -44,7 +48,8 @@ export const ITR_SERVICES: ItrServiceItem[] = [
     description: "Get expert help with income tax notices",
     iconName: "warning",
     iconColor: BrandColors.PRIMARY_BLUE,
-    iconBg: BrandColors.PRIMARY_LIGHT_BLUE,
+    iconBg: "#EAF2FF",
+    iconImage: require("../../../../assets/images/services/itr/tax_notice_assistance.png"),
     route: "/service/tax-notice-assistance",
   },
 ];

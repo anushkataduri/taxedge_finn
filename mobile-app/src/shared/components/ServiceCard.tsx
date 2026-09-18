@@ -48,11 +48,20 @@ const GST_3D_ICONS: Record<string, any> = {
   certificate: require("../../../assets/images/services/gst/gst_certificate.png"),
 };
 
+const ITR_3D_ICONS: Record<string, any> = {
+  "itr-filing": require("../../../assets/images/services/itr/itr_filing.png"),
+  "tds-refund": require("../../../assets/images/services/itr/tds_refund.png"),
+  "previous-year-itr": require("../../../assets/images/services/itr/previous_year_itr.png"),
+  "revised-itr": require("../../../assets/images/services/itr/revised_itr.png"),
+  "tax-notice-assistance": require("../../../assets/images/services/itr/tax_notice_assistance.png"),
+};
+
 const renderCardIcon = (item: ServiceCardData) => {
   const bg = item.iconBg || "#EDF9F3";
   const icon3D =
     item.iconImage ||
     GST_3D_ICONS[item.id] ||
+    ITR_3D_ICONS[item.id] ||
     (item.iconType ? GST_3D_ICONS[item.iconType] : undefined);
 
   if (icon3D) {
@@ -151,7 +160,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#EEF2F6",
+    borderColor: "#E2E8F0",
     ...Platform.select({
       ios: {
         shadowColor: "#0F172A",
@@ -178,36 +187,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
   },
-  compositeIconContainer: {
-    width: 28,
-    height: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  pencilOverlay: {
-    position: "absolute",
-    bottom: -2,
-    right: -2,
-  },
-  chartBarsContainer: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 3,
-    height: 24,
-  },
-  chartBar: {
-    width: 5,
-    borderRadius: 2,
-  },
-  greenCheckBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: "#10B981",
-    justifyContent: "center",
-    alignItems: "center",
-  },
   detailsCol: {
     flex: 1,
     justifyContent: "center",
@@ -216,7 +195,7 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#1E293B",
+    color: "#0F3567",
     letterSpacing: -0.2,
     fontFamily: Platform.select({ ios: "System", android: "sans-serif-medium" }),
   },
