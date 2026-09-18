@@ -28,7 +28,13 @@ export function getDefaultBaseUrl(): string {
 
   // 2. Web fallback
   if (Platform.OS === "web") {
-    return `http://localhost:${SERVER_PORT}`;
+    if (typeof window !== "undefined" && window.location?.hostname) {
+      const host = window.location.hostname;
+      if (host && host !== "localhost" && host !== "127.0.0.1") {
+        return `http://${host}:${SERVER_PORT}`;
+      }
+    }
+    return `http://${SERVER_IP}:${SERVER_PORT}`;
   }
 
   // 3. Expo Go host IP detection if running inside Expo Go
