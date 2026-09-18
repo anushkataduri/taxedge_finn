@@ -1,21 +1,20 @@
 import { apiClient } from "../../../core/api/apiClient";
 import type { CustomerProfile } from "../types/customer.types";
-import { useAuthStore } from "../../authentication/store/authStore";
 import { authStorage } from "../../authentication/services/authStorage";
 
 export const customerApi = {
   getProfile: async (identifier?: string) => {
     let resolved = identifier;
     if (!resolved) {
-      const state = useAuthStore.getState();
+      const user = authStorage.getUser();
+      const session = authStorage.getSession();
       resolved =
-        state.customer?.mobile ||
-        state.customer?.customerId ||
-        state.authenticatedUser?.mobileNumber ||
-        (state.authenticatedUser as any)?.mobile ||
-        state.authenticatedUser?.customerId ||
-        state.mobileNumber ||
-        authStorage.getSession().activeMobile;
+        user?.mobileNumber ||
+        (user as any)?.mobile ||
+        user?.customerId ||
+        (user as any)?.custId ||
+        session.activeMobile ||
+        (session as any)?.activeCustId;
     }
 
     const clean = resolved ? String(resolved).trim() : "";
@@ -56,20 +55,19 @@ export const customerApi = {
   },
 
   updateProfile: async (profile: Partial<CustomerProfile> & { custId?: string; mobileNumber?: string }) => {
-    const state = useAuthStore.getState();
+    const user = authStorage.getUser();
+    const session = authStorage.getSession();
     const resolvedMobile =
       profile.mobileNumber ||
-      state.customer?.mobile ||
-      state.authenticatedUser?.mobileNumber ||
-      (state.authenticatedUser as any)?.mobile ||
-      state.mobileNumber ||
-      authStorage.getSession().activeMobile;
+      user?.mobileNumber ||
+      (user as any)?.mobile ||
+      session.activeMobile;
 
     const resolvedCustId =
       profile.custId ||
-      state.customer?.customerId ||
-      state.authenticatedUser?.customerId ||
-      (state.authenticatedUser as any)?.custId;
+      user?.customerId ||
+      (user as any)?.custId ||
+      (session as any)?.activeCustId;
 
     const headers: Record<string, string> = {};
     if (resolvedMobile) headers["X-Customer-Mobile"] = resolvedMobile;
