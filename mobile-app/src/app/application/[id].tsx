@@ -6,6 +6,9 @@ import {
   TouchableOpacity,
   StatusBar,
   ActivityIndicator,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,13 +20,14 @@ import { applicationService } from "../../modules/applications/services/applicat
 import type { Application, TimelineStep } from "../../types/domain";
 import { styles } from "../../styles/app/application/[id].styles";
 
-type DetailTab = "OVERVIEW" | "STATUS" | "DOCUMENTS" | "PAYMENTS";
+type DetailTab = "OVERVIEW" | "STATUS" | "DOCUMENTS" | "PAYMENTS" | "CHAT";
 
 const TABS: { id: DetailTab; label: string }[] = [
   { id: "OVERVIEW", label: "Overview" },
   { id: "STATUS", label: "Status" },
   { id: "DOCUMENTS", label: "Documents" },
   { id: "PAYMENTS", label: "Payments" },
+  { id: "CHAT", label: "Chat with CA" },
 ];
 
 function formatDisplayDate(dateStr?: string): string {
@@ -57,10 +61,27 @@ export default function ApplicationDetailScreen() {
 
   const applications = useApplicationStore((state) => state.applications);
   const uploadDocument = useApplicationStore((state) => state.uploadDocument);
+  const addChatMessage = useApplicationStore((state) => state.addChatMessage);
   const [remoteApp, setRemoteApp] = useState<Application | null>(null);
   const [isLoadingRemote, setIsLoadingRemote] = useState(false);
+  const [chatInput, setChatInput] = useState("");
+  const [isSendingChat, setIsSendingChat] = useState(false);
 
   const app = applications.find((a) => a.id === id || a.formData?.arn === id) || remoteApp;
+
+  const handleSendMessage = async () => {
+    const text = chatInput.trim();
+    if (!text || !app) return;
+    setChatInput("");
+    setIsSendingChat(true);
+    try {
+      await addChatMessage(app.id, "user", text);
+    } catch {
+      // Handled in store
+    } finally {
+      setIsSendingChat(false);
+    }
+  };
 
   useEffect(() => {
     if (!app && id) {
@@ -127,7 +148,9 @@ export default function ApplicationDetailScreen() {
       : (formData.businessName || formData.tradeName || currentCustomerName || "Verified Business"));
 
   const appliedDate = formData.submissionDate || formatDisplayDate(app.createdAt);
-  const assignedCA = app.assignedExecutive || (isGstAmendment ? (isCore ? "GST Verification Officer" : "Auto-Verification Engine") : "CA Vikram");
+  const assignedCA = (app.assignedExecutive && app.assignedExecutive.trim() !== "")
+    ? app.assignedExecutive.trim()
+    : (isGstAmendment ? (isCore ? "GST Verification Officer" : "Auto-Verification Engine") : "CA not assigned yet");
   const expectedDate = isGstAmendment ? (isCore ? "15 Working Days (Officer Review)" : "Auto-Approved / 24 Hours") : calculateExpectedDate(app.createdAt);
   const uploadedDocs = app.documents.filter((d: any) => d.status === "Uploaded").length;
 
@@ -203,6 +226,11 @@ export default function ApplicationDetailScreen() {
       sub: isGstAmendment
         ? "Government Portal Filing • Fee: Free"
         : `Total: ₹${totalAmount.toLocaleString()} • Status: ${app.paymentStatus}`,
+    },
+    CHAT: {
+      nav: "Chat with CA",
+      title: "CA Consultation",
+      sub: `Application #${displayId} • ${assignedCA}`,
     },
   }[activeTab];
 
@@ -301,19 +329,36 @@ export default function ApplicationDetailScreen() {
         </View>
       </View>
 
-      {/* ---------------- 4 TABS ROW ---------------- */}
+      {/* ---------------- 5 HORIZONTAL TABS ROW ---------------- */}
       <View style={styles.tabsContainer}>
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <TouchableOpacity key={tab.id} activeOpacity={0.7} onPress={() => setActiveTab(tab.id)} style={styles.tabItem}>
-              <Text style={[styles.tabLabel, { color: isActive ? "#FF5722" : "#0A2346", fontWeight: isActive ? "700" : "600" }]} numberOfLines={1} adjustsFontSizeToFit>
-                {tab.label}
-              </Text>
-              <View style={isActive ? styles.activeTabIndicator : styles.inactiveTabIndicator} />
-            </TouchableOpacity>
-          );
-        })}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsScrollContent}
+        >
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <TouchableOpacity
+                key={tab.id}
+                activeOpacity={0.7}
+                onPress={() => setActiveTab(tab.id)}
+                style={styles.tabItem}
+              >
+                <Text
+                  style={[
+                    styles.tabLabel,
+                    { color: isActive ? "#FF5722" : "#0A2346", fontWeight: isActive ? "700" : "600" },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {tab.label}
+                </Text>
+                <View style={isActive ? styles.activeTabIndicator : styles.inactiveTabIndicator} />
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {/* ---------------- SCROLLABLE BODY ---------------- */}
@@ -376,6 +421,36 @@ export default function ApplicationDetailScreen() {
               </View>
             </View>
 
+            {/* Assigned CA Card with Direct Chat Action */}
+            <View style={[styles.card, { backgroundColor: "#F8FAFC", borderColor: "#E2E8F0" }]}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
+                  <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: "#EAF2FF", alignItems: "center", justifyContent: "center" }}>
+                    <Ionicons name="person" size={22} color="#083B75" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 11, color: "#64748B", fontWeight: "700", textTransform: "uppercase" }}>Assigned Executive</Text>
+                    <Text style={{ fontSize: 14, fontWeight: "700", color: "#0F172A", marginTop: 2 }}>{assignedCA}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setActiveTab("CHAT")}
+                  style={{
+                    backgroundColor: "#083B75",
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 10,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <Ionicons name="chatbubbles-outline" size={15} color="#FFFFFF" />
+                  <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>Chat with CA</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
 
             {/* GST Filing Details */}
             {filingRows.length > 0 && (
@@ -491,43 +566,61 @@ export default function ApplicationDetailScreen() {
 
         {/* TAB 2: STATUS */}
         {activeTab === "STATUS" && (
-          <View style={styles.card}>
-            <View style={styles.cardHeaderRow}>
-              <Ionicons name="git-branch-outline" size={20} color="#083B75" />
-              <Text style={styles.cardHeaderTitle}>Status Timeline</Text>
-            </View>
-            <View style={{ paddingLeft: 4, paddingTop: 4 }}>
-              {timelineSteps.map((step, index) => {
-                const isLast = index === timelineSteps.length - 1;
-                const isCompleted = step.status === "completed";
-                const isCurrent = step.status === "current";
-                return (
-                  <View key={index} style={{ flexDirection: "row", marginBottom: 6 }}>
-                    <View style={{ alignItems: "center", width: 28, marginRight: 10 }}>
-                      {isCompleted ? (
-                        <View style={styles.completedCircle}><Ionicons name="checkmark" size={12} color="#FFF" /></View>
-                      ) : isCurrent ? (
-                        <View style={[styles.completedCircle, { backgroundColor: "#EA580C" }]}>
-                          <Text style={{ fontSize: 11, fontWeight: "800", color: "#FFF" }}>{index + 1}</Text>
-                        </View>
-                      ) : (
-                        <View style={[styles.pendingCircle, { justifyContent: "center", alignItems: "center" }]}>
-                          <Text style={{ fontSize: 10, fontWeight: "700", color: "#94A3B8" }}>{index + 1}</Text>
-                        </View>
-                      )}
-                      {!isLast && <View style={[styles.timelineConnectingLine, { backgroundColor: isCompleted ? "#16A34A" : isCurrent ? "#FED7AA" : "#E2E8F0" }]} />}
-                    </View>
-                    <View style={styles.timelineContentCol}>
-                      <View style={styles.timelineStepTopRow}>
-                        <Text style={[styles.timelineStepTitle, { color: isCurrent ? "#EA580C" : isCompleted ? "#0F172A" : "#64748B", fontWeight: isCurrent || isCompleted ? "700" : "600" }]}>{step.title}</Text>
-                        {step.date && <Text style={styles.timelineStepDate}>{step.date}</Text>}
+          <View style={{ gap: 14 }}>
+            <View style={styles.card}>
+              <View style={styles.cardHeaderRow}>
+                <Ionicons name="git-branch-outline" size={20} color="#083B75" />
+                <Text style={styles.cardHeaderTitle}>Status Timeline</Text>
+              </View>
+              <View style={{ paddingLeft: 4, paddingTop: 4 }}>
+                {timelineSteps.map((step, index) => {
+                  const isLast = index === timelineSteps.length - 1;
+                  const isCompleted = step.status === "completed";
+                  const isCurrent = step.status === "current";
+                  return (
+                    <View key={index} style={{ flexDirection: "row", marginBottom: 6 }}>
+                      <View style={{ alignItems: "center", width: 28, marginRight: 10 }}>
+                        {isCompleted ? (
+                          <View style={styles.completedCircle}><Ionicons name="checkmark" size={12} color="#FFF" /></View>
+                        ) : isCurrent ? (
+                          <View style={[styles.completedCircle, { backgroundColor: "#EA580C" }]}>
+                            <Text style={{ fontSize: 11, fontWeight: "800", color: "#FFF" }}>{index + 1}</Text>
+                          </View>
+                        ) : (
+                          <View style={[styles.pendingCircle, { justifyContent: "center", alignItems: "center" }]}>
+                            <Text style={{ fontSize: 10, fontWeight: "700", color: "#94A3B8" }}>{index + 1}</Text>
+                          </View>
+                        )}
+                        {!isLast && <View style={[styles.timelineConnectingLine, { backgroundColor: isCompleted ? "#16A34A" : isCurrent ? "#FED7AA" : "#E2E8F0" }]} />}
                       </View>
-                      <Text style={styles.timelineStepSub}>{step.description}</Text>
+                      <View style={styles.timelineContentCol}>
+                        <View style={styles.timelineStepTopRow}>
+                          <Text style={[styles.timelineStepTitle, { color: isCurrent ? "#EA580C" : isCompleted ? "#0F172A" : "#64748B", fontWeight: isCurrent || isCompleted ? "700" : "600" }]}>{step.title}</Text>
+                          {step.date && <Text style={styles.timelineStepDate}>{step.date}</Text>}
+                        </View>
+                        <Text style={styles.timelineStepSub}>{step.description}</Text>
+                      </View>
                     </View>
-                  </View>
-                );
-              })}
+                  );
+                })}
+              </View>
             </View>
+
+            {/* Status Discussion Shortcut */}
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setActiveTab("CHAT")}
+              style={[styles.card, { backgroundColor: "#FFF2EA", borderColor: "#FED7AA", flexDirection: "row", alignItems: "center", justifyContent: "space-between" }]}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
+                <Ionicons name="chatbubbles" size={24} color="#EA580C" />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13.5, fontWeight: "700", color: "#0A2346" }}>Need clarification on this status?</Text>
+                  <Text style={{ fontSize: 11.5, color: "#64748B", marginTop: 2 }}>Discuss directly with {assignedCA}</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#EA580C" />
+            </TouchableOpacity>
           </View>
         )}
 
@@ -539,52 +632,71 @@ export default function ApplicationDetailScreen() {
               <Text style={styles.cardHeaderTitle}>{isGstAmendment ? "Supporting Documents" : "Required Documents"}</Text>
             </View>
             <View style={{ gap: 12 }}>
-              {isGstAmendment && formData.document && (
-                <View style={styles.docItemCard}>
-                  <View style={styles.docIconWrap}>
-                    <Ionicons name="checkmark-circle" size={24} color="#083B75" />
-                  </View>
-                  <View style={{ flex: 1, paddingRight: 8, justifyContent: "center" }}>
-                    <Text style={styles.docNameText}>{formData.document.name}</Text>
-                    {formData.document.size ? (
-                      <Text style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>{formData.document.size}</Text>
-                    ) : null}
-                  </View>
-                  <View style={styles.uploadedPill}>
-                    <Ionicons name="checkmark-circle" size={14} color="#083B75" />
-                    <Text style={styles.uploadedPillText}>Attached</Text>
-                  </View>
+              {app.documents.length === 0 && !(isGstAmendment && formData.document) ? (
+                <View style={{ alignItems: "center", paddingVertical: 36, gap: 8 }}>
+                  <Ionicons name="folder-open-outline" size={44} color="#94A3B8" />
+                  <Text style={{ fontSize: 14, fontWeight: "600", color: "#64748B", textAlign: "center" }}>
+                    No documents uploaded for this application.
+                  </Text>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => handleDocumentUpload("Additional Document")}
+                    style={[styles.actionBtnFilled, { marginTop: 12, paddingHorizontal: 16, height: 42 }]}
+                  >
+                    <Ionicons name="cloud-upload-outline" size={18} color="#FFFFFF" />
+                    <Text style={styles.actionBtnFilledText}>Upload Document</Text>
+                  </TouchableOpacity>
                 </View>
-              )}
-              {app.documents.map((doc: any, i: number) => {
-                const isUploaded = doc.status === "Uploaded";
-                return (
-                  <View key={i} style={styles.docItemCard}>
-                    <View style={styles.docIconWrap}>
-                      <Ionicons name={isUploaded ? "checkmark-circle" : "document-text-outline"} size={24} color={isUploaded ? "#059669" : "#EA580C"} />
-                    </View>
-                    <View style={{ flex: 1, paddingRight: 8, justifyContent: "center" }}>
-                      <Text style={styles.docNameText}>{doc.name}</Text>
-                      {doc.fileUri && (
-                        <Text style={{ fontSize: 11, color: "#64748B", marginTop: 2 }} numberOfLines={1}>
-                          {doc.fileUri.split("/").pop()}
-                        </Text>
-                      )}
-                    </View>
-                    {!isUploaded ? (
-                      <TouchableOpacity activeOpacity={0.8} onPress={() => handleDocumentUpload(doc.name)} style={styles.uploadPeachBtn}>
-                        <Text style={styles.uploadPeachBtnText}>Upload</Text>
-                        <Ionicons name="cloud-upload-outline" size={15} color="#EA580C" />
-                      </TouchableOpacity>
-                    ) : (
-                      <View style={[styles.uploadedPill, { backgroundColor: "#ECFDF5" }]}>
-                        <Ionicons name="checkmark-circle" size={14} color="#059669" />
-                        <Text style={[styles.uploadedPillText, { color: "#059669" }]}>Uploaded</Text>
+              ) : (
+                <>
+                  {isGstAmendment && formData.document && (
+                    <View style={styles.docItemCard}>
+                      <View style={styles.docIconWrap}>
+                        <Ionicons name="checkmark-circle" size={24} color="#083B75" />
                       </View>
-                    )}
-                  </View>
-                );
-              })}
+                      <View style={{ flex: 1, paddingRight: 8, justifyContent: "center" }}>
+                        <Text style={styles.docNameText}>{formData.document.name}</Text>
+                        {formData.document.size ? (
+                          <Text style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>{formData.document.size}</Text>
+                        ) : null}
+                      </View>
+                      <View style={styles.uploadedPill}>
+                        <Ionicons name="checkmark-circle" size={14} color="#083B75" />
+                        <Text style={styles.uploadedPillText}>Attached</Text>
+                      </View>
+                    </View>
+                  )}
+                  {app.documents.map((doc: any, i: number) => {
+                    const isUploaded = doc.status === "Uploaded";
+                    return (
+                      <View key={i} style={styles.docItemCard}>
+                        <View style={styles.docIconWrap}>
+                          <Ionicons name={isUploaded ? "checkmark-circle" : "document-text-outline"} size={24} color={isUploaded ? "#059669" : "#EA580C"} />
+                        </View>
+                        <View style={{ flex: 1, paddingRight: 8, justifyContent: "center" }}>
+                          <Text style={styles.docNameText}>{doc.name}</Text>
+                          {doc.fileUri && (
+                            <Text style={{ fontSize: 11, color: "#64748B", marginTop: 2 }} numberOfLines={1}>
+                              {doc.fileUri.split("/").pop()}
+                            </Text>
+                          )}
+                        </View>
+                        {!isUploaded ? (
+                          <TouchableOpacity activeOpacity={0.8} onPress={() => handleDocumentUpload(doc.name)} style={styles.uploadPeachBtn}>
+                            <Text style={styles.uploadPeachBtnText}>Upload</Text>
+                            <Ionicons name="cloud-upload-outline" size={15} color="#EA580C" />
+                          </TouchableOpacity>
+                        ) : (
+                          <View style={[styles.uploadedPill, { backgroundColor: "#ECFDF5" }]}>
+                            <Ionicons name="checkmark-circle" size={14} color="#059669" />
+                            <Text style={[styles.uploadedPillText, { color: "#059669" }]}>Uploaded</Text>
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })}
+                </>
+              )}
             </View>
           </View>
         )}
@@ -624,15 +736,104 @@ export default function ApplicationDetailScreen() {
             </View>
           </View>
         )}
+
+        {/* TAB 5: CHAT WITH CA */}
+        {activeTab === "CHAT" && (
+          <View style={{ gap: 14 }}>
+            <View style={[styles.card, { paddingBottom: 16 }]}>
+              <View style={styles.cardHeaderRow}>
+                <Ionicons name="chatbubbles-outline" size={20} color="#083B75" />
+                <Text style={styles.cardHeaderTitle}>CA Consultation</Text>
+              </View>
+
+              {(!app.chatHistory || app.chatHistory.length === 0) ? (
+                <View style={styles.emptyChatWrap}>
+                  <View style={styles.emptyChatIconCircle}>
+                    <Ionicons name="chatbubble-ellipses-outline" size={30} color="#FF5722" />
+                  </View>
+                  <Text style={styles.emptyChatTitle}>Direct CA Consultation</Text>
+                  <Text style={styles.emptyChatSubtitle}>
+                    Have questions about this application? Send a direct message to {assignedCA}.
+                  </Text>
+                  <View style={styles.chatSecurityBadge}>
+                    <Ionicons name="shield-checkmark" size={14} color="#059669" />
+                    <Text style={styles.chatSecurityText}>Application-Specific & Confidential</Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={{ paddingVertical: 6 }}>
+                  {app.chatHistory.map((msg) => {
+                    const isUser = msg.sender === "user";
+                    return (
+                      <View
+                        key={msg.id}
+                        style={isUser ? styles.chatBubbleUser : styles.chatBubbleCA}
+                      >
+                        <Text
+                          style={[
+                            styles.chatSenderLabel,
+                            { color: isUser ? "#FED7AA" : "#083B75" },
+                          ]}
+                        >
+                          {isUser ? "You" : (assignedCA !== "CA not assigned yet" ? assignedCA : "TaxEdge CA")}
+                        </Text>
+                        <Text style={isUser ? styles.chatTextUser : styles.chatTextCA}>
+                          {msg.text}
+                        </Text>
+                        <Text style={isUser ? styles.chatTimeUser : styles.chatTimeCA}>
+                          {formatDisplayDate(msg.timestamp)}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          </View>
+        )}
       </ScrollView>
 
-      {/* ---------------- FIXED BOTTOM ACTION BUTTON ---------------- */}
-      <View style={[styles.bottomActionBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => router.push("/chat/support")} style={styles.actionBtnFilled}>
-          <Ionicons name="headset-outline" size={18} color="#FFFFFF" />
-          <Text style={styles.actionBtnFilledText}>{isGstAmendment ? "Contact Support" : "Support"}</Text>
-        </TouchableOpacity>
-      </View>
+      {/* ---------------- BOTTOM ACTION BAR ---------------- */}
+      {activeTab === "CHAT" ? (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? insets.bottom + 20 : 0}
+        >
+          <View style={[styles.chatInputBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+            <TextInput
+              style={styles.chatTextInput}
+              placeholder={`Message ${assignedCA}...`}
+              placeholderTextColor="#94A3B8"
+              value={chatInput}
+              onChangeText={setChatInput}
+              multiline
+              maxLength={1000}
+            />
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleSendMessage}
+              disabled={!chatInput.trim() || isSendingChat}
+              style={[
+                styles.chatSendBtn,
+                { opacity: !chatInput.trim() || isSendingChat ? 0.5 : 1 },
+              ]}
+            >
+              {isSendingChat ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Ionicons name="send" size={18} color="#FFFFFF" />
+              )}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      ) : (
+        <View style={[styles.bottomActionBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => setActiveTab("CHAT")} style={styles.actionBtnFilled}>
+            <Ionicons name="chatbubbles-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.actionBtnFilledText}>Chat with CA</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }

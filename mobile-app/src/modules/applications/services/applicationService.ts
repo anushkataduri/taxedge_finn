@@ -49,6 +49,36 @@ export const applicationService = {
 
     return await apiClient.post<Application>("/applications", payload, { headers });
   },
+
+  updateApplication: async (app: Application): Promise<Application> => {
+    const headers = getAuthHeaders();
+    return await apiClient.post<Application>("/applications", app, { headers });
+  },
+
+  sendChatMessage: async (appId: string, text: string, sender: "user" | "staff" = "user"): Promise<boolean> => {
+    try {
+      const app = await applicationService.getApplicationById(appId);
+      if (!app) return false;
+
+      const newMessage = {
+        id: `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        sender,
+        text,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+
+      const updatedApp: Application = {
+        ...app,
+        chatHistory: [...(app.chatHistory || []), newMessage],
+      };
+
+      await applicationService.updateApplication(updatedApp);
+      return true;
+    } catch (e) {
+      console.warn("Failed to persist chat message to backend:", e);
+      return false;
+    }
+  },
 };
 
 export default applicationService;

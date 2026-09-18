@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
   type NativeSyntheticEvent,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter, type Href } from "expo-router";
+import { useRouter, useFocusEffect, type Href } from "expo-router";
 import { useTheme } from "../../hooks/use-theme";
 import { useColorScheme } from "../../hooks/use-color-scheme";
 import { useAuthStore } from "../../store/authStore";
@@ -229,6 +229,12 @@ export default function HomeScreen() {
   const gstFilingDraft = useApplicationStore((state) => state.gstFilingDraft);
   const itrDraft = useApplicationStore((state) => state.itrDraft);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
+
+  useFocusEffect(
+    useCallback(() => {
+      useApplicationStore.getState().loadApplications();
+    }, [])
+  );
 
   const hasRealName = Boolean(
     customer?.name &&
