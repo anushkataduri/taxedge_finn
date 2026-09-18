@@ -14,13 +14,13 @@ export const BusinessDetailsScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.scroll}>
         <FormInput
           label="Industry Category"
-          value={draft.company.industryCategory}
+          value={draft.company.industryCategory || ''}
           onChangeText={(v) => updateCompanyDetails({ industryCategory: v })}
           placeholder="e.g. Information Technology"
         />
         <FormInput
           label="Business Activity Description"
-          value={draft.company.businessActivityDescription}
+          value={draft.company.businessActivityDescription || ''}
           onChangeText={(v) => updateCompanyDetails({ businessActivityDescription: v })}
           placeholder="Describe your primary business objectives"
         />

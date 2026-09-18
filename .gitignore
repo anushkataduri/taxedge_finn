@@ -10,3 +10,5 @@ dist/
 build/
 target/
 .gradle/
+.tools/
+.agents/
