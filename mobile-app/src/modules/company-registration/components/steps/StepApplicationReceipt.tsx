@@ -23,8 +23,8 @@ export const StepApplicationReceipt: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Application Receipt</Text>
-      <Text style={styles.subheading}>Official TaxEdge incorporation payment receipt & filing acknowledgement.</Text>
+      <Text style={styles.heading}>TaxEdge Application & Payment Receipt</Text>
+      <Text style={styles.subheading}>This receipt confirms successful submission to TaxEdge and payment received for application processing.</Text>
 
       {/* Printable Receipt Paper Card */}
       <View style={styles.receiptPaper}>
@@ -33,7 +33,7 @@ export const StepApplicationReceipt: React.FC = () => {
             <Text style={styles.brandName}>TaxEdge Fin Solutions</Text>
             <Text style={styles.brandSub}>Corporate Incorporation Desk</Text>
           </View>
-          <Text style={styles.receiptTitle}>TAX RECEIPT</Text>
+          <Text style={styles.receiptTitle}>RECEIPT</Text>
         </View>
 
         <View style={styles.dataRow}>

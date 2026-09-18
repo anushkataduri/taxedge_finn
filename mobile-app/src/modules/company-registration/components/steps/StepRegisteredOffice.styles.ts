@@ -80,4 +80,16 @@ export const styles = StyleSheet.create({
     color: '#083B75',
     fontWeight: '600',
   },
+  infoNote: {
+    fontSize: 12,
+    color: '#0369A1',
+    backgroundColor: '#F0F9FF',
+    borderColor: '#BAE6FD',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 8,
+    lineHeight: 16,
+  },
 });
+

@@ -10,7 +10,8 @@ export const StepCapitalShareholding: React.FC = () => {
   const updateDetails = useCompanyRegistrationStore((state) => state.updateCompanyDetails);
   const updateDirector = useCompanyRegistrationStore((state) => state.updateDirector);
 
-  const totalShareholding = directors.reduce((sum, d) => sum + (Number(d.sharesPercentage) || 0), 0);
+  const isOpc = company.companyType === 'One Person Company (OPC)';
+  const totalShareholding = isOpc ? 100 : directors.reduce((sum, d) => sum + (Number(d.sharesPercentage) || 0), 0);
   const isPaidUpValid = Number(company.paidUpCapital) <= Number(company.authorizedCapital);
   const isShareholdingValid = totalShareholding === 100;
 
@@ -71,6 +72,11 @@ export const StepCapitalShareholding: React.FC = () => {
 
       {/* Shareholding Breakdown */}
       <Text style={[styles.label, { marginTop: 10, marginBottom: 8 }]}>Equity Shareholding Pattern (%)</Text>
+      {company.companyType === 'One Person Company (OPC)' && (
+        <Text style={{ fontSize: 12, color: '#0369A1', backgroundColor: '#F0F9FF', borderColor: '#BAE6FD', borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 12 }}>
+          In a One Person Company (OPC), 100% equity shareholding is automatically allocated to the single member.
+        </Text>
+      )}
       {directors.map((dir) => (
         <View key={dir.id} style={styles.shareCard}>
           <View style={styles.shareRow}>
@@ -80,10 +86,11 @@ export const StepCapitalShareholding: React.FC = () => {
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <TextInput
-                style={styles.shareInput}
-                value={String(dir.sharesPercentage)}
+                style={[styles.shareInput, company.companyType === 'One Person Company (OPC)' && { backgroundColor: '#E2E8F0', color: '#64748B' }]}
+                value={company.companyType === 'One Person Company (OPC)' ? '100' : String(dir.sharesPercentage)}
                 onChangeText={(val) => updateDirector(dir.id, { sharesPercentage: Number(val) || 0 })}
                 keyboardType="numeric"
+                editable={company.companyType !== 'One Person Company (OPC)'}
               />
               <Text style={{ fontSize: 14, fontWeight: '700', color: '#1E293B' }}>%</Text>
             </View>

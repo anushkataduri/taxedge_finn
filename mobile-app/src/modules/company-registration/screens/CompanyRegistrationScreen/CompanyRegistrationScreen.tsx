@@ -61,7 +61,9 @@ export const CompanyRegistrationScreen: React.FC = () => {
   };
 
   const handleBack = () => {
-    if (currentStep > 0) {
+    if (currentStep === totalSteps - 1) {
+      setStep(0);
+    } else if (currentStep > 0) {
       setStep(currentStep - 1);
     } else {
       router.back();
@@ -107,15 +109,9 @@ export const CompanyRegistrationScreen: React.FC = () => {
     <View style={styles.container}>
       <AppHeader title="Company Registration" showBack />
 
-      {/* Step Progress Bar Header */}
-      <View style={styles.progressHeader}>
-        <View style={styles.headerTop}>
-          <Text style={styles.stepCounter}>Step {currentStep + 1} of {totalSteps}</Text>
-          <Text style={styles.stepName}>{STEP_NAMES[currentStep]}</Text>
-        </View>
-        <View style={styles.progressBarBg}>
-          <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
-        </View>
+      {/* Filling Progress Bar */}
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
       </View>
 
       {/* Main Scroll Content */}

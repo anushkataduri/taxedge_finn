@@ -39,7 +39,7 @@ export const StepFeesPayment: React.FC = () => {
           <Text style={styles.value}>₹{feeBreakdown.gstAmount.toLocaleString('en-IN')}</Text>
         </View>
         <View style={styles.row}>
-          <Text style={styles.label}>Government / Statutory MCA Charges</Text>
+          <Text style={styles.label}>Estimated / Applicable MCA Statutory Charges</Text>
           <Text style={styles.value}>₹{feeBreakdown.statutoryCharges.toLocaleString('en-IN')}</Text>
         </View>
         <View style={styles.divider} />
@@ -48,6 +48,9 @@ export const StepFeesPayment: React.FC = () => {
           <Text style={styles.totalValue}>₹{feeBreakdown.totalAmount.toLocaleString('en-IN')}</Text>
         </View>
       </View>
+      <Text style={{ fontSize: 12, color: '#64748B', marginTop: 4, marginBottom: 16 }}>
+        * ₹1,500 represents estimated / applicable MCA government filing fee and stamp duty charges.
+      </Text>
 
       {/* Payment Method Selection */}
       <Text style={[styles.label, { fontWeight: '700', marginBottom: 8 }]}>Select Payment Method</Text>

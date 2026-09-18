@@ -94,6 +94,13 @@ export const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#92400E',
-    marginBottom: 10,
+    marginBottom: 6,
+  },
+  opcNote: {
+    fontSize: 12,
+    color: '#B45309',
+    marginBottom: 12,
+    lineHeight: 16,
   },
 });
+

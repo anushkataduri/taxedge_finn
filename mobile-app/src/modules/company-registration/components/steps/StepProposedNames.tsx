@@ -24,11 +24,11 @@ export const StepProposedNames: React.FC = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Proposed Company Names</Text>
-      <Text style={styles.subheading}>Provide up to 3 name choices in order of preference for RUN / SPICe+ MCA approval.</Text>
+      <Text style={styles.subheading}>Provide up to 2 preferred names for SPICe+ Part A name reservation / incorporation.</Text>
 
       {/* 1st Preferred Name */}
       <View style={styles.fieldGroup}>
-        <Text style={styles.label}>1st Preferred Name *</Text>
+        <Text style={styles.label}>First Preferred Name *</Text>
         <TextInput
           style={styles.input}
           value={company.proposedName1}
@@ -40,24 +40,12 @@ export const StepProposedNames: React.FC = () => {
 
       {/* 2nd Preferred Name */}
       <View style={styles.fieldGroup}>
-        <Text style={styles.label}>2nd Preferred Name *</Text>
+        <Text style={styles.label}>Second Preferred Name *</Text>
         <TextInput
           style={styles.input}
           value={company.proposedName2}
           onChangeText={(val) => updateDetails({ proposedName2: val })}
           placeholder="Second Preference Name"
-          placeholderTextColor="#94A3B8"
-        />
-      </View>
-
-      {/* 3rd Preferred Name */}
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>3rd Preferred Name (Optional)</Text>
-        <TextInput
-          style={styles.input}
-          value={company.proposedName3}
-          onChangeText={(val) => updateDetails({ proposedName3: val })}
-          placeholder="Third Preference Name"
           placeholderTextColor="#94A3B8"
         />
       </View>
@@ -72,11 +60,11 @@ export const StepProposedNames: React.FC = () => {
 
       {/* Name Availability Indicator */}
       <View style={styles.statusCard}>
-        <Ionicons name="checkmark-circle" size={20} color="#166534" />
-        <View>
-          <Text style={styles.statusText}>Initial Availability Check: Passed</Text>
-          <Text style={{ fontSize: 12, color: '#15803D' }}>
-            "{company.proposedName1 || 'TaxEdge Tech Private Limited'}" has no direct trademark conflicts.
+        <Ionicons name="information-circle-outline" size={20} color="#166534" />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.statusText}>Preliminary Name Check</Text>
+          <Text style={{ fontSize: 12, color: '#15803D', lineHeight: 16 }}>
+            Preliminary name check passed — final approval is subject to MCA name availability and applicable naming/trademark rules.
           </Text>
         </View>
       </View>

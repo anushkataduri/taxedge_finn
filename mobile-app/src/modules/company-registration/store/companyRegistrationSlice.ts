@@ -135,12 +135,20 @@ const initialDraft: CompanyRegistrationDraft = {
 export const useCompanyRegistrationStore = create<CompanyRegistrationState>((set) => ({
   draft: initialDraft,
   setCompanyType: (type) =>
-    set((state) => ({
-      draft: {
-        ...state.draft,
-        company: { ...state.draft.company, companyType: type },
-      },
-    })),
+    set((state) => {
+      const isOpc = type === 'One Person Company (OPC)';
+      let directors = state.draft.directors;
+      if (isOpc && directors.length > 0) {
+        directors = [{ ...directors[0], sharesPercentage: 100 }];
+      }
+      return {
+        draft: {
+          ...state.draft,
+          company: { ...state.draft.company, companyType: type },
+          directors,
+        },
+      };
+    }),
   updateCompanyDetails: (details) =>
     set((state) => ({
       draft: {
@@ -149,12 +157,17 @@ export const useCompanyRegistrationStore = create<CompanyRegistrationState>((set
       },
     })),
   addDirector: (director) =>
-    set((state) => ({
-      draft: {
-        ...state.draft,
-        directors: [...state.draft.directors, director],
-      },
-    })),
+    set((state) => {
+      if (state.draft.company.companyType === 'One Person Company (OPC)') {
+        return state; // Prevent adding more than 1 director/promoter for OPC
+      }
+      return {
+        draft: {
+          ...state.draft,
+          directors: [...state.draft.directors, director],
+        },
+      };
+    }),
   updateDirector: (id, updatedFields) =>
     set((state) => ({
       draft: {
@@ -198,12 +211,18 @@ export const useCompanyRegistrationStore = create<CompanyRegistrationState>((set
       },
     })),
   updateDocumentStatus: (documentId, status, fileUri) =>
-    set((state) => ({
-      draft: {
-        ...state.draft,
-        documents: state.draft.documents.map((doc) => (doc.id === documentId ? { ...doc, status, fileUri } : doc)),
-      },
-    })),
+    set((state) => {
+      const exists = state.draft.documents.some((doc) => doc.id === documentId);
+      const updatedDocs = exists
+        ? state.draft.documents.map((doc) => (doc.id === documentId ? { ...doc, status, fileUri } : doc))
+        : [...state.draft.documents, { id: documentId, name: documentId, category: 'Conditional Doc', required: true, status, fileUri }];
+      return {
+        draft: {
+          ...state.draft,
+          documents: updatedDocs,
+        },
+      };
+    }),
   setStep: (currentStep) =>
     set((state) => ({
       draft: { ...state.draft, currentStep },
