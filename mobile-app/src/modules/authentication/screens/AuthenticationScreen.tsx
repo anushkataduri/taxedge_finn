@@ -145,7 +145,7 @@ export function AuthenticationScreen() {
           setShowBiometricModal(true);
           return;
         }
-      } catch {}
+      } catch { }
 
       router.replace("/(main)/home" as any);
     }
@@ -158,7 +158,7 @@ export function AuthenticationScreen() {
       if (authRes.success) {
         await useAuthStore.getState().setBiometricEnabled(true);
       }
-    } catch {}
+    } catch { }
     router.replace("/(main)/home" as any);
   };
 
@@ -264,9 +264,7 @@ export function AuthenticationScreen() {
           {authFlowState === "ENTER_MOBILE" && (
             <View style={styles.welcome}>
               <Text style={[styles.welcomeTitle, themed.welcomeTitle]}>Welcome Back 👋</Text>
-              <Text style={[styles.welcomeSub, themed.welcomeSub]}>
-                Enter your mobile number
-              </Text>
+
             </View>
           )}
 
@@ -281,16 +279,16 @@ export function AuthenticationScreen() {
                 error.toLowerCase().includes("url") ||
                 error.toLowerCase().includes("fetch")
               ) && (
-                <TouchableOpacity
-                  onPress={() => setShowServerModal(true)}
-                  style={styles.serverConfigBtn}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.serverConfigBtnText}>
-                    ⚙️ Tap to change Server IP / URL
-                  </Text>
-                </TouchableOpacity>
-              )}
+                  <TouchableOpacity
+                    onPress={() => setShowServerModal(true)}
+                    style={styles.serverConfigBtn}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.serverConfigBtnText}>
+                      ⚙️ Tap to change Server IP / URL
+                    </Text>
+                  </TouchableOpacity>
+                )}
             </>
           )}
 
@@ -340,7 +338,7 @@ export function AuthenticationScreen() {
                 <MobileNumberSection
                   mobile={mobileNumber}
                   onChangeMobile={setMobileNumber}
-                  onSubmit={() => {}}
+                  onSubmit={() => { }}
                   isReadOnly={true}
                   onChangeNumber={changeNumber}
                   loading={false}
@@ -368,7 +366,7 @@ export function AuthenticationScreen() {
                 <MobileNumberSection
                   mobile={mobileNumber}
                   onChangeMobile={setMobileNumber}
-                  onSubmit={() => {}}
+                  onSubmit={() => { }}
                   isReadOnly={true}
                   onChangeNumber={() => setAuthFlowState("PASSCODE_LOGIN")}
                   loading={false}

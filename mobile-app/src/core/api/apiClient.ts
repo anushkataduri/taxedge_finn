@@ -14,7 +14,7 @@ export interface RequestOptions {
  * Server Network Configuration
  * Change IP and Port here to point the mobile app to your backend.
  */
-export const SERVER_IP = "192.168.88.2";
+export const SERVER_IP = "192.168.88.47";
 
 export const SERVER_PORT = 8088;
 
@@ -70,6 +70,10 @@ export class ApiClient {
 
   setBaseUrl(url: string): void {
     let clean = url.trim();
+    // Automatically correct accidental entry of Expo bundler port (8081) to backend port (8088)
+    if (clean.includes(":8081")) {
+      clean = clean.replace(":8081", `:${SERVER_PORT}`);
+    }
     if (!clean.startsWith("http://") && !clean.startsWith("https://")) {
       clean = `https://${clean}`;
     }
@@ -95,7 +99,12 @@ export class ApiClient {
     try {
       const saved = await AsyncStorage.getItem(STORAGE_KEY_SERVER_URL);
       if (saved && saved.trim()) {
-        this.setBaseUrl(saved.trim());
+        let clean = saved.trim();
+        if (clean.includes(":8081")) {
+          clean = clean.replace(":8081", `:${SERVER_PORT}`);
+          await AsyncStorage.setItem(STORAGE_KEY_SERVER_URL, clean);
+        }
+        this.setBaseUrl(clean);
       }
     } catch {}
     this.baseUrlLoaded = true;
