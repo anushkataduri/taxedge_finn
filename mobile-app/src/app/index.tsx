@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { View, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "../store/authStore";
 import { LandingScreen } from "../components/landing/LandingScreen";
@@ -79,7 +80,11 @@ export default function Index() {
   }, [isLoggedIn, router]);
 
   if (isInitializing || isLoggedIn) {
-    return null;
+    return (
+      <View style={{ flex: 1, backgroundColor: "#0A2346", justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#FF5722" />
+      </View>
+    );
   }
 
   return <LandingScreen />;
