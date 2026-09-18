@@ -18,7 +18,7 @@ export const PaymentScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={[styles.card, themed.card]}>
           <Text style={[styles.title, themed.title]}>Order Summary</Text>
-          <Text style={[styles.amount, themed.amount]}>{formatCurrencyINR(draft.totalFee)}</Text>
+          <Text style={[styles.amount, themed.amount]}>{formatCurrencyINR(draft.totalFee || 4999)}</Text>
           <Text style={[styles.note, themed.note]}>Includes MCA filing fees, Name Approval, DIN & DSC.</Text>
         </View>
         <Button title="Proceed to Pay" onPress={() => {}} variant="primary" />
