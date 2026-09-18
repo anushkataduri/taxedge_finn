@@ -249,15 +249,15 @@ export default function HomeScreen() {
     ? `Hello, ${customer!.name.trim().split(" ")[0]} 👋`
     : "Welcome to TaxEdge 👋";
 
-  const activeCount = applications.filter((app) => app.status !== "Completed").length;
-  const pendingDocsCount = applications.reduce(
-    (sum, app) => sum + app.documents.filter((d) => d.status === "Pending").length,
+  const activeCount = (applications || []).filter((app) => app?.status !== "Completed").length;
+  const pendingDocsCount = (applications || []).reduce(
+    (sum, app) => sum + ((app?.documents || []).filter((d) => d?.status === "Pending").length),
     0
   );
-  const completedCount = applications.filter((app) => app.status === "Completed").length;
-  const paymentDue = applications
-    .filter((app) => app.paymentStatus === "Pending")
-    .reduce((sum, app) => sum + (app.paymentAmount || 0), 0);
+  const completedCount = (applications || []).filter((app) => app?.status === "Completed").length;
+  const paymentDue = (applications || [])
+    .filter((app) => app?.paymentStatus === "Pending")
+    .reduce((sum, app) => sum + (app?.paymentAmount || 0), 0);
 
   const recentApps = applications.slice(0, 3);
 

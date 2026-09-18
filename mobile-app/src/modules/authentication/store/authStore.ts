@@ -667,7 +667,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 }));
 
-// Initialize biometric state asynchronously
-useAuthStore.getState().syncBiometricState();
+// Initialize biometric state asynchronously after bootstrap
+setTimeout(() => {
+  useAuthStore.getState().syncBiometricState().catch?.(() => {});
+}, 300);
 
 export default useAuthStore;
