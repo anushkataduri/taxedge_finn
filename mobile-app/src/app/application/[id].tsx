@@ -455,9 +455,28 @@ export default function ApplicationDetailScreen() {
             {/* GST Filing Details */}
             {filingRows.length > 0 && (
               <View style={styles.card}>
-                <View style={styles.cardHeaderRow}>
-                  <Ionicons name="document-text-outline" size={20} color="#083B75" />
-                  <Text style={styles.cardHeaderTitle}>Filing Details</Text>
+                <View style={[styles.cardHeaderRow, { justifyContent: "space-between" }]}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <Ionicons name="document-text-outline" size={20} color="#083B75" />
+                    <Text style={styles.cardHeaderTitle}>Filing Details</Text>
+                  </View>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => router.push(`/service/gst-filing?appId=${app.id}&step=2` as any)}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 4,
+                      borderWidth: 1,
+                      borderColor: "#EA580C",
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 14,
+                    }}
+                  >
+                    <Ionicons name="eye-outline" size={12} color="#EA580C" />
+                    <Text style={{ fontSize: 12, fontWeight: "600", color: "#EA580C" }}>Review & Edit</Text>
+                  </TouchableOpacity>
                 </View>
                 <View style={{ gap: 10 }}>
                   {filingRows.map((r, i) => (

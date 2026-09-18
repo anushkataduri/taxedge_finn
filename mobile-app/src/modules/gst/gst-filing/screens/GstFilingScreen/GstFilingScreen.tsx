@@ -6,7 +6,7 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
@@ -32,8 +32,11 @@ import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
 import { styles } from "./GstFilingScreen.styles";
 import { useApplicationStore } from "@/store/applicationStore";
 import { useNotificationStore } from "@/store/notificationStore";
+import { applicationService } from "@/modules/applications/services/applicationService";
+
 export const GstFilingScreen: React.FC = () => {
   const router = useRouter();
+  const params = useLocalSearchParams<{ appId?: string; step?: string }>();
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -101,8 +104,61 @@ export const GstFilingScreen: React.FC = () => {
     isSubmitted: () => currentStep >= 4,
   });
 
-  // Restore draft if available on initial mount
+  // Restore existing application or draft on mount
   useEffect(() => {
+    if (params.appId) {
+      const existingApp = useApplicationStore
+        .getState()
+        .applications.find((a) => a.id === params.appId);
+      if (existingApp) {
+        setCreatedAppId(existingApp.id);
+        const fData = (existingApp.formData || {}) as Record<string, any>;
+        setPeriodData((prev) => ({
+          ...prev,
+          gstin: fData.gstin || prev.gstin,
+          businessName: fData.businessName || fData.tradeName || fData.applicantName || prev.businessName,
+          tradeName: fData.tradeName || fData.businessName || prev.tradeName,
+          taxpayerScheme: fData.taxpayerScheme || prev.taxpayerScheme,
+          filingNature: fData.filingNature || prev.filingNature,
+          financialYear: fData.financialYear || prev.financialYear,
+          filingPeriod: fData.filingPeriod || fData.filingMonth || prev.filingPeriod,
+          filingMonth: fData.filingMonth || fData.filingPeriod || prev.filingMonth,
+          filingType: fData.filingType || prev.filingType,
+          filingFrequency: fData.filingFrequency || prev.periodType,
+          periodType: fData.filingFrequency || prev.periodType,
+          taxableSales: fData.turnover || prev.taxableSales,
+          turnover: fData.turnover || prev.turnover,
+          eligibleItc: fData.eligibleItc || prev.eligibleItc,
+        }));
+
+        if (Array.isArray(existingApp.documents) && existingApp.documents.length > 0) {
+          setDocuments((prevDocs) =>
+            prevDocs.map((initDoc) => {
+              const matched = existingApp.documents.find(
+                (d) => d.name?.toLowerCase() === initDoc.name?.toLowerCase() || (d as any).id === initDoc.id
+              );
+              if (matched && matched.status === "Uploaded") {
+                return {
+                  ...initDoc,
+                  fileUri: matched.fileUri || "https://taxedge.in/docs/" + initDoc.id,
+                  fileName: matched.name,
+                };
+              }
+              return initDoc;
+            })
+          );
+        }
+
+        if (params.step) {
+          const stepNum = parseInt(params.step, 10);
+          if (!isNaN(stepNum)) setCurrentStep(stepNum);
+        } else {
+          setCurrentStep(2);
+        }
+        return;
+      }
+    }
+
     if (gstFilingDraft) {
       if (gstFilingDraft.periodData) {
         setPeriodData((prev) => ({ ...prev, ...gstFilingDraft.periodData }));
@@ -114,7 +170,7 @@ export const GstFilingScreen: React.FC = () => {
         setCurrentStep(gstFilingDraft.stepIndex);
       }
     }
-  }, []);
+  }, [params.appId, params.step]);
 
   // Universal Scroll-to-Top resetting whenever user transitions to another step
   useEffect(() => {
@@ -137,7 +193,7 @@ export const GstFilingScreen: React.FC = () => {
     switch (currentStep) {
       case 0: return "Continue to Documents";
       case 1: return "Continue to Review";
-      case 2: return "Approve & Proceed to Payment";
+      case 2: return "Proceed to Submit →";
       case 3: return "Pay Securely ₹2,344";
       default: return "";
     }
@@ -193,17 +249,75 @@ export const GstFilingScreen: React.FC = () => {
     }
   };
 
+  const requiredDocs = documents.filter((d) => d.required);
+  const missingDocs = requiredDocs.filter((d) => !d.fileUri);
+  const missingDocsCount = missingDocs.length;
+  const uploadedDocsCount = documents.filter((d) => Boolean(d.fileUri)).length;
+
+  const handleUpdateDocuments = (updatedDocs: FilingDocItem[]) => {
+    setDocuments(updatedDocs);
+    if (createdAppId) {
+      const existing = useApplicationStore
+        .getState()
+        .applications.find((a) => a.id === createdAppId);
+      if (existing) {
+        const appDocs = updatedDocs.map((d) => ({
+          name: d.name,
+          status: (d.fileUri ? "Uploaded" : "Pending") as "Uploaded" | "Pending",
+          fileUri: d.fileUri,
+        }));
+        applicationService.updateApplication({
+          ...existing,
+          documents: appDocs,
+        }).catch(() => {});
+      }
+    }
+  };
+
   const handleContinue = () => {
     if (currentStep === 0) {
       if (!validatePeriodStep()) return;
     } else if (currentStep === 1) {
-      const requiredMissing = documents.filter((d) => d.required && !d.fileUri);
-      if (requiredMissing.length > 0) {
+      // Allow proceeding to Review so user can see Review with any missing doc warnings
+    } else if (currentStep === 2) {
+      if (missingDocsCount > 0) {
         Alert.alert(
-          "Documents Required",
-          `Please upload mandatory filing documents (${requiredMissing.map((d) => d.name).join(", ")}) before proceeding to review.`
+          "Documents Missing",
+          `You have ${missingDocsCount} missing required document(s). Please upload all required documents before submitting your return.`,
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Upload Now", onPress: () => setCurrentStep(1) },
+          ]
         );
         return;
+      }
+
+      if (createdAppId) {
+        const existing = useApplicationStore
+          .getState()
+          .applications.find((a) => a.id === createdAppId);
+        if (existing && existing.paymentStatus === "Paid") {
+          const appDocuments = documents.map((d) => ({
+            name: d.name,
+            status: (d.fileUri ? "Uploaded" : "Pending") as "Uploaded" | "Pending",
+            fileUri: d.fileUri,
+          }));
+          applicationService.updateApplication({
+            ...existing,
+            formData: {
+              ...existing.formData,
+              turnover: periodData.taxableSales || periodData.turnover,
+              eligibleItc: periodData.eligibleItc,
+            },
+            documents: appDocuments,
+          }).catch(() => {});
+          Alert.alert(
+            "Changes Submitted",
+            "Your updated GST filing details and documents have been saved and forwarded to your assigned Chartered Accountant.",
+            [{ text: "OK", onPress: () => setCurrentStep(6) }]
+          );
+          return;
+        }
       }
     } else if (currentStep === 3) {
       if (!validatePaymentStep()) return;
@@ -212,11 +326,7 @@ export const GstFilingScreen: React.FC = () => {
       const newTxn = "TXN" + Date.now().toString().slice(-8);
       setTxnId(newTxn);
 
-      const requiredDocNames = documents
-        .filter((d) => d.fileUri)
-        .map((d) => d.name);
-
-      const periodLabel = periodData.filingPeriod || periodData.filingMonth;
+      const periodLabel = periodData.filingPeriod || periodData.filingMonth || "Current Period";
       const businessDisplayName = periodData.tradeName || periodData.businessName || "Shree Deshmukh Traders";
       const legalDisplayName = periodData.legalName || businessDisplayName;
 
@@ -228,7 +338,7 @@ export const GstFilingScreen: React.FC = () => {
 
       const appId = createApplication(
         "gst-filing",
-        `GST Return Filing (${periodData.filingType ? periodData.filingType.split(" ")[0] : "GSTR-3B"} - ${periodLabel})`,
+        `GST Return Filing (${periodData.filingType ? periodData.filingType.split(" ")[0] : "GSTR-1"} - ${periodLabel})`,
         "GST",
         {
           applicantName: businessDisplayName,
@@ -244,8 +354,8 @@ export const GstFilingScreen: React.FC = () => {
           filingMonth: periodLabel,
           filingType: periodData.filingType,
           filingFrequency: periodData.periodType,
-          turnover: periodData.taxableSales || periodData.turnover || "",
-          eligibleItc: periodData.eligibleItc || "",
+          turnover: periodData.taxableSales || periodData.turnover || "425000",
+          eligibleItc: periodData.eligibleItc || "22500",
           paymentMethod: selectedMethod.toUpperCase(),
           transactionId: newTxn,
         },
@@ -270,11 +380,6 @@ export const GstFilingScreen: React.FC = () => {
       setCurrentStep((prev) => prev + 1);
     }
   };
-
-  const uploadedDocsCount = documents.reduce(
-    (acc, d) => (d.fileUri ? acc + 1 : acc),
-    0
-  );
 
   return (
     <View style={styles.root}>
@@ -323,8 +428,8 @@ export const GstFilingScreen: React.FC = () => {
         {currentStep === 1 && (
           <GstFilingDocumentsStep
             documents={documents}
-            onUpdateDocuments={setDocuments}
-            filingPeriodText={`${periodData.filingType ? periodData.filingType.split(" ")[0] : "GSTR-3B"} — ${periodData.filingPeriod || periodData.filingMonth || "Current Period"}`}
+            onUpdateDocuments={handleUpdateDocuments}
+            filingPeriodText={`${periodData.filingType ? periodData.filingType.split(" ")[0] : "GSTR-1"} — ${periodData.filingPeriod || periodData.filingMonth || "Current Period"}`}
             filingNature={periodData.filingNature || "Regular Return"}
           />
         )}
@@ -336,10 +441,42 @@ export const GstFilingScreen: React.FC = () => {
             taxpayerScheme={periodData.taxpayerScheme || "Regular Scheme"}
             filingNature={periodData.filingNature || "Regular Return"}
             financialYear={periodData.financialYear || "FY 2025-26"}
-            filingMonth={periodData.filingPeriod || periodData.filingMonth || "July 2026"}
-            filingType={periodData.filingType || "GSTR-3B (Monthly Summary Return)"}
+            filingMonth={periodData.filingPeriod || periodData.filingMonth || "August 2025"}
+            filingType={periodData.filingType || "GSTR-1"}
             filingFrequency={periodData.periodType || "Monthly"}
             uploadedDocsCount={uploadedDocsCount}
+            totalRequiredDocsCount={requiredDocs.length}
+            missingDocsCount={missingDocsCount}
+            grossTaxableTurnover={periodData.taxableSales || periodData.turnover || 425000}
+            eligibleItc={periodData.eligibleItc || 22500}
+            onEditFilingDetails={() => setCurrentStep(0)}
+            onEditTaxComputation={() => setCurrentStep(0)}
+            onEditFilingFee={() => setCurrentStep(3)}
+            onEditDocuments={() => setCurrentStep(1)}
+            onReuploadDocuments={() => setCurrentStep(1)}
+            onUpdateComputation={(turnover, itc) => {
+              setPeriodData((prev) => ({
+                ...prev,
+                taxableSales: String(turnover),
+                turnover: String(turnover),
+                eligibleItc: String(itc),
+              }));
+              if (createdAppId) {
+                const existing = useApplicationStore
+                  .getState()
+                  .applications.find((a) => a.id === createdAppId);
+                if (existing) {
+                  applicationService.updateApplication({
+                    ...existing,
+                    formData: {
+                      ...existing.formData,
+                      turnover: String(turnover),
+                      eligibleItc: String(itc),
+                    },
+                  }).catch(() => {});
+                }
+              }
+            }}
             onApprove={handleContinue}
             onRequestChanges={() =>
               Alert.alert(
