@@ -144,7 +144,7 @@ export const TdsRefundFormScreen: React.FC = () => {
           hasPasscode: currentCustomer?.hasPasscode ?? Boolean(currentAuthUser?.passcode),
         };
         currentCustomer = mergedCust;
-        useAuthStore.setState({ customer: mergedCust });
+        useAuthStore.setState({ customer: mergedCust, profileCompleted: true });
         try {
           useCustomerStore.getState().setProfile(mergedCust);
         } catch {}
@@ -275,7 +275,7 @@ export const TdsRefundFormScreen: React.FC = () => {
       hasPasscode: currentCust?.hasPasscode ?? Boolean(currentAuthUser?.passcode),
     };
 
-    useAuthStore.setState({ customer: updatedCustomer });
+    useAuthStore.setState({ customer: updatedCustomer, profileCompleted: true });
     try {
       useCustomerStore.getState().setProfile(updatedCustomer);
     } catch {}

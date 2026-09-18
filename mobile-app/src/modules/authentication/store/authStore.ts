@@ -4,6 +4,7 @@ import type { DevUser, AuthState, AuthFlowState } from "../types/auth.types";
 import { authService } from "../services/authService";
 import { authStorage } from "../services/authStorage";
 import { biometricService } from "../services/biometricService";
+import { customerApi } from "../../customer/services/customerApi";
 import {
   validateLoginPhone,
   validateOtp,
@@ -11,31 +12,43 @@ import {
   validatePasscodeMatch,
 } from "../validation/authSchema";
 
-const toCustomer = (u: DevUser): Customer => ({
-  name: u.name,
-  email: u.email,
-  dob: u.dob || "",
-  gender: u.gender || "",
-  fatherSpouseName: u.fatherSpouseName || "",
-  pan: u.pan || "",
-  aadhaar: u.aadhaar || (u as any).adhar || "",
-  address: u.address || "",
-  addressLine1: u.addressLine1 || "",
-  addressLine2: u.addressLine2 || "",
-  city: u.city || "",
-  pincode: u.pincode || (u as any).pinCode || "",
-  state: u.state || "",
-  customerType: u.customerType || "Individual",
-  mobile: u.mobileNumber || (u as any).mobile || "",
-  customerId: u.customerId || (u as any).custId || "",
-  avatarUri: u.avatarUri,
-  profileCompleted: Boolean(
-    u.registrationCompleted ||
-    (u as any).profileCompleted ||
-    (u.passcode && u.passcode.length === 6)
-  ),
-  hasPasscode: Boolean(u.passcode || (u as any).hasPasscode),
-});
+const toCustomer = (u: DevUser): Customer => {
+  const isPlaceholderName =
+    !u.name ||
+    u.name.trim() === "" ||
+    u.name.toLowerCase() === "valued client" ||
+    u.name.toLowerCase() === "client" ||
+    u.name.toLowerCase() === "valued";
+
+  const hasBackendIdentity = Boolean(u.customerId && !isPlaceholderName);
+
+  return {
+    name: u.name,
+    email: u.email,
+    dob: u.dob || "",
+    gender: u.gender || "",
+    fatherSpouseName: u.fatherSpouseName || "",
+    pan: u.pan || "",
+    aadhaar: u.aadhaar || (u as any).adhar || "",
+    address: u.address || "",
+    addressLine1: u.addressLine1 || "",
+    addressLine2: u.addressLine2 || "",
+    city: u.city || "",
+    pincode: u.pincode || (u as any).pinCode || "",
+    state: u.state || "",
+    customerType: u.customerType || "Individual",
+    mobile: u.mobileNumber || (u as any).mobile || "",
+    customerId: u.customerId || (u as any).custId || "",
+    avatarUri: u.avatarUri,
+    profileCompleted: Boolean(
+      u.registrationCompleted ||
+      (u as any).profileCompleted ||
+      hasBackendIdentity ||
+      (u.passcode && u.passcode.length === 6)
+    ),
+    hasPasscode: Boolean(u.passcode || (u as any).hasPasscode || hasBackendIdentity),
+  };
+};
 
 const initialUser = authService.getCurrentUser();
 
@@ -134,6 +147,92 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isExistingUser: res.customerExists,
     });
     return res;
+  },
+
+  // Fetch full customer profile from backend and sync into auth state and local storage
+  fetchAndSyncProfile: async (identifier?: string) => {
+    try {
+      const activeMobile =
+        identifier ||
+        get().mobileNumber ||
+        get().authenticatedUser?.mobileNumber ||
+        (get().authenticatedUser as any)?.mobile ||
+        get().customer?.mobile ||
+        authStorage.getUser()?.mobileNumber ||
+        authStorage.getSession().activeMobile;
+
+      if (!activeMobile) {
+        console.warn("⚠️ [authStore] fetchAndSyncProfile called with no mobile number or user");
+        return { success: false, isComplete: false, customer: null };
+      }
+      const cleanMobile = String(activeMobile).replace(/\D/g, "");
+      const d: any = await customerApi.getProfile(cleanMobile);
+      if (d && typeof d === "object") {
+        const custId = d.customerId || d.custId || "";
+        const name = d.name || d.fullName || "";
+        const isPlaceholderName =
+          !name ||
+          name.trim() === "" ||
+          name.toLowerCase() === "valued client" ||
+          name.toLowerCase() === "client" ||
+          name.toLowerCase() === "valued";
+
+        const hasRealIdentity = Boolean(custId && !isPlaceholderName);
+        const hasPanOrAadhaar = Boolean(d.pan || d.aadhaar || d.adhar);
+        const isComplete = Boolean(
+          d.profileCompleted === true ||
+          d.registrationCompleted === true ||
+          (hasRealIdentity && (hasPanOrAadhaar || Boolean(d.dob && String(d.dob).trim() !== "")))
+        );
+
+        const currentU = get().authenticatedUser || authStorage.getUser();
+        const mergedUser: DevUser = {
+          customerId: custId || currentU?.customerId || "",
+          name: name || currentU?.name || "",
+          mobileNumber: d.mobileNumber || d.mobile || cleanMobile,
+          email: d.email || currentU?.email || `${cleanMobile}@taxedge.in`,
+          customerType: d.customerType || currentU?.customerType || "Individual",
+          dob: d.dob || currentU?.dob || "",
+          gender: d.gender || currentU?.gender || "",
+          fatherSpouseName: d.fatherSpouseName || currentU?.fatherSpouseName || "",
+          pan: d.pan || currentU?.pan || "",
+          aadhaar: d.aadhaar || d.adhar || currentU?.aadhaar || "",
+          address: d.address || currentU?.address || "",
+          addressLine1: d.addressLine1 || currentU?.addressLine1 || "",
+          addressLine2: d.addressLine2 || currentU?.addressLine2 || "",
+          city: d.city || currentU?.city || "",
+          pincode: d.pincode || d.pinCode || currentU?.pincode || "",
+          state: d.state || currentU?.state || "",
+          registrationCompleted: isComplete,
+          passcode: currentU?.passcode || get().passcode,
+          avatarUri: d.avatarUri || currentU?.avatarUri,
+        };
+
+        authStorage.saveUser(mergedUser);
+        const custObj = toCustomer(mergedUser);
+
+        set({
+          customerExists: true,
+          isExistingUser: true,
+          profileCompleted: isComplete,
+          hasPasscode: true,
+          authenticatedUser: mergedUser,
+          customer: custObj,
+          isCompleteProfileModalOpen: false,
+        });
+
+        console.log("✅ [authStore] fetchAndSyncProfile synced customer:", {
+          customerId: custId,
+          name: name,
+          isComplete,
+        });
+        return { success: true, isComplete, customer: custObj };
+      }
+      return { success: false, isComplete: false, customer: null };
+    } catch (err) {
+      console.warn("⚠️ [authStore] fetchAndSyncProfile warning:", err);
+      return { success: false, isComplete: false, customer: null };
+    }
   },
 
   // Business Flow Operations
@@ -288,6 +387,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           passcode: code,
           registrationCompleted: true,
         };
+        authStorage.saveUser(enrichedUser);
+
         set({
           isLoading: false,
           isLoggedIn: true,
@@ -300,6 +401,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           error: null,
           isCompleteProfileModalOpen: false,
         });
+
+        // Hydrate full profile from backend (PAN, Aadhaar, DOB, Address, etc.)
+        try {
+          await get().fetchAndSyncProfile(mobileNumber || res.user.mobileNumber);
+        } catch (e) {
+          console.warn("⚠️ [authStore] Profile sync warning after passcode login:", e);
+        }
+
         return { success: true };
       }
       set({ isLoading: false, error: res.error || "Incorrect passcode. Please try again." });
@@ -472,6 +581,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       autoLogin
     );
     if (res.success && res.user) {
+      authStorage.saveUser(res.user);
       if (autoLogin) {
         set({
           isLoggedIn: true,
@@ -483,6 +593,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           authenticatedUser: res.user,
           isCompleteProfileModalOpen: false,
         });
+        get().fetchAndSyncProfile(res.user.mobileNumber).catch(() => {});
       } else {
         set({
           customerExists: true,
@@ -526,17 +637,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   syncFromDevAuth: () => {
     const u = authService.getCurrentUser();
     const isAuth = Boolean(authService.isAuthenticated() && u);
+    const isPlaceholder =
+      !u?.name ||
+      u.name.trim() === "" ||
+      u.name.toLowerCase() === "valued client" ||
+      u.name.toLowerCase() === "client" ||
+      u.name.toLowerCase() === "valued";
+    const hasRealIdentity = Boolean(u && u.customerId && !isPlaceholder);
+    const hasPanOrAadhaar = Boolean(u && (u.pan || u.aadhaar || (u as any).adhar));
+    const isComplete = Boolean(
+      u &&
+      (u.registrationCompleted ||
+       (u as any).profileCompleted ||
+       hasRealIdentity ||
+       (hasPanOrAadhaar && Boolean(u.dob)) ||
+       (u.passcode && u.passcode.length === 6))
+    );
+
     set({
       isLoggedIn: isAuth,
-      customerExists: Boolean(u && (u.registrationCompleted || u.passcode)),
-      isExistingUser: Boolean(u && (u.registrationCompleted || u.passcode)),
-      profileCompleted: Boolean(
-        u &&
-        (u.registrationCompleted ||
-         (u as any).profileCompleted ||
-         (u.passcode && u.passcode.length === 6))
-      ),
-      hasPasscode: Boolean(u && (u.passcode || (u as any).hasPasscode)),
+      customerExists: Boolean(u && (u.registrationCompleted || u.passcode || hasRealIdentity)),
+      isExistingUser: Boolean(u && (u.registrationCompleted || u.passcode || hasRealIdentity)),
+      profileCompleted: isComplete,
+      hasPasscode: Boolean(u && (u.passcode || (u as any).hasPasscode || hasRealIdentity)),
       mobileNumber: u?.mobileNumber || "",
       customer: u ? toCustomer(u) : null,
       authenticatedUser: u,

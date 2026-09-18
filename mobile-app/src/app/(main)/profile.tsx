@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -215,12 +215,19 @@ const compactRupees = (value: number): string => {
 export default function ProfileScreen() {
   const colors = useTheme();
   const router = useRouter();
-  const { customer, logout, setAvatar } = useAuthStore();
+  const { customer, logout, setAvatar, fetchAndSyncProfile } = useAuthStore();
   const applications = useApplicationStore((state) => state.applications);
 
   const [pickingPhoto, setPickingPhoto] = useState(false);
   const [showKycModal, setShowKycModal] = useState(false);
   const [showPersonalModal, setShowPersonalModal] = useState(false);
+
+  useEffect(() => {
+    // If essential customer profile fields are missing, fetch fresh data from backend
+    if (!customer?.pan || !customer?.dob || !customer?.customerId) {
+      fetchAndSyncProfile().catch(() => {});
+    }
+  }, [customer?.pan, customer?.dob, customer?.customerId, fetchAndSyncProfile]);
 
   /* ---------- Stats ---------- */
   const activeCount = applications.filter(
@@ -233,14 +240,14 @@ export default function ProfileScreen() {
     .filter((app) => app.paymentStatus === "Paid")
     .reduce((sum, app) => sum + app.paymentAmount, 0);
 
-  /* KYC reads as verified once both identity documents are on file. */
+  /* KYC reads as verified once both identity documents are on file or verified in profile */
   const allDocuments = applications.flatMap((app) => app.documents);
   const hasUploaded = (keyword: string) =>
     allDocuments.some(
       (doc) =>
         doc.name.toLowerCase().includes(keyword) && doc.status === "Uploaded",
     );
-  const kycVerified = hasUploaded("pan") && hasUploaded("aadhaar");
+  const kycVerified = (hasUploaded("pan") && hasUploaded("aadhaar")) || Boolean(customer?.pan && customer?.aadhaar);
 
   /* ---------- Profile photo ---------- */
   const pickFromLibrary = async () => {

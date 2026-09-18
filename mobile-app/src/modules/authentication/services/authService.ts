@@ -40,7 +40,9 @@ export const authService = {
     const hasPasscode = customerExists;
 
     let user = apiRes.user;
-    if (customerExists && !user) {
+    if (user) {
+      authStorage.saveUser(user);
+    } else if (customerExists) {
       user = {
         customerId: `CUST-2026-${clean.slice(-5)}`,
         mobileNumber: clean,
@@ -206,17 +208,15 @@ export const authService = {
       return { success: false, error: apiRes.message || "Invalid mobile number or passcode" };
     }
  
-    let user = authStorage.getUserByMobile(clean);
-    if (!user) {
-      user = apiRes.user || {
-        customerId: `CUST-2026-${clean.slice(-5)}`,
-        mobileNumber: clean,
-        name: "Valued Client",
-        email: `${clean}@taxedge.in`,
-        customerType: "Individual",
-      };
-      authStorage.saveUser(user);
-    }
+    let existingUser = authStorage.getUserByMobile(clean) || {} as DevUser;
+    const user: DevUser = {
+      ...existingUser,
+      ...(apiRes.user || {}),
+      mobileNumber: clean,
+      passcode: pass,
+      registrationCompleted: true,
+    };
+    authStorage.saveUser(user);
  
     authStorage.saveSession({
       isLoggedIn: true,
