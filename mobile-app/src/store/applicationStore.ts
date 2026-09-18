@@ -270,9 +270,7 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
       category,
       status: "Verification",
       progress: 20,
-      assignedExecutive: ["Rahul", "Sneha", "Vikram", "Karan"][
-        Math.floor(Math.random() * 4)
-      ],
+      assignedExecutive: "CA not assigned yet",
       paymentAmount,
       paymentStatus: initialPaymentStatus || (paymentAmount > 0 ? "Pending" : "Paid"),
       createdAt: new Date().toISOString().split("T")[0],
@@ -342,14 +340,7 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
               status: "pending",
             },
           ],
-      chatHistory: [
-        {
-          id: "1",
-          sender: "staff",
-          text: `Hello! I have been assigned as your service representative. Let me know if you have any questions about this request.`,
-          timestamp: "Just now",
-        },
-      ],
+      chatHistory: [],
     };
 
     set((state) => ({
@@ -369,36 +360,37 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
   },
   uploadDocument: (appId, docName, fileUri) =>
     set((state) => {
-      return {
-        applications: state.applications.map((app) => {
-          if (app.id !== appId) return app;
-          const newDocs = app.documents.map((doc) =>
-            doc.name === docName
-              ? { ...doc, status: "Uploaded" as const, fileUri }
-              : doc,
-          );
-          const uploadedCount = newDocs.filter(
-            (d) => d.status === "Uploaded",
-          ).length;
-          const totalDocs = newDocs.length;
-          const progress = Math.min(
-            95,
-            Math.round(20 + (uploadedCount / totalDocs) * 50),
-          );
-          return {
-            ...app,
-            documents: newDocs,
-            progress,
-            status:
-              uploadedCount === totalDocs
-                ? "Verification"
-                : "Document Collection",
-          };
-        }),
-      };
+      const updatedApplications = state.applications.map((app) => {
+        if (app.id !== appId) return app;
+        const newDocs = app.documents.map((doc) =>
+          doc.name === docName
+            ? { ...doc, status: "Uploaded" as const, fileUri }
+            : doc,
+        );
+        const uploadedCount = newDocs.filter(
+          (d) => d.status === "Uploaded",
+        ).length;
+        const totalDocs = newDocs.length;
+        const progress = Math.min(
+          95,
+          Math.round(20 + (uploadedCount / totalDocs) * 50),
+        );
+        const updated = {
+          ...app,
+          documents: newDocs,
+          progress,
+          status:
+            uploadedCount === totalDocs
+              ? "Verification"
+              : "Document Collection",
+        };
+        applicationService.updateApplication(updated).catch(() => {});
+        return updated;
+      });
+      return { applications: updatedApplications };
     }),
   addChatMessage: (appId, sender, text) => {
-    const messageId = Math.random().toString();
+    const messageId = `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const newMessage: ChatMessage = {
       id: messageId,
       sender,
@@ -406,36 +398,18 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
       timestamp: timeStamp(),
     };
 
-    set((state) => ({
-      applications: state.applications.map((app) => {
+    set((state) => {
+      const updatedApps = state.applications.map((app) => {
         if (app.id !== appId) return app;
-        return {
+        const updated = {
           ...app,
-          chatHistory: [...app.chatHistory, newMessage],
+          chatHistory: [...(app.chatHistory || []), newMessage],
         };
-      }),
-    }));
-
-    // If sent by user, simulate automated executive response after 1.5s
-    if (sender === "user") {
-      setTimeout(() => {
-        const staffMessage: ChatMessage = {
-          id: Math.random().toString(),
-          sender: "staff",
-          text: "Thank you for your message. I am looking into your application. I will review and update your document status shortly.",
-          timestamp: timeStamp(),
-        };
-        set((state) => ({
-          applications: state.applications.map((app) => {
-            if (app.id !== appId) return app;
-            return {
-              ...app,
-              chatHistory: [...app.chatHistory, staffMessage],
-            };
-          }),
-        }));
-      }, 1500);
-    }
+        applicationService.updateApplication(updated).catch(() => {});
+        return updated;
+      });
+      return { applications: updatedApps };
+    });
   },
   payApplication: (appId) => {
     let paidAmount = 0;

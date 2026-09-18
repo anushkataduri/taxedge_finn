@@ -19,6 +19,9 @@ export default function Index() {
       hasTriggeredBiometrics.current = true;
 
       try {
+        await authStorage.initAsync();
+        useAuthStore.getState().syncFromDevAuth();
+
         const isBioEnabled = await biometricService.isBiometricEnabled();
         if (isBioEnabled) {
           const bioMobile =
@@ -42,6 +45,7 @@ export default function Index() {
                 lastLoginAt: new Date().toISOString(),
               });
               useAuthStore.getState().syncFromDevAuth();
+              useAuthStore.getState().fetchAndSyncProfile(user.mobileNumber).catch(() => {});
               router.replace("/(main)/home" as any);
               return;
             } else {
@@ -55,12 +59,13 @@ export default function Index() {
           }
         }
       } catch (e) {
-        console.warn("App launch biometric error:", e);
+        console.warn("App launch biometric/storage error:", e);
       }
 
       if (isMounted) {
         setIsInitializing(false);
         if (isLoggedIn) {
+          useAuthStore.getState().fetchAndSyncProfile().catch(() => {});
           router.replace("/(main)/home" as any);
         }
       }

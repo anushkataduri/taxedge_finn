@@ -95,7 +95,12 @@ export const ItrFilingScreen: React.FC = () => {
 
   const handleBack = () => {
     if (!isCategoryConfirmed) {
-      openDraftModal();
+      const hasData = formData.calculation.grossTotalIncome > 0 || formData.documents.some((d) => Boolean(d.fileUri));
+      if (hasData) {
+        openDraftModal();
+      } else {
+        router.back();
+      }
       return;
     }
     if (currentStep > 0) {

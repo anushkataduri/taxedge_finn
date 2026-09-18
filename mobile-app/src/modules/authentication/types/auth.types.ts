@@ -140,6 +140,7 @@ export interface AuthStoreActions {
   setAvatar: (uri: string | null) => void;
   logout: () => void | Promise<void>;
   syncFromDevAuth: () => void;
+  fetchAndSyncProfile: (identifier?: string) => Promise<{ success: boolean; isComplete: boolean; customer: Customer | null }>;
 }
 
 export type AuthState = AuthStoreState & AuthStoreActions;
