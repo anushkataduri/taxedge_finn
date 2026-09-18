@@ -168,6 +168,9 @@ export const StepPromoters: React.FC = () => {
       {isOpc && (
         <View style={styles.opcBox}>
           <Text style={styles.opcHeader}>One Person Company (OPC) Nominee Details</Text>
+          <Text style={styles.opcNote}>
+            Legal Appointee (Companies Act Requirement): The nominee does NOT hold any equity shares during the sole member's lifetime (0% shareholding) and only assumes ownership in the event of death or incapacity of the sole member.
+          </Text>
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Nominee Full Name *</Text>
             <TextInput

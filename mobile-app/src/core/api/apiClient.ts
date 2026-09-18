@@ -16,7 +16,7 @@ export interface RequestOptions {
  */
 export const SERVER_IP = "192.168.88.47";
 
-export const SERVER_PORT = 8081;
+export const SERVER_PORT = 8088;
 
 export const STORAGE_KEY_SERVER_URL = "@taxedge_server_url";
 

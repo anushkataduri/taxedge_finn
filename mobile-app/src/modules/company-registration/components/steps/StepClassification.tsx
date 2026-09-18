@@ -5,13 +5,31 @@ import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlic
 import type { CompanyClass, CompanyCategory, CompanySubCategory } from '../../types/company.types';
 import { styles } from './StepClassification.styles';
 
-const CLASSES: CompanyClass[] = ['Private', 'Public'];
-const CATEGORIES: CompanyCategory[] = ['Company limited by Shares', 'Company limited by Guarantee', 'Unlimited Company'];
-const SUB_CATEGORIES: CompanySubCategory[] = ['Indian Non-Government Company', 'State Government Company', 'Central Government Company'];
-
 export const StepClassification: React.FC = () => {
   const company = useCompanyRegistrationStore((state) => state.draft.company);
   const updateDetails = useCompanyRegistrationStore((state) => state.updateCompanyDetails);
+
+  const getAvailableClasses = (): CompanyClass[] => {
+    if (company.companyType === 'Public Limited') return ['Public'];
+    if (company.companyType === 'Section 8 (NGO)') return ['Private', 'Public'];
+    return ['Private'];
+  };
+
+  const getAvailableCategories = (): CompanyCategory[] => {
+    if (company.companyType === 'One Person Company (OPC)') return ['Company limited by Shares'];
+    if (company.companyType === 'Section 8 (NGO)') return ['Company limited by Guarantee', 'Company limited by Shares'];
+    return ['Company limited by Shares', 'Company limited by Guarantee', 'Unlimited Company'];
+  };
+
+  const getAvailableSubCategories = (): CompanySubCategory[] => {
+    if (company.companyType === 'One Person Company (OPC)') return ['Indian Non-Government Company'];
+    return ['Indian Non-Government Company', 'State Government Company', 'Central Government Company'];
+  };
+
+  const classes = getAvailableClasses();
+  const categories = getAvailableCategories();
+  const subCategories = getAvailableSubCategories();
+
 
   return (
     <View style={styles.container}>
@@ -22,7 +40,7 @@ export const StepClassification: React.FC = () => {
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>Class of Company *</Text>
         <View style={styles.optionRow}>
-          {CLASSES.map((cls) => {
+          {classes.map((cls) => {
             const selected = company.companyClass === cls;
             return (
               <TouchableOpacity
@@ -41,7 +59,7 @@ export const StepClassification: React.FC = () => {
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>Category of Company *</Text>
         <View style={styles.optionRow}>
-          {CATEGORIES.map((cat) => {
+          {categories.map((cat) => {
             const selected = company.companyCategory === cat;
             return (
               <TouchableOpacity
@@ -60,7 +78,7 @@ export const StepClassification: React.FC = () => {
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>Sub-Category of Company *</Text>
         <View style={styles.optionRow}>
-          {SUB_CATEGORIES.map((subCat) => {
+          {subCategories.map((subCat) => {
             const selected = company.companySubCategory === subCat;
             return (
               <TouchableOpacity

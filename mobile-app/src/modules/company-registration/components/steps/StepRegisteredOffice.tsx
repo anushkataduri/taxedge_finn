@@ -11,7 +11,7 @@ export const StepRegisteredOffice: React.FC = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Registered Office Details</Text>
-      <Text style={styles.subheading}>Provide official communication address for ROC notices and GST registration.</Text>
+      <Text style={styles.subheading}>Provide official communication address for MCA, ROC, and statutory authorities.</Text>
 
       {/* Address Line */}
       <View style={styles.fieldGroup}>
@@ -80,6 +80,9 @@ export const StepRegisteredOffice: React.FC = () => {
             );
           })}
         </View>
+        <Text style={styles.infoNote}>
+          Proof of address (Electricity Bill / Rent Agreement) is mandatory. If premises are rented, leased, or owned by a Director or third party, a No Objection Certificate (NOC) from the owner is strictly required.
+        </Text>
       </View>
 
       {/* Email & Mobile */}

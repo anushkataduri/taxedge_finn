@@ -5,37 +5,14 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  progressHeader: {
-    backgroundColor: '#083B75',
-    paddingHorizontal: 16,
-    paddingBottom: 14,
+  progressTrack: {
+    height: 3,
+    backgroundColor: '#E2E8F0',
+    width: '100%',
   },
-  headerTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  stepCounter: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#F97316',
-  },
-  stepName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  progressBarBg: {
-    height: 6,
-    backgroundColor: '#1E293B',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
+  progressFill: {
     height: '100%',
     backgroundColor: '#F97316',
-    borderRadius: 3,
   },
   scrollContent: {
     flexGrow: 1,
