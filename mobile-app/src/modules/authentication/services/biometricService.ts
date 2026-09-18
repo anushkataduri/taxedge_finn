@@ -16,7 +16,10 @@ const getSecureItem = async (key: string): Promise<string | null> => {
       }
       return memoryStorage[key] || null;
     }
-    return await SecureStore.getItemAsync(key);
+    const securePromise = SecureStore.getItemAsync(key);
+    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 800));
+    const result = await Promise.race([securePromise, timeoutPromise]);
+    return result ?? memoryStorage[key] ?? null;
   } catch (e) {
     console.warn("SecureStore.getItemAsync error:", e);
     return memoryStorage[key] || null;
@@ -32,7 +35,10 @@ const setSecureItem = async (key: string, value: string): Promise<void> => {
       memoryStorage[key] = value;
       return;
     }
-    await SecureStore.setItemAsync(key, value);
+    await Promise.race([
+      SecureStore.setItemAsync(key, value),
+      new Promise<void>((resolve) => setTimeout(resolve, 800)),
+    ]);
   } catch (e) {
     console.warn("SecureStore.setItemAsync error:", e);
     memoryStorage[key] = value;
@@ -48,7 +54,10 @@ const deleteSecureItem = async (key: string): Promise<void> => {
       delete memoryStorage[key];
       return;
     }
-    await SecureStore.deleteItemAsync(key);
+    await Promise.race([
+      SecureStore.deleteItemAsync(key),
+      new Promise<void>((resolve) => setTimeout(resolve, 800)),
+    ]);
   } catch (e) {
     console.warn("SecureStore.deleteItemAsync error:", e);
     delete memoryStorage[key];

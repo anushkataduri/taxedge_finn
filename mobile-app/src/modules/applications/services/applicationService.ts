@@ -20,8 +20,18 @@ function getAuthHeaders(): Record<string, string> {
 export const applicationService = {
   getApplications: async (): Promise<Application[]> => {
     const headers = getAuthHeaders();
-    const result = await apiClient.get<Application[]>("/applications", { headers });
-    return Array.isArray(result) ? result : [];
+    try {
+      const result = await apiClient.get<Application[]>("/applications", { headers });
+      if (!Array.isArray(result)) return [];
+      return result.map((app) => ({
+        ...app,
+        documents: Array.isArray(app?.documents) ? app.documents : [],
+        timeline: Array.isArray(app?.timeline) ? app.timeline : [],
+        chatHistory: Array.isArray(app?.chatHistory) ? app.chatHistory : [],
+      }));
+    } catch {
+      return [];
+    }
   },
 
   getApplicationById: async (id: string): Promise<Application | null> => {
