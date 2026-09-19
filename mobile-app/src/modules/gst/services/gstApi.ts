@@ -1,4 +1,5 @@
 import { apiClient, SERVER_IP, SERVER_PORT } from "../../../core/api/apiClient";
+import { tokenManager } from "../../../core/authentication/tokenManager";
 import type { GstRegistrationDraft, GstFilingDraft } from "../types/gstTypes";
 
 export interface GstinEntityDetails {
@@ -77,9 +78,15 @@ export const gstApi = {
     const url = `${baseUrl}/gst/documents/upload`;
     console.log("Uploading direct via XHR to:", url);
 
+    const token = await tokenManager.getAccessToken();
+
     return new Promise<string>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", url);
+
+      if (token) {
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      }
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
@@ -129,9 +136,15 @@ export const gstApi = {
     const url = `${baseUrl}/gst/filing/documents/upload`;
     console.log("Uploading filing doc via XHR to:", url);
 
+    const token = await tokenManager.getAccessToken();
+
     return new Promise<string>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", url);
+
+      if (token) {
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      }
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {

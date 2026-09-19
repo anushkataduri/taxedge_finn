@@ -34,6 +34,9 @@ import { GstRegistrationPaymentStep } from "@/modules/gst/gst-registration/compo
 import { GstApplicationStatusStep } from "@/modules/gst/gst-status/components/GstApplicationStatusStep/GstApplicationStatusStep";
 import { useApplicationStore } from "@/store/applicationStore";
 import { useNotificationStore } from "@/store/notificationStore";
+import { tokenManager } from "@/core/authentication/tokenManager";
+import { useAuthStore } from "@/modules/authentication/store/authStore";
+import { applicationService } from "@/modules/applications/services/applicationService";
 import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
 import { styles } from "./GstRegistrationScreen.styles";
@@ -386,7 +389,12 @@ export const GstRegistrationScreen: React.FC = () => {
       ifscCode: businessData.ifscCode,
       bankName: businessData.bankName,
       branchName: businessData.branchName,
-      accountType: mapEnum(businessData.accountType) || "CURRENT",
+      accountType: (() => {
+        const rawAcc = mapEnum(businessData.accountType);
+        if (rawAcc.includes("SAVING")) return "SAVINGS";
+        if (rawAcc.includes("CASH") || rawAcc.includes("CREDIT") || rawAcc.includes("OD")) return "CASH_CREDIT_OD";
+        return "CURRENT";
+      })(),
       authorisedSignatory: businessData.signatoryName ? "YES" : "NO",
       signatoryName: businessData.signatoryName || businessData.legalName,
       signatoryPan: businessData.signatoryPan,
@@ -403,6 +411,26 @@ export const GstRegistrationScreen: React.FC = () => {
     try {
       if (screenIndex === 0) {
         if (!validateBusinessDetails()) return;
+
+        // Session readiness & authentication verification
+        const authState = useAuthStore.getState();
+        const activeCustomer = authState.customer || authState.authenticatedUser;
+        const custId = activeCustomer?.customerId;
+
+        // Ensure token is ready in tokenManager
+        let currentToken = await tokenManager.getAccessToken();
+        if (!currentToken && custId) {
+          try {
+            currentToken = await tokenManager.generateTokenForCustomer({
+              customerId: custId,
+              name: activeCustomer.name,
+              mobileNumber: (activeCustomer as any)?.mobile || (activeCustomer as any)?.mobileNumber || authState.mobileNumber || "",
+            });
+          } catch (tokenErr) {
+            console.warn("[GST] Could not auto-generate token:", tokenErr);
+          }
+        }
+
         saveGstDraft({
           id: "draft-gst",
           stepIndex: 1,
@@ -419,15 +447,21 @@ export const GstRegistrationScreen: React.FC = () => {
         // API call to create or update GST Registration
         try {
           const payload = getBackendPayload();
-          if (createdGstId) {
-            await gstApi.updateRegistration(createdGstId, payload);
+          let gstId = createdGstId;
+
+          if (gstId) {
+            await gstApi.updateRegistration(gstId, payload);
           } else {
             const response = await gstApi.submitRegistration(payload);
-            // Backend returns the plain GST ID text (e.g. "Business registered successfully with Business ID: GST123456789012")
+            // Backend returns string: "Business details registered successfully. Business ID: GST123456789012"
             const responseStr = typeof response === "string" ? response : JSON.stringify(response);
             const match = responseStr.match(/(GST\d+)/);
-            const gstId = match ? match[1] : (typeof response === "string" ? response : (response?.gstId || response?.businessId || ""));
-            setCreatedGstId(gstId);
+            gstId = match ? match[1] : (typeof response === "string" ? response : (response?.gstId || response?.businessId || ""));
+
+            if (gstId) {
+              setCreatedGstId(gstId);
+            }
+
             saveGstDraft({
               id: "draft-gst",
               stepIndex: 1,
@@ -441,10 +475,30 @@ export const GstRegistrationScreen: React.FC = () => {
               }),
             });
           }
+
           setScreenIndex(1);
-        } catch (err) {
-          Alert.alert("Error", "Failed to save business details");
-          console.error(err);
+        } catch (err: any) {
+          console.error("GST Registration API error:", err);
+          const status = err?.status;
+          const msg = err?.message || "Failed to save business details";
+
+          if (status === 401) {
+            Alert.alert("Session Expired", "Your session has expired. Please log in again.");
+          } else if (status === 403) {
+            Alert.alert(
+              "Access Denied",
+              "Authentication could not be verified by the GST backend. Please verify your customer session or try logging in again."
+            );
+          } else if (status === 400 || status === 422) {
+            Alert.alert("Validation Error", msg);
+          } else if (status === 409) {
+            Alert.alert("Already Registered", "A business registration already exists for these details.");
+          } else if (status === 500) {
+            Alert.alert("Server Error", "Backend service encountered an error. Please try again shortly.");
+          } else {
+            Alert.alert("Error", msg);
+          }
+          return;
         }
       } else if (screenIndex === 1) {
         if (!validateDocuments()) return;
@@ -499,9 +553,9 @@ export const GstRegistrationScreen: React.FC = () => {
               );
             });
             await Promise.all(uploadPromises);
-          } catch (err) {
-            Alert.alert("Error", "Failed to upload some documents");
-            console.error(err);
+          } catch (err: any) {
+            console.error("Document upload error:", err);
+            Alert.alert("Warning", "Some documents could not be uploaded to the server, but your draft is saved.");
           }
         }
 
@@ -532,7 +586,9 @@ export const GstRegistrationScreen: React.FC = () => {
         if (createdGstId) {
           try {
             await gstApi.updateRegistration(createdGstId, getBackendPayload());
-          } catch (e) {}
+          } catch (e) {
+            console.warn("Could not update registration on review step:", e);
+          }
         }
 
         setScreenIndex(3);
@@ -544,13 +600,16 @@ export const GstRegistrationScreen: React.FC = () => {
 
   const handlePaymentSuccess = async (txnId: string, paymentMethod: string) => {
     try {
-      // 3. Complete locally to update UI tracker
+      const generatedId = `GST-${Date.now().toString().slice(-6)}`;
+
+      // 1. Create locally in UI tracker
       const appId = createApplication(
         "gst-registration",
         "GST Registration",
         "GST",
         {
           ...businessData,
+          gstId: createdGstId,
           applicantName:
             businessData.businessName ||
             businessData.legalName ||
@@ -576,13 +635,63 @@ export const GstRegistrationScreen: React.FC = () => {
         "Paid",
       );
 
-      setCreatedAppId(appId);
+      // 2. Persist application to backend /applications
+      try {
+        await applicationService.createApplication({
+          id: appId || generatedId,
+          serviceType: "gst-registration",
+          title: "GST Registration",
+          category: "GST",
+          status: "Under Review",
+          appliedDate: new Date().toISOString(),
+          fee: 1499,
+          paymentStatus: "Paid",
+          data: {
+            ...businessData,
+            gstId: createdGstId,
+            transactionId: txnId,
+            paymentMethod: paymentMethod,
+            paymentAmount: 1499,
+            paymentStatus: "Paid",
+          },
+          documents: documents.map((d) => ({
+            id: d.id,
+            name: d.name,
+            status: "Uploaded",
+            fileUri: d.fileUri,
+            fileName: d.fileName,
+            fileSize: d.fileSize,
+            uploadedAt: new Date().toISOString(),
+          })),
+          timeline: [
+            {
+              id: "1",
+              title: "Application Submitted",
+              date: new Date().toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              }),
+              time: new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              status: "completed",
+              description: "Your GST registration application and fee have been submitted to TaxEdge.",
+            },
+          ],
+        } as any);
+      } catch (appErr) {
+        console.warn("Backend application persistence note:", appErr);
+      }
+
+      setCreatedAppId(appId || generatedId);
       markSubmitted();
       clearGstDraft();
 
       addNotification(
         "GST Application Submitted",
-        `Your GST Registration (ID: ${appId}) has been successfully submitted and is under verification.`,
+        `Your GST Registration (ID: ${appId || generatedId}) has been successfully submitted and is under verification.`,
         "gst",
       );
 

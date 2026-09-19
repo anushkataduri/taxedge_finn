@@ -14,7 +14,7 @@ export interface RequestOptions {
  * Server Network Configuration
  * Change IP and Port here to point the mobile app to your backend.
  */
-export const SERVER_IP = "192.168.88.18";
+export const SERVER_IP = "10.182.145.246";
 
 export const SERVER_PORT = 8088;
 
