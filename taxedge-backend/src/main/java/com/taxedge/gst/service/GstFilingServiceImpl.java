@@ -1,5 +1,6 @@
 package com.taxedge.gst.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.modelmapper.ModelMapper;
@@ -12,7 +13,6 @@ import com.taxedge.gst.enums.FilingType;
 import com.taxedge.gst.enums.TaxCalculationMethod;
 import com.taxedge.gst.exception.ResourceNotFoundException;
 import com.taxedge.gst.helper.RandomNumberGenerator;
-import com.taxedge.gst.repository.BusinessRepository;
 import com.taxedge.gst.repository.GstFilingRepository;
 
 @Service
@@ -22,27 +22,12 @@ public class GstFilingServiceImpl implements GstFilingService {
     private GstFilingRepository gstFilingRepository;
 
     @Autowired
-    private BusinessRepository businessRepository;
-
-    @Autowired
     private ModelMapper modelMapper;
 
     @Override
     public String createFiling(GstFilingDto gstFilingDto) {
 
-        businessRepository.findById(gstFilingDto.getGstId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Business not found with gstId: "
-                                        + gstFilingDto.getGstId()));
-
         validateFiling(gstFilingDto);
-
-        modelMapper.typeMap(
-                GstFilingDto.class,
-                GstFiling.class)
-                .addMappings(mapper ->
-                        mapper.skip(GstFiling::setId));
 
         GstFiling filing =
                 modelMapper.map(
@@ -52,8 +37,10 @@ public class GstFilingServiceImpl implements GstFilingService {
         filing.setId(
                 RandomNumberGenerator.generateFilingId());
 
-        filing.setGstId(
-                gstFilingDto.getGstId());
+        filing.setGstin(
+                gstFilingDto.getGstin());
+        filing.setCreatedAt(
+                LocalDateTime.now());
 
         gstFilingRepository.save(filing);
 
@@ -61,16 +48,10 @@ public class GstFilingServiceImpl implements GstFilingService {
     }
 
     @Override
-    public List<GstFiling> getFilingsByGstId(
-            String gstId) {
+    public List<GstFiling> getFilingsByGstin(
+            String gstin) {
 
-        businessRepository.findById(gstId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Business not found with gstId: "
-                                        + gstId));
-
-        return gstFilingRepository.findByGstId(gstId);
+        return gstFilingRepository.findByGstin(gstin);
     }
 
     @Override
@@ -85,19 +66,12 @@ public class GstFilingServiceImpl implements GstFilingService {
                                         "GST filing not found with id: "
                                                 + id));
 
-        businessRepository.findById(
-                gstFilingDto.getGstId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Business not found with gstId: "
-                                        + gstFilingDto.getGstId()));
-
-        if (!filing.getGstId()
-                .equals(gstFilingDto.getGstId())) {
+        if (!filing.getGstin()
+                .equals(gstFilingDto.getGstin())) {
 
             throw new ResourceNotFoundException(
-                    "GST filing does not belong to gstId: "
-                            + gstFilingDto.getGstId());
+                    "GST filing does not belong to GSTIN: "
+                            + gstFilingDto.getGstin());
         }
 
         validateFiling(gstFilingDto);
@@ -114,8 +88,8 @@ public class GstFilingServiceImpl implements GstFilingService {
 
         filing.setId(id);
 
-        filing.setGstId(
-                gstFilingDto.getGstId());
+        filing.setGstin(
+                gstFilingDto.getGstin());
 
         gstFilingRepository.save(filing);
 
@@ -140,11 +114,11 @@ public class GstFilingServiceImpl implements GstFilingService {
     private void validateFiling(
             GstFilingDto dto) {
 
-        if (dto.getGstId() == null ||
-                dto.getGstId().trim().isEmpty()) {
+        if (dto.getGstin() == null ||
+                dto.getGstin().trim().isEmpty()) {
 
             throw new IllegalArgumentException(
-                    "GST ID is required");
+                    "GSTIN is required");
         }
 
         if (dto.getFinancialYear() == null ||

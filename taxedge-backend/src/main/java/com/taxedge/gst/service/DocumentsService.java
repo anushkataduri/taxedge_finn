@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.taxedge.gst.dto.DocumentsDto;
 import com.taxedge.gst.entity.Documents;
 
 public interface DocumentsService {
@@ -15,5 +16,5 @@ public interface DocumentsService {
 
     String deleteFile(String gstId, Long id);
 
-    List<Documents> getDocumentsByGstId(String gstId);
+    List<DocumentsDto> getDocumentsByGstId(String gstId);
 }

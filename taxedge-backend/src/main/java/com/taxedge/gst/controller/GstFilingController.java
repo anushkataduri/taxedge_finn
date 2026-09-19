@@ -37,12 +37,12 @@ public class GstFilingController {
                 HttpStatus.CREATED);
     }
 
-    @GetMapping("/{gstId}")
-    public ResponseEntity<List<GstFiling>> getFilingsByGstId(
-            @PathVariable String gstId) {
+    @GetMapping("/{gstin}")
+    public ResponseEntity<List<GstFiling>> getFilingsByGstin(
+            @PathVariable String gstin) {
 
         List<GstFiling> filings =
-                gstFilingService.getFilingsByGstId(gstId);
+                gstFilingService.getFilingsByGstin(gstin);
 
         return ResponseEntity.ok(filings);
     }

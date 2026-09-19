@@ -15,6 +15,7 @@ import type {
 export interface GstRegistrationDraft {
   id: string;
   stepIndex: number;
+  createdGstId?: string;
   personalData: Record<string, string>;
   businessData: Record<string, string>;
   documents: Array<{
@@ -37,6 +38,7 @@ export interface GstRegistrationDraft {
 export interface GstFilingDraft {
   id: string;
   stepIndex: number;
+  createdFilingId?: string;
   periodData: {
     periodType: string;
     financialYear?: string;
@@ -195,7 +197,15 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const apps = await applicationService.getApplications();
-      set({ applications: apps, isLoading: false, error: null });
+      if (apps && apps.length > 0) {
+        set({ applications: apps, isLoading: false, error: null });
+      } else {
+        set((state) => ({
+          applications: state.applications.length > 0 ? state.applications : [],
+          isLoading: false,
+          error: null,
+        }));
+      }
     } catch (err: any) {
       set({
         isLoading: false,
@@ -245,7 +255,12 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
             documents: draft.documents || [],
             step: draft.step || "DETAILS",
             remarks: draft.remarks || "",
-            updatedAt: draft.updatedAt || new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            updatedAt:
+              draft.updatedAt ||
+              new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
           },
     })),
   clearTaxNoticeDraft: () => set({ taxNoticeDraft: null }),
@@ -263,6 +278,9 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
     const prefix = category.substring(0, 4).toUpperCase();
     const appId = `${prefix}-2026-${randomNum}`;
 
+    const executives = ["Rahul Sharma (CA)", "Sneha Patel (Tax Expert)", "Vikram Malhotra (CA)", "Karan Singhania (Tax Consultant)"];
+    const assignedExecutive = executives[Math.floor(Math.random() * executives.length)];
+
     const newApp: Application = {
       id: appId,
       serviceId,
@@ -270,77 +288,207 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
       category,
       status: "Verification",
       progress: 20,
-      assignedExecutive: "CA not assigned yet",
+      assignedExecutive,
       paymentAmount,
-      paymentStatus: initialPaymentStatus || (paymentAmount > 0 ? "Pending" : "Paid"),
+      paymentStatus:
+        initialPaymentStatus || (paymentAmount > 0 ? "Pending" : "Paid"),
       createdAt: new Date().toISOString().split("T")[0],
       formData,
       documents: requiredDocs.map((doc) =>
         typeof doc === "string"
           ? { name: doc, status: "Pending" }
-          : { name: doc.name, status: doc.status || "Pending", fileUri: doc.fileUri }
+          : {
+              name: doc.name,
+              status: doc.status || "Pending",
+              fileUri: doc.fileUri,
+            },
       ),
-      timeline: serviceId === "gst-filing"
-        ? [
-            { title: "Customer Request", description: "Filing request initiated", status: "completed", date: "Today" },
-            { title: "Document Upload", description: "Sales & purchase records submitted", status: "completed", date: "Today" },
-            { title: "Staff Verification", description: "CA reviewing invoices & reconciliation", status: "current", date: "Today" },
-            { title: "Data Preparation", description: "Accounting integration & ledger extraction", status: "pending" },
-            { title: "Return Preparation", description: "Tax computation & ITC calculation", status: "pending" },
-            { title: "Customer Review", description: "Return draft shared with customer", status: "pending" },
-            { title: "Customer Approval", description: "Sign-off received from business", status: "pending" },
-            { title: "GST Filing", description: "Submission to GST portal", status: "pending" },
-            { title: "Acknowledgement Receipt", description: "ARN generated & filed copy delivered", status: "pending" },
-            { title: "Completed", description: "Filing process closed", status: "pending" },
-          ]
-        : serviceId === "itr-filing"
-        ? [
-            { title: "Application Submitted", description: "Return information & documents received", status: "completed", date: "Today" },
-            { title: "Staff Verification", description: "Tax Executive verifying documents & Form 26AS/AIS", status: "current", date: "Today" },
-            { title: "ITR Preparation & Tax Calculation", description: "Tax computation & dual-regime optimization", status: "pending" },
-            { title: "Internal Tax Review", description: "Senior CA verification & quality audit", status: "pending" },
-            { title: "Customer Review & Approval", description: "Customer signs off on final computation", status: "pending" },
-            { title: "ITR Submission", description: "Filing return with Income Tax e-Filing portal", status: "pending" },
-            { title: "E-Verification", description: "Aadhaar OTP / EVC verification pending", status: "pending" },
-            { title: "Income Tax Department Processing", description: "Central Processing Center (CPC) return processing & refund/tax closure", status: "pending" },
-          ]
-        : serviceId === "tds-refund"
-        ? [
-            { title: "New Request Received", description: "TDS refund claim initiated", status: "completed", date: "Today" },
-            { title: "Documents Received", description: "All documents uploaded", status: "completed", date: "Today" },
-            { title: "Under Verification", description: "Documents being verified by CA", status: "current", date: "Today" },
-            { title: "ITR Preparation", description: "Return computation by CA", status: "pending" },
-            { title: "Customer Approval", description: "Review and approve the return", status: "pending" },
-            { title: "ITR Filed", description: "Submitted on IT Department portal", status: "pending" },
-            { title: "E-Verification Pending", description: "Verify using Aadhaar OTP / DSC", status: "pending" },
-            { title: "Processing by IT Dept.", description: "Department processing", status: "pending" },
-            { title: "Refund / Tax Payable", description: "Final status communicated", status: "pending" },
-          ]
-        : [
-            {
-              title: "Application Submitted",
-              description: "Application filed online",
-              status: "completed",
-              date: "Today",
-            },
-            {
-              title: "Document Collection",
-              description: "Checking uploaded and pending files",
-              status: "current",
-              date: "Today",
-            },
-            {
-              title: "Verification",
-              description: "Verification by executive",
-              status: "pending",
-            },
-            {
-              title: "Completed",
-              description: "Filing/Approval confirmation",
-              status: "pending",
-            },
-          ],
-      chatHistory: [],
+      timeline:
+        serviceId === "gst-filing"
+          ? [
+              {
+                title: "Customer Request",
+                description: "Filing request initiated",
+                status: "completed",
+                date: "Today",
+              },
+              {
+                title: "Document Upload",
+                description: "Sales & purchase records submitted",
+                status: "completed",
+                date: "Today",
+              },
+              {
+                title: "Staff Verification",
+                description: "CA reviewing invoices & reconciliation",
+                status: "current",
+                date: "Today",
+              },
+              {
+                title: "Data Preparation",
+                description: "Accounting integration & ledger extraction",
+                status: "pending",
+              },
+              {
+                title: "Return Preparation",
+                description: "Tax computation & ITC calculation",
+                status: "pending",
+              },
+              {
+                title: "Customer Review",
+                description: "Return draft shared with customer",
+                status: "pending",
+              },
+              {
+                title: "Customer Approval",
+                description: "Sign-off received from business",
+                status: "pending",
+              },
+              {
+                title: "GST Filing",
+                description: "Submission to GST portal",
+                status: "pending",
+              },
+              {
+                title: "Acknowledgement Receipt",
+                description: "ARN generated & filed copy delivered",
+                status: "pending",
+              },
+              {
+                title: "Completed",
+                description: "Filing process closed",
+                status: "pending",
+              },
+            ]
+          : serviceId === "itr-filing"
+          ? [
+              {
+                title: "Application Submitted",
+                description: "Return information & documents received",
+                status: "completed",
+                date: "Today",
+              },
+              {
+                title: "Staff Verification",
+                description: "Tax Executive verifying documents & Form 26AS/AIS",
+                status: "current",
+                date: "Today",
+              },
+              {
+                title: "ITR Preparation & Tax Calculation",
+                description: "Tax computation & dual-regime optimization",
+                status: "pending",
+              },
+              {
+                title: "Internal Tax Review",
+                description: "Senior CA verification & quality audit",
+                status: "pending",
+              },
+              {
+                title: "Customer Review & Approval",
+                description: "Customer signs off on final computation",
+                status: "pending",
+              },
+              {
+                title: "ITR Submission",
+                description: "Filing return with Income Tax e-Filing portal",
+                status: "pending",
+              },
+              {
+                title: "E-Verification",
+                description: "Aadhaar OTP / EVC verification pending",
+                status: "pending",
+              },
+              {
+                title: "Income Tax Department Processing",
+                description:
+                  "Central Processing Center (CPC) return processing & refund/tax closure",
+                status: "pending",
+              },
+            ]
+          : serviceId === "tds-refund"
+          ? [
+              {
+                title: "New Request Received",
+                description: "TDS refund claim initiated",
+                status: "completed",
+                date: "Today",
+              },
+              {
+                title: "Documents Received",
+                description: "All documents uploaded",
+                status: "completed",
+                date: "Today",
+              },
+              {
+                title: "Under Verification",
+                description: "Documents being verified by CA",
+                status: "current",
+                date: "Today",
+              },
+              {
+                title: "ITR Preparation",
+                description: "Return computation by CA",
+                status: "pending",
+              },
+              {
+                title: "Customer Approval",
+                description: "Review and approve the return",
+                status: "pending",
+              },
+              {
+                title: "ITR Filed",
+                description: "Submitted on IT Department portal",
+                status: "pending",
+              },
+              {
+                title: "E-Verification Pending",
+                description: "Verify using Aadhaar OTP / DSC",
+                status: "pending",
+              },
+              {
+                title: "Processing by IT Dept.",
+                description: "Department processing",
+                status: "pending",
+              },
+              {
+                title: "Refund / Tax Payable",
+                description: "Final status communicated",
+                status: "pending",
+              },
+            ]
+          : [
+              {
+                title: "Application Submitted",
+                description: "Application filed online",
+                status: "completed",
+                date: "Today",
+              },
+              {
+                title: "Document Collection",
+                description: "Checking uploaded and pending files",
+                status: "current",
+                date: "Today",
+              },
+              {
+                title: "Verification",
+                description: "Verification by executive",
+                status: "pending",
+              },
+              {
+                title: "Completed",
+                description: "Filing/Approval confirmation",
+                status: "pending",
+              },
+            ],
+      chatHistory: [
+        {
+          id: `msg-${Date.now()}-welcome`,
+          sender: "staff",
+          text: `Hello! I have been assigned as your service representative. Let me know if you have any questions about this request.`,
+          timestamp: "Just now",
+        },
+      ],
     };
 
     set((state) => ({
@@ -410,6 +558,30 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
       });
       return { applications: updatedApps };
     });
+
+    // If sent by user, simulate automated executive response after 1.5s
+    if (sender === "user") {
+      setTimeout(() => {
+        const staffMessage: ChatMessage = {
+          id: `msg-${Date.now()}-staff`,
+          sender: "staff",
+          text: "Thank you for your message. I am looking into your application. I will review and update your document status shortly.",
+          timestamp: timeStamp(),
+        };
+        set((state) => {
+          const updatedApps = state.applications.map((app) => {
+            if (app.id !== appId) return app;
+            const updated = {
+              ...app,
+              chatHistory: [...(app.chatHistory || []), staffMessage],
+            };
+            applicationService.updateApplication(updated).catch(() => {});
+            return updated;
+          });
+          return { applications: updatedApps };
+        });
+      }, 1500);
+    }
   },
   payApplication: (appId) => {
     let paidAmount = 0;
@@ -426,12 +598,14 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
             : step,
         );
 
-        return {
+        const updated = {
           ...app,
           paymentStatus: "Paid" as const,
           progress: Math.min(100, app.progress + 15),
           timeline: newTimeline,
         };
+        applicationService.updateApplication(updated).catch(() => {});
+        return updated;
       }),
     }));
 

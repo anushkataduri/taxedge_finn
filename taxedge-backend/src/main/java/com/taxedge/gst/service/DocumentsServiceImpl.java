@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.util.Base64;
 import java.util.List;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.taxedge.gst.dto.DocumentsDto;
 import com.taxedge.gst.entity.Documents;
 import com.taxedge.gst.enums.AddressProofType;
 import com.taxedge.gst.enums.DocumentType;
@@ -23,7 +25,10 @@ public class DocumentsServiceImpl implements DocumentsService {
 
     @Autowired
     private BusinessRepository businessRepository;
-
+   
+    @Autowired
+    private ModelMapper modelMapper;
+    
     @Override
     public String uploadFile(
             String gstId,
@@ -180,14 +185,30 @@ public class DocumentsServiceImpl implements DocumentsService {
         return "Document deleted successfully";
     }
 
+//    @Override
+//    public List<DocumentsDto> getDocumentsByGstId(String gstId) {
+//
+//        businessRepository.findById(gstId)
+//                .orElseThrow(() ->
+//                        new ResourceNotFoundException(
+//                                "Business not found with gstId: " + gstId));
+//
+//        return documentsRepository.findByGstId(gstId);
+//    }
+    
     @Override
-    public List<Documents> getDocumentsByGstId(String gstId) {
+    public List<DocumentsDto> getDocumentsByGstId(String gstId) {
 
         businessRepository.findById(gstId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Business not found with gstId: " + gstId));
 
-        return documentsRepository.findByGstId(gstId);
+        List<Documents> documents =
+                documentsRepository.findByGstId(gstId);
+
+        return documents.stream()
+                .map(document -> modelMapper.map(document, DocumentsDto.class))
+                .toList();
     }
 }

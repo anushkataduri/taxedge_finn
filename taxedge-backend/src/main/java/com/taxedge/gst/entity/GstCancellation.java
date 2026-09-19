@@ -14,8 +14,8 @@ import lombok.Data;
 public class GstCancellation {
 
     @Id
-    @Column(name = "gst_id", nullable = false, unique = true, length = 15)
-    private String gstId;
+    @Column(name = "gstin", nullable = false, unique = true, length = 15)
+    private String gstin;
 
     @Column(name = "reason_for_cancellation", nullable = false)
     private String reasonForCancellation;

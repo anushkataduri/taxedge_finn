@@ -11,33 +11,21 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "gst_filing")
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class GstFiling {
 
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    private Long id;
-	
-	@Id
-	@Column(name = "id", nullable = false, unique = true, length = 9)
-	private String id;
+    @Id
+    @Column(name = "id", nullable = false, unique = true, length = 9)
+    private String id;
 
-    @Column(name = "gst_id", nullable = false, length = 15)
-    private String gstId;
+    @Column(name = "gstin", nullable = false, length = 15)
+    private String gstin;
 
     @Column(name = "financial_year", nullable = false, length = 7)
     private String financialYear;
@@ -70,8 +58,6 @@ public class GstFiling {
     @Column(name = "estimated_eligible_itc")
     private Long estimatedEligibleItc;
 
-    @Column(name = "created_at",nullable = false, insertable = false,
-    	    updatable = false
-    	)
-    	private LocalDateTime createdAt;
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 }

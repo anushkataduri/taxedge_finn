@@ -12,7 +12,7 @@ public interface DocumentsRepository extends JpaRepository<Documents, Long> {
 
     List<Documents> findByGstId(String gstId);
 
-    Optional<Documents> findByGstIdAndDocumentType( String gstId,DocumentType documentType);
+ //   Optional<Documents> findByGstIdAndDocumentType( String gstId,DocumentType documentType);
 
     boolean existsByGstIdAndDocumentType( String gstId,DocumentType documentType);
 

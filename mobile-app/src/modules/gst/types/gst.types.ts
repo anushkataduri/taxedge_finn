@@ -1,8 +1,9 @@
-import { ServiceCardData } from '../../../shared/components/ServiceCard';
+import { ServiceCardData } from "../../../shared/components/ServiceCard";
 
 export interface GstServiceItem extends ServiceCardData {}
 
 export interface GstRegistrationDraft {
+  createdGstId?: string;
   businessName: string;
   panNumber: string;
   constitution: string;
@@ -12,6 +13,7 @@ export interface GstRegistrationDraft {
 }
 
 export interface GstFilingDraft {
+  createdFilingId?: string;
   gstin: string;
   returnType: string;
   financialYear: string;

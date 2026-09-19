@@ -9,7 +9,7 @@ public interface GstFilingService {
 
     String createFiling(GstFilingDto gstFilingDto);
 
-    List<GstFiling> getFilingsByGstId(String gstId);
+    List<GstFiling> getFilingsByGstin(String gstin);
 
     String updateFiling(String id, GstFilingDto gstFilingDto);
 

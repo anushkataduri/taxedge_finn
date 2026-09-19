@@ -78,11 +78,9 @@ public class GstFilingDocumentsServiceImpl
 
         document.setDocumentType(type);
 
-        document.setFileName(
-                file.getOriginalFilename());
+        document.setFileName(file.getOriginalFilename());
 
-        document.setFileType(
-                file.getContentType());
+        document.setFileType(file.getContentType());
 
         String base64Data =
                 Base64.getEncoder()
@@ -140,15 +138,12 @@ public class GstFilingDocumentsServiceImpl
                 .equals(filingId)) {
 
             throw new ResourceNotFoundException(
-                    "Document does not belong to filingId: "
-                            + filingId);
+                    "Document does not belong to filingId: " + filingId);
         }
 
-        document.setFileName(
-                file.getOriginalFilename());
+        document.setFileName(file.getOriginalFilename());
 
-        document.setFileType(
-                file.getContentType());
+        document.setFileType(file.getContentType());
 
         String base64Data =
                 Base64.getEncoder()

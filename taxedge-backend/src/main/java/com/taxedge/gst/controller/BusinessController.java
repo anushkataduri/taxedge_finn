@@ -21,8 +21,6 @@ public class BusinessController {
 	@Autowired
     private  BusinessService businessService;
 
-    
-
 	@GetMapping("/{gstId}")
 	public ResponseEntity<BusinessDto> getBusiness(@PathVariable String gstId) {
 

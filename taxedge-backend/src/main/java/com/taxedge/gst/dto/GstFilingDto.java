@@ -10,7 +10,7 @@ import lombok.Data;
 @Data
 public class GstFilingDto {
 
-    private String gstId;
+    private String gstin;
 
     private String financialYear;
 

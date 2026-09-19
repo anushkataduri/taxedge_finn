@@ -28,11 +28,11 @@ public class GstCancellationServiceImpl
             throws IOException {
 
         if (cancellationRepository.existsById(
-                gstCancellationDto.getGstId())) {
+                gstCancellationDto.getGstin())) {
 
             throw new IllegalArgumentException(
-                    "GST cancellation already exists for GST ID: "
-                            + gstCancellationDto.getGstId());
+                    "GST cancellation already exists for GSTIN: "
+                            + gstCancellationDto.getGstin());
         }
 
         GstCancellation cancellation =
@@ -63,12 +63,12 @@ public class GstCancellationServiceImpl
 
     @Override
     public GstCancellation getCancellation(
-            String gstId) {
+            String gstin) {
 
-        return cancellationRepository.findById(gstId)
+        return cancellationRepository.findById(gstin)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "GST cancellation details not found for GST ID: "
-                                        + gstId));
+                                "GST cancellation details not found for GSTIN: "
+                                        + gstin));
     }
 }

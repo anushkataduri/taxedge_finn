@@ -8,4 +8,5 @@ public class TaxEdgeApplication {
     public static void main(String[] args) {
         SpringApplication.run(TaxEdgeApplication.class, args);
     }
+    
 }

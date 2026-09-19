@@ -11,5 +11,5 @@ public interface GstCancellationService {
             GstCancellationDto gstCancellationDto)
             throws IOException;
 
-    GstCancellation getCancellation(String gstId);
+    GstCancellation getCancellation(String gstin);
 }

@@ -1,19 +1,22 @@
 package com.taxedge.gst.service;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.taxedge.gst.dto.GstComplianceDto;
 import com.taxedge.gst.entity.GstCompliance;
 import com.taxedge.gst.enums.ComplianceRequestType;
 import com.taxedge.gst.exception.ResourceNotFoundException;
-import com.taxedge.gst.repository.BusinessRepository;
+import com.taxedge.gst.helper.RandomNumberGenerator;
 import com.taxedge.gst.repository.GstComplianceRepository;
+import com.taxedge.gst.service.GstComplianceService;
 
 @Service
 public class GstComplianceServiceImpl implements GstComplianceService {
@@ -22,202 +25,209 @@ public class GstComplianceServiceImpl implements GstComplianceService {
     private GstComplianceRepository complianceRepository;
 
     @Autowired
-    private BusinessRepository businessRepository;
+    private ModelMapper modelMapper;
 
     @Override
-    public String createCompliance(String gstId,String financialYear,String requestType,String gstr2bNumber,MultipartFile reconciliationFile1,MultipartFile reconciliationFile2,String noticeNumber,String noticeIssueDate,String replyDueDate,MultipartFile noticeFile,String message) throws IOException {
+    public String createCompliance(
+            GstComplianceDto dto,
+            MultipartFile reconciliationFile1,
+            MultipartFile reconciliationFile2,
+            MultipartFile noticeFile) throws IOException {
 
-        businessRepository.findById(gstId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Business not found with gstId: " + gstId));
+        if (dto.getGstin() == null ||
+                dto.getGstin().isBlank()) {
 
-        if (financialYear == null || financialYear.trim().isEmpty()) {
-            throw new IllegalArgumentException("Financial year is required");
+            throw new IllegalArgumentException(
+                    "GSTIN is required");
         }
 
-        ComplianceRequestType type =
-                ComplianceRequestType.valueOf(requestType);
+        if (dto.getFinancialYear() == null ||
+                dto.getFinancialYear().isBlank()) {
 
-        GstCompliance compliance = new GstCompliance();
+            throw new IllegalArgumentException(
+                    "Financial year is required");
+        }
 
-        compliance.setGstId(gstId);
-        compliance.setFinancialYear(financialYear);
-        compliance.setRequestType(type);
-        compliance.setMessage(message);
+        if (dto.getRequestType() == null) {
 
-        if (type == ComplianceRequestType.RECONCILIATION_SUPPORT) {
+            throw new IllegalArgumentException(
+                    "Request type is required");
+        }
 
-            if (gstr2bNumber == null || gstr2bNumber.trim().isEmpty()) {
+        GstCompliance compliance =
+                modelMapper.map(dto, GstCompliance.class);
+
+        compliance.setId(
+                RandomNumberGenerator.generateComplianceId());
+
+        if (dto.getRequestType() ==
+                ComplianceRequestType.RECONCILIATION_SUPPORT) {
+
+            if (dto.getGstr2bNumber() == null ||
+                    dto.getGstr2bNumber().isBlank()) {
+
                 throw new IllegalArgumentException(
                         "GSTR-2B number is required");
             }
 
-            if (reconciliationFile1 == null || reconciliationFile1.isEmpty()) {
+            if (reconciliationFile1 == null ||
+                    reconciliationFile1.isEmpty()) {
+
                 throw new IllegalArgumentException(
-                        "First reconciliation file is required");
+                        "Reconciliation document 1 is required");
             }
 
-            if (reconciliationFile2 == null || reconciliationFile2.isEmpty()) {
-                throw new IllegalArgumentException(
-                        "Second reconciliation file is required");
-            }
+            if (reconciliationFile2 == null ||
+                    reconciliationFile2.isEmpty()) {
 
-            if (message == null || message.trim().isEmpty()) {
                 throw new IllegalArgumentException(
-                        "Message is required");
+                        "Reconciliation document 2 is required");
             }
-
-            compliance.setGstr2bNumber(gstr2bNumber);
 
             compliance.setReconciliationFile1(
-                    Base64.getEncoder().encodeToString(
-                            reconciliationFile1.getBytes()));
+                    convertToBase64(reconciliationFile1));
 
             compliance.setReconciliationFile2(
-                    Base64.getEncoder().encodeToString(
-                            reconciliationFile2.getBytes()));
+                    convertToBase64(reconciliationFile2));
+        }
 
-        } else if (type == ComplianceRequestType.NOTICE_RESPONSE) {
+        if (dto.getRequestType() ==
+                ComplianceRequestType.NOTICE_RESPONSE) {
 
-            if (noticeNumber == null || noticeNumber.trim().isEmpty()) {
+            if (dto.getNoticeNumber() == null ||
+                    dto.getNoticeNumber().isBlank()) {
+
                 throw new IllegalArgumentException(
                         "Notice number is required");
             }
 
-            if (noticeIssueDate == null || noticeIssueDate.trim().isEmpty()) {
+            if (dto.getNoticeIssueDate() == null) {
+
                 throw new IllegalArgumentException(
                         "Notice issue date is required");
             }
 
-            if (replyDueDate == null || replyDueDate.trim().isEmpty()) {
+            if (dto.getReplyDueDate() == null) {
+
                 throw new IllegalArgumentException(
                         "Reply due date is required");
             }
 
-            if (noticeFile == null || noticeFile.isEmpty()) {
+            if (noticeFile == null ||
+                    noticeFile.isEmpty()) {
+
                 throw new IllegalArgumentException(
-                        "Notice response file is required");
+                        "Notice document is required");
             }
-
-            if (message == null || message.trim().isEmpty()) {
-                throw new IllegalArgumentException(
-                        "Message is required");
-            }
-
-            compliance.setNoticeNumber(noticeNumber);
-
-            compliance.setNoticeIssueDate(
-                    LocalDate.parse(noticeIssueDate));
-
-            compliance.setReplyDueDate(
-                    LocalDate.parse(replyDueDate));
 
             compliance.setNoticeFile(
-                    Base64.getEncoder().encodeToString(
-                            noticeFile.getBytes()));
+                    convertToBase64(noticeFile));
         }
 
         complianceRepository.save(compliance);
 
-        return "GST compliance request created successfully";
+        return "GST compliance request created successfully with ID: "
+                + compliance.getId();
     }
 
     @Override
-    public List<GstCompliance> getComplianceByGstId(String gstId) {
+    public List<GstComplianceDto> getComplianceByGstin(
+            String gstin) {
 
-        businessRepository.findById(gstId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Business not found with gstId: " + gstId));
+        List<GstCompliance> complianceList =
+                complianceRepository.findByGstin(gstin);
 
-        return complianceRepository.findByGstId(gstId);
+        return complianceList.stream()
+                .map(compliance ->
+                        modelMapper.map(
+                                compliance,
+                                GstComplianceDto.class))
+                .collect(Collectors.toList());
     }
 
     @Override
-    public String updateCompliance(String gstId,Long id,String financialYear,String requestType,String gstr2bNumber,MultipartFile reconciliationFile1,MultipartFile reconciliationFile2,String noticeNumber,String noticeIssueDate,String replyDueDate,MultipartFile noticeFile,String message) throws IOException {
+    public String updateCompliance(
+            String gstin,
+            String id,
+            GstComplianceDto dto,
+            MultipartFile reconciliationFile1,
+            MultipartFile reconciliationFile2,
+            MultipartFile noticeFile) throws IOException {
 
-        businessRepository.findById(gstId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Business not found with gstId: " + gstId));
+        GstCompliance compliance =
+                complianceRepository
+                        .findByIdAndGstin(id, gstin)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Compliance request not found"));
 
-        GstCompliance compliance = complianceRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Compliance request not found with id: " + id));
+        modelMapper.typeMap(
+                GstComplianceDto.class,
+                GstCompliance.class)
+                .addMappings(mapper -> {
+                    mapper.skip(GstCompliance::setId);
+                });
 
-        if (!compliance.getGstId().equals(gstId)) {
-            throw new ResourceNotFoundException(
-                    "Compliance request does not belong to gstId: " + gstId);
-        }
+        modelMapper.map(dto, compliance);
 
-        ComplianceRequestType type =
-                ComplianceRequestType.valueOf(requestType);
+        if (dto.getRequestType() ==
+                ComplianceRequestType.RECONCILIATION_SUPPORT) {
 
-        compliance.setFinancialYear(financialYear);
-        compliance.setRequestType(type);
-        compliance.setMessage(message);
+            if (dto.getGstr2bNumber() == null ||
+                    dto.getGstr2bNumber().isBlank()) {
 
-        if (type == ComplianceRequestType.RECONCILIATION_SUPPORT) {
-
-            if (gstr2bNumber == null || gstr2bNumber.trim().isEmpty()) {
                 throw new IllegalArgumentException(
                         "GSTR-2B number is required");
             }
 
-            if (reconciliationFile1 != null && !reconciliationFile1.isEmpty()) {
+            if (reconciliationFile1 != null &&
+                    !reconciliationFile1.isEmpty()) {
 
                 compliance.setReconciliationFile1(
-                        Base64.getEncoder().encodeToString(
-                                reconciliationFile1.getBytes()));
+                        convertToBase64(reconciliationFile1));
             }
 
-            if (reconciliationFile2 != null && !reconciliationFile2.isEmpty()) {
+            if (reconciliationFile2 != null &&
+                    !reconciliationFile2.isEmpty()) {
 
                 compliance.setReconciliationFile2(
-                        Base64.getEncoder().encodeToString(
-                                reconciliationFile2.getBytes()));
+                        convertToBase64(reconciliationFile2));
             }
-
-            compliance.setGstr2bNumber(gstr2bNumber);
 
             compliance.setNoticeNumber(null);
             compliance.setNoticeIssueDate(null);
             compliance.setReplyDueDate(null);
             compliance.setNoticeFile(null);
+        }
 
-        } else if (type == ComplianceRequestType.NOTICE_RESPONSE) {
+        if (dto.getRequestType() ==
+                ComplianceRequestType.NOTICE_RESPONSE) {
 
-            if (noticeNumber == null || noticeNumber.trim().isEmpty()) {
+            if (dto.getNoticeNumber() == null ||
+                    dto.getNoticeNumber().isBlank()) {
+
                 throw new IllegalArgumentException(
                         "Notice number is required");
             }
 
-            if (noticeIssueDate == null || noticeIssueDate.trim().isEmpty()) {
+            if (dto.getNoticeIssueDate() == null) {
+
                 throw new IllegalArgumentException(
                         "Notice issue date is required");
             }
 
-            if (replyDueDate == null || replyDueDate.trim().isEmpty()) {
+            if (dto.getReplyDueDate() == null) {
+
                 throw new IllegalArgumentException(
                         "Reply due date is required");
             }
 
-            if (noticeFile != null && !noticeFile.isEmpty()) {
+            if (noticeFile != null &&
+                    !noticeFile.isEmpty()) {
 
                 compliance.setNoticeFile(
-                        Base64.getEncoder().encodeToString(
-                                noticeFile.getBytes()));
+                        convertToBase64(noticeFile));
             }
-
-            compliance.setNoticeNumber(noticeNumber);
-
-            compliance.setNoticeIssueDate(
-                    LocalDate.parse(noticeIssueDate));
-
-            compliance.setReplyDueDate(
-                    LocalDate.parse(replyDueDate));
 
             compliance.setGstr2bNumber(null);
             compliance.setReconciliationFile1(null);
@@ -230,25 +240,28 @@ public class GstComplianceServiceImpl implements GstComplianceService {
     }
 
     @Override
-    public String deleteCompliance(String gstId,Long id) {
+    public String deleteCompliance(
+            String gstin,
+            String id) {
 
-        businessRepository.findById(gstId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Business not found with gstId: " + gstId));
-
-        GstCompliance compliance = complianceRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Compliance request not found with id: " + id));
-
-        if (!compliance.getGstId().equals(gstId)) {
-            throw new ResourceNotFoundException(
-                    "Compliance request does not belong to gstId: " + gstId);
-        }
+        GstCompliance compliance =
+                complianceRepository
+                        .findByIdAndGstin(id, gstin)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Compliance request not found"));
 
         complianceRepository.delete(compliance);
 
         return "GST compliance request deleted successfully";
+    }
+
+    private String convertToBase64(
+            MultipartFile file) throws IOException {
+
+        byte[] fileBytes = file.getBytes();
+
+        return Base64.getEncoder()
+                .encodeToString(fileBytes);
     }
 }

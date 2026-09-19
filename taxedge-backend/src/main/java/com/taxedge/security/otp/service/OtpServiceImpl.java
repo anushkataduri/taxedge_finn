@@ -1,6 +1,6 @@
 package com.taxedge.security.otp.service;
 
-import java.security.SecureRandom;
+import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,12 +17,9 @@ public class OtpServiceImpl implements OtpService {
 	@Autowired
     private final OtpRepository otpRepository;
 
-    private final SecureRandom secureRandom = new SecureRandom();
-
     @Override
     public String generateOtp(Otp otp) {
-        int code = 100000 + secureRandom.nextInt(900000);
-        String otpCode = String.valueOf(code);
+        String otpCode = String.format("%06d", new Random().nextInt(999999));
         otp.setOtpCode(otpCode);
 
         otpRepository.save(otp);
@@ -34,20 +31,12 @@ public class OtpServiceImpl implements OtpService {
 
     @Override
     public boolean verifyOtp(Otp otp) {
-        if (otp.getMobileNumber() == null || otp.getOtpCode() == null) {
-            throw new IllegalArgumentException("Mobile number and OTP code must be provided");
-        }
-
         Otp savedOtp = otpRepository.findTopByMobileNumberOrderByIdDesc(otp.getMobileNumber());
 
         if (savedOtp == null) {
-            throw new RuntimeException("OTP not found");
+            return false;
         }
 
-        if (!savedOtp.getOtpCode().equals(otp.getOtpCode())) {
-            throw new RuntimeException("Invalid OTP");
-        }
-
-        return true;
+        return savedOtp.getOtpCode().equals(otp.getOtpCode());
     }
 }

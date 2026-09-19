@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.taxedge.gst.dto.DocumentsDto;
 import com.taxedge.gst.entity.Documents;
 import com.taxedge.gst.service.DocumentsService;
 
@@ -45,10 +46,10 @@ public class DocumentsController {
     }
 
     @GetMapping("/{gstId}")
-    public ResponseEntity<List<Documents>> getDocumentsByGstId(
+    public ResponseEntity<List<DocumentsDto>> getDocumentsByGstId(
             @PathVariable String gstId) {
 
-        List<Documents> documents =
+        List<DocumentsDto> documents =
                 documentsService.getDocumentsByGstId(gstId);
 
         return ResponseEntity.ok(documents);

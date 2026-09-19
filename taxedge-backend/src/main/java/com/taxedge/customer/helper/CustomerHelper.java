@@ -15,5 +15,4 @@ public final class CustomerHelper {
         return "CI" + number;
     }
 
-
 }

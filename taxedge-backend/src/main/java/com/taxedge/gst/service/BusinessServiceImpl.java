@@ -53,7 +53,7 @@ public class BusinessServiceImpl implements BusinessService {
 
         modelMapper.map(businessDto, business);
 
-        business.setGstId(gstId);
+      //  business.setGstId(gstId);
 
         businessRepository.save(business);
 
