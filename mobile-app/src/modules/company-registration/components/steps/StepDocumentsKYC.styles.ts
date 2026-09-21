@@ -55,6 +55,7 @@ export const styles = StyleSheet.create({
   },
   docTitleTextGroup: {
     flex: 1,
+    justifyContent: 'center',
   },
   docTitle: {
     fontSize: 14,
@@ -64,7 +65,9 @@ export const styles = StyleSheet.create({
   docSubtitle: {
     fontSize: 11,
     color: '#64748B',
-    marginTop: 2,
+    marginTop: 6,
+    marginLeft: 46,
+    lineHeight: 16,
   },
   uploadActionBtn: {
     flexDirection: 'row',
@@ -81,19 +84,8 @@ export const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   uploadedContainer: {
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  uploadedInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    flex: 1,
+    marginTop: 12,
+    marginLeft: 46,
   },
   uploadedBadge: {
     flexDirection: 'row',
@@ -113,21 +105,28 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     color: '#083B75',
-    flex: 1,
+    marginBottom: 12,
   },
   uploadedActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 16,
+    justifyContent: 'flex-start',
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   actionTextBtn: {
     fontSize: 12,
     fontWeight: '600',
     color: '#083B75',
+    marginLeft: 4,
   },
   removeTextBtn: {
     fontSize: 12,
     fontWeight: '600',
     color: '#EF4444',
+    marginLeft: 4,
   },
 });

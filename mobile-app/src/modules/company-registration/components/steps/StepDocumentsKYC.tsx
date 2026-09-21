@@ -210,15 +210,11 @@ export const StepDocumentsKYC: React.FC = () => {
               return (
                 <View key={item.id} style={styles.docCard}>
                   <View style={styles.docHeaderRow}>
-                    <View style={styles.docIconTitleGroup}>
+                    <View style={{flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1}}>
                       <View style={styles.docIconBox}>
                         <Ionicons name={item.iconName} size={20} color="#083B75" />
                       </View>
-
-                      <View style={styles.docTitleTextGroup}>
-                        <Text style={styles.docTitle}>{item.title}</Text>
-                        <Text style={styles.docSubtitle}>{item.subtitle}</Text>
-                      </View>
+                      <Text style={styles.docTitle}>{item.title}</Text>
                     </View>
 
                     {!isUploaded && !item.isNotRequired && !item.isHandled && (
@@ -231,30 +227,37 @@ export const StepDocumentsKYC: React.FC = () => {
                         <Text style={styles.uploadActionBtnText}>Upload</Text>
                       </TouchableOpacity>
                     )}
+
+                    {isUploaded && !item.isHandled && !item.isNotRequired && (
+                      <View style={styles.uploadedBadge}>
+                        <Ionicons name="checkmark-circle" size={14} color="#166534" />
+                        <Text style={styles.uploadedText}>Uploaded</Text>
+                      </View>
+                    )}
                   </View>
+
+                  <Text style={styles.docSubtitle}>{item.subtitle}</Text>
 
                   {/* Real Uploaded State Display */}
                   {isUploaded && !item.isHandled && !item.isNotRequired && (
                     <View style={styles.uploadedContainer}>
-                      <View style={styles.uploadedInfo}>
-                        <View style={styles.uploadedBadge}>
-                          <Ionicons name="checkmark-circle" size={14} color="#166534" />
-                          <Text style={styles.uploadedText}>Uploaded</Text>
-                        </View>
-                        <Text style={styles.fileNameText} numberOfLines={1}>
-                          {displayFileName || 'document.pdf'}
-                        </Text>
-                      </View>
+                      <Text style={styles.fileNameText} numberOfLines={1}>
+                        {displayFileName || 'document.pdf'}
+                      </Text>
 
                       <View style={styles.uploadedActions}>
-                        <TouchableOpacity onPress={() => handleViewDocument(stored?.fileUri, displayFileName)} activeOpacity={0.7} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
+                        <TouchableOpacity onPress={() => handleViewDocument(stored?.fileUri, displayFileName)} activeOpacity={0.7} style={styles.actionBtn}>
                           <Ionicons name="eye-outline" size={16} color="#083B75" />
-                          <Text style={[styles.actionTextBtn, { marginLeft: 4 }]}>View</Text>
+                          <Text style={styles.actionTextBtn}>View</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={() => handleRemoveDocument(item.id)} activeOpacity={0.7} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <TouchableOpacity onPress={() => setActiveItem(item)} activeOpacity={0.7} style={styles.actionBtn}>
+                          <Text style={styles.actionTextBtn}>Change</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={() => handleRemoveDocument(item.id)} activeOpacity={0.7} style={styles.actionBtn}>
                           <Ionicons name="trash-outline" size={16} color="#B91C1C" />
-                          <Text style={[styles.removeTextBtn, { marginLeft: 4 }]}>Delete</Text>
+                          <Text style={styles.removeTextBtn}>Delete</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
