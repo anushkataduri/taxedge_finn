@@ -12,6 +12,20 @@ export interface CompanyTypeCardProps {
   onSelect: (item: CompanyTypeOption) => void;
 }
 
+export const getCompanyTypeIcon = (type: string, title?: string): keyof typeof Ionicons.glyphMap => {
+  const text = (type + " " + (title || "")).toLowerCase();
+  if (text.includes("opc") || text.includes("one person")) {
+    return "person-outline";
+  }
+  if (text.includes("section 8") || text.includes("ngo") || text.includes("non-profit") || text.includes("growth")) {
+    return "trending-up-outline";
+  }
+  if (text.includes("public limited") || text.includes("llp") || text.includes("briefcase") || text.includes("partnership")) {
+    return "briefcase-outline";
+  }
+  return "business-outline";
+};
+
 export const CompanyTypeCard: React.FC<CompanyTypeCardProps> = ({
   item,
   selected,
@@ -27,6 +41,13 @@ export const CompanyTypeCard: React.FC<CompanyTypeCardProps> = ({
       ]}
     >
       <View style={styles.headerRow}>
+        <View style={styles.iconContainer}>
+          <Ionicons
+            name={getCompanyTypeIcon(item.type, item.title)}
+            size={22}
+            color={BrandColors.PRIMARY_BLUE_DARK}
+          />
+        </View>
         <View style={styles.titleCol}>
           <Text style={styles.title}>{item.title}</Text>
           <Text style={styles.description}>{item.description}</Text>
@@ -54,3 +75,4 @@ export const CompanyTypeCard: React.FC<CompanyTypeCardProps> = ({
 };
 
 export default CompanyTypeCard;
+

@@ -25,8 +25,6 @@ export interface CheckUserResponse {
   profileCompleted?: boolean;
   hasPasscode?: boolean;
   user?: DevUser;
-  error?: string;
-  message?: string;
 }
 
 export interface RegisterResponse {
@@ -85,13 +83,13 @@ export const authApi = {
     const cleanMobile = mobileNumber.replace(/\D/g, "");
     try {
       console.log(
-        `🚀 [OTP] Verifying with Backend POST /otp/verify for: ${cleanMobile}`,
+        `🚀 [OTP] Verifying with Backend POST /otp/verify for: ${cleanMobile}, code: ${otp}`,
       );
       const res = await apiClient.post<any>("/otp/verify", {
         mobileNumber: cleanMobile,
         otpCode: otp,
       });
-      console.log("✅ [OTP] Backend verified OTP successfully");
+      console.log("✅ [OTP] Backend verified OTP successfully:", res);
 
       const customerExists =
         res?.customerExists === true || res?.isExistingUser === true;
@@ -121,22 +119,13 @@ export const authApi = {
         customer: res?.customer,
       };
     } catch (error: any) {
-      console.log("ℹ️ [OTP] OTP verification error for:", cleanMobile);
-      const errMsg = error?.message || "";
-      const isNetworkErr =
-        errMsg.includes("Unable to connect") ||
-        errMsg.includes("network") ||
-        errMsg.includes("Network") ||
-        errMsg.includes("timeout");
-
-      const backendMsg = isNetworkErr
-        ? "Unable to connect to server. Please check your internet connection."
-        : error?.message &&
-          error.message !== "Request failed" &&
-          !error.message.includes("status code")
-        ? error.message
-        : "Incorrect OTP code. Please enter the valid OTP sent to your terminal.";
-
+      console.log("ℹ️ [OTP] Incorrect OTP entered for:", cleanMobile);
+      const backendMsg =
+        error?.message &&
+        error.message !== "Request failed" &&
+        !error.message.includes("status code")
+          ? error.message
+          : "Incorrect OTP code. Please enter the valid OTP sent to your terminal.";
       return {
         success: false,
         isExistingUser: false,
@@ -155,24 +144,23 @@ export const authApi = {
         `🚀 [API] Checking customer status GET /customer/exists/${cleanMobile}`,
       );
       const res = await apiClient.get<any>(`/customer/exists/${cleanMobile}`);
-      console.log(`✅ [API] Customer status check succeeded for ${cleanMobile}`);
+      console.log(`✅ [API] Customer status for ${cleanMobile}:`, res);
       const exists = res?.exists === true || res?.customerExists === true;
       return {
         success: true,
         exists,
         customerExists: exists,
-        profileCompleted: exists,
-        hasPasscode: exists,
+        profileCompleted: res?.profileCompleted === true,
+        hasPasscode: res?.hasPasscode === true,
       };
     } catch (err: any) {
-      console.warn("[authApi] Error calling /customer/exists:", err?.message);
+      console.warn("Error calling /customer/exists:", err?.message);
       return {
         success: false,
         exists: false,
-        customerExists: undefined,
+        customerExists: false,
         profileCompleted: false,
         hasPasscode: false,
-        error: err?.message || "Unable to check customer existence",
       };
     }
   },
@@ -254,9 +242,9 @@ export const authApi = {
         pushToken: data.pushToken,
       };
 
-      console.log(`🚀 [API] Sending POST /customer/register for mobile: ${payload.mobileNumber}`);
+      console.log("🚀 FETCHING POST /customer/register Payload:", payload);
       const response = await apiClient.post<any>("/customer/register", payload);
-      console.log(`✅ [API] Backend registration successful for custId: ${response?.custId}`);
+      console.log("✅ Backend Registration Response:", response);
 
       if (response.accessToken) {
         tokenManager.setAccessToken(response.accessToken).catch(() => {});
@@ -306,12 +294,12 @@ export const authApi = {
   ): Promise<PasscodeResponse> => {
     try {
       const cleanMobile = mobileNumber.replace(/\D/g, "");
-      console.log("🚀 [API] Sending POST /customer/login for:", cleanMobile);
+      console.log("🚀 FETCHING POST /customer/login for:", cleanMobile);
       const response = await apiClient.post<any>("/customer/login", {
         mobileNumber: cleanMobile,
         password: passcode,
       });
-      console.log(`✅ [API] Backend login successful for custId: ${response?.custId}`);
+      console.log("✅ Backend Login Response:", response);
 
       if (response.accessToken) {
         tokenManager.setAccessToken(response.accessToken).catch(() => {});
@@ -397,6 +385,18 @@ export const authApi = {
     } catch (err: any) {
       console.warn("⚠️ [API] Failed to revoke refresh token on backend:", err?.message);
       return false;
+    }
+  },
+
+  getCustomerDetails: async (custId: string): Promise<any> => {
+    try {
+      console.log(`🚀 [API] Fetching GET /customer/details/${custId}`);
+      const res = await apiClient.get<any>(`/customer/details/${custId}`);
+      console.log(`✅ [API] Customer details fetched successfully:`, res);
+      return { success: true, data: res };
+    } catch (error: any) {
+      console.error(`❌ [API] Error fetching customer details for ${custId}:`, error);
+      return { success: false, message: error?.message || "Failed to fetch customer details" };
     }
   },
 };
