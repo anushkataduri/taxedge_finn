@@ -85,7 +85,18 @@ export const CompanyRegistrationScreen: React.FC = () => {
 
     // Validation for Step 5 (Documents & KYC Checklist)
     if (currentStep === 5) {
-      const requiredIds = ['doc-pan', 'doc-aadhaar', 'doc-address', 'doc-utility'];
+      const requiredIds: string[] = ['doc-address', 'doc-utility'];
+
+      draft.directors.forEach((dir) => {
+        if (!dir.hasDin) {
+          requiredIds.push(`doc-idproof-${dir.id}`);
+        }
+      });
+
+      if (draft.company.companyType === 'One Person Company (OPC)' && draft.opcNominee?.name) {
+        requiredIds.push('doc-idproof-nominee');
+      }
+
       const missingMandatory = requiredIds.some((id) => {
         const doc = draft.documents.find((d) => d.id === id);
         return !doc || doc.status !== 'Uploaded';
@@ -93,7 +104,7 @@ export const CompanyRegistrationScreen: React.FC = () => {
       if (missingMandatory) {
         Alert.alert(
           'Validation Error',
-          'Please upload all mandatory documents (PAN Card, Identity/Address Proof, Office Address Proof, and Office Utility Bill) before proceeding.'
+          'Please upload all applicable mandatory documents (Office Proofs, and Identity Proofs for persons without DIN) before proceeding.'
         );
         return;
       }

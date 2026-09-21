@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Linking } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -13,83 +13,16 @@ export interface KycChecklistItem {
   subtitle: string;
   section: 'PROMOTER / DIRECTOR KYC' | 'REGISTERED OFFICE' | 'STATUTORY DOCUMENTS';
   required: boolean;
+  isNotRequired?: boolean;
+  isHandled?: boolean;
   iconName: keyof typeof Ionicons.glyphMap;
 }
 
-const CHECKLIST_ITEMS: KycChecklistItem[] = [
-  // PROMOTER / DIRECTOR KYC
-  {
-    id: 'doc-pan',
-    title: 'PAN Card *',
-    subtitle: 'Promoter KYC',
-    section: 'PROMOTER / DIRECTOR KYC',
-    required: true,
-    iconName: 'card-outline',
-  },
-  {
-    id: 'doc-aadhaar',
-    title: 'Identity / Address Proof *',
-    subtitle: 'Aadhaar / Passport / other applicable proof',
-    section: 'PROMOTER / DIRECTOR KYC',
-    required: true,
-    iconName: 'id-card-outline',
-  },
-  {
-    id: 'doc-photo',
-    title: 'Passport Photo',
-    subtitle: 'Required if applicable',
-    section: 'PROMOTER / DIRECTOR KYC',
-    required: false,
-    iconName: 'person-circle-outline',
-  },
-
-  // REGISTERED OFFICE
-  {
-    id: 'doc-address',
-    title: 'Office Address Proof *',
-    subtitle: 'Lease / Rent Agreement / Ownership Proof',
-    section: 'REGISTERED OFFICE',
-    required: true,
-    iconName: 'business-outline',
-  },
-  {
-    id: 'doc-utility',
-    title: 'Office Utility Bill *',
-    subtitle: 'Electricity / Water / applicable utility bill',
-    section: 'REGISTERED OFFICE',
-    required: true,
-    iconName: 'receipt-outline',
-  },
-  {
-    id: 'doc-noc',
-    title: 'Owner NOC',
-    subtitle: 'Required only if applicable',
-    section: 'REGISTERED OFFICE',
-    required: false,
-    iconName: 'document-attach-outline',
-  },
-
-  // STATUTORY DOCUMENTS
-  {
-    id: 'doc-moa',
-    title: 'MOA / e-MOA',
-    subtitle: 'Handled/generated as applicable',
-    section: 'STATUTORY DOCUMENTS',
-    required: false,
-    iconName: 'document-text-outline',
-  },
-  {
-    id: 'doc-aoa',
-    title: 'AOA / e-AOA',
-    subtitle: 'Handled/generated as applicable',
-    section: 'STATUTORY DOCUMENTS',
-    required: false,
-    iconName: 'book-outline',
-  },
-];
-
 export const StepDocumentsKYC: React.FC = () => {
   const storedDocs = useCompanyRegistrationStore((state) => state.draft.documents);
+  const directors = useCompanyRegistrationStore((state) => state.draft.directors);
+  const companyType = useCompanyRegistrationStore((state) => state.draft.company.companyType);
+  const opcNominee = useCompanyRegistrationStore((state) => state.draft.opcNominee);
   const updateDocumentStatus = useCompanyRegistrationStore((state) => state.updateDocumentStatus);
 
   const [activeItem, setActiveItem] = useState<KycChecklistItem | null>(null);
@@ -157,8 +90,96 @@ export const StepDocumentsKYC: React.FC = () => {
   };
 
   const handleRemoveDocument = (docId: string) => {
-    updateDocumentStatus(docId, 'Pending', undefined, undefined);
+    Alert.alert('Delete Document', 'Are you sure you want to delete this document?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => updateDocumentStatus(docId, 'Pending', undefined, undefined) },
+    ]);
   };
+
+  const handleViewDocument = async (fileUri?: string, fileName?: string) => {
+    if (fileUri) {
+      try {
+        await Linking.openURL(fileUri);
+      } catch (error) {
+        Alert.alert('View Document', `Previewing: ${fileName || 'Document'}\n\nCannot open URI directly on this device.`);
+      }
+    } else {
+      Alert.alert('View Document', 'Document file is not available.');
+    }
+  };
+
+  // Generate dynamic checklist
+  const checklistItems: KycChecklistItem[] = [];
+
+  directors.forEach((dir) => {
+    const isDinAvail = dir.hasDin;
+    checklistItems.push({
+      id: `doc-idproof-${dir.id}`,
+      title: 'Identity / Residential Proof' + (isDinAvail ? '' : ' *'),
+      subtitle: `${dir.name}\n${dir.designation || 'Director'}${isDinAvail ? ' • DIN Available' : ' • DIN Not Available'}` + (isDinAvail ? '\nNot required for this person' : ''),
+      section: 'PROMOTER / DIRECTOR KYC',
+      required: !isDinAvail,
+      isNotRequired: isDinAvail,
+      iconName: 'person-circle-outline',
+    });
+  });
+
+  if (companyType === 'One Person Company (OPC)' && opcNominee?.name) {
+    checklistItems.push({
+      id: `doc-idproof-nominee`,
+      title: 'Identity / Residential Proof *',
+      subtitle: `${opcNominee.name}\nNominee`,
+      section: 'PROMOTER / DIRECTOR KYC',
+      required: true,
+      isNotRequired: false,
+      iconName: 'person-circle-outline',
+    });
+  }
+
+  checklistItems.push(
+    {
+      id: 'doc-address',
+      title: 'Office Address Proof *',
+      subtitle: 'Lease / Rent Agreement / Ownership Proof',
+      section: 'REGISTERED OFFICE',
+      required: true,
+      iconName: 'business-outline',
+    },
+    {
+      id: 'doc-utility',
+      title: 'Office Utility Bill *',
+      subtitle: 'Electricity / Water / applicable utility bill',
+      section: 'REGISTERED OFFICE',
+      required: true,
+      iconName: 'receipt-outline',
+    },
+    {
+      id: 'doc-noc',
+      title: 'Owner NOC',
+      subtitle: 'Required only if applicable',
+      section: 'REGISTERED OFFICE',
+      required: false,
+      iconName: 'document-attach-outline',
+    },
+    {
+      id: 'doc-moa',
+      title: 'MOA / e-MOA',
+      subtitle: 'Handled / generated as applicable',
+      section: 'STATUTORY DOCUMENTS',
+      required: false,
+      isHandled: true,
+      iconName: 'document-text-outline',
+    },
+    {
+      id: 'doc-aoa',
+      title: 'AOA / e-AOA',
+      subtitle: 'Handled / generated as applicable',
+      section: 'STATUTORY DOCUMENTS',
+      required: false,
+      isHandled: true,
+      iconName: 'book-outline',
+    }
+  );
 
   const sections: ('PROMOTER / DIRECTOR KYC' | 'REGISTERED OFFICE' | 'STATUTORY DOCUMENTS')[] = [
     'PROMOTER / DIRECTOR KYC',
@@ -174,7 +195,7 @@ export const StepDocumentsKYC: React.FC = () => {
       </Text>
 
       {sections.map((sectionName) => {
-        const sectionItems = CHECKLIST_ITEMS.filter((item) => item.section === sectionName);
+        const sectionItems = checklistItems.filter((item) => item.section === sectionName);
         if (sectionItems.length === 0) return null;
 
         return (
@@ -200,7 +221,7 @@ export const StepDocumentsKYC: React.FC = () => {
                       </View>
                     </View>
 
-                    {!isUploaded && (
+                    {!isUploaded && !item.isNotRequired && !item.isHandled && (
                       <TouchableOpacity
                         style={styles.uploadActionBtn}
                         onPress={() => setActiveItem(item)}
@@ -213,7 +234,7 @@ export const StepDocumentsKYC: React.FC = () => {
                   </View>
 
                   {/* Real Uploaded State Display */}
-                  {isUploaded && (
+                  {isUploaded && !item.isHandled && !item.isNotRequired && (
                     <View style={styles.uploadedContainer}>
                       <View style={styles.uploadedInfo}>
                         <View style={styles.uploadedBadge}>
@@ -226,12 +247,14 @@ export const StepDocumentsKYC: React.FC = () => {
                       </View>
 
                       <View style={styles.uploadedActions}>
-                        <TouchableOpacity onPress={() => setActiveItem(item)} activeOpacity={0.7}>
-                          <Text style={styles.actionTextBtn}>Replace</Text>
+                        <TouchableOpacity onPress={() => handleViewDocument(stored?.fileUri, displayFileName)} activeOpacity={0.7} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
+                          <Ionicons name="eye-outline" size={16} color="#083B75" />
+                          <Text style={[styles.actionTextBtn, { marginLeft: 4 }]}>View</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={() => handleRemoveDocument(item.id)} activeOpacity={0.7}>
-                          <Text style={styles.removeTextBtn}>Remove</Text>
+                        <TouchableOpacity onPress={() => handleRemoveDocument(item.id)} activeOpacity={0.7} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Ionicons name="trash-outline" size={16} color="#B91C1C" />
+                          <Text style={[styles.removeTextBtn, { marginLeft: 4 }]}>Delete</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
