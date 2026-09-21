@@ -1,0 +1,1 @@
+export { staffSettingsRoutes } from './routes'
