@@ -215,19 +215,12 @@ const compactRupees = (value: number): string => {
 export default function ProfileScreen() {
   const colors = useTheme();
   const router = useRouter();
-  const { customer, logout, setAvatar, fetchAndSyncProfile } = useAuthStore();
+  const { customer, logout, setAvatar } = useAuthStore();
   const applications = useApplicationStore((state) => state.applications);
 
   const [pickingPhoto, setPickingPhoto] = useState(false);
   const [showKycModal, setShowKycModal] = useState(false);
   const [showPersonalModal, setShowPersonalModal] = useState(false);
-
-  useEffect(() => {
-    // If essential customer profile fields are missing, fetch fresh data from backend
-    if (!customer?.pan || !customer?.dob || !customer?.customerId) {
-      fetchAndSyncProfile().catch(() => {});
-    }
-  }, [customer?.pan, customer?.dob, customer?.customerId, fetchAndSyncProfile]);
 
   /* ---------- Stats ---------- */
   const activeCount = applications.filter(

@@ -42,12 +42,29 @@ export const PreviousYearSubmittedScreen: React.FC = () => {
   };
 
   const handleBack = () => {
-    router.replace("/service/itr" as any);
+    router.replace("/(main)/home" as any);
+  };
+
+  const handleGoHome = () => {
+    router.replace("/(main)/home" as any);
   };
 
   const handleTrackStatus = () => {
-    router.replace("/(main)/home" as any);
+    if (applicationId && applicationId !== "Pending" && !applicationId.includes(" ")) {
+      router.replace(`/application/${applicationId}` as any);
+    } else {
+      router.replace("/(main)/applications" as any);
+    }
   };
+
+  React.useEffect(() => {
+    const { BackHandler } = require("react-native");
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      handleBack();
+      return true;
+    });
+    return () => sub.remove();
+  }, []);
 
   return (
     <View style={[styles.container, getContainerInsetsStyle(insets.top)]}>
@@ -92,7 +109,7 @@ export const PreviousYearSubmittedScreen: React.FC = () => {
         <WhatHappensNextInfoCard />
       </ScrollView>
 
-      {/* Bottom Sticky Action Button */}
+      {/* Bottom Sticky Action Buttons */}
       <View style={[styles.bottomBar, getBottomBarInsetsStyle(insets.bottom)]}>
         <TouchableOpacity
           activeOpacity={0.85}
@@ -101,6 +118,23 @@ export const PreviousYearSubmittedScreen: React.FC = () => {
         >
           <Text style={styles.trackButtonText}>Track Application Status</Text>
           <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={handleGoHome}
+          style={[
+            styles.trackButton,
+            {
+              backgroundColor: "#FFFFFF",
+              borderWidth: 1.5,
+              borderColor: "#CBD5E1",
+              marginTop: 8,
+            },
+          ]}
+        >
+          <Ionicons name="home-outline" size={18} color="#0B1F3A" style={{ marginRight: 6 }} />
+          <Text style={[styles.trackButtonText, { color: "#0B1F3A" }]}>Go Home</Text>
         </TouchableOpacity>
       </View>
     </View>

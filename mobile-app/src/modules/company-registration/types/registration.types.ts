@@ -9,7 +9,6 @@ export interface CompanyDoc {
   required: boolean;
   status: DocumentStatus;
   fileUri?: string;
-  fileName?: string;
 }
 
 export interface LinkedRegistrations {
@@ -65,3 +64,5 @@ export interface CompanyRegistrationDraft {
   status: 'Draft' | 'KYC Pending' | 'Under Review' | 'Name Reservation' | 'DSC / DIN Process' | 'Ready for Filing' | 'Submitted' | 'Government Query' | 'Approved' | 'Documents Issued' | 'Completed';
   createdAt: string;
 }
+
+

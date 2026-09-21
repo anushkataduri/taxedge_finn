@@ -15,6 +15,7 @@ import { ScreenLayout } from "../components/ScreenLayout";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useServiceAccessGuard } from "../shared/hooks/useServiceAccessGuard";
+import { CompleteProfileModal } from "../shared/components/CompleteProfileModal";
 import { styles } from "../styles/app/services.styles";
 
 export default function ServicesScreen() {
@@ -244,6 +245,7 @@ export default function ServicesScreen() {
           </TouchableOpacity>
         )}
       />
+      <CompleteProfileModal />
     </ScreenLayout>
   );
 }

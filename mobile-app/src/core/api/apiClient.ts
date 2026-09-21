@@ -3,7 +3,21 @@ import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ApiError } from "./apiError";
 import { InterceptorManager } from "./interceptors";
-import { tokenManager } from "../authentication/tokenManager";
+import { tokenRefreshManager } from "../authentication/tokenRefreshManager";
+
+/**
+ * Paths that should NEVER trigger a silent refresh on 401.
+ * These are the auth endpoints themselves — retrying them would cause infinite loops.
+ */
+const NO_REFRESH_PATHS = [
+  "/auth/refresh",
+  "/auth/revoke",
+  "/auth/validate",
+  "/otp/generate",
+  "/otp/verify",
+  "/customer/login",
+  "/customer/register",
+];
 
 export interface RequestOptions {
   headers?: Record<string, string>;
@@ -15,7 +29,7 @@ export interface RequestOptions {
  * Server Network Configuration
  * Change IP and Port here to point the mobile app to your backend.
  */
-export const SERVER_IP = "192.168.88.69";
+export const SERVER_IP = "192.168.88.12";
 
 export const SERVER_PORT = 8086;
 
@@ -30,13 +44,7 @@ export function getDefaultBaseUrl(): string {
     return process.env.EXPO_PUBLIC_API_URL.trim();
   }
 
-  // 2. Default target: Explicitly configured SERVER_IP and SERVER_PORT
-  const ip = SERVER_IP as string;
-  if (ip && ip !== "localhost" && ip !== "127.0.0.1") {
-    return `http://${ip}:${SERVER_PORT}`;
-  }
-
-  // 3. Web fallback
+  // 2. Web fallback
   if (Platform.OS === "web") {
     if (typeof window !== "undefined" && window.location?.hostname) {
       const host = window.location.hostname;
@@ -47,7 +55,22 @@ export function getDefaultBaseUrl(): string {
     return `http://${SERVER_IP}:${SERVER_PORT}`;
   }
 
-  // 4. Default fallback
+  // 3. Expo Go host IP detection if running inside Expo Go
+  try {
+    const hostUri =
+      Constants.expoConfig?.hostUri ||
+      (Constants as any).manifest?.debuggerHost ||
+      (Constants as any).manifest2?.extra?.expoGo?.debuggerHost;
+
+    if (hostUri) {
+      const ip = hostUri.split(":")[0];
+      if (ip && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+        return `http://${ip}:${SERVER_PORT}`;
+      }
+    }
+  } catch {}
+
+  // 4. Default fallback: configured SERVER_IP and SERVER_PORT (guarantees non-empty URL in standalone APK)
   return `http://${SERVER_IP}:${SERVER_PORT}`;
 }
 
@@ -55,8 +78,6 @@ export class ApiClient {
   private baseUrl: string;
   private baseUrlLoaded = false;
   public interceptors: InterceptorManager;
-  /** Prevents concurrent 401s from triggering multiple /auth/refresh calls */
-  private refreshPromise: Promise<string | null> | null = null;
 
   constructor(baseUrl: string = getDefaultBaseUrl()) {
     this.baseUrl = baseUrl || `http://${SERVER_IP}:${SERVER_PORT}`;
@@ -193,68 +214,25 @@ export class ApiClient {
   }
 
   /**
-   * Silently refreshes the access token using the stored refresh token.
-   * Shared promise prevents concurrent 401s from firing multiple refresh calls.
-   * Returns the new access token, or null if refresh failed (user must re-login).
+   * Core HTTP request executor with silent 401 token refresh.
+   *
+   * Flow on HTTP 401:
+   *  1. Check if the path is an auth endpoint (skip refresh to avoid loops).
+   *  2. Check if this is already a retry (skip to avoid infinite recursion).
+   *  3. Call tokenRefreshManager.attemptRefresh() — which uses a mutex so
+   *     concurrent 401s only trigger ONE /auth/refresh call.
+   *  4. If refresh succeeds → replay this exact request ONCE with the new token.
+   *  5. If refresh fails → throw the original 401 ApiError to the caller.
+   *
+   * @param _isRetry internal flag — true when this is the automatic retry after
+   *                 a successful token refresh. Prevents infinite recursion.
    */
-  private async tryRefreshToken(): Promise<string | null> {
-    if (this.refreshPromise) {
-      return this.refreshPromise;
-    }
-
-    this.refreshPromise = (async (): Promise<string | null> => {
-      try {
-        const refreshToken = await tokenManager.getRefreshToken();
-        if (!refreshToken) {
-          return null;
-        }
-
-        const refreshUrl = this.buildUrl("/auth/refresh");
-        const response = await fetch(refreshUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refreshToken }),
-        });
-
-        if (!response.ok) {
-          // Refresh token is also expired — clear everything so login screen shows
-          await tokenManager.clearTokens();
-          return null;
-        }
-
-        const data = await response.json();
-        const newAccessToken: string = data.accessToken;
-        const newRefreshToken: string | undefined = data.refreshToken;
-
-        if (!newAccessToken) {
-          await tokenManager.clearTokens();
-          return null;
-        }
-
-        await tokenManager.setAccessToken(newAccessToken);
-        if (newRefreshToken) {
-          await tokenManager.setRefreshToken(newRefreshToken);
-        }
-
-        console.log("🔄 [ApiClient] Access token refreshed successfully.");
-        return newAccessToken;
-      } catch {
-        await tokenManager.clearTokens();
-        return null;
-      } finally {
-        this.refreshPromise = null;
-      }
-    })();
-
-    return this.refreshPromise;
-  }
-
   private async request<T>(
     method: string,
     path: string,
     body?: unknown,
     options?: RequestOptions,
-    isRetry = false,
+    _isRetry = false,
   ): Promise<T> {
     try {
       await this.ensureBaseUrlLoaded();
@@ -268,13 +246,6 @@ export class ApiClient {
       if (body instanceof FormData) {
         delete initialHeaders["Content-Type"];
       }
-
-      try {
-        const token = await tokenManager.getAccessToken();
-        if (token && !initialHeaders["Authorization"]) {
-          initialHeaders["Authorization"] = `Bearer ${token}`;
-        }
-      } catch {}
 
       const interceptedConfig = await this.interceptors.runRequestInterceptors({
         url: initialUrl,
@@ -315,23 +286,6 @@ export class ApiClient {
         );
       }
 
-      // ── Auto token-refresh on 401 ──────────────────────────────────────────
-      // Only attempt once (isRetry guard) and never on the refresh endpoint itself
-      if (response.status === 401 && !isRetry && !path.includes("/auth/refresh")) {
-        const newToken = await this.tryRefreshToken();
-        if (newToken) {
-          // Retry the original request with the fresh access token
-          return this.request<T>(method, path, body, options, true);
-        }
-        // Refresh also failed — session is dead
-        throw new ApiError(
-          "Session expired. Please log in again.",
-          401,
-          "SESSION_EXPIRED",
-        );
-      }
-      // ──────────────────────────────────────────────────────────────────────
-
       if (!response.ok) {
         let errorData: any = {};
         try {
@@ -349,12 +303,40 @@ export class ApiClient {
           errorData.error ||
           response.statusText ||
           "Request failed";
-        throw new ApiError(
+        const apiError = new ApiError(
           message,
           response.status,
           errorData.code || "API_ERROR",
           errorData.errors,
         );
+
+        // ── Silent 401 refresh logic ────────────────────────────────────────
+        if (
+          response.status === 401 &&
+          !_isRetry &&
+          !this.isAuthEndpoint(path)
+        ) {
+          console.log(
+            `🔄 [API] 401 received for ${path} — attempting silent token refresh...`
+          );
+
+          const refreshed = await tokenRefreshManager.attemptRefresh();
+
+          if (refreshed) {
+            console.log(
+              `🔄 [API] Token refreshed — retrying original request: ${method} ${path}`
+            );
+            // Retry ONCE with the new token. The request interceptor in
+            // AppBootstrap will pick up the fresh token from tokenManager.
+            return this.request<T>(method, path, body, options, true);
+          }
+
+          console.warn(
+            `🔄 [API] Token refresh failed — propagating 401 for ${path}`
+          );
+        }
+
+        throw apiError;
       }
 
       const rawText = await response.text();
@@ -384,6 +366,15 @@ export class ApiClient {
         new ApiError(errMessage, 500, "NETWORK_ERROR"),
       );
     }
+  }
+
+  /**
+   * Returns true if the given path is an auth/public endpoint that should
+   * NEVER trigger a silent refresh (to prevent infinite loops).
+   */
+  private isAuthEndpoint(path: string): boolean {
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+    return NO_REFRESH_PATHS.some((p) => cleanPath.startsWith(p));
   }
 }
 

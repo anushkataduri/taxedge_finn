@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, Alert, Animated, Platform } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, Alert, Animated, Platform, BackHandler } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -13,6 +13,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useApplicationStore } from "@/store/applicationStore";
 import { useGstStore } from "@/modules/gst/store/gstStore";
 import { notificationService } from "@/modules/notifications/services/notificationService";
+import { getInitialGstDocuments } from "@/modules/gst/types/gstDocumentConfig";
 import { st } from "./GstCertificateScreen.styles";
 
 const CERTIFICATE_REQUEST_TYPES = ["Download Existing Certificate (Form REG-06)", "Request Reprint / Duplicate Copy", "Certificate Verification & Status Check"];
@@ -55,6 +56,10 @@ export function GstCertificateScreen() {
   const router = useRouter(), insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ gstin?: string; legalName?: string; tradeName?: string; constitution?: string; address?: string; signatoryName?: string; director?: string; state?: string }>();
   const customer = useAuthStore((s) => s.customer), applications = useApplicationStore((s) => s.applications);
+  const saveGstCertificateDraft = useApplicationStore((s) => s.saveGstCertificateDraft);
+  const clearGstCertificateDraft = useApplicationStore((s) => s.clearGstCertificateDraft);
+  const gstCertificateDraft = useApplicationStore((s) => s.gstCertificateDraft);
+  const createApplication = useApplicationStore((s) => s.createApplication);
   const gstDraft = useApplicationStore((s) => s.gstDraft), registrationDraft = useGstStore((s) => s.registrationDraft);
   const registeredMobile = customer?.mobile ? `+91 ${customer.mobile}` : "+91 9347074726", registeredEmail = customer?.email || "user@taxedge.in";
   const [gstin, setGstin] = useState(params.gstin || "");
@@ -66,12 +71,42 @@ export function GstCertificateScreen() {
   const floatAnim = useRef(new Animated.Value(0)).current, btnScale = useRef(new Animated.Value(1)).current, fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (gstCertificateDraft?.formData) {
+      if (gstCertificateDraft.formData.gstin && !gstin) {
+        setGstin(gstCertificateDraft.formData.gstin);
+      }
+      if (gstCertificateDraft.formData.requestType) {
+        setRequestType(gstCertificateDraft.formData.requestType);
+      }
+    }
+  }, [gstCertificateDraft]);
+
+  useEffect(() => {
+    if (!isCompleted) return;
+    const backAction = () => {
+      router.replace("/(main)/applications");
+      return true;
+    };
+    const backHandler = BackHandler.addEventListener("hardwareBackPress", backAction);
+    return () => backHandler.remove();
+  }, [isCompleted]);
+
+  useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 450, useNativeDriver: true }).start();
     Animated.loop(Animated.sequence([Animated.timing(floatAnim, { toValue: -6, duration: 1800, useNativeDriver: true }), Animated.timing(floatAnim, { toValue: 0, duration: 1800, useNativeDriver: true })])).start();
   }, [isCompleted]);
 
   const { showDraftModal, markSubmitted, handleSaveAndExit, handleDiscardAndExit, handleCancel } = useUniversalDraftGuard({
-    isDirty: () => Boolean(gstin), onSaveDraft: () => {}, onDiscardDraft: () => {}, isSubmitted: () => isCompleted,
+    isDirty: () => Boolean(gstin),
+    onSaveDraft: () => {
+      saveGstCertificateDraft({
+        formData: { gstin, requestType },
+        step: 0,
+        updatedAt: new Date().toISOString().split("T")[0],
+      });
+    },
+    onDiscardDraft: () => { clearGstCertificateDraft(); },
+    isSubmitted: () => isCompleted,
   });
 
   const handleGstinChange = (text: string) => { setGstin(text.replace(/[^a-zA-Z0-9]/g, "").toUpperCase()); setGstinError(""); };
@@ -139,6 +174,26 @@ export function GstCertificateScreen() {
       setGeneratedFileName(fileName);
       markSubmitted();
       setIsCompleted(true);
+      try {
+        createApplication(
+          "gst-certificate",
+          "GST Certificate (REG-06)",
+          "GST",
+          {
+            gstin: regData.gstin,
+            legalName: regData.legalName,
+            tradeName: regData.tradeName,
+            constitution: regData.constitution,
+            address: regData.address,
+            requestType,
+            issueDate: regData.issueDate,
+          },
+          getInitialGstDocuments("gst-certificate"),
+          0,
+          "Paid"
+        );
+      } catch {}
+      clearGstCertificateDraft();
       try { notificationService.notifyCertificateReady("GST", gstin); } catch {}
       await downloadAndSharePdf(uri, fileName);
     } catch {
@@ -163,7 +218,7 @@ export function GstCertificateScreen() {
       <View style={st.root}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <View style={[st.topBar, { paddingTop: Math.max(insets.top, 12) + 4 }]}>
-          <TouchableOpacity activeOpacity={0.7} onPress={() => router.back()} style={st.backBtn}><Ionicons name="chevron-back" size={22} color="#0F172A" /></TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.7} onPress={() => router.replace("/(main)/applications")} style={st.backBtn}><Ionicons name="chevron-back" size={22} color="#0F172A" /></TouchableOpacity>
         </View>
         <ScrollView style={st.flex1} contentContainerStyle={st.readyScroll} showsVerticalScrollIndicator={false}>
           <Animated.View style={[st.readyHeroWrap, { transform: [{ translateY: floatAnim }] }]}>
@@ -197,8 +252,11 @@ export function GstCertificateScreen() {
             <TouchableOpacity style={st.blueOutlineBtn} activeOpacity={0.8} onPress={() => { if (certificatePdfUri) downloadAndSharePdf(certificatePdfUri, generatedFileName); }}>
               <Ionicons name="share-social-outline" size={18} color="#1E5EFF" style={{ marginRight: 8 }} /><Text style={st.blueOutlineBtnText}>Share Certificate</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={st.textOnlyBtn} activeOpacity={0.8} onPress={() => router.back()}>
-              <Ionicons name="arrow-back-outline" size={16} color="#64748B" style={{ marginRight: 6 }} /><Text style={st.textOnlyBtnText}>Back to GST Services</Text>
+            <TouchableOpacity style={st.blueOutlineBtn} activeOpacity={0.8} onPress={() => router.replace("/(main)/applications")}>
+              <Ionicons name="briefcase-outline" size={18} color="#1E5EFF" style={{ marginRight: 8 }} /><Text style={st.blueOutlineBtnText}>Track in My Applications</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={st.textOnlyBtn} activeOpacity={0.8} onPress={() => router.replace("/(main)/home")}>
+              <Ionicons name="home-outline" size={16} color="#64748B" style={{ marginRight: 6 }} /><Text style={st.textOnlyBtnText}>Go to Home</Text>
             </TouchableOpacity>
           </Animated.View>
           <View style={st.footerWrap}>

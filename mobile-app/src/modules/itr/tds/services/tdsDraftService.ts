@@ -1,10 +1,25 @@
-import { localStorage } from "../../../../core/storage/localStorage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { TdsCustomerIncomeFormData } from "../types/customerIncome.types";
 import { TdsChecklistItem } from "../types/checklist.types";
+import { useAuthStore } from "@/modules/authentication/store/authStore";
+import { authStorage } from "@/modules/authentication/services/authStorage";
+import { addDraftToIndex, removeDraftFromIndex } from "@/shared/hooks/useServiceDraft";
 
-const STORAGE_KEY_FORM = "taxedge_tds_refund_form_draft";
-const STORAGE_KEY_DOCS = "taxedge_tds_refund_docs_draft";
-const STORAGE_KEY_APP_ID = "taxedge_tds_refund_app_id";
+function getCleanMobile(): string {
+  const state = useAuthStore.getState();
+  const rawMobile =
+    state.customer?.mobile ||
+    state.authenticatedUser?.mobileNumber ||
+    (state.authenticatedUser as any)?.mobile ||
+    authStorage.getSession().activeMobile ||
+    state.mobileNumber ||
+    "user";
+  return String(rawMobile).replace(/\D/g, "") || "user";
+}
+
+const getStorageKeyForm = () => `@taxedge_draft_${getCleanMobile()}_tds-refund`;
+const getStorageKeyDocs = () => `@taxedge_draft_${getCleanMobile()}_tds_docs`;
+const getStorageKeyAppId = () => `@taxedge_draft_${getCleanMobile()}_tds_app_id`;
 
 export const INITIAL_TDS_FORM_DATA: TdsCustomerIncomeFormData = {
   personal: {
@@ -62,9 +77,19 @@ export const INITIAL_TDS_FORM_DATA: TdsCustomerIncomeFormData = {
 };
 
 export const tdsDraftService = {
-  saveFormDraft: async (formData: TdsCustomerIncomeFormData): Promise<void> => {
+  saveFormDraft: async (formData: TdsCustomerIncomeFormData, step: string = "FORM"): Promise<void> => {
     try {
-      await localStorage.setItem(STORAGE_KEY_FORM, JSON.stringify(formData));
+      const cleanMobile = getCleanMobile();
+      const payload = {
+        serviceKey: "tds-refund",
+        serviceName: "TDS Refund",
+        category: "ITR",
+        step,
+        formData,
+        updatedAt: new Date().toISOString().split("T")[0],
+      };
+      await AsyncStorage.setItem(getStorageKeyForm(), JSON.stringify(payload));
+      await addDraftToIndex(cleanMobile, "tds-refund");
     } catch (err) {
       console.error("Failed to save TDS form draft:", err);
     }
@@ -72,13 +97,14 @@ export const tdsDraftService = {
 
   getFormDraft: async (): Promise<TdsCustomerIncomeFormData> => {
     try {
-      const raw = await localStorage.getItem(STORAGE_KEY_FORM);
+      const raw = await AsyncStorage.getItem(getStorageKeyForm());
       if (raw) {
         const parsed = JSON.parse(raw);
+        const data = parsed.formData || parsed;
         return {
-          personal: { ...INITIAL_TDS_FORM_DATA.personal, ...(parsed.personal || {}) },
-          bank: { ...INITIAL_TDS_FORM_DATA.bank, ...(parsed.bank || {}) },
-          income: { ...INITIAL_TDS_FORM_DATA.income, ...(parsed.income || {}) },
+          personal: { ...INITIAL_TDS_FORM_DATA.personal, ...(data.personal || {}) },
+          bank: { ...INITIAL_TDS_FORM_DATA.bank, ...(data.bank || {}) },
+          income: { ...INITIAL_TDS_FORM_DATA.income, ...(data.income || {}) },
         };
       }
     } catch (err) {
@@ -87,9 +113,39 @@ export const tdsDraftService = {
     return INITIAL_TDS_FORM_DATA;
   },
 
+  getDraftMetadata: async (): Promise<{ step?: string; updatedAt?: string } | null> => {
+    try {
+      const raw = await AsyncStorage.getItem(getStorageKeyForm());
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          step: parsed.step,
+          updatedAt: parsed.updatedAt,
+        };
+      }
+    } catch {}
+    return null;
+  },
+
   saveDocumentsDraft: async (documents: TdsChecklistItem[]): Promise<void> => {
     try {
-      await localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(documents));
+      const cleanMobile = getCleanMobile();
+      await AsyncStorage.setItem(getStorageKeyDocs(), JSON.stringify(documents));
+      const raw = await AsyncStorage.getItem(getStorageKeyForm());
+      const existing = raw ? JSON.parse(raw) : {};
+      await AsyncStorage.setItem(
+        getStorageKeyForm(),
+        JSON.stringify({
+          serviceKey: "tds-refund",
+          serviceName: "TDS Refund",
+          category: "ITR",
+          step: existing.step || "DOCUMENTS",
+          formData: existing.formData || {},
+          documents,
+          updatedAt: new Date().toISOString().split("T")[0],
+        }),
+      );
+      await addDraftToIndex(cleanMobile, "tds-refund");
     } catch (err) {
       console.error("Failed to save TDS documents draft:", err);
     }
@@ -97,7 +153,7 @@ export const tdsDraftService = {
 
   getDocumentsDraft: async (): Promise<TdsChecklistItem[] | null> => {
     try {
-      const raw = await localStorage.getItem(STORAGE_KEY_DOCS);
+      const raw = await AsyncStorage.getItem(getStorageKeyDocs());
       if (raw) {
         return JSON.parse(raw);
       }
@@ -109,7 +165,7 @@ export const tdsDraftService = {
 
   saveApplicationId: async (appId: string): Promise<void> => {
     try {
-      await localStorage.setItem(STORAGE_KEY_APP_ID, appId);
+      await AsyncStorage.setItem(getStorageKeyAppId(), appId);
     } catch (err) {
       console.error("Failed to save application ID:", err);
     }
@@ -117,7 +173,7 @@ export const tdsDraftService = {
 
   getApplicationId: async (): Promise<string | null> => {
     try {
-      return await localStorage.getItem(STORAGE_KEY_APP_ID);
+      return await AsyncStorage.getItem(getStorageKeyAppId());
     } catch {
       return null;
     }
@@ -125,8 +181,11 @@ export const tdsDraftService = {
 
   clearDraft: async (): Promise<void> => {
     try {
-      await localStorage.removeItem(STORAGE_KEY_FORM);
-      await localStorage.removeItem(STORAGE_KEY_DOCS);
+      const cleanMobile = getCleanMobile();
+      await AsyncStorage.removeItem(getStorageKeyForm());
+      await AsyncStorage.removeItem(getStorageKeyDocs());
+      await AsyncStorage.removeItem(getStorageKeyAppId());
+      await removeDraftFromIndex(cleanMobile, "tds-refund");
     } catch {}
   },
 };

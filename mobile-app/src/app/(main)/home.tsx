@@ -21,7 +21,7 @@ import { useAuthStore } from "../../store/authStore";
 import { useApplicationStore } from "../../store/applicationStore";
 import { useNotificationStore } from "../../store/notificationStore";
 import { useServiceAccessGuard } from "../../shared/hooks/useServiceAccessGuard";
-import { SavingsJarAnimation } from "../../components/SavingsJarAnimation";
+import { CompleteProfileModal } from "../../shared/components/CompleteProfileModal";
 import { SERVICE_CATALOGUE } from "../../data/catalogue";
 import { SCREEN_BOTTOM_PADDING } from "../../components/ScreenLayout";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -294,7 +294,7 @@ export default function HomeScreen() {
     if (item.serviceId) {
       accessService(`/service/${item.serviceId}`);
     } else {
-      accessService("/services", { selectedCategory: categoryId });
+      router.push({ pathname: "/services", params: { selectedCategory: categoryId } });
     }
   };
 
@@ -306,7 +306,17 @@ export default function HomeScreen() {
     }
     setMoreOpen(false);
     if (tile.route) {
-      accessService(tile.route);
+      if (
+        tile.route === "/service/gst" ||
+        tile.route === "/service/itr" ||
+        tile.route === "/service/loans" ||
+        tile.route === "/service/health-insurance" ||
+        tile.route === "/services"
+      ) {
+        router.push(tile.route as any);
+      } else {
+        accessService(tile.route);
+      }
     }
   };
 
@@ -394,7 +404,6 @@ export default function HomeScreen() {
             <Text style={styles.welcomeText}>{greetingTitle}</Text>
             <Text style={styles.welcomeSubText}>What can we help you with today?</Text>
           </View>
-          <SavingsJarAnimation accent={colors.orange} scale={0.8} />
         </View>
       </View>
 
@@ -883,6 +892,7 @@ export default function HomeScreen() {
         </Pressable>
       </Modal>
 
+      <CompleteProfileModal />
     </View>
   );
 }

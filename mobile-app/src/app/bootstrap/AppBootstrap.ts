@@ -2,6 +2,7 @@ import { moduleRegistry } from "./ModuleRegistry";
 import { container } from "./DependencyContainer";
 import { apiClient } from "../../core/api/apiClient";
 import { tokenManager } from "../../core/authentication/tokenManager";
+import { tokenRefreshManager } from "../../core/authentication/tokenRefreshManager";
 import { sessionManager } from "../../core/authentication/sessionManager";
 import { logger } from "../../core/logging/logger";
 
@@ -19,13 +20,23 @@ export class AppBootstrap {
     container.register("sessionManager", sessionManager);
     container.register("logger", logger);
 
-    // Setup API interceptors with auth token
+    // ── Request interceptor: attach Bearer token ──────────────────────────
     apiClient.interceptors.useRequest(async (config) => {
       const token = await tokenManager.getAccessToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
       return config;
+    });
+
+    // ── Session-expired handler ───────────────────────────────────────────
+    // Fired by tokenRefreshManager when the refresh token itself is expired
+    // or revoked. The session is irrecoverably dead — clear auth state.
+    tokenRefreshManager.onSessionExpired(() => {
+      logger.warn(
+        "Session expired — refresh token is no longer valid. Clearing auth state."
+      );
+      sessionManager.logout().catch(() => {});
     });
 
     // Initialize all domain modules

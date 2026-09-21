@@ -6,23 +6,18 @@ import { ThemeProvider } from "../design-system/theme";
 import { AnimatedSplashOverlay } from "../components/animated-icon";
 import { CompleteProfileModal } from "../shared/components/CompleteProfileModal";
 import { ErrorBoundary } from "../core/error-handling/ErrorBoundary";
-import { useFonts } from "expo-font";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { AppBootstrap } from "./bootstrap/AppBootstrap";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({
-    ...Ionicons.font,
-  });
-
   useEffect(() => {
     AppBootstrap.init().catch(() => {});
-    if (fontsLoaded || fontError) {
+    const timer = setTimeout(() => {
       SplashScreen.hideAsync().catch(() => {});
-    }
-  }, [fontsLoaded, fontError]);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <ErrorBoundary>
@@ -35,8 +30,6 @@ export default function RootLayout() {
           <Stack.Screen name="(main)" />
           <Stack.Screen name="settings" />
           <Stack.Screen name="service/gst" />
-          <Stack.Screen name="service/company-registration" />
-          <Stack.Screen name="service/company-registration-wizard" />
           <Stack.Screen name="service/gst-registration" />
           <Stack.Screen name="service/gst-filing" />
           <Stack.Screen name="service/gst-compliance" />
