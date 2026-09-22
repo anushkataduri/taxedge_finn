@@ -6,6 +6,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { DocumentUploadBottomSheet } from '@/modules/itr/tds/components/upload/DocumentUploadBottomSheet/DocumentUploadBottomSheet';
 import { TdsDocumentCard } from '@/modules/itr/tds/components/upload/TdsDocumentCard/TdsDocumentCard';
 import { TdsChecklistItem } from '@/modules/itr/tds/types/checklist.types';
+import { DocumentPreviewModal } from '@/modules/itr/itr-filing/components/DocumentPreviewModal/DocumentPreviewModal';
+import { ItrDocumentItem } from '@/modules/itr/itr-filing/types/itrFiling.types';
 import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlice';
 import { styles } from './StepDocumentsKYC.styles';
 
@@ -95,6 +97,7 @@ export const StepDocumentsKYC: React.FC = () => {
   const updateDocumentStatus = useCompanyRegistrationStore((state) => state.updateDocumentStatus);
 
   const [activeItem, setActiveItem] = useState<KycChecklistItem | null>(null);
+  const [previewItem, setPreviewItem] = useState<ItrDocumentItem | null>(null);
 
   const handleDocumentSelected = (fileName: string, fileUri?: string) => {
     if (!activeItem) return;
@@ -162,6 +165,7 @@ export const StepDocumentsKYC: React.FC = () => {
     updateDocumentStatus(docId, 'Pending', undefined, undefined);
   };
 
+
   const sections: ('PROMOTER / DIRECTOR KYC' | 'REGISTERED OFFICE' | 'STATUTORY DOCUMENTS')[] = [
     'PROMOTER / DIRECTOR KYC',
     'REGISTERED OFFICE',
@@ -208,8 +212,18 @@ export const StepDocumentsKYC: React.FC = () => {
                     onChange={() => setActiveItem(item)}
                     onDelete={() => handleRemoveDocument(item.id)}
                     onView={() => {
-                      if (stored?.fileUri) {
-                        Alert.alert('View Document', `Previewing: ${displayFileName}\n\nCannot open URI directly on this device.`);
+                      if (displayFileName || stored?.fileUri) {
+                        setPreviewItem({
+                          id: item.id,
+                          name: item.title.replace('*', '').trim(),
+                          subtitle: item.subtitle,
+                          tier: item.required ? 'REQUIRED' : 'NOT_REQUIRED',
+                          required: item.required,
+                          docGroup: 'common',
+                          fileUri: stored?.fileUri || `file://${displayFileName}`,
+                          fileName: displayFileName,
+                          fileSize: '2.4 MB',
+                        });
                       }
                     }}
                   />
@@ -229,6 +243,17 @@ export const StepDocumentsKYC: React.FC = () => {
         onPickFiles={handlePickFiles}
         onPickGallery={handlePickGallery}
         onTakePhoto={handleTakePhoto}
+      />
+
+      <DocumentPreviewModal
+        visible={!!previewItem}
+        document={previewItem}
+        onClose={() => setPreviewItem(null)}
+        onChangeFile={(doc) => {
+          setPreviewItem(null);
+          const originalItem = CHECKLIST_ITEMS.find(i => i.id === doc.id);
+          if (originalItem) setActiveItem(originalItem);
+        }}
       />
     </View>
   );

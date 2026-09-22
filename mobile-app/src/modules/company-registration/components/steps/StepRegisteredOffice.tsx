@@ -6,6 +6,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { DocumentUploadBottomSheet } from '@/modules/itr/tds/components/upload/DocumentUploadBottomSheet/DocumentUploadBottomSheet';
 import { TdsDocumentCard } from '@/modules/itr/tds/components/upload/TdsDocumentCard/TdsDocumentCard';
 import { TdsChecklistItem } from '@/modules/itr/tds/types/checklist.types';
+import { DocumentPreviewModal } from '@/modules/itr/itr-filing/components/DocumentPreviewModal/DocumentPreviewModal';
+import { ItrDocumentItem } from '@/modules/itr/itr-filing/types/itrFiling.types';
 import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlice';
 import { styles } from './StepRegisteredOffice.styles';
 
@@ -16,6 +18,7 @@ export const StepRegisteredOffice: React.FC = () => {
   const updateDetails = useCompanyRegistrationStore((state) => state.updateCompanyDetails);
 
   const [activeDocType, setActiveDocType] = useState<DocType | null>(null);
+  const [previewItem, setPreviewItem] = useState<ItrDocumentItem | null>(null);
 
   const isNocRequired = company.premisesOwnership === 'Rented' || company.premisesOwnership === 'Leased';
 
@@ -126,6 +129,21 @@ export const StepRegisteredOffice: React.FC = () => {
           onUploadPress={() => setActiveDocType(type)}
           onChange={() => setActiveDocType(type)}
           onDelete={() => handleRemoveDoc(type)}
+          onView={() => {
+            if (fileName) {
+              setPreviewItem({
+                id: type,
+                name: label.replace('*', '').trim(),
+                subtitle: helperText || (isRequired ? 'Mandatory document' : 'Optional document'),
+                tier: isRequired ? 'REQUIRED' : 'NOT_REQUIRED',
+                required: isRequired,
+                docGroup: 'common',
+                fileUri: `file://${fileName}`,
+                fileName: fileName,
+                fileSize: '2.4 MB',
+              });
+            }
+          }}
         />
       </View>
     );
@@ -298,6 +316,16 @@ export const StepRegisteredOffice: React.FC = () => {
         onPickFiles={handlePickFiles}
         onPickGallery={handlePickGallery}
         onTakePhoto={handleTakePhoto}
+      />
+
+      <DocumentPreviewModal
+        visible={!!previewItem}
+        document={previewItem}
+        onClose={() => setPreviewItem(null)}
+        onChangeFile={(doc) => {
+          setPreviewItem(null);
+          setActiveDocType(doc.id as DocType);
+        }}
       />
     </View>
   );
