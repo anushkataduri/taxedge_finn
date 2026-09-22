@@ -15,7 +15,7 @@ interface CompanyRegistrationState {
   removePartner: (id: string) => void;
   setOpcNominee: (nominee: OpcNomineeInfo) => void;
   toggleLinkedRegistration: (key: keyof LinkedRegistrations) => void;
-  updateDocumentStatus: (documentId: string, status: DocumentStatus, fileUri?: string, fileName?: string) => void;
+  updateDocumentStatus: (documentId: string, status: DocumentStatus, fileUri?: string) => void;
   setStep: (step: number) => void;
   processPayment: (paymentMethod: string) => void;
   resetRegistration: () => void;
@@ -38,15 +38,12 @@ const initialDraft: CompanyRegistrationDraft = {
     nameAvailabilityStatus: 'Available',
     registeredAddressLine: 'Plot 42, Tech Park Phase 2, HITEC City',
     registeredCity: 'Hyderabad',
-    registeredDistrict: 'Rangareddy',
     registeredState: 'Telangana',
     registeredPincode: '500081',
     premisesOwnership: 'Rented',
     companyEmail: 'contact@taxedgetech.com',
     companyMobile: '9876543210',
-    officeAddressProofName: 'Electricity_Bill.pdf',
-    ownershipDocName: 'Rent_Agreement_Office.pdf',
-    ownerNocName: 'Owner_NOC.pdf',
+    officeAddressProofName: 'Rent_Agreement_Office.pdf',
     authorizedCapital: 100000,
     paidUpCapital: 100000,
     numberOfShares: 10000,
@@ -60,31 +57,14 @@ const initialDraft: CompanyRegistrationDraft = {
       aadhaar: '123456789012',
       dob: '1988-05-14',
       fatherName: 'Suresh Kumar',
-      gender: 'Male',
-      nationality: 'Indian',
-      placeOfBirth: 'Hyderabad',
-      occupation: 'Professional',
-      educationalQualification: 'Post Graduate',
-      designation: 'Director',
-      category: 'Promoter Director',
       email: 'rajesh@taxedge.com',
       phone: '9876543210',
+      occupation: 'Professional',
       hasDin: true,
       din: '08492014',
       hasDsc: true,
       sharesPercentage: 60,
       residentialAddress: 'Flat 302, Green Acres, Hyderabad',
-      addressLine1: 'Flat 302, Green Acres, Road No 12',
-      city: 'Hyderabad',
-      district: 'Rangareddy',
-      state: 'Telangana',
-      pinCode: '500034',
-      isResidentInIndia: true,
-      sameAsPermanentAddress: true,
-      numberOfShares: 6000,
-      amountSubscribed: 60000,
-      identityProofDocName: 'Aadhaar_Card_Rajesh.pdf',
-      residentialAddressProofDocName: 'Passport_Rajesh.pdf',
     },
     {
       id: 'dir-2',
@@ -93,30 +73,13 @@ const initialDraft: CompanyRegistrationDraft = {
       aadhaar: '987654321098',
       dob: '1990-11-20',
       fatherName: 'Ramesh Sharma',
-      gender: 'Female',
-      nationality: 'Indian',
-      placeOfBirth: 'Hyderabad',
-      occupation: 'Business',
-      educationalQualification: 'Graduate',
-      designation: 'Director',
-      category: 'Promoter Director',
       email: 'anita@taxedge.com',
       phone: '9812345678',
+      occupation: 'Business',
       hasDin: false,
       hasDsc: true,
       sharesPercentage: 40,
       residentialAddress: 'H.No 12-4, Jubliee Hills, Hyderabad',
-      addressLine1: 'H.No 12-4, Jubilee Hills, Road No 36',
-      city: 'Hyderabad',
-      district: 'Hyderabad',
-      state: 'Telangana',
-      pinCode: '500033',
-      isResidentInIndia: true,
-      sameAsPermanentAddress: true,
-      numberOfShares: 4000,
-      amountSubscribed: 40000,
-      identityProofDocName: 'Aadhaar_Card_Anita.pdf',
-      residentialAddressProofDocName: '',
     },
   ],
   opcNominee: {
@@ -129,14 +92,13 @@ const initialDraft: CompanyRegistrationDraft = {
   },
   partners: [],
   documents: [
-    { id: 'doc-pan', name: 'Promoter PAN Card', category: 'Promoter KYC', required: true, status: 'Pending' },
-    { id: 'doc-aadhaar', name: 'Promoter Aadhaar / Passport', category: 'Promoter KYC', required: true, status: 'Pending' },
-    { id: 'doc-photo', name: 'Promoter Passport Photo', category: 'Promoter KYC', required: false, status: 'Pending' },
-    { id: 'doc-address', name: 'Registered Office Ownership / Lease Proof', category: 'Office Proof', required: true, status: 'Pending' },
-    { id: 'doc-utility', name: 'Registered Office Utility Bill (Electricity/Water)', category: 'Office Proof', required: true, status: 'Pending' },
-    { id: 'doc-noc', name: 'Property Owner No Objection Certificate (NOC)', category: 'Office Proof', required: false, status: 'Pending' },
-    { id: 'doc-moa', name: 'Draft e-MoA (Memorandum of Association)', category: 'Statutory Docs', required: false, status: 'Pending' },
-    { id: 'doc-aoa', name: 'Draft e-AoA (Articles of Association)', category: 'Statutory Docs', required: false, status: 'Pending' },
+    { id: 'doc-pan', name: 'Promoter PAN Card', category: 'Promoter KYC', required: true, status: 'Uploaded' },
+    { id: 'doc-aadhaar', name: 'Promoter Aadhaar / Passport', category: 'Promoter KYC', required: true, status: 'Uploaded' },
+    { id: 'doc-photo', name: 'Promoter Passport Photo', category: 'Promoter KYC', required: true, status: 'Uploaded' },
+    { id: 'doc-address', name: 'Registered Office Ownership / Lease Proof', category: 'Office Proof', required: true, status: 'Uploaded' },
+    { id: 'doc-utility', name: 'Registered Office Utility Bill (Electricity/Water)', category: 'Office Proof', required: true, status: 'Uploaded' },
+    { id: 'doc-moa', name: 'Draft e-MoA (Memorandum of Association)', category: 'Statutory Docs', required: true, status: 'Pending' },
+    { id: 'doc-aoa', name: 'Draft e-AoA (Articles of Association)', category: 'Statutory Docs', required: true, status: 'Pending' },
   ],
   linkedRegistrations: {
     pan: true,
@@ -248,12 +210,12 @@ export const useCompanyRegistrationStore = create<CompanyRegistrationState>((set
         },
       },
     })),
-  updateDocumentStatus: (documentId, status, fileUri, fileName) =>
+  updateDocumentStatus: (documentId, status, fileUri) =>
     set((state) => {
       const exists = state.draft.documents.some((doc) => doc.id === documentId);
       const updatedDocs = exists
-        ? state.draft.documents.map((doc) => (doc.id === documentId ? { ...doc, status, fileUri, fileName } : doc))
-        : [...state.draft.documents, { id: documentId, name: documentId, category: 'Conditional Doc', required: true, status, fileUri, fileName }];
+        ? state.draft.documents.map((doc) => (doc.id === documentId ? { ...doc, status, fileUri } : doc))
+        : [...state.draft.documents, { id: documentId, name: documentId, category: 'Conditional Doc', required: true, status, fileUri }];
       return {
         draft: {
           ...state.draft,

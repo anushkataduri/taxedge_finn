@@ -11,6 +11,7 @@ import type {
   PaymentStatus,
   ServiceCategoryId,
 } from "../types/domain";
+import type { LoanApplicationDraft } from "../modules/loans/types/loans.types";
 
 export interface GstRegistrationDraft {
   id: string;
@@ -149,6 +150,7 @@ export interface ApplicationState {
   itrDraft: ItrRegistrationDraft | null;
   tdsDraft: TdsDraft | null;
   taxNoticeDraft: TaxNoticeDraft | null;
+  loanDraft: Partial<LoanApplicationDraft> | null;
   setSelectedApplicationId: (id: string | null) => void;
   setApplications: (apps: Application[]) => void;
   loadApplications: () => Promise<void>;
@@ -162,6 +164,8 @@ export interface ApplicationState {
   clearTdsDraft: () => void;
   saveTaxNoticeDraft: (draft: Partial<TaxNoticeDraft>) => void;
   clearTaxNoticeDraft: () => void;
+  saveLoanDraft: (draft: Partial<LoanApplicationDraft>) => void;
+  clearLoanDraft: () => void;
   /** Creates an application and returns its generated id. */
   createApplication: (
     serviceId: string,
@@ -192,6 +196,7 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
   itrDraft: null,
   tdsDraft: null,
   taxNoticeDraft: null,
+  loanDraft: null,
   setSelectedApplicationId: (id) => set({ selectedApplicationId: id }),
   setApplications: (apps) => set({ applications: apps, error: null }),
   loadApplications: async () => {
@@ -265,6 +270,13 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
           },
     })),
   clearTaxNoticeDraft: () => set({ taxNoticeDraft: null }),
+  saveLoanDraft: (draft) =>
+    set((state) => ({
+      loanDraft: state.loanDraft
+        ? { ...state.loanDraft, ...draft, updatedAt: new Date().toISOString() }
+        : { ...draft, updatedAt: new Date().toISOString() },
+    })),
+  clearLoanDraft: () => set({ loanDraft: null }),
   createApplication: (
     serviceId,
     serviceName,

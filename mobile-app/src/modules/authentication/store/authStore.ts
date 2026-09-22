@@ -229,36 +229,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return { success: true, isComplete, customer: custObj };
       }
       return { success: false, isComplete: false, customer: null };
-    } catch (err: any) {
-      // ApiError.statusCode holds the HTTP status.
-      // 404  → profile not found yet (new user) — expected, suppress.
-      // 401  → access token expired; apiClient already attempted refresh+retry.
-      //         If it still throws, the session is truly dead — navigation will
-      //         redirect to login, so no yellow warning is needed here either.
-      const statusCode: number =
-        err?.statusCode ??       // ApiError own field
-        err?.status ??           // axios-style
-        err?.response?.status ?? // raw fetch-style
-        0;
-      const msg = String(err?.message ?? err ?? "").toLowerCase();
-      const isSilent =
-        statusCode === 404 ||
-        statusCode === 401 ||
-        err?.code === "SESSION_EXPIRED" ||
-        msg.includes("no static resource") ||
-        msg.includes("customer not found") ||
-        msg.includes("not found") ||
-        msg.includes("expired") ||
-        msg.includes("session expired");
-
-      if (isSilent) {
-        console.log("ℹ️ [authStore] fetchAndSyncProfile: skipping sync —", err?.message ?? statusCode);
-      } else {
-        console.warn("⚠️ [authStore] fetchAndSyncProfile warning:", err);
-      }
+    } catch (err) {
+      console.warn("⚠️ [authStore] fetchAndSyncProfile warning:", err);
       return { success: false, isComplete: false, customer: null };
     }
-
   },
 
   // Business Flow Operations

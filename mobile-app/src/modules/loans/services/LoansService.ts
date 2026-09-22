@@ -1,12 +1,11 @@
-import { ILoansRepository, loansRepository } from "../repository/LoansRepository";
+import { LOAN_SERVICES } from "../mock/loanServices";
 import { LoanServiceItem } from "../types/loans.types";
 
 export class LoansService {
-  constructor(private readonly repository: ILoansRepository = loansRepository) {}
-
   async fetchLoanServices(): Promise<LoanServiceItem[]> {
-    return this.repository.getLoanServices();
+    return LOAN_SERVICES;
   }
 }
 
 export const loansService = new LoansService();
+export default loansService;

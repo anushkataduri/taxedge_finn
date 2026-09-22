@@ -3,7 +3,6 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: '#F8FAFC',
   },
   heading: {
     fontSize: 20,
@@ -12,20 +11,14 @@ export const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subheading: {
-    fontSize: 13,
-    color: '#64748B',
-    marginBottom: 18,
-    lineHeight: 18,
-  },
-  sectionTitle: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginTop: 10,
-    marginBottom: 10,
-    letterSpacing: 0.3,
+    color: '#64748B',
+    marginBottom: 16,
   },
   docCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -33,6 +26,7 @@ export const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
   },
+
   docHeaderRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -57,27 +51,28 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+
   docTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: '#0F172A',
   },
-  docSubtitle: {
-    fontSize: 11,
+  docCategory: {
+    fontSize: 12,
     color: '#64748B',
     marginTop: 6,
     marginLeft: 46,
     lineHeight: 16,
   },
-  uploadActionBtn: {
+  statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#083B75',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 6,
   },
+
   uploadActionBtnText: {
     fontSize: 12,
     fontWeight: '600',
@@ -87,20 +82,24 @@ export const styles = StyleSheet.create({
     marginTop: 12,
     marginLeft: 46,
   },
+
   uploadedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
     backgroundColor: '#DCFCE7',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+  },
+  pendingBadge: {
+    backgroundColor: '#FEF3C7',
+  },
+
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   uploadedText: {
-    fontSize: 11,
-    fontWeight: '700',
     color: '#166534',
   },
+  pendingText: {
+    color: '#92400E',
+
   fileNameText: {
     fontSize: 12,
     fontWeight: '500',
@@ -128,5 +127,6 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#EF4444',
     marginLeft: 4,
+
   },
 });

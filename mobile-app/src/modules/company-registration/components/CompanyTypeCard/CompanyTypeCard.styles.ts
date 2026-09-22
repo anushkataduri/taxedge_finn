@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+﻿import { StyleSheet } from "react-native";
 import { BrandColors } from "../../../../design-system/colors";
 
 export const styles = StyleSheet.create({
@@ -19,15 +19,6 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: 12,
-  },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: BrandColors.PRIMARY_LIGHT_BLUE,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
   },
   titleCol: {
     flex: 1,

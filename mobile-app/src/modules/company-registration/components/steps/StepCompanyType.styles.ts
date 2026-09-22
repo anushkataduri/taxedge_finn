@@ -33,19 +33,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#EAF1FE',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  titleCol: {
-    flex: 1,
-    marginRight: 8,
-  },
   cardTitle: {
     fontSize: 16,
     fontWeight: '700',

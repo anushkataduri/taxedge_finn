@@ -19,7 +19,7 @@ export const StepFeesPayment: React.FC = () => {
   const handlePay = () => {
     processPayment(selectedMethod);
     Alert.alert('Payment Successful!', 'Your incorporation application has been submitted to TaxEdge Compliance Team.', [
-      { text: 'View Tracking', onPress: () => setStep(9) },
+      { text: 'View Tracking', onPress: () => setStep(11) },
     ]);
   };
 
