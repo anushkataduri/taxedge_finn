@@ -2,8 +2,6 @@ package com.taxedge.customer.service;
 
 import java.time.LocalDateTime;
 
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -128,6 +126,11 @@ public class CustomerServiceImpl implements CustomerService {
 
         String refreshToken = refreshTokenService.createRefreshToken(customer);
 
+        System.out.println("\n=========================================================================");
+        System.out.println("🔑 [LOGIN SUCCESS] ACCESS TOKEN FOR EXISTING USER (" + customer.getCustId() + " / " + customer.getMobileNumber() + "):");
+        System.out.println(accessToken);
+        System.out.println("=========================================================================\n");
+
         return new CustomerJwt(
                 accessToken,
                 refreshToken,
@@ -182,6 +185,42 @@ public class CustomerServiceImpl implements CustomerService {
 				.build();
 
 		return customerDto;
+	}
+
+
+	@Override
+	@Transactional
+	public String updateCustomer(CustomerDto dto) {
+		Customer customer = (dto.getCustId() != null && !dto.getCustId().isBlank())
+				? customerRepository.findById(dto.getCustId()).orElse(null)
+				: null;
+
+		if (customer == null && dto.getMobileNumber() != null && !dto.getMobileNumber().isBlank()) {
+			customer = customerRepository.findByMobileNumber(dto.getMobileNumber().trim()).orElse(null);
+		}
+
+		if (customer == null) {
+			throw new RuntimeException("Customer not found with id: " + dto.getCustId());
+		}
+
+		if (dto.getName() != null) customer.setName(dto.getName());
+		if (dto.getEmail() != null) customer.setEmail(dto.getEmail());
+		if (dto.getMobileNumber() != null) customer.setMobileNumber(dto.getMobileNumber());
+		if (dto.getAadhaar() != null) customer.setAadhaar(dto.getAadhaar());
+		if (dto.getPan() != null) customer.setPan(dto.getPan());
+		if (dto.getDob() != null) customer.setDob(dto.getDob());
+		if (dto.getGender() != null) customer.setGender(dto.getGender());
+		if (dto.getFatherSpouseName() != null) customer.setFatherSpouseName(dto.getFatherSpouseName());
+		if (dto.getCustomerType() != null) customer.setCustomerType(dto.getCustomerType());
+		if (dto.getAddressLine1() != null) customer.setAddressLine1(dto.getAddressLine1());
+		if (dto.getAddressLine2() != null) customer.setAddressLine2(dto.getAddressLine2());
+		if (dto.getCity() != null) customer.setCity(dto.getCity());
+		if (dto.getPincode() != null) customer.setPincode(dto.getPincode());
+		if (dto.getState() != null) customer.setState(dto.getState());
+		if (dto.getAddress() != null) customer.setAddress(dto.getAddress());
+
+		customerRepository.save(customer);
+		return "Updated Successfully";
 	}
     
     

@@ -13,5 +13,6 @@ public interface CustomerService {
     String updatePassword(UpdatePasswordDto updatePasswordDto);
     boolean existsByMobileNumber(String mobileNumber);
     CustomerDto getDetails(String custId);
+    String updateCustomer(CustomerDto customerDto);
 }
 
