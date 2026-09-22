@@ -3,6 +3,21 @@ import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ApiError } from "./apiError";
 import { InterceptorManager } from "./interceptors";
+import { tokenRefreshManager } from "../authentication/tokenRefreshManager";
+
+/**
+ * Paths that should NEVER trigger a silent refresh on 401.
+ * These are the auth endpoints themselves — retrying them would cause infinite loops.
+ */
+const NO_REFRESH_PATHS = [
+  "/auth/refresh",
+  "/auth/revoke",
+  "/auth/validate",
+  "/otp/generate",
+  "/otp/verify",
+  "/customer/login",
+  "/customer/register",
+];
 
 export interface RequestOptions {
   headers?: Record<string, string>;
@@ -14,7 +29,7 @@ export interface RequestOptions {
  * Server Network Configuration
  * Change IP and Port here to point the mobile app to your backend.
  */
-export const SERVER_IP = "192.168.88.12";
+export const SERVER_IP = "192.168.88.24";
 
 export const SERVER_PORT = 8086;
 
@@ -198,11 +213,26 @@ export class ApiClient {
     return this.request<T>("DELETE", path, undefined, options);
   }
 
+  /**
+   * Core HTTP request executor with silent 401 token refresh.
+   *
+   * Flow on HTTP 401:
+   *  1. Check if the path is an auth endpoint (skip refresh to avoid loops).
+   *  2. Check if this is already a retry (skip to avoid infinite recursion).
+   *  3. Call tokenRefreshManager.attemptRefresh() — which uses a mutex so
+   *     concurrent 401s only trigger ONE /auth/refresh call.
+   *  4. If refresh succeeds → replay this exact request ONCE with the new token.
+   *  5. If refresh fails → throw the original 401 ApiError to the caller.
+   *
+   * @param _isRetry internal flag — true when this is the automatic retry after
+   *                 a successful token refresh. Prevents infinite recursion.
+   */
   private async request<T>(
     method: string,
     path: string,
     body?: unknown,
     options?: RequestOptions,
+    _isRetry = false,
   ): Promise<T> {
     try {
       await this.ensureBaseUrlLoaded();
@@ -273,12 +303,40 @@ export class ApiClient {
           errorData.error ||
           response.statusText ||
           "Request failed";
-        throw new ApiError(
+        const apiError = new ApiError(
           message,
           response.status,
           errorData.code || "API_ERROR",
           errorData.errors,
         );
+
+        // ── Silent 401 refresh logic ────────────────────────────────────────
+        if (
+          response.status === 401 &&
+          !_isRetry &&
+          !this.isAuthEndpoint(path)
+        ) {
+          console.log(
+            `🔄 [API] 401 received for ${path} — attempting silent token refresh...`
+          );
+
+          const refreshed = await tokenRefreshManager.attemptRefresh();
+
+          if (refreshed) {
+            console.log(
+              `🔄 [API] Token refreshed — retrying original request: ${method} ${path}`
+            );
+            // Retry ONCE with the new token. The request interceptor in
+            // AppBootstrap will pick up the fresh token from tokenManager.
+            return this.request<T>(method, path, body, options, true);
+          }
+
+          console.warn(
+            `🔄 [API] Token refresh failed — propagating 401 for ${path}`
+          );
+        }
+
+        throw apiError;
       }
 
       const rawText = await response.text();
@@ -308,6 +366,15 @@ export class ApiClient {
         new ApiError(errMessage, 500, "NETWORK_ERROR"),
       );
     }
+  }
+
+  /**
+   * Returns true if the given path is an auth/public endpoint that should
+   * NEVER trigger a silent refresh (to prevent infinite loops).
+   */
+  private isAuthEndpoint(path: string): boolean {
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+    return NO_REFRESH_PATHS.some((p) => cleanPath.startsWith(p));
   }
 }
 

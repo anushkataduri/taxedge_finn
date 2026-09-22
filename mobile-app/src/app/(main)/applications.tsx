@@ -27,9 +27,6 @@ const CATEGORY_TABS: { id: "ALL" | ServiceCategoryId; label: string }[] = [
   { id: "ALL", label: "All" },
   { id: "GST", label: "GST" },
   { id: "ITR", label: "ITR" },
-  { id: "LOANS", label: "Loans" },
-  { id: "BUSINESS", label: "Business" },
-  { id: "INSURANCE", label: "Insurance" },
 ];
 
 /** Custom Tagged Document Icon (GST / ITR) */
@@ -155,6 +152,12 @@ function isInsuranceApplication(app: Application): boolean {
   return cat === "INSURANCE" || sid.startsWith("insurance");
 }
 
+function getResumeRoute(app: Application): any {
+  if (app.formData?.resumeRoute) return app.formData.resumeRoute;
+  if (app.serviceId === "tds-refund") return "/service/tds-form";
+  return `/service/${app.serviceId || "itr"}`;
+}
+
 export default function ApplicationsScreen() {
   const colors = useTheme();
   const isDark = useColorScheme() === "dark";
@@ -265,6 +268,15 @@ export default function ApplicationsScreen() {
     { key: "COMPLETED", count: completedCount, label: "Completed", color: isDark ? colors.text : "#083B75" },
     { key: "UNDER_VERIFICATION", count: underVerificationCount, label: "Under\nVerification", color: "#EA580C" },
   ];
+
+  const handleApplicationPress = useCallback((item: Application) => {
+    if (item.status === "Draft" || item.formData?.isDraft) {
+      router.push(getResumeRoute(item));
+      return;
+    }
+    useApplicationStore.getState().setSelectedApplicationId(item.id);
+    router.push(`/application/${item.id}`);
+  }, [router]);
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? colors.background : "#F8FAFC" }]}>
@@ -472,6 +484,8 @@ export default function ApplicationsScreen() {
         }
         renderItem={({ item }) => {
           const badge = getStatusBadgeStyle(item.status);
+          const isDraft = item.status === "Draft" || Boolean(item.formData?.isDraft);
+          const pendingDocsCount = item.documents.filter((doc) => doc.status === "Pending").length;
           const isGstAmendment = item.serviceId === "gst-amendment";
           const isGstCancellation = item.serviceId === "gst-cancellation";
           const idColor = item.category === "BUSINESS" || item.category === "LOANS" ? "#EA580C" : "#083B75";
@@ -497,10 +511,7 @@ export default function ApplicationsScreen() {
           return (
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={() => {
-                useApplicationStore.getState().setSelectedApplicationId(item.id);
-                router.push(`/application/${item.id}`);
-              }}
+              onPress={() => handleApplicationPress(item)}
               style={[
                 styles.appCard,
                 {
@@ -533,6 +544,23 @@ export default function ApplicationsScreen() {
                       <Text style={styles.dateText}>{formattedDate}</Text>
                     </View>
                   ) : null}
+                  <View style={styles.metaChip}>
+                    <Ionicons name="document-attach-outline" size={12} color="#64748B" />
+                    <Text style={styles.metaChipText}>
+                      {pendingDocsCount} pending
+                    </Text>
+                  </View>
+                  <View style={styles.metaChip}>
+                    <Ionicons name="card-outline" size={12} color="#64748B" />
+                    <Text style={styles.metaChipText}>
+                      {item.paymentStatus}
+                    </Text>
+                  </View>
+                  <View style={styles.cardActionTextWrap}>
+                    <Text style={styles.cardActionText}>
+                      {isDraft ? "Resume" : "View Details"}
+                    </Text>
+                  </View>
                   {isGstAmendment && item.formData?.gstin ? (
                     <View
                       style={{

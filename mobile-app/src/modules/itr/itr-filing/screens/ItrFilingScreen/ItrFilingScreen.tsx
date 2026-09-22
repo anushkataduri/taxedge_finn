@@ -88,9 +88,19 @@ export const ItrFilingScreen: React.FC = () => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   }, [currentStep]);
 
-  // Pre-fetch live customer profile from database on entry
+  // Restore saved draft and last saved step on entry, then sync profile
   useEffect(() => {
-    useITRStore.getState().fetchAndPopulateUserProfile();
+    async function init() {
+      const restored = await useITRStore.getState().restoreItrDraft();
+      if (restored) {
+        const restoredStep = useITRStore.getState().currentStep;
+        if (restoredStep > 0) {
+          setIsCategoryConfirmed(true);
+        }
+      }
+      await useITRStore.getState().fetchAndPopulateUserProfile();
+    }
+    init();
   }, []);
 
   const handleBack = () => {

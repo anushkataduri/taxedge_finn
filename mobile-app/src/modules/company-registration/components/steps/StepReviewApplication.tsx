@@ -6,29 +6,7 @@ import { styles } from './StepReviewApplication.styles';
 export const StepReviewApplication: React.FC = () => {
   const draft = useCompanyRegistrationStore((state) => state.draft);
   const setStep = useCompanyRegistrationStore((state) => state.setStep);
-  const { company, directors, linkedRegistrations, documents, opcNominee } = draft;
-
-  // Calculate Promoter KYC Status
-  let promoterKycPending = false;
-  directors.forEach((dir) => {
-    if (!dir.hasDin) {
-      const doc = documents.find((d) => d.id === `doc-idproof-${dir.id}`);
-      if (!doc || doc.status !== 'Uploaded') promoterKycPending = true;
-    }
-  });
-  if (company.companyType === 'One Person Company (OPC)' && opcNominee?.name) {
-    const doc = documents.find((d) => d.id === 'doc-idproof-nominee');
-    if (!doc || doc.status !== 'Uploaded') promoterKycPending = true;
-  }
-  const promoterKycStatus = promoterKycPending ? 'Pending' : 'Completed';
-
-  // Calculate Registered Office Status
-  const officeDocIds = ['doc-address', 'doc-utility'];
-  const officeDocsPending = officeDocIds.some((id) => {
-    const doc = documents.find((d) => d.id === id);
-    return !doc || doc.status !== 'Uploaded';
-  });
-  const officeDocsStatus = officeDocsPending ? 'Pending' : 'Completed';
+  const { company, directors, linkedRegistrations } = draft;
 
   return (
     <View style={styles.container}>
@@ -127,29 +105,7 @@ export const StepReviewApplication: React.FC = () => {
         </View>
       </View>
 
-      {/* Section 6: Documents & KYC */}
-      <View style={styles.sectionCard}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>DOCUMENTS & KYC</Text>
-          <TouchableOpacity onPress={() => setStep(5)}>
-            <Text style={styles.editBtn}>Edit</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Promoter / Director KYC</Text>
-          <Text style={styles.dataValue}>{promoterKycStatus}</Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Registered Office Documents</Text>
-          <Text style={styles.dataValue}>{officeDocsStatus}</Text>
-        </View>
-        <View style={styles.dataRow}>
-          <Text style={styles.dataLabel}>Statutory Documents</Text>
-          <Text style={styles.dataValue}>As applicable</Text>
-        </View>
-      </View>
-
-      {/* Section 7: Linked Services */}
+      {/* Section 6: Linked Services */}
       <View style={styles.sectionCard}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Linked Registrations</Text>

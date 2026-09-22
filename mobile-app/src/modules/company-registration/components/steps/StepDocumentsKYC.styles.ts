@@ -3,6 +3,7 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
   container: {
     padding: 16,
+    backgroundColor: '#F8FAFC',
   },
   heading: {
     fontSize: 20,
@@ -11,14 +12,20 @@ export const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subheading: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#64748B',
-    marginBottom: 16,
+    marginBottom: 18,
+    lineHeight: 18,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginTop: 10,
+    marginBottom: 10,
+    letterSpacing: 0.3,
   },
   docCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -26,7 +33,6 @@ export const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
   },
-
   docHeaderRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -49,84 +55,79 @@ export const styles = StyleSheet.create({
   },
   docTitleTextGroup: {
     flex: 1,
-    justifyContent: 'center',
   },
-
   docTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: '#0F172A',
   },
-  docCategory: {
-    fontSize: 12,
+  docSubtitle: {
+    fontSize: 11,
     color: '#64748B',
-    marginTop: 6,
-    marginLeft: 46,
-    lineHeight: 16,
+    marginTop: 2,
   },
-  statusBadge: {
+  uploadActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    backgroundColor: '#083B75',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 6,
   },
-
   uploadActionBtnText: {
     fontSize: 12,
     fontWeight: '600',
     color: '#FFFFFF',
   },
   uploadedContainer: {
-    marginTop: 12,
-    marginLeft: 46,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-
+  uploadedInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
   uploadedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: '#DCFCE7',
-  },
-  pendingBadge: {
-    backgroundColor: '#FEF3C7',
-  },
-
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
   },
   uploadedText: {
+    fontSize: 11,
+    fontWeight: '700',
     color: '#166534',
   },
-  pendingText: {
-    color: '#92400E',
-
   fileNameText: {
     fontSize: 12,
     fontWeight: '500',
     color: '#083B75',
-    marginBottom: 12,
+    flex: 1,
   },
   uploadedActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    justifyContent: 'flex-start',
-  },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    gap: 12,
   },
   actionTextBtn: {
     fontSize: 12,
     fontWeight: '600',
     color: '#083B75',
-    marginLeft: 4,
   },
   removeTextBtn: {
     fontSize: 12,
     fontWeight: '600',
     color: '#EF4444',
-    marginLeft: 4,
-
   },
 });

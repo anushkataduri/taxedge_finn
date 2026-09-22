@@ -35,6 +35,7 @@ import {
   ACCEPTED_PROOFS,
 } from "./GstCancellationScreen.styles";
 import { useApplicationStore } from "@/store/applicationStore";
+import { useAuthStore } from "@/store/authStore";
 import { gstCancellationApi } from "@/modules/gst/services/gstCancellationApi";
 import { GstCancellationSuccess } from "../../components/GstCancellationSuccess";
 import { GstCancellationReview } from "../../components/GstCancellationReview";
@@ -82,6 +83,8 @@ export default function GstCancellationScreen() {
     appId: string;
   } | null>(null);
 
+  const { saveGstCancellationDraft, clearGstCancellationDraft } = useApplicationStore();
+
   const {
     showDraftModal,
     markSubmitted,
@@ -98,8 +101,24 @@ export default function GstCancellationScreen() {
         lastGstr3b ||
         supportingDoc,
       ),
-    onSaveDraft: () => {},
-    onDiscardDraft: () => {},
+    onSaveDraft: () => {
+      saveGstCancellationDraft({
+        formData: {
+          gstin,
+          reason,
+          otherReason,
+          cancellationDate,
+          closingStock,
+          pendingLiabilities,
+          lastGstr3b,
+        },
+        step: currentStep,
+        updatedAt: new Date().toISOString().split("T")[0],
+      });
+    },
+    onDiscardDraft: () => {
+      clearGstCancellationDraft();
+    },
     isSubmitted: () => currentStep === "SUCCESS",
   });
 

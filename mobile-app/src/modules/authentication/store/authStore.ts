@@ -4,7 +4,6 @@ import type { DevUser, AuthState, AuthFlowState } from "../types/auth.types";
 import { authService } from "../services/authService";
 import { authStorage } from "../services/authStorage";
 import { biometricService } from "../services/biometricService";
-import { customerApi } from "../../customer/services/customerApi";
 import {
   validateLoginPhone,
   validateOtp,
@@ -41,10 +40,11 @@ const toCustomer = (u: DevUser): Customer => {
     customerId: u.customerId || (u as any).custId || "",
     avatarUri: u.avatarUri,
     profileCompleted: Boolean(
-      u.registrationCompleted ||
-      (u as any).profileCompleted ||
-      hasBackendIdentity ||
-      (u.passcode && u.passcode.length === 6)
+      !isPlaceholderName &&
+      u.customerId &&
+      u.customerId.trim() !== "" &&
+      (u.pan || u.aadhaar || (u as any).adhar) &&
+      (u.registrationCompleted || (u as any).profileCompleted)
     ),
     hasPasscode: Boolean(u.passcode || (u as any).hasPasscode || hasBackendIdentity),
   };
@@ -149,7 +149,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return res;
   },
 
-  // Fetch full customer profile from backend and sync into auth state and local storage
+  // Sync customer profile into auth state from local storage
   fetchAndSyncProfile: async (identifier?: string) => {
     try {
       const activeMobile =
@@ -166,7 +166,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return { success: false, isComplete: false, customer: null };
       }
       const cleanMobile = String(activeMobile).replace(/\D/g, "");
-      const d: any = await customerApi.getProfile(cleanMobile);
+      const d: any = (cleanMobile ? authStorage.getUserByMobile(cleanMobile) : null) || authStorage.getUser();
       if (d && typeof d === "object") {
         const custId = d.customerId || d.custId || "";
         const name = d.name || d.fullName || "";
@@ -177,12 +177,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           name.toLowerCase() === "client" ||
           name.toLowerCase() === "valued";
 
-        const hasRealIdentity = Boolean(custId && !isPlaceholderName);
+        const hasRealIdentity = Boolean(custId && custId.trim() !== "" && !isPlaceholderName);
         const hasPanOrAadhaar = Boolean(d.pan || d.aadhaar || d.adhar);
         const isComplete = Boolean(
-          d.profileCompleted === true ||
-          d.registrationCompleted === true ||
-          (hasRealIdentity && (hasPanOrAadhaar || Boolean(d.dob && String(d.dob).trim() !== "")))
+          hasRealIdentity &&
+          hasPanOrAadhaar &&
+          (d.profileCompleted === true || d.registrationCompleted === true)
         );
 
         const currentU = get().authenticatedUser || authStorage.getUser();
@@ -212,13 +212,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const custObj = toCustomer(mergedUser);
 
         set({
-          customerExists: true,
-          isExistingUser: true,
+          customerExists: Boolean(custId),
+          isExistingUser: Boolean(custId),
           profileCompleted: isComplete,
-          hasPasscode: true,
+          hasPasscode: Boolean(mergedUser.passcode),
           authenticatedUser: mergedUser,
           customer: custObj,
-          isCompleteProfileModalOpen: false,
         });
 
         console.log("✅ [authStore] fetchAndSyncProfile synced customer:", {
@@ -402,7 +401,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isCompleteProfileModalOpen: false,
         });
 
-        // Hydrate full profile from backend (PAN, Aadhaar, DOB, Address, etc.)
+        // Hydrate profile from storage
         try {
           await get().fetchAndSyncProfile(mobileNumber || res.user.mobileNumber);
         } catch (e) {
@@ -632,6 +631,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
     // 2. Perform server token revocation and secure storage cleanup in background
     authService.logout().catch(() => {});
+    try {
+      const { useApplicationStore } = require("../../../store/applicationStore");
+      useApplicationStore.getState().resetStore?.();
+    } catch {}
   },
 
   syncFromDevAuth: () => {

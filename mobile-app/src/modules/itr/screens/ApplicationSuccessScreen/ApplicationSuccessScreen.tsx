@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StatusBar,
   Alert,
+  BackHandler,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -74,22 +75,30 @@ export const ApplicationSuccessScreen: React.FC<ApplicationSuccessScreenProps> =
   };
 
   const handleBack = () => {
-    if (isRevised) {
-      router.replace("/service/revised-itr" as any);
-    } else {
-      router.replace("/service/itr" as any);
-    }
+    router.replace("/(main)/home" as any);
+  };
+
+  const handleGoHome = () => {
+    router.replace("/(main)/home" as any);
   };
 
   const handleTrackStatus = () => {
     if (onTrackStatus) {
       onTrackStatus();
+    } else if (appId && appId !== "Application Received" && !appId.includes(" ")) {
+      router.replace(`/application/${appId}` as any);
     } else {
-      router.replace({
-        pathname: "/(main)/home" as any,
-      });
+      router.replace("/(main)/applications" as any);
     }
   };
+
+  React.useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      handleBack();
+      return true;
+    });
+    return () => sub.remove();
+  }, []);
 
   const handleDownload = () => {
     if (onDownloadAcknowledgement) {
@@ -154,14 +163,23 @@ export const ApplicationSuccessScreen: React.FC<ApplicationSuccessScreenProps> =
           onPress={handleTrackStatus}
           style={styles.primaryButton}
         >
-          <Text style={styles.primaryButtonText}>View Application Status</Text>
+          <Text style={styles.primaryButtonText}>Track My Application</Text>
           <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
         </TouchableOpacity>
 
         <TouchableOpacity
           activeOpacity={0.85}
+          onPress={handleGoHome}
+          style={[styles.secondaryButton, { marginTop: 8 }]}
+        >
+          <Ionicons name="home-outline" size={18} color="#0B1F3A" />
+          <Text style={[styles.secondaryButtonText, { color: "#0B1F3A" }]}>Go Home</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
           onPress={handleDownload}
-          style={styles.secondaryButton}
+          style={[styles.secondaryButton, { marginTop: 8 }]}
         >
           <Ionicons name="download-outline" size={18} color="#F97316" />
           <Text style={styles.secondaryButtonText}>Download TaxEdge Application Receipt</Text>

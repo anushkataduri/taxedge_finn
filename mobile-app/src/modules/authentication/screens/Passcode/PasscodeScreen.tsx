@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -42,7 +42,7 @@ export function PasscodeScreen() {
   }, []);
 
   const phone = mobileNumber
-    ? +91  
+    ? `+91 ${mobileNumber.slice(0, 5)} ${mobileNumber.slice(5)}`
     : "+91 XXXXX XXXXX";
 
   const handleLoginPress = async () => {

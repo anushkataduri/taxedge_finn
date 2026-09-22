@@ -17,7 +17,6 @@ export const BrandColors = {
   BORDER: "#E2E8F0",
   CHEVRON_BLUE: "#083B75",
   WHITE: "#FFFFFF",
-  COLOR_WHITE: "#FFFFFF",
 };
 
 export const Colors = {
@@ -66,13 +65,6 @@ export const Typography = {
     bold: "700" as const,
     extraBold: "800" as const,
   },
-  FONT_SIZE_XS: 11,
-  FONT_SIZE_SM: 12,
-  FONT_SIZE_BASE: 14,
-  FONT_SIZE_MD: 15,
-  FONT_SIZE_LG: 16,
-  FONT_SIZE_XL: 18,
-  FONT_SIZE_XXL: 22,
 };
 
 export const Spacing = {

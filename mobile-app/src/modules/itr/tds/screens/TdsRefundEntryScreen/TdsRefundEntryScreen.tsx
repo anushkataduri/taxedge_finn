@@ -26,12 +26,30 @@ import {
 export const TdsRefundEntryScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [draftStep, setDraftStep] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    import("../../services/tdsDraftService").then(({ tdsDraftService }) => {
+      tdsDraftService.getDraftMetadata().then((meta) => {
+        if (meta?.step) {
+          setDraftStep(meta.step);
+        }
+      });
+    });
+  }, []);
 
   const handleStart = () => {
-    // Navigate to Customer & Income form (Screen 1 of TDS Refund workflow)
-    router.push({
-      pathname: "/service/tds-form" as any,
-    });
+    if (draftStep === "DOCUMENTS") {
+      router.push("/service/tds-checklist" as any);
+    } else if (draftStep === "ESTIMATE") {
+      router.push("/service/tds-estimate" as any);
+    } else if (draftStep === "PAYMENT") {
+      router.push("/service/tds-payment" as any);
+    } else {
+      router.push({
+        pathname: "/service/tds-form" as any,
+      });
+    }
   };
 
   const handleBack = () => {

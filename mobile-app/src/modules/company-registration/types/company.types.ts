@@ -31,12 +31,15 @@ export interface CompanyDetails {
   // Registered Office
   registeredAddressLine: string;
   registeredCity: string;
+  registeredDistrict?: string;
   registeredState: string;
   registeredPincode: string;
   premisesOwnership: 'Rented' | 'Owned' | 'Leased';
   companyEmail: string;
   companyMobile: string;
   officeAddressProofName?: string;
+  ownershipDocName?: string;
+  ownerNocName?: string;
   // Capital & Shareholding
   authorizedCapital: number;
   paidUpCapital: number;
