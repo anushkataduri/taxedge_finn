@@ -4,6 +4,10 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { DocumentUploadBottomSheet } from '@/modules/itr/tds/components/upload/DocumentUploadBottomSheet/DocumentUploadBottomSheet';
+import { TdsDocumentCard } from '@/modules/itr/tds/components/upload/TdsDocumentCard/TdsDocumentCard';
+import { TdsChecklistItem } from '@/modules/itr/tds/types/checklist.types';
+import { DocumentPreviewModal } from '@/modules/itr/itr-filing/components/DocumentPreviewModal/DocumentPreviewModal';
+import { ItrDocumentItem } from '@/modules/itr/itr-filing/types/itrFiling.types';
 import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlice';
 import { styles } from './StepDocumentsKYC.styles';
 
@@ -93,6 +97,7 @@ export const StepDocumentsKYC: React.FC = () => {
   const updateDocumentStatus = useCompanyRegistrationStore((state) => state.updateDocumentStatus);
 
   const [activeItem, setActiveItem] = useState<KycChecklistItem | null>(null);
+  const [previewItem, setPreviewItem] = useState<ItrDocumentItem | null>(null);
 
   const handleDocumentSelected = (fileName: string, fileUri?: string) => {
     if (!activeItem) return;
@@ -160,6 +165,7 @@ export const StepDocumentsKYC: React.FC = () => {
     updateDocumentStatus(docId, 'Pending', undefined, undefined);
   };
 
+
   const sections: ('PROMOTER / DIRECTOR KYC' | 'REGISTERED OFFICE' | 'STATUTORY DOCUMENTS')[] = [
     'PROMOTER / DIRECTOR KYC',
     'REGISTERED OFFICE',
@@ -186,56 +192,41 @@ export const StepDocumentsKYC: React.FC = () => {
               const isUploaded = stored?.status === 'Uploaded';
               const displayFileName = stored?.fileName || (stored?.fileUri ? stored.fileUri.split('/').pop() : '');
 
+              const tdsItem: TdsChecklistItem = {
+                id: item.id,
+                title: item.title.replace('*', '').trim(),
+                subtitle: item.subtitle,
+                status: isUploaded ? 'uploaded' : 'not_uploaded',
+                isMandatory: item.required,
+                fileName: displayFileName || undefined,
+                fileUri: stored?.fileUri || (isUploaded && displayFileName ? `file://${displayFileName}` : undefined),
+                fileSize: isUploaded ? '2.4 MB' : undefined,
+                isVisible: true,
+              };
+
               return (
-                <View key={item.id} style={styles.docCard}>
-                  <View style={styles.docHeaderRow}>
-                    <View style={styles.docIconTitleGroup}>
-                      <View style={styles.docIconBox}>
-                        <Ionicons name={item.iconName} size={20} color="#083B75" />
-                      </View>
-
-                      <View style={styles.docTitleTextGroup}>
-                        <Text style={styles.docTitle}>{item.title}</Text>
-                        <Text style={styles.docSubtitle}>{item.subtitle}</Text>
-                      </View>
-                    </View>
-
-                    {!isUploaded && (
-                      <TouchableOpacity
-                        style={styles.uploadActionBtn}
-                        onPress={() => setActiveItem(item)}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="cloud-upload-outline" size={14} color="#FFFFFF" />
-                        <Text style={styles.uploadActionBtnText}>Upload</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-
-                  {/* Real Uploaded State Display */}
-                  {isUploaded && (
-                    <View style={styles.uploadedContainer}>
-                      <View style={styles.uploadedInfo}>
-                        <View style={styles.uploadedBadge}>
-                          <Ionicons name="checkmark-circle" size={14} color="#166534" />
-                          <Text style={styles.uploadedText}>Uploaded</Text>
-                        </View>
-                        <Text style={styles.fileNameText} numberOfLines={1}>
-                          {displayFileName || 'document.pdf'}
-                        </Text>
-                      </View>
-
-                      <View style={styles.uploadedActions}>
-                        <TouchableOpacity onPress={() => setActiveItem(item)} activeOpacity={0.7}>
-                          <Text style={styles.actionTextBtn}>Replace</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity onPress={() => handleRemoveDocument(item.id)} activeOpacity={0.7}>
-                          <Text style={styles.removeTextBtn}>Remove</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  )}
+                <View key={item.id} style={{ marginBottom: 12 }}>
+                  <TdsDocumentCard
+                    item={tdsItem}
+                    onUploadPress={() => setActiveItem(item)}
+                    onChange={() => setActiveItem(item)}
+                    onDelete={() => handleRemoveDocument(item.id)}
+                    onView={() => {
+                      if (displayFileName || stored?.fileUri) {
+                        setPreviewItem({
+                          id: item.id,
+                          name: item.title.replace('*', '').trim(),
+                          subtitle: item.subtitle,
+                          tier: item.required ? 'REQUIRED' : 'NOT_REQUIRED',
+                          required: item.required,
+                          docGroup: 'common',
+                          fileUri: stored?.fileUri || `file://${displayFileName}`,
+                          fileName: displayFileName,
+                          fileSize: '2.4 MB',
+                        });
+                      }
+                    }}
+                  />
                 </View>
               );
             })}
@@ -252,6 +243,17 @@ export const StepDocumentsKYC: React.FC = () => {
         onPickFiles={handlePickFiles}
         onPickGallery={handlePickGallery}
         onTakePhoto={handleTakePhoto}
+      />
+
+      <DocumentPreviewModal
+        visible={!!previewItem}
+        document={previewItem}
+        onClose={() => setPreviewItem(null)}
+        onChangeFile={(doc) => {
+          setPreviewItem(null);
+          const originalItem = CHECKLIST_ITEMS.find(i => i.id === doc.id);
+          if (originalItem) setActiveItem(originalItem);
+        }}
       />
     </View>
   );

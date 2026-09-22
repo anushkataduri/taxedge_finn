@@ -38,8 +38,11 @@ export interface CompanyDetails {
   companyEmail: string;
   companyMobile: string;
   officeAddressProofName?: string;
+  officeAddressProofUri?: string;
   ownershipDocName?: string;
+  ownershipDocUri?: string;
   ownerNocName?: string;
+  ownerNocUri?: string;
   // Capital & Shareholding
   authorizedCapital: number;
   paidUpCapital: number;

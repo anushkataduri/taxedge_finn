@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlice';
 import { styles } from './StepFeesPayment.styles';
@@ -15,12 +15,18 @@ export const StepFeesPayment: React.FC = () => {
   const processPayment = useCompanyRegistrationStore((state) => state.processPayment);
   const setStep = useCompanyRegistrationStore((state) => state.setStep);
   const [selectedMethod, setSelectedMethod] = useState('UPI');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handlePay = () => {
-    processPayment(selectedMethod);
-    Alert.alert('Payment Successful!', 'Your incorporation application has been submitted to TaxEdge Compliance Team.', [
-      { text: 'View Tracking', onPress: () => setStep(9) },
-    ]);
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    
+    // Simulate submission / API delay
+    setTimeout(() => {
+      processPayment(selectedMethod);
+      setIsSubmitting(false);
+      setStep(10); // Navigate to Application Submitted Successfully screen
+    }, 1500);
   };
 
   return (
@@ -77,8 +83,17 @@ export const StepFeesPayment: React.FC = () => {
       })}
 
       {/* Pay CTA */}
-      <TouchableOpacity style={styles.payBtn} onPress={handlePay} activeOpacity={0.8}>
-        <Text style={styles.payBtnText}>Pay ₹{feeBreakdown.totalAmount.toLocaleString('en-IN')} & Submit</Text>
+      <TouchableOpacity 
+        style={[styles.payBtn, isSubmitting && { opacity: 0.7 }]} 
+        onPress={handlePay} 
+        activeOpacity={0.8}
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? (
+          <ActivityIndicator color="#FFFFFF" size="small" />
+        ) : (
+          <Text style={styles.payBtnText}>Pay ₹{feeBreakdown.totalAmount.toLocaleString('en-IN')} & Submit</Text>
+        )}
       </TouchableOpacity>
     </View>
   );

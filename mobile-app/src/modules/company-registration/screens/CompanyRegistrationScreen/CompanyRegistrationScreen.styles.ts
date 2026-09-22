@@ -5,14 +5,27 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
+  progressContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+  },
+  progressText: {
+    fontSize: 12,
+    color: '#64748B',
+    marginBottom: 6,
+    fontWeight: '500',
+  },
   progressTrack: {
-    height: 3,
+    height: 4,
     backgroundColor: '#E2E8F0',
     width: '100%',
+    borderRadius: 2,
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#F97316',
+    borderRadius: 2,
   },
   scrollContent: {
     flexGrow: 1,

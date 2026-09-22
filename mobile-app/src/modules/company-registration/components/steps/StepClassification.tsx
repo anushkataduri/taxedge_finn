@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlice';
 import type { CompanyClass, CompanyCategory, CompanySubCategory } from '../../types/company.types';
+import { CompanySectionCard } from '../CompanySectionCard/CompanySectionCard';
 import { styles } from './StepClassification.styles';
 
 export const StepClassification: React.FC = () => {
@@ -32,10 +33,10 @@ export const StepClassification: React.FC = () => {
 
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Company Classification</Text>
-      <Text style={styles.subheading}>Specify MCA statutory classification details for incorporation filing.</Text>
-
+    <CompanySectionCard
+      title="Company Classification"
+      description="Specify MCA statutory classification details for incorporation filing."
+    >
       {/* Class of Company */}
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>Class of Company *</Text>
@@ -97,6 +98,6 @@ export const StepClassification: React.FC = () => {
         <Ionicons name="information-circle-outline" size={20} color="#1E40AF" />
         <Text style={styles.infoText}>Standard commercial startups default to Indian Non-Government Company limited by shares.</Text>
       </View>
-    </View>
+    </CompanySectionCard>
   );
 };

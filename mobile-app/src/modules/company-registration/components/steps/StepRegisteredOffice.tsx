@@ -4,7 +4,12 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { DocumentUploadBottomSheet } from '@/modules/itr/tds/components/upload/DocumentUploadBottomSheet/DocumentUploadBottomSheet';
+import { TdsDocumentCard } from '@/modules/itr/tds/components/upload/TdsDocumentCard/TdsDocumentCard';
+import { TdsChecklistItem } from '@/modules/itr/tds/types/checklist.types';
+import { DocumentPreviewModal } from '@/modules/itr/itr-filing/components/DocumentPreviewModal/DocumentPreviewModal';
+import { ItrDocumentItem } from '@/modules/itr/itr-filing/types/itrFiling.types';
 import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlice';
+import { CompanySectionCard } from '../CompanySectionCard/CompanySectionCard';
 import { styles } from './StepRegisteredOffice.styles';
 
 type DocType = 'proof' | 'ownership' | 'noc';
@@ -14,6 +19,7 @@ export const StepRegisteredOffice: React.FC = () => {
   const updateDetails = useCompanyRegistrationStore((state) => state.updateCompanyDetails);
 
   const [activeDocType, setActiveDocType] = useState<DocType | null>(null);
+  const [previewItem, setPreviewItem] = useState<ItrDocumentItem | null>(null);
 
   const isNocRequired = company.premisesOwnership === 'Rented' || company.premisesOwnership === 'Leased';
 
@@ -30,11 +36,11 @@ export const StepRegisteredOffice: React.FC = () => {
     }
   };
 
-  const handleDocumentSelected = (fileName: string) => {
+  const handleDocumentSelected = (fileName: string, fileUri?: string) => {
     if (!activeDocType) return;
-    if (activeDocType === 'proof') updateDetails({ officeAddressProofName: fileName });
-    if (activeDocType === 'ownership') updateDetails({ ownershipDocName: fileName });
-    if (activeDocType === 'noc') updateDetails({ ownerNocName: fileName });
+    if (activeDocType === 'proof') updateDetails({ officeAddressProofName: fileName, officeAddressProofUri: fileUri });
+    if (activeDocType === 'ownership') updateDetails({ ownershipDocName: fileName, ownershipDocUri: fileUri });
+    if (activeDocType === 'noc') updateDetails({ ownerNocName: fileName, ownerNocUri: fileUri });
     setActiveDocType(null);
   };
 
@@ -45,7 +51,7 @@ export const StepRegisteredOffice: React.FC = () => {
         copyToCacheDirectory: true,
       });
       if (!res.canceled && res.assets && res.assets.length > 0) {
-        handleDocumentSelected(res.assets[0].name);
+        handleDocumentSelected(res.assets[0].name, res.assets[0].uri);
       }
     } catch (e: any) {
       Alert.alert('Upload Error', e?.message || 'Failed to select document.');
@@ -66,7 +72,7 @@ export const StepRegisteredOffice: React.FC = () => {
       if (!res.canceled && res.assets && res.assets.length > 0) {
         const asset = res.assets[0];
         const name = asset.fileName || `gallery_doc_${Date.now()}.jpg`;
-        handleDocumentSelected(name);
+        handleDocumentSelected(name, asset.uri);
       }
     } catch (e: any) {
       Alert.alert('Upload Error', e?.message || 'Failed to select image from gallery.');
@@ -86,7 +92,7 @@ export const StepRegisteredOffice: React.FC = () => {
       if (!res.canceled && res.assets && res.assets.length > 0) {
         const asset = res.assets[0];
         const name = asset.fileName || `camera_doc_${Date.now()}.jpg`;
-        handleDocumentSelected(name);
+        handleDocumentSelected(name, asset.uri);
       }
     } catch (e: any) {
       Alert.alert('Upload Error', e?.message || 'Failed to take photo.');
@@ -94,78 +100,65 @@ export const StepRegisteredOffice: React.FC = () => {
   };
 
   const handleRemoveDoc = (type: DocType) => {
-    if (type === 'proof') updateDetails({ officeAddressProofName: '' });
-    if (type === 'ownership') updateDetails({ ownershipDocName: '' });
-    if (type === 'noc') updateDetails({ ownerNocName: '' });
+    if (type === 'proof') updateDetails({ officeAddressProofName: '', officeAddressProofUri: '' });
+    if (type === 'ownership') updateDetails({ ownershipDocName: '', ownershipDocUri: '' });
+    if (type === 'noc') updateDetails({ ownerNocName: '', ownerNocUri: '' });
   };
 
   const renderDocCard = (
     label: string,
     type: DocType,
     fileName: string | undefined,
-    helperText?: string,
+    fileUri: string | undefined,
+    helperText: string | undefined,
     isRequired = true
   ) => {
-    const hasFile = !!fileName;
+    const item: TdsChecklistItem = {
+      id: type,
+      title: label.replace('*', '').trim(),
+      subtitle: helperText || (isRequired ? 'Mandatory document' : 'Optional document'),
+      status: fileName ? 'uploaded' : 'not_uploaded',
+      isMandatory: isRequired,
+      fileName: fileName,
+      fileUri: fileUri || (fileName ? `file://${fileName}` : undefined),
+      fileSize: fileName ? '2.4 MB' : undefined,
+    };
 
     return (
       <View style={styles.fieldGroup}>
-        <Text style={styles.label}>
-          {label} {isRequired ? '*' : ''}
-        </Text>
-
-        {hasFile ? (
-          <View style={styles.uploadBoxSuccess}>
-            <TouchableOpacity
-              style={styles.fileLeftInfo}
-              onPress={() => setActiveDocType(type)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="document-text" size={20} color="#083B75" />
-              <Text style={styles.uploadSuccessText} numberOfLines={1}>
-                {fileName}
-              </Text>
-            </TouchableOpacity>
-            <View style={styles.fileRightActions}>
-              <Ionicons name="checkmark-circle" size={20} color="#166534" />
-              <TouchableOpacity
-                onPress={() => handleRemoveDoc(type)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={styles.removeBtn}
-              >
-                <Ionicons name="trash-outline" size={18} color="#EF4444" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={styles.uploadBoxEmpty}
-            onPress={() => setActiveDocType(type)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.fileLeftInfo}>
-              <Ionicons name="cloud-upload-outline" size={20} color="#083B75" />
-              <Text style={styles.uploadEmptyText}>
-                Upload {label.replace('*', '').trim()} (PDF / Image)
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-          </TouchableOpacity>
-        )}
-
-        {helperText ? <Text style={styles.helperText}>{helperText}</Text> : null}
+        <TdsDocumentCard
+          item={item}
+          onUploadPress={() => setActiveDocType(type)}
+          onChange={() => setActiveDocType(type)}
+          onDelete={() => handleRemoveDoc(type)}
+          onView={() => {
+            if (fileName) {
+              setPreviewItem({
+                id: type,
+                name: label.replace('*', '').trim(),
+                subtitle: helperText || (isRequired ? 'Mandatory document' : 'Optional document'),
+                tier: isRequired ? 'REQUIRED' : 'NOT_REQUIRED',
+                required: isRequired,
+                docGroup: 'common',
+                fileUri: fileUri || `file://${fileName}`,
+                fileName: fileName,
+                fileSize: '2.4 MB',
+              });
+            }
+          }}
+        />
       </View>
     );
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Registered Office Details</Text>
-      <Text style={styles.subheading}>
-        Provide official communication address for MCA, ROC, and statutory authorities.
-      </Text>
-
-      {/* Building / Address Line */}
+      {/* CARD A — BUILDING / ADDRESS */}
+      <CompanySectionCard
+        title="Building / Address"
+        description="Provide official communication address for MCA, ROC, and statutory authorities."
+      >
+        {/* Building / Address Line */}
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>Building / Premises Address Line *</Text>
         <TextInput
@@ -227,8 +220,11 @@ export const StepRegisteredOffice: React.FC = () => {
           />
         </View>
       </View>
+      </CompanySectionCard>
 
-      {/* Premises Ownership Status */}
+      {/* CARD B — PREMISES OWNERSHIP */}
+      <CompanySectionCard title="Premises Ownership">
+        {/* Premises Ownership Status */}
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>Premises Ownership Status *</Text>
         <View style={styles.chipRow}>
@@ -256,9 +252,11 @@ export const StepRegisteredOffice: React.FC = () => {
           </Text>
         </View>
       </View>
+      </CompanySectionCard>
 
-      {/* Contact Details */}
-      <View style={styles.row}>
+      {/* CARD C — CONTACT DETAILS */}
+      <CompanySectionCard title="Contact Details">
+        <View style={styles.row}>
         <View style={[styles.fieldGroup, styles.halfField]}>
           <Text style={styles.label}>Company Email *</Text>
           <TextInput
@@ -284,16 +282,16 @@ export const StepRegisteredOffice: React.FC = () => {
           />
         </View>
       </View>
+      </CompanySectionCard>
 
-      {/* Document Section */}
-      <View style={styles.sectionDivider} />
-      <Text style={styles.sectionHeading}>Mandatory Documents</Text>
-
-      {/* 1. Address Proof / Utility Bill */}
+      {/* CARD D — OFFICE DOCUMENTS */}
+      <CompanySectionCard title="Office Documents">
+        {/* 1. Address Proof / Utility Bill */}
       {renderDocCard(
         'Office Address Proof / Utility Bill',
         'proof',
         company.officeAddressProofName,
+        company.officeAddressProofUri,
         'Utility bill should be recent (not older than 2 months).',
         true
       )}
@@ -303,6 +301,7 @@ export const StepRegisteredOffice: React.FC = () => {
         'Ownership / Rent / Lease Document',
         'ownership',
         company.ownershipDocName,
+        company.ownershipDocUri,
         undefined,
         true
       )}
@@ -312,9 +311,11 @@ export const StepRegisteredOffice: React.FC = () => {
         'Owner NOC',
         'noc',
         company.ownerNocName,
+        company.ownerNocUri,
         'Required only for rented/leased/third-party premises.',
         isNocRequired
       )}
+      </CompanySectionCard>
 
       {/* ITR Document Upload Bottom Sheet Reused */}
       <DocumentUploadBottomSheet
@@ -325,6 +326,16 @@ export const StepRegisteredOffice: React.FC = () => {
         onPickFiles={handlePickFiles}
         onPickGallery={handlePickGallery}
         onTakePhoto={handleTakePhoto}
+      />
+
+      <DocumentPreviewModal
+        visible={!!previewItem}
+        document={previewItem}
+        onClose={() => setPreviewItem(null)}
+        onChangeFile={(doc) => {
+          setPreviewItem(null);
+          setActiveDocType(doc.id as DocType);
+        }}
       />
     </View>
   );
