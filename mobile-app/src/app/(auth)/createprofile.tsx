@@ -13,10 +13,9 @@ import {
   ActivityIndicator,
   LayoutAnimation,
   Keyboard,
-  BackHandler,
   type TextInputProps,
 } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Svg, { Path } from "react-native-svg";
@@ -168,26 +167,11 @@ export default function CreateProfileScreen() {
   const colors = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ customerType?: string }>();
   const scrollRef = useRef<ScrollView>(null);
   const { register, mobileNumber: storeMobileNumber } = useAuthStore();
 
-  // 2-Step Navigation: Step 1 = Type of User (Account Type), Step 2 = Full Registration Form
+  // 2-Step Navigation: Step 1 = Full Registration Form, Step 2 = Customer Type
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
-
-  // Hardware Back Button listener for Android: Step 2 returns to Step 1
-  useEffect(() => {
-    const onBackPress = () => {
-      if (currentStep === 2) {
-        setCurrentStep(1);
-        scrollRef.current?.scrollTo({ y: 0, animated: true });
-        return true;
-      }
-      return false;
-    };
-    const sub = BackHandler.addEventListener("hardwareBackPress", onBackPress);
-    return () => sub.remove();
-  }, [currentStep]);
 
   // Input Refs for smooth keyboard navigation
   const nameRef = useRef<TextInput>(null);
@@ -234,7 +218,7 @@ export default function CreateProfileScreen() {
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
   ];
 
-  const autoMobile = storeMobileNumber || "";
+  const autoMobile = storeMobileNumber || "9347074726";
 
   const [form, setForm] = useState<SignupForm>({
     name: "",
@@ -252,14 +236,8 @@ export default function CreateProfileScreen() {
     state: "",
     password: "",
     confirmPassword: "",
-    customerType: params.customerType || "Individual",
+    customerType: "Individual",
   });
-
-  useEffect(() => {
-    if (params?.customerType && params.customerType !== form.customerType) {
-      setForm((p) => ({ ...p, customerType: params.customerType! }));
-    }
-  }, [params?.customerType]);
 
   useEffect(() => {
     if (storeMobileNumber && storeMobileNumber !== form.mobileNumber) {
@@ -477,25 +455,8 @@ export default function CreateProfileScreen() {
     );
   }, [form, agreedToTerms]);
 
-  // Navigate from Step 1 (Select Account Type) to Step 2 (Registration Form)
-  const handleProceedToRegistration = () => {
-    if (!form.customerType) {
-      Alert.alert("Account Type Required", "Please select an account type.");
-      return;
-    }
-
-    setCurrentStep(2);
-    scrollRef.current?.scrollTo({ y: 0, animated: true });
-  };
-
-  // Step 2: Submit Full Registration Payload to Backend
-  const handleFinalRegistration = async () => {
-    if (!form.customerType) {
-      Alert.alert("Account Type Required", "Please select an account type.");
-      setCurrentStep(1);
-      return;
-    }
-
+  // Navigate from Screen 1 to Screen 2 (Customer Type)
+  const handleProceedToCustomerType = () => {
     const requiredKeys: (keyof SignupForm)[] = [
       "name",
       "email",
@@ -532,6 +493,17 @@ export default function CreateProfileScreen() {
         "Incomplete Form",
         "Please fill in all required fields."
       );
+      return;
+    }
+
+    setCurrentStep(2);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  // Screen 2: Submit Full Registration Payload to Backend
+  const handleFinalRegistration = async () => {
+    if (!form.customerType) {
+      Alert.alert("Account Type Required", "Please select an account type.");
       return;
     }
 
@@ -654,7 +626,7 @@ export default function CreateProfileScreen() {
           styles.profileScroll,
           {
             paddingBottom:
-              currentStep === 1
+              currentStep === 2
                 ? Math.max(insets.bottom + 90, 110)
                 : Math.max(insets.bottom + Spacing.xl, 40),
           },
@@ -702,123 +674,17 @@ export default function CreateProfileScreen() {
               </TouchableOpacity>
 
               <Text style={styles.headerTitleWhite}>
-                {currentStep === 1 ? "Select Account Type" : "Create Account"}
+                {currentStep === 1 ? "Create Account" : "Select Account Type"}
               </Text>
             </View>
           </View>
         </View>
 
         {/* ============================================================= */}
-        {/* STEP 1: TYPE OF USER / ACCOUNT TYPE SELECTION                 */}
+        {/* SCREEN 1: COMPLETE REGISTRATION FORM (ONE SCROLLABLE PAGE)    */}
         {/* ============================================================= */}
         {currentStep === 1 && (
-          <View style={styles.customerTypeContainer}>
-            {/* 10 Modern Customer Type Option Cards */}
-            {CUSTOMER_TYPE_OPTIONS.map((opt) => {
-              const isSelected = form.customerType === opt.key;
-              return (
-                <TouchableOpacity
-                  key={opt.key}
-                  activeOpacity={0.8}
-                  onPress={() => updateForm("customerType", opt.key)}
-                  style={[
-                    styles.customerTypeCard,
-                    isSelected && styles.customerTypeCardSelected,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.cardIconContainer,
-                      isSelected && styles.cardIconContainerSelected,
-                    ]}
-                  >
-                    <Ionicons
-                      name={opt.icon}
-                      size={22}
-                      color={
-                        isSelected
-                          ? BrandColors.PRIMARY_ORANGE
-                          : BrandColors.PRIMARY_BLUE
-                      }
-                    />
-                  </View>
-
-                  <View style={styles.cardContent}>
-                    <Text
-                      style={[
-                        styles.cardTitle,
-                        isSelected && styles.cardTitleSelected,
-                      ]}
-                    >
-                      {opt.title}
-                    </Text>
-                    <Text style={styles.cardSubtitle}>{opt.subtitle}</Text>
-                  </View>
-
-                  <View
-                    style={[
-                      styles.radioCircle,
-                      isSelected && styles.radioCircleSelected,
-                    ]}
-                  >
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark"
-                        size={14}
-                        color={BrandColors.WHITE}
-                      />
-                    )}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-
-        {/* ============================================================= */}
-        {/* STEP 2: COMPLETE REGISTRATION FORM (ONE SCROLLABLE PAGE)       */}
-        {/* ============================================================= */}
-        {currentStep === 2 && (
           <View style={styles.formSection}>
-            {/* Selected Account Type Badge */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => {
-                setCurrentStep(1);
-                scrollRef.current?.scrollTo({ y: 0, animated: true });
-              }}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                backgroundColor: "#EFF6FF",
-                borderWidth: 1,
-                borderColor: "#BFDBFE",
-                borderRadius: 12,
-                paddingHorizontal: 16,
-                paddingVertical: 12,
-                marginBottom: 16,
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Ionicons name="briefcase-outline" size={20} color={BrandColors.PRIMARY_BLUE} />
-                <View>
-                  <Text style={{ fontSize: 11, color: "#64748B", fontWeight: "600", textTransform: "uppercase" }}>
-                    Account Type
-                  </Text>
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: BrandColors.PRIMARY_BLUE_DARK }}>
-                    {form.customerType || "Individual"}
-                  </Text>
-                </View>
-              </View>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <Text style={{ fontSize: 12, fontWeight: "600", color: BrandColors.PRIMARY_ORANGE }}>
-                  Change
-                </Text>
-                <Ionicons name="chevron-forward" size={14} color={BrandColors.PRIMARY_ORANGE} />
-              </View>
-            </TouchableOpacity>
-
             {/* Full Name */}
             <Field
               ref={nameRef}
@@ -1175,35 +1041,98 @@ export default function CreateProfileScreen() {
               </Text>
             </View>
 
-            {/* Create Account / Final Registration Button */}
+            {/* Continue Button */}
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={handleFinalRegistration}
-              disabled={!isScreen1Valid || profileLoading}
+              onPress={handleProceedToCustomerType}
+              disabled={!isScreen1Valid}
               style={[
                 styles.submitBtnOrange,
-                (!isScreen1Valid || profileLoading) && styles.submitBtnDisabled,
+                !isScreen1Valid && styles.submitBtnDisabled,
               ]}
             >
-              {profileLoading ? (
-                <ActivityIndicator color={BrandColors.WHITE} size="small" />
-              ) : (
-                <Text
+              <Text
+                style={[
+                  styles.submitBtnText,
+                  !isScreen1Valid && styles.submitBtnTextDisabled,
+                ]}
+              >
+                Continue
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ============================================================= */}
+        {/* SCREEN 2: CUSTOMER TYPE SCREEN                                */}
+        {/* ============================================================= */}
+        {currentStep === 2 && (
+          <View style={styles.customerTypeContainer}>
+            {/* 10 Modern Customer Type Option Cards */}
+            {CUSTOMER_TYPE_OPTIONS.map((opt) => {
+              const isSelected = form.customerType === opt.key;
+              return (
+                <TouchableOpacity
+                  key={opt.key}
+                  activeOpacity={0.8}
+                  onPress={() => updateForm("customerType", opt.key)}
                   style={[
-                    styles.submitBtnText,
-                    (!isScreen1Valid || profileLoading) && styles.submitBtnTextDisabled,
+                    styles.customerTypeCard,
+                    isSelected && styles.customerTypeCardSelected,
                   ]}
                 >
-                  Create Account
-                </Text>
-              )}
-            </TouchableOpacity>
+                  <View
+                    style={[
+                      styles.cardIconContainer,
+                      isSelected && styles.cardIconContainerSelected,
+                    ]}
+                  >
+                    <Ionicons
+                      name={opt.icon}
+                      size={22}
+                      color={
+                        isSelected
+                          ? BrandColors.PRIMARY_ORANGE
+                          : BrandColors.PRIMARY_BLUE
+                      }
+                    />
+                  </View>
+
+                  <View style={styles.cardContent}>
+                    <Text
+                      style={[
+                        styles.cardTitle,
+                        isSelected && styles.cardTitleSelected,
+                      ]}
+                    >
+                      {opt.title}
+                    </Text>
+                    <Text style={styles.cardSubtitle}>{opt.subtitle}</Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.radioCircle,
+                      isSelected && styles.radioCircleSelected,
+                    ]}
+                  >
+                    {isSelected && (
+                      <Ionicons
+                        name="checkmark"
+                        size={14}
+                        color={BrandColors.WHITE}
+                      />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
       </ScrollView>
 
-      {/* Fixed Bottom Button for Step 1: Continue to Registration */}
-      {currentStep === 1 && (
+      {/* Fixed Bottom Button for Screen 2: Continue Registration */}
+      {currentStep === 2 && (
         <View
           style={[
             styles.fixedBottomBar,
@@ -1214,11 +1143,15 @@ export default function CreateProfileScreen() {
         >
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={handleProceedToRegistration}
-            disabled={!form.customerType}
+            onPress={handleFinalRegistration}
+            disabled={profileLoading || !form.customerType}
             style={styles.submitBtnOrange}
           >
-            <Text style={styles.submitBtnText}>Continue</Text>
+            {profileLoading ? (
+              <ActivityIndicator color={BrandColors.WHITE} size="small" />
+            ) : (
+              <Text style={styles.submitBtnText}>Continue Registration</Text>
+            )}
           </TouchableOpacity>
         </View>
       )}

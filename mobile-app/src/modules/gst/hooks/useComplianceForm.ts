@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   ComplianceFormData,
   ValidationErrors,
@@ -12,8 +11,6 @@ import {
   isValidGstin,
 } from "../utils/gstValidation";
 import { submitComplianceRequest, SubmissionResult } from "../services/gstComplianceService";
-import { useAuthStore } from "@/store/authStore";
-import { addDraftToIndex, removeDraftFromIndex } from "@/shared/hooks/useServiceDraft";
 
 const initialFormData: ComplianceFormData = {
   gstin: "",
@@ -30,18 +27,8 @@ const initialFormData: ComplianceFormData = {
   noticeRemarks: "",
 };
 
-function getDraftKey(mobile: string) {
-  return `@taxedge_draft_${mobile}_gst-compliance`;
-}
-
-function getCleanMobile(): string {
-  const authState = useAuthStore.getState();
-  const mobile =
-    authState.customer?.mobile ||
-    authState.authenticatedUser?.mobileNumber ||
-    authState.mobileNumber;
-  return mobile ? String(mobile).replace(/\D/g, "") : "";
-}
+// In-memory draft store for fast reactive resume across navigation
+let savedDraftCache: ComplianceFormData | null = null;
 
 export function useComplianceForm() {
   const router = useRouter();
@@ -53,33 +40,20 @@ export function useComplianceForm() {
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [hasCheckedDraft, setHasCheckedDraft] = useState(false);
 
-  // Check if draft exists on mount (from AsyncStorage)
+  // Check if draft exists on mount
   useEffect(() => {
     if (!hasCheckedDraft) {
-      const check = async () => {
-        try {
-          const mobile = getCleanMobile();
-          if (!mobile) return;
-          const raw = await AsyncStorage.getItem(getDraftKey(mobile));
-          if (raw) {
-            const draft = JSON.parse(raw);
-            const saved: ComplianceFormData = draft.formData || {};
-            if (
-              saved.gstin ||
-              saved.financialYear ||
-              saved.requestType ||
-              saved.purchaseDoc ||
-              saved.noticeDoc
-            ) {
-              setShowResumeModal(true);
-            }
-          }
-        } catch {
-          // ignore
-        }
-        setHasCheckedDraft(true);
-      };
-      check();
+      if (
+        savedDraftCache &&
+        (savedDraftCache.gstin ||
+          savedDraftCache.financialYear ||
+          savedDraftCache.requestType ||
+          savedDraftCache.purchaseDoc ||
+          savedDraftCache.noticeDoc)
+      ) {
+        setShowResumeModal(true);
+      }
+      setHasCheckedDraft(true);
     }
   }, [hasCheckedDraft]);
 
@@ -95,48 +69,20 @@ export function useComplianceForm() {
       formData.noticeNumber
     );
 
-    if (isDirty && hasCheckedDraft) {
-      const mobile = getCleanMobile();
-      if (mobile) {
-        addDraftToIndex(mobile, "gst-compliance");
-        AsyncStorage.setItem(
-          getDraftKey(mobile),
-          JSON.stringify({
-            serviceKey: "gst-compliance",
-            serviceName: "GST Compliance",
-            category: "GST",
-            step: 0,
-            formData,
-            updatedAt: new Date().toISOString().split("T")[0],
-          })
-        ).catch(() => {});
-      }
+    if (isDirty) {
+      savedDraftCache = formData;
     }
-  }, [formData, hasCheckedDraft]);
+  }, [formData]);
 
-  const resumeDraft = useCallback(async () => {
-    try {
-      const mobile = getCleanMobile();
-      if (!mobile) return;
-      const raw = await AsyncStorage.getItem(getDraftKey(mobile));
-      if (raw) {
-        const draft = JSON.parse(raw);
-        if (draft.formData) {
-          setFormData(draft.formData);
-        }
-      }
-    } catch {
-      // ignore
+  const resumeDraft = useCallback(() => {
+    if (savedDraftCache) {
+      setFormData(savedDraftCache);
     }
     setShowResumeModal(false);
   }, []);
 
   const discardDraft = useCallback(() => {
-    const mobile = getCleanMobile();
-    if (mobile) {
-      removeDraftFromIndex(mobile, "gst-compliance");
-      AsyncStorage.removeItem(getDraftKey(mobile)).catch(() => {});
-    }
+    savedDraftCache = null;
     setFormData(initialFormData);
     setErrors({});
     setShowResumeModal(false);
@@ -207,12 +153,8 @@ export function useComplianceForm() {
       const result: SubmissionResult = await submitComplianceRequest(formData);
 
       if (result.success) {
-        // Clear draft from AsyncStorage
-        const mobile = getCleanMobile();
-        if (mobile) {
-          removeDraftFromIndex(mobile, "gst-compliance");
-          AsyncStorage.removeItem(getDraftKey(mobile)).catch(() => {});
-        }
+        // Clear draft
+        savedDraftCache = null;
 
         // Navigate to dedicated success screen
         router.replace({

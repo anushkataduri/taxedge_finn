@@ -1,36 +1,57 @@
+import { apiClient } from "../../../core/api/apiClient";
 import type { CustomerProfile } from "../types/customer.types";
 import { authStorage } from "../../authentication/services/authStorage";
 
 export const customerApi = {
-  getProfile: async (identifier?: string): Promise<any> => {
-    const cleanMobile = identifier ? String(identifier).replace(/\D/g, "") : "";
-    const user = (cleanMobile ? authStorage.getUserByMobile(cleanMobile) : null) || authStorage.getUser();
-    const session = authStorage.getSession();
-
-    if (!user) {
-      return null;
+  getProfile: async (identifier?: string) => {
+    let resolved = identifier;
+    if (!resolved) {
+      const user = authStorage.getUser();
+      const session = authStorage.getSession();
+      resolved =
+        user?.mobileNumber ||
+        (user as any)?.mobile ||
+        user?.customerId ||
+        (user as any)?.custId ||
+        session.activeMobile ||
+        (session as any)?.activeCustId;
     }
 
-    const custId = user.customerId || (user as any).custId || (session as any)?.activeCustId || "";
-    const mobile = user.mobileNumber || (user as any).mobile || session.activeMobile || cleanMobile || "";
-    const name = user.name || (user as any).fullName || "";
-    const pin = user.pincode || (user as any).pinCode || "";
+    const clean = resolved ? String(resolved).trim() : "";
+    const params: Record<string, string> = {};
+    const headers: Record<string, string> = {};
 
-    return {
-      ...user,
-      customerId: custId,
-      custId: custId,
-      mobile: mobile,
-      mobileNumber: mobile,
-      name: name,
-      fullName: name,
-      aadhaar: user.aadhaar || (user as any).adhar || "",
-      pan: user.pan || "",
-      dob: user.dob || (user as any).dateOfBirth || "",
-      pincode: pin,
-      pinCode: pin,
-      customerType: user.customerType || (user as any).custType || "Individual",
-    };
+    if (clean) {
+      params["identifier"] = clean;
+      headers["X-Customer-Mobile"] = clean;
+      headers["X-Customer-Id"] = clean;
+    }
+
+    const res = await apiClient.get<any>("/customer/profile", {
+      params: Object.keys(params).length > 0 ? params : undefined,
+      headers,
+    });
+
+    if (res && typeof res === "object") {
+      const data = res.data || res;
+      return {
+        ...data,
+        customerId: data.custId || data.customerId || "",
+        custId: data.custId || data.customerId || "",
+        mobile: data.mobileNumber || data.mobile || "",
+        mobileNumber: data.mobileNumber || data.mobile || "",
+        name: data.name || data.fullName || "",
+        fullName: data.name || data.fullName || "",
+        aadhaar: data.aadhaar || data.adhar || "",
+        pan: data.pan || "",
+        dob: data.dob || data.dateOfBirth || "",
+        pincode: data.pincode || data.pinCode || "",
+        pinCode: data.pincode || data.pinCode || "",
+        customerType: data.customerType || data.custType || "Individual",
+      };
+    }
+
+    return res;
   },
 
   updateProfile: async (profile: Partial<CustomerProfile> & { custId?: string; mobileNumber?: string }) => {
@@ -40,28 +61,27 @@ export const customerApi = {
       profile.mobileNumber ||
       user?.mobileNumber ||
       (user as any)?.mobile ||
-      session.activeMobile ||
-      "";
+      session.activeMobile;
 
     const resolvedCustId =
       profile.custId ||
       user?.customerId ||
       (user as any)?.custId ||
-      (session as any)?.activeCustId ||
-      "";
+      (session as any)?.activeCustId;
 
-    const updatedUser = {
-      ...(user || {}),
-      ...profile,
-      customerId: resolvedCustId,
-      mobileNumber: resolvedMobile,
-    };
+    const headers: Record<string, string> = {};
+    if (resolvedMobile) headers["X-Customer-Mobile"] = resolvedMobile;
+    if (resolvedCustId) headers["X-Customer-Id"] = resolvedCustId;
 
-    if (resolvedMobile) {
-      authStorage.saveUser(updatedUser as any);
-    }
-
-    return { success: true, data: updatedUser };
+    return apiClient.put<any>(
+      "/customer/profile",
+      {
+        ...profile,
+        mobileNumber: resolvedMobile,
+        custId: resolvedCustId,
+      },
+      { headers }
+    );
   },
 };
 

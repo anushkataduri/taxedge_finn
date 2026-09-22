@@ -1,10 +1,7 @@
 import { create } from "zustand";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { applicationService } from "../modules/applications/services/applicationService";
 import { notificationService } from "../modules/notifications/services/notificationService";
-import { useAuthStore } from "../modules/authentication/store/authStore";
-import { getCustomerDrafts, addDraftToIndex, removeDraftFromIndex } from "../shared/hooks/useServiceDraft";
 import type {
   Application,
   ApplicationDocument,
@@ -14,127 +11,7 @@ import type {
   PaymentStatus,
   ServiceCategoryId,
 } from "../types/domain";
-
-function getActiveCustomerMobile(): string {
-  const authState = useAuthStore.getState();
-  const mobile =
-    authState.customer?.mobile ||
-    authState.authenticatedUser?.mobileNumber ||
-    authState.mobileNumber;
-  return mobile ? String(mobile).replace(/\D/g, "") : "";
-}
-
-async function getPersistedApplications(cleanMobile: string): Promise<Application[]> {
-  if (!cleanMobile) return [];
-  try {
-    const raw = await AsyncStorage.getItem(`@taxedge_apps_${cleanMobile}`);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-async function savePersistedApplications(cleanMobile: string, apps: Application[]): Promise<void> {
-  if (!cleanMobile) return;
-  try {
-    const realApps = apps.filter((a) => a.status !== "Draft" && !a.id.startsWith("DRAFT-"));
-    await AsyncStorage.setItem(`@taxedge_apps_${cleanMobile}`, JSON.stringify(realApps));
-  } catch (err) {
-    console.warn("Failed to persist applications to AsyncStorage:", err);
-  }
-}
-
-function normalizeDraftStep(step: unknown): number {
-  if (typeof step === "number" && Number.isFinite(step)) return step;
-  if (typeof step !== "string") return 0;
-
-  const stepMap: Record<string, number> = {
-    FORM: 0,
-    DETAILS: 0,
-    UPLOAD: 1,
-    DOCUMENTS: 1,
-    SUMMARY: 2,
-    REVIEW: 3,
-    ESTIMATE: 2,
-    PAYMENT: 3,
-  };
-
-  return stepMap[step.toUpperCase()] ?? 0;
-}
-
-function getDraftResumeRoute(serviceKey: string, step: unknown): string {
-  if (serviceKey === "tds-refund") {
-    const routeMap: Record<string, string> = {
-      DOCUMENTS: "/service/tds-checklist",
-      ESTIMATE: "/service/tds-estimate",
-      PAYMENT: "/service/tds-payment",
-    };
-    return routeMap[String(step || "").toUpperCase()] || "/service/tds-form";
-  }
-
-  const routeMap: Record<string, string> = {
-    "tax-notice": "/service/tax-notice-assistance",
-    "previous-year-itr": "/service/previous-year-itr",
-    "revised-itr": "/service/revised-itr",
-  };
-
-  return routeMap[serviceKey] || `/service/${serviceKey}`;
-}
-
-function normalizeDraftDocuments(draft: any): ApplicationDocument[] {
-  const docs = Array.isArray(draft.documents)
-    ? draft.documents
-    : Array.isArray(draft.formData?.documents)
-      ? draft.formData.documents
-      : [];
-
-  return docs.map((doc: any) => ({
-    name: doc.name || doc.title || doc.id || "Required Document",
-    status:
-      String(doc.status || "").toLowerCase() === "uploaded" || Boolean(doc.fileUri)
-        ? "Uploaded"
-        : "Pending",
-    fileUri: doc.fileUri || doc.uri,
-  }));
-}
-
-function draftToApplication(draft: any, cleanMobile: string): Application {
-  const sid = draft.serviceKey || draft.serviceId || "service";
-  const cat: ServiceCategoryId =
-    draft.category || (sid.startsWith("gst") ? "GST" : "ITR");
-  const serviceName =
-    draft.serviceName ||
-    sid
-      .split("-")
-      .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
-  const rawStep = draft.step ?? draft.stepIndex ?? draft.savedStep;
-  const stepNum = normalizeDraftStep(rawStep);
-  const documents = normalizeDraftDocuments(draft);
-  const updatedAt = draft.updatedAt || new Date().toISOString();
-
-  return {
-    id: draft.id || `DRAFT-${sid.toUpperCase()}-${cleanMobile.slice(-4) || "USER"}`,
-    serviceId: sid,
-    serviceName,
-    category: cat,
-    status: "Draft",
-    progress: Math.min(95, Math.max(5, Math.round(((stepNum + 1) / 5) * 100))),
-    assignedExecutive: "",
-    paymentAmount: 0,
-    paymentStatus: "Pending" as const,
-    createdAt: updatedAt,
-    formData: {
-      ...(draft.formData || {}),
-      isDraft: true,
-      savedStep: rawStep,
-      resumeRoute: getDraftResumeRoute(sid, rawStep),
-    },
-    documents,
-    timeline: [],
-    chatHistory: [],
-  };
-}
+import type { LoanApplicationDraft } from "../modules/loans/types/loans.types";
 
 export interface GstRegistrationDraft {
   id: string;
@@ -273,12 +150,7 @@ export interface ApplicationState {
   itrDraft: ItrRegistrationDraft | null;
   tdsDraft: TdsDraft | null;
   taxNoticeDraft: TaxNoticeDraft | null;
-  previousYearDraft: any | null;
-  revisedItrDraft: any | null;
-  gstComplianceDraft: any | null;
-  gstCancellationDraft: any | null;
-  gstAmendmentDraft: any | null;
-  gstCertificateDraft: any | null;
+  loanDraft: Partial<LoanApplicationDraft> | null;
   setSelectedApplicationId: (id: string | null) => void;
   setApplications: (apps: Application[]) => void;
   loadApplications: () => Promise<void>;
@@ -292,18 +164,8 @@ export interface ApplicationState {
   clearTdsDraft: () => void;
   saveTaxNoticeDraft: (draft: Partial<TaxNoticeDraft>) => void;
   clearTaxNoticeDraft: () => void;
-  savePreviousYearDraft: (draft: any) => void;
-  clearPreviousYearDraft: () => void;
-  saveRevisedItrDraft: (draft: any) => void;
-  clearRevisedItrDraft: () => void;
-  saveGstComplianceDraft: (draft: any) => void;
-  clearGstComplianceDraft: () => void;
-  saveGstCancellationDraft: (draft: any) => void;
-  clearGstCancellationDraft: () => void;
-  saveGstAmendmentDraft: (draft: any) => void;
-  clearGstAmendmentDraft: () => void;
-  saveGstCertificateDraft: (draft: any) => void;
-  clearGstCertificateDraft: () => void;
+  saveLoanDraft: (draft: Partial<LoanApplicationDraft>) => void;
+  clearLoanDraft: () => void;
   /** Creates an application and returns its generated id. */
   createApplication: (
     serviceId: string,
@@ -319,7 +181,6 @@ export interface ApplicationState {
   addChatMessage: (appId: string, sender: ChatSender, text: string) => void;
   payApplication: (appId: string) => void;
   deleteApplication: (appId: string) => void;
-  resetStore: () => void;
 }
 
 const timeStamp = (): string =>
@@ -335,133 +196,39 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
   itrDraft: null,
   tdsDraft: null,
   taxNoticeDraft: null,
-  previousYearDraft: null,
-  revisedItrDraft: null,
-  gstComplianceDraft: null,
-  gstCancellationDraft: null,
-  gstAmendmentDraft: null,
-  gstCertificateDraft: null,
-  resetStore: () =>
-    set({
-      applications: [],
-      selectedApplicationId: null,
-      error: null,
-      gstDraft: null,
-      gstFilingDraft: null,
-      itrDraft: null,
-      tdsDraft: null,
-      taxNoticeDraft: null,
-      previousYearDraft: null,
-      revisedItrDraft: null,
-      gstComplianceDraft: null,
-      gstCancellationDraft: null,
-      gstAmendmentDraft: null,
-      gstCertificateDraft: null,
-    }),
+  loanDraft: null,
   setSelectedApplicationId: (id) => set({ selectedApplicationId: id }),
-  setApplications: (apps) => {
-    set({ applications: apps });
-    savePersistedApplications(getActiveCustomerMobile(), apps);
-  },
+  setApplications: (apps) => set({ applications: apps, error: null }),
   loadApplications: async () => {
     set({ isLoading: true, error: null });
-    const cleanMobile = getActiveCustomerMobile();
     try {
-      // 1. Fetch remote applications if available
-      const remoteApps = await applicationService.getApplications();
-      // 2. Load locally persisted applications for this customer
-      const localApps = await getPersistedApplications(cleanMobile);
-
-      // Merge remote and local (remote takes precedence by id)
-      const mergedMap = new Map<string, Application>();
-      localApps.forEach((app) => mergedMap.set(app.id, app));
-      remoteApps.forEach((app) => mergedMap.set(app.id, app));
-
-      // 3. Load active drafts for this authenticated customer
-      const customerDrafts = await getCustomerDrafts(cleanMobile);
-      const draftApplications: Application[] = customerDrafts.map((draft) =>
-        draftToApplication(draft, cleanMobile),
-      );
-
-      const combinedApps = [...Array.from(mergedMap.values()), ...draftApplications];
-      set({ applications: combinedApps, isLoading: false, error: null });
+      const apps = await applicationService.getApplications();
+      if (apps && apps.length > 0) {
+        set({ applications: apps, isLoading: false, error: null });
+      } else {
+        set((state) => ({
+          applications: state.applications.length > 0 ? state.applications : [],
+          isLoading: false,
+          error: null,
+        }));
+      }
     } catch (err: any) {
-      const localApps = await getPersistedApplications(cleanMobile);
-      const customerDrafts = await getCustomerDrafts(cleanMobile);
-      const draftApplications = customerDrafts.map((draft) =>
-        draftToApplication(draft, cleanMobile),
-      );
-      const fallbackApps = [...localApps, ...draftApplications];
       set({
-        applications: fallbackApps,
         isLoading: false,
-        error: fallbackApps.length > 0 ? null : err?.message || "Failed to load applications. Please try again.",
+        error: err?.message || "Failed to load applications. Please try again.",
       });
+      throw err;
     }
   },
-  saveGstDraft: (draft) => {
-    set({ gstDraft: draft });
-    const clean = getActiveCustomerMobile();
-    addDraftToIndex(clean, "gst-registration");
-    AsyncStorage.setItem(`@taxedge_draft_${clean}_gst-registration`, JSON.stringify({
-      serviceKey: "gst-registration",
-      serviceName: "GST Registration",
-      category: "GST",
-      step: draft.stepIndex,
-      formData: draft.businessData,
-      documents: draft.documents,
-      updatedAt: draft.updatedAt || new Date().toISOString().split("T")[0],
-    })).catch(() => {});
-  },
-  clearGstDraft: () => {
-    set({ gstDraft: null });
-    const clean = getActiveCustomerMobile();
-    removeDraftFromIndex(clean, "gst-registration");
-    AsyncStorage.removeItem(`@taxedge_draft_${clean}_gst-registration`).catch(() => {});
-  },
-  saveGstFilingDraft: (draft) => {
-    set({ gstFilingDraft: draft });
-    const clean = getActiveCustomerMobile();
-    addDraftToIndex(clean, "gst-filing");
-    AsyncStorage.setItem(`@taxedge_draft_${clean}_gst-filing`, JSON.stringify({
-      serviceKey: "gst-filing",
-      serviceName: "GST Filing",
-      category: "GST",
-      step: (draft as any).currentStep ?? draft.stepIndex,
-      formData: draft.periodData,
-      documents: draft.documents,
-      updatedAt: draft.updatedAt || new Date().toISOString().split("T")[0],
-    })).catch(() => {});
-  },
-  clearGstFilingDraft: () => {
-    set({ gstFilingDraft: null });
-    const clean = getActiveCustomerMobile();
-    removeDraftFromIndex(clean, "gst-filing");
-    AsyncStorage.removeItem(`@taxedge_draft_${clean}_gst-filing`).catch(() => {});
-  },
-  saveItrDraft: (draft) => {
-    set({ itrDraft: draft });
-    const clean = getActiveCustomerMobile();
-    addDraftToIndex(clean, "itr-filing");
-    AsyncStorage.setItem(`@taxedge_draft_${clean}_itr-filing`, JSON.stringify({
-      serviceKey: "itr-filing",
-      serviceName: "ITR Filing",
-      category: "ITR",
-      step: draft.stepIndex,
-      formData: (draft as any).filingData || draft,
-      documents: draft.documents,
-      updatedAt: draft.updatedAt || new Date().toISOString().split("T")[0],
-    })).catch(() => {});
-  },
-  clearItrDraft: () => {
-    set({ itrDraft: null });
-    const clean = getActiveCustomerMobile();
-    removeDraftFromIndex(clean, "itr-filing");
-    AsyncStorage.removeItem(`@taxedge_draft_${clean}_itr-filing`).catch(() => {});
-  },
+  saveGstDraft: (draft) => set({ gstDraft: draft }),
+  clearGstDraft: () => set({ gstDraft: null }),
+  saveGstFilingDraft: (draft) => set({ gstFilingDraft: draft }),
+  clearGstFilingDraft: () => set({ gstFilingDraft: null }),
+  saveItrDraft: (draft) => set({ itrDraft: draft }),
+  clearItrDraft: () => set({ itrDraft: null }),
   saveTdsDraft: (draft) =>
-    set((state) => {
-      const updatedTds = state.tdsDraft
+    set((state) => ({
+      tdsDraft: state.tdsDraft
         ? {
             ...state.tdsDraft,
             ...draft,
@@ -475,29 +242,12 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
             documents: draft.documents || [],
             step: draft.step,
             updatedAt: draft.updatedAt,
-          };
-      const clean = getActiveCustomerMobile();
-      addDraftToIndex(clean, "tds-refund");
-      AsyncStorage.setItem(`@taxedge_draft_${clean}_tds-refund`, JSON.stringify({
-        serviceKey: "tds-refund",
-        serviceName: "TDS Refund",
-        category: "ITR",
-        step: updatedTds.step,
-        formData: updatedTds.formData,
-        documents: updatedTds.documents,
-        updatedAt: updatedTds.updatedAt || new Date().toISOString().split("T")[0],
-      })).catch(() => {});
-      return { tdsDraft: updatedTds };
-    }),
-  clearTdsDraft: () => {
-    set({ tdsDraft: null });
-    const clean = getActiveCustomerMobile();
-    removeDraftFromIndex(clean, "tds-refund");
-    AsyncStorage.removeItem(`@taxedge_draft_${clean}_tds-refund`).catch(() => {});
-  },
+          },
+    })),
+  clearTdsDraft: () => set({ tdsDraft: null }),
   saveTaxNoticeDraft: (draft) =>
-    set((state) => {
-      const updatedNotice = state.taxNoticeDraft
+    set((state) => ({
+      taxNoticeDraft: state.taxNoticeDraft
         ? {
             ...state.taxNoticeDraft,
             ...draft,
@@ -517,146 +267,16 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
                 hour: "2-digit",
                 minute: "2-digit",
               }),
-          };
-      const clean = getActiveCustomerMobile();
-      addDraftToIndex(clean, "tax-notice");
-      AsyncStorage.setItem(`@taxedge_draft_${clean}_tax-notice`, JSON.stringify({
-        serviceKey: "tax-notice",
-        serviceName: "Tax Notice Assistance",
-        category: "ITR",
-        step: updatedNotice.step,
-        formData: updatedNotice.formData,
-        documents: updatedNotice.documents,
-        updatedAt: updatedNotice.updatedAt || new Date().toISOString().split("T")[0],
-      })).catch(() => {});
-      return { taxNoticeDraft: updatedNotice };
-    }),
-  clearTaxNoticeDraft: () => {
-    set({ taxNoticeDraft: null });
-    const clean = getActiveCustomerMobile();
-    removeDraftFromIndex(clean, "tax-notice");
-    AsyncStorage.removeItem(`@taxedge_draft_${clean}_tax-notice`).catch(() => {});
-  },
-  savePreviousYearDraft: (draft) => {
-    set({ previousYearDraft: draft });
-    const clean = getActiveCustomerMobile();
-    addDraftToIndex(clean, "previous-year-itr");
-    AsyncStorage.setItem(`@taxedge_draft_${clean}_previous-year-itr`, JSON.stringify({
-      serviceKey: "previous-year-itr",
-      serviceName: "Previous Year ITR",
-      category: "ITR",
-      step: draft.step ?? 0,
-      formData: draft.formData || draft,
-      documents: draft.documents || [],
-      updatedAt: draft.updatedAt || new Date().toISOString().split("T")[0],
-    })).catch(() => {});
-  },
-  clearPreviousYearDraft: () => {
-    set({ previousYearDraft: null });
-    const clean = getActiveCustomerMobile();
-    removeDraftFromIndex(clean, "previous-year-itr");
-    AsyncStorage.removeItem(`@taxedge_draft_${clean}_previous-year-itr`).catch(() => {});
-  },
-  saveRevisedItrDraft: (draft) => {
-    set({ revisedItrDraft: draft });
-    const clean = getActiveCustomerMobile();
-    addDraftToIndex(clean, "revised-itr");
-    AsyncStorage.setItem(`@taxedge_draft_${clean}_revised-itr`, JSON.stringify({
-      serviceKey: "revised-itr",
-      serviceName: "Revised ITR",
-      category: "ITR",
-      step: draft.step ?? 0,
-      formData: draft.formData || draft,
-      documents: draft.documents || [],
-      updatedAt: draft.updatedAt || new Date().toISOString().split("T")[0],
-    })).catch(() => {});
-  },
-  clearRevisedItrDraft: () => {
-    set({ revisedItrDraft: null });
-    const clean = getActiveCustomerMobile();
-    removeDraftFromIndex(clean, "revised-itr");
-    AsyncStorage.removeItem(`@taxedge_draft_${clean}_revised-itr`).catch(() => {});
-  },
-  saveGstComplianceDraft: (draft) => {
-    set({ gstComplianceDraft: draft });
-    const clean = getActiveCustomerMobile();
-    addDraftToIndex(clean, "gst-compliance");
-    AsyncStorage.setItem(`@taxedge_draft_${clean}_gst-compliance`, JSON.stringify({
-      serviceKey: "gst-compliance",
-      serviceName: "GST Compliance",
-      category: "GST",
-      step: draft.step ?? 0,
-      formData: draft.formData || draft,
-      documents: draft.documents || [],
-      updatedAt: draft.updatedAt || new Date().toISOString().split("T")[0],
-    })).catch(() => {});
-  },
-  clearGstComplianceDraft: () => {
-    set({ gstComplianceDraft: null });
-    const clean = getActiveCustomerMobile();
-    removeDraftFromIndex(clean, "gst-compliance");
-    AsyncStorage.removeItem(`@taxedge_draft_${clean}_gst-compliance`).catch(() => {});
-  },
-  saveGstCancellationDraft: (draft) => {
-    set({ gstCancellationDraft: draft });
-    const clean = getActiveCustomerMobile();
-    addDraftToIndex(clean, "gst-cancellation");
-    AsyncStorage.setItem(`@taxedge_draft_${clean}_gst-cancellation`, JSON.stringify({
-      serviceKey: "gst-cancellation",
-      serviceName: "GST Cancellation",
-      category: "GST",
-      step: draft.step ?? 0,
-      formData: draft.formData || draft,
-      documents: draft.documents || [],
-      updatedAt: draft.updatedAt || new Date().toISOString().split("T")[0],
-    })).catch(() => {});
-  },
-  clearGstCancellationDraft: () => {
-    set({ gstCancellationDraft: null });
-    const clean = getActiveCustomerMobile();
-    removeDraftFromIndex(clean, "gst-cancellation");
-    AsyncStorage.removeItem(`@taxedge_draft_${clean}_gst-cancellation`).catch(() => {});
-  },
-  saveGstAmendmentDraft: (draft) => {
-    set({ gstAmendmentDraft: draft });
-    const clean = getActiveCustomerMobile();
-    addDraftToIndex(clean, "gst-amendment");
-    AsyncStorage.setItem(`@taxedge_draft_${clean}_gst-amendment`, JSON.stringify({
-      serviceKey: "gst-amendment",
-      serviceName: "GST Amendment",
-      category: "GST",
-      step: draft.step ?? 0,
-      formData: draft.formData || draft,
-      documents: draft.documents || [],
-      updatedAt: draft.updatedAt || new Date().toISOString().split("T")[0],
-    })).catch(() => {});
-  },
-  clearGstAmendmentDraft: () => {
-    set({ gstAmendmentDraft: null });
-    const clean = getActiveCustomerMobile();
-    removeDraftFromIndex(clean, "gst-amendment");
-    AsyncStorage.removeItem(`@taxedge_draft_${clean}_gst-amendment`).catch(() => {});
-  },
-  saveGstCertificateDraft: (draft) => {
-    set({ gstCertificateDraft: draft });
-    const clean = getActiveCustomerMobile();
-    addDraftToIndex(clean, "gst-certificate");
-    AsyncStorage.setItem(`@taxedge_draft_${clean}_gst-certificate`, JSON.stringify({
-      serviceKey: "gst-certificate",
-      serviceName: "GST Certificate",
-      category: "GST",
-      step: draft.step ?? 0,
-      formData: draft.formData || draft,
-      documents: draft.documents || [],
-      updatedAt: draft.updatedAt || new Date().toISOString().split("T")[0],
-    })).catch(() => {});
-  },
-  clearGstCertificateDraft: () => {
-    set({ gstCertificateDraft: null });
-    const clean = getActiveCustomerMobile();
-    removeDraftFromIndex(clean, "gst-certificate");
-    AsyncStorage.removeItem(`@taxedge_draft_${clean}_gst-certificate`).catch(() => {});
-  },
+          },
+    })),
+  clearTaxNoticeDraft: () => set({ taxNoticeDraft: null }),
+  saveLoanDraft: (draft) =>
+    set((state) => ({
+      loanDraft: state.loanDraft
+        ? { ...state.loanDraft, ...draft, updatedAt: new Date().toISOString() }
+        : { ...draft, updatedAt: new Date().toISOString() },
+    })),
+  clearLoanDraft: () => set({ loanDraft: null }),
   createApplication: (
     serviceId,
     serviceName,
@@ -670,14 +290,22 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
     const randomNum = Math.floor(10000 + Math.random() * 90000);
     const prefix = category.substring(0, 4).toUpperCase();
     const appId = `${prefix}-2026-${randomNum}`;
-    const assignedExecutive = "";
+
+    const executives = [
+      "Rahul Sharma (CA)",
+      "Sneha Patel (Tax Expert)",
+      "Vikram Malhotra (CA)",
+      "Karan Singhania (Tax Consultant)",
+    ];
+    const assignedExecutive =
+      executives[Math.floor(Math.random() * executives.length)];
 
     const newApp: Application = {
       id: appId,
       serviceId,
       serviceName,
       category,
-      status: "Submitted",
+      status: "Verification",
       progress: 20,
       assignedExecutive,
       paymentAmount,
@@ -873,23 +501,22 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
                     status: "pending",
                   },
                 ],
-      chatHistory: [],
+      chatHistory: [
+        {
+          id: `msg-${Date.now()}-welcome`,
+          sender: "staff",
+          text: `Hello! I have been assigned as your service representative. Let me know if you have any questions about this request.`,
+          timestamp: "Just now",
+        },
+      ],
     };
 
-    set((state) => {
-      const remainingApps = state.applications.filter(
-        (a) => !(a.status === "Draft" && a.serviceId === serviceId) && a.id !== appId,
-      );
-      const nextApps = [newApp, ...remainingApps];
-      savePersistedApplications(getActiveCustomerMobile(), nextApps);
-      return { applications: nextApps };
-    });
-
-    const cleanMobile = getActiveCustomerMobile();
-    if (cleanMobile) {
-      AsyncStorage.removeItem(`@taxedge_draft_${cleanMobile}_${serviceId}`).catch(() => {});
-      removeDraftFromIndex(cleanMobile, serviceId).catch(() => {});
-    }
+    set((state) => ({
+      applications: [
+        newApp,
+        ...state.applications.filter((a) => a.id !== appId),
+      ],
+    }));
 
     // Asynchronously persist to backend database
     applicationService.createApplication(newApp).catch((err) => {
@@ -931,7 +558,6 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
         applicationService.updateApplication(updated).catch(() => {});
         return updated;
       });
-      savePersistedApplications(getActiveCustomerMobile(), updatedApplications);
       return { applications: updatedApplications };
     }),
   addChatMessage: (appId, sender, text) => {
@@ -953,16 +579,39 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
         applicationService.updateApplication(updated).catch(() => {});
         return updated;
       });
-      savePersistedApplications(getActiveCustomerMobile(), updatedApps);
       return { applications: updatedApps };
     });
+
+    // If sent by user, simulate automated executive response after 1.5s
+    if (sender === "user") {
+      setTimeout(() => {
+        const staffMessage: ChatMessage = {
+          id: `msg-${Date.now()}-staff`,
+          sender: "staff",
+          text: "Thank you for your message. I am looking into your application. I will review and update your document status shortly.",
+          timestamp: timeStamp(),
+        };
+        set((state) => {
+          const updatedApps = state.applications.map((app) => {
+            if (app.id !== appId) return app;
+            const updated = {
+              ...app,
+              chatHistory: [...(app.chatHistory || []), staffMessage],
+            };
+            applicationService.updateApplication(updated).catch(() => {});
+            return updated;
+          });
+          return { applications: updatedApps };
+        });
+      }, 1500);
+    }
   },
   payApplication: (appId) => {
     let paidAmount = 0;
     let paidServiceName = "";
 
-    set((state) => {
-      const updatedApps = state.applications.map((app) => {
+    set((state) => ({
+      applications: state.applications.map((app) => {
         if (app.id !== appId) return app;
         paidAmount = app.paymentAmount;
         paidServiceName = app.serviceName;
@@ -980,39 +629,22 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
         };
         applicationService.updateApplication(updated).catch(() => {});
         return updated;
-      });
-      savePersistedApplications(getActiveCustomerMobile(), updatedApps);
-      return { applications: updatedApps };
-    });
+      }),
+    }));
 
     if (paidAmount > 0 || paidServiceName) {
       notificationService.notifyPaymentSuccessful(paidAmount, paidServiceName);
     }
   },
   deleteApplication: (appId) => {
-    if (appId.startsWith("DRAFT-")) {
-      const cleanMobile = getActiveCustomerMobile();
-      const serviceKey = appId.replace("DRAFT-", "").toLowerCase();
-      removeDraftFromIndex(cleanMobile, serviceKey).catch(() => {});
-      AsyncStorage.removeItem(`@taxedge_draft_${cleanMobile}_${serviceKey}`).catch(() => {});
-    }
-    set((state) => {
-      const targetApp = state.applications.find((a) => a.id === appId);
-      if (targetApp && (targetApp.status === "Draft" || targetApp.id.startsWith("DRAFT-"))) {
-        const cleanMobile = getActiveCustomerMobile();
-        const serviceKey = targetApp.serviceId || appId.replace("DRAFT-", "").toLowerCase();
-        removeDraftFromIndex(cleanMobile, serviceKey).catch(() => {});
-        AsyncStorage.removeItem(`@taxedge_draft_${cleanMobile}_${serviceKey}`).catch(() => {});
-      }
-      const remainingApps = state.applications.filter((a) => a.id !== appId);
-      savePersistedApplications(getActiveCustomerMobile(), remainingApps);
-      return {
-        applications: remainingApps,
-        selectedApplicationId:
-          state.selectedApplicationId === appId
-            ? null
-            : state.selectedApplicationId,
-      };
-    });
+    set((state) => ({
+      applications: state.applications.filter((a) => a.id !== appId),
+      selectedApplicationId:
+        state.selectedApplicationId === appId
+          ? null
+          : state.selectedApplicationId,
+    }));
+    // Optional: Delete from backend if needed
+    // applicationService.deleteApplication(appId).catch(() => {});
   },
 }));

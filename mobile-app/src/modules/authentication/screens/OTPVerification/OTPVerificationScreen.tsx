@@ -54,13 +54,13 @@ export function OTPVerificationScreen() {
       const res = await verifyOtp(code);
       setLoading(false);
       if (res.success) {
-        if (res.requiresPasscode) {
+        if (res.isExistingUser || res.requiresPasscode) {
           router.replace("/(auth)/passcode" as any);
         } else {
           router.replace("/(main)/home" as any);
         }
       } else {
-        setError(res.message || res.error || "Invalid OTP. Please check the code and try again.");
+        setError("Invalid OTP. Please check the code and try again.");
       }
     } catch (err: any) {
       setLoading(false);
@@ -121,7 +121,7 @@ export function OTPVerificationScreen() {
             Verification Code
           </Text>
           <Text style={styles.subTitle}>
-            Enter the 6-digit OTP sent to {mobileNumber ? `+91 ${mobileNumber}` : "your mobile number"}
+            Enter the 6-digit OTP sent to +91 {mobileNumber || "9876543210"}
           </Text>
         </View>
 

@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { View, ScrollView, StatusBar, BackHandler } from "react-native";
+import React from "react";
+import { View, ScrollView, StatusBar } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApplicationStore } from "@/store/applicationStore";
@@ -39,16 +39,12 @@ export const TdsRefundStatusScreen: React.FC = () => {
   );
 
   const handleBack = () => {
-    router.replace("/(main)/home");
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/service/itr" as any);
+    }
   };
-
-  useEffect(() => {
-    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      handleBack();
-      return true;
-    });
-    return () => sub.remove();
-  }, []);
 
   const containerInsetsStyle = getContainerInsetsStyle(insets.top);
   const scrollContentInsetsStyle = getScrollContentInsetsStyle(insets.bottom);

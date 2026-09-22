@@ -13,5 +13,4 @@ target/
 .tools/
 .agents/
 taxedge-backend/taxedge-backend/
-.git_backend_backup/
-*.git_backend_backup/
+

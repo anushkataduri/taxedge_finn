@@ -18,6 +18,7 @@ import { BrandColors } from "@/shared/theme";
 import { ifscService } from "@/modules/gst/services/ifscService";
 import { useAuthStore } from "@/modules/authentication/store/authStore";
 import { authStorage } from "@/modules/authentication/services/authStorage";
+import { customerApi } from "@/modules/customer/services/customerApi";
 import { useCustomerStore } from "@/modules/customer/store/customerStore";
 import type { Customer } from "@/shared/types/domain";
 import {
@@ -115,8 +116,12 @@ export const TdsRefundFormScreen: React.FC = () => {
         (currentAuthUser as any)?.customerId ||
         (currentAuthUser as any)?.custId;
 
-      const cleanMob = activeMobile ? String(activeMobile).replace(/\D/g, "") : "";
-      const apiRes: any = (cleanMob ? authStorage.getUserByMobile(cleanMob) : null) || authStorage.getUser();
+      let apiRes: any = null;
+      try {
+        apiRes = await customerApi.getProfile(activeMobile || activeCustId);
+      } catch (err) {
+        console.warn("Backend profile fetch failed, using stored profile:", err);
+      }
 
       if (apiRes && (apiRes.name || apiRes.fullName || apiRes.mobileNumber || apiRes.mobile || apiRes.pan || apiRes.aadhaar)) {
         const mergedCust: Customer = {
@@ -276,9 +281,7 @@ export const TdsRefundFormScreen: React.FC = () => {
     } catch {}
 
     try {
-      const existingUser = authStorage.getUser() || {};
-      authStorage.saveUser({
-        ...existingUser,
+      await customerApi.updateProfile({
         name: updatedCustomer.name,
         email: updatedCustomer.email,
         mobileNumber: updatedCustomer.mobile,
@@ -292,8 +295,10 @@ export const TdsRefundFormScreen: React.FC = () => {
         state: updatedCustomer.state,
         pincode: updatedCustomer.pincode,
         customerType: updatedCustomer.customerType,
-      } as any);
-    } catch {}
+      });
+    } catch (e) {
+      console.warn("Backend profile persistence failed:", e);
+    }
 
     await tdsDraftService.saveFormDraft({
       ...formData,

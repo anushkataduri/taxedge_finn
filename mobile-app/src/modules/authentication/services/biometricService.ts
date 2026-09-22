@@ -92,13 +92,7 @@ export const biometricService = {
    */
   async checkHardwareSupport(): Promise<boolean> {
     try {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      if (!hasHardware) return false;
-      if (Platform.OS === "ios") {
-        const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
-        return types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
-      }
-      return true;
+      return await LocalAuthentication.hasHardwareAsync();
     } catch {
       return false;
     }
@@ -127,7 +121,6 @@ export const biometricService = {
   /**
    * Get the concrete biometric type of the device:
    * 'FINGERPRINT' | 'FACE_UNLOCK' | 'BIOMETRIC' | 'NONE'
-   * Note: On iOS, only FACE_UNLOCK (Face ID) is supported. Touch ID is not allowed.
    */
   async getBiometricType(): Promise<BiometricType> {
     try {
@@ -135,16 +128,11 @@ export const biometricService = {
       if (!isAvailable) return "NONE";
 
       const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
-      const hasFace = types.includes(
-        LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION,
-      );
-
-      if (Platform.OS === "ios") {
-        return hasFace ? "FACE_UNLOCK" : "NONE";
-      }
-
       const hasFingerprint = types.includes(
         LocalAuthentication.AuthenticationType.FINGERPRINT,
+      );
+      const hasFace = types.includes(
+        LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION,
       );
 
       if (hasFingerprint) return "FINGERPRINT";
@@ -156,13 +144,10 @@ export const biometricService = {
   },
 
   /**
-   * Detect device biometric type and return a user-friendly label
+   * Detect device biometric type and return a user-friendly label (e.g. "Fingerprint", "Face Unlock", "Biometric")
    */
   async getBiometricTypeLabel(): Promise<string> {
     try {
-      if (Platform.OS === "ios") {
-        return "Face ID";
-      }
       const type = await this.getBiometricType();
       switch (type) {
         case "FINGERPRINT":
@@ -173,7 +158,7 @@ export const biometricService = {
           return "Biometric";
       }
     } catch {
-      return Platform.OS === "ios" ? "Face ID" : "Fingerprint";
+      return "Fingerprint";
     }
   },
 
@@ -222,9 +207,9 @@ export const biometricService = {
 
       const res = await LocalAuthentication.authenticateAsync({
         promptMessage: prompt,
-        fallbackLabel: "",
+        fallbackLabel: customOptions.fallbackLabel ?? "Use Passcode",
         cancelLabel: customOptions.cancelLabel ?? "Cancel",
-        disableDeviceFallback: true,
+        disableDeviceFallback: customOptions.disableDeviceFallback ?? false,
       });
 
       if (res && res.success === true) {
@@ -256,17 +241,9 @@ export const biometricService = {
   /**
    * Check whether biometric login is enabled for the current device/user
    */
-  async isBiometricEnabled(mobile?: string): Promise<boolean> {
+  async isBiometricEnabled(): Promise<boolean> {
     const val = await getSecureItem(KEY_BIOMETRIC_ENABLED);
-    if (val !== "true") return false;
-    if (mobile) {
-      const cleanMobile = mobile.replace(/\D/g, "");
-      const registeredMobile = await this.getBiometricMobile();
-      if (registeredMobile && cleanMobile && registeredMobile !== cleanMobile) {
-        return false;
-      }
-    }
-    return true;
+    return val === "true";
   },
 
   /**

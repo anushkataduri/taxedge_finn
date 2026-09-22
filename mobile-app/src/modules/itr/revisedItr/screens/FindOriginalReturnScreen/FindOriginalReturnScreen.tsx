@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -39,22 +39,6 @@ export const FindOriginalReturnScreen: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const ayOptions = ["AY 2025–26", "AY 2024–25", "AY 2023–24"];
-
-  useEffect(() => {
-    const draft = useApplicationStore.getState().revisedItrDraft;
-    if (draft) {
-      const step = draft.step ?? draft.currentStep ?? 0;
-      if (step >= 4) {
-        router.push({ pathname: "/service/revised-itr-review" as any, params: draft.formData || {} });
-      } else if (step === 3) {
-        router.push({ pathname: "/service/revised-itr-documents" as any, params: draft.formData || {} });
-      } else if (step === 2) {
-        router.push({ pathname: "/service/revised-itr-update" as any, params: draft.formData || {} });
-      } else if (step === 1) {
-        router.push({ pathname: "/service/revised-itr-reason" as any, params: draft.formData || {} });
-      }
-    }
-  }, []);
 
   const handleFindReturn = () => {
     // 15-digit numeric validation

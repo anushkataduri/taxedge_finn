@@ -258,8 +258,6 @@ export function GstAmendmentScreen() {
 
   const customer = useAuthStore((state) => state.customer);
   const createApplication = useApplicationStore((state) => state.createApplication);
-  const saveGstAmendmentDraft = useApplicationStore((state) => state.saveGstAmendmentDraft);
-  const clearGstAmendmentDraft = useApplicationStore((state) => state.clearGstAmendmentDraft);
   const addNotification = useNotificationStore((state) => state.addNotification);
 
   // Workflow state
@@ -422,42 +420,8 @@ export function GstAmendmentScreen() {
           newContactEmail ||
           supportingDoc)
       ),
-    onSaveDraft: () => {
-      saveGstAmendmentDraft({
-        formData: {
-          gstin,
-          selectedSectionId,
-          newLegalBusinessName,
-          newPrincipalAddress,
-          newPrincipalCity,
-          newPrincipalDistrict,
-          newPrincipalState,
-          newPrincipalPincode,
-          newPrincipalNatureOfPremises,
-          newAdditionalAddress,
-          newAdditionalCity,
-          newAdditionalPincode,
-          newAdditionalNatureOfPremises,
-          newBankName,
-          newBankAccountNumber,
-          newIfscCode,
-          newAccountType,
-          newSignatoryName,
-          newSignatoryPan,
-          newSignatoryDob,
-          newSignatoryDesignation,
-          newSignatoryMobile,
-          newSignatoryEmail,
-          newContactMobile,
-          newContactEmail,
-        },
-        step: currentStep,
-        updatedAt: new Date().toISOString().split("T")[0],
-      });
-    },
-    onDiscardDraft: () => {
-      clearGstAmendmentDraft();
-    },
+    onSaveDraft: () => {},
+    onDiscardDraft: () => {},
     isSubmitted: () => currentStep === "SUCCESS",
   });
 

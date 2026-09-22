@@ -17,7 +17,6 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTheme } from "../../hooks/use-theme";
 import { useAuthStore } from "../../store/authStore";
 import { useApplicationStore } from "../../store/applicationStore";
-import authApi from "../../modules/authentication/services/authApi";
 
 import { ScreenLayout, SCREEN_BOTTOM_PADDING } from "../../components/ScreenLayout";
 import { styles } from "../../styles/app/(main)/profile.styles";
@@ -216,43 +215,19 @@ const compactRupees = (value: number): string => {
 export default function ProfileScreen() {
   const colors = useTheme();
   const router = useRouter();
-  const { customer, logout, setAvatar } = useAuthStore();
+  const { customer, logout, setAvatar, fetchAndSyncProfile } = useAuthStore();
   const applications = useApplicationStore((state) => state.applications);
 
   const [pickingPhoto, setPickingPhoto] = useState(false);
   const [showKycModal, setShowKycModal] = useState(false);
   const [showPersonalModal, setShowPersonalModal] = useState(false);
-  const [fetchingPersonal, setFetchingPersonal] = useState(false);
-  const [personalDetails, setPersonalDetails] = useState<any>(null);
-
-  const fetchPersonalDetails = async () => {
-    const custId = customer?.customerId;
-    if (!custId) {
-      console.warn("⚠️ [Profile] No customerId found to fetch personal details");
-      return;
-    }
-    setFetchingPersonal(true);
-    try {
-      console.log(`🚀 [Profile] Fetching details for custId: ${custId}`);
-      const res = await authApi.getCustomerDetails(custId);
-      if (res.success && res.data) {
-        console.log("✅ [Profile] Personal details fetched successfully:", res.data);
-        setPersonalDetails(res.data);
-      } else {
-        console.warn("⚠️ [Profile] Failed to fetch personal details:", res.message);
-      }
-    } catch (err) {
-      console.error("❌ [Profile] Error fetching personal details:", err);
-    } finally {
-      setFetchingPersonal(false);
-    }
-  };
 
   useEffect(() => {
-    if (customer?.customerId) {
-      fetchPersonalDetails();
+    // If essential customer profile fields are missing, fetch fresh data from backend
+    if (!customer?.pan || !customer?.dob || !customer?.customerId) {
+      fetchAndSyncProfile().catch(() => {});
     }
-  }, [customer?.customerId]);
+  }, [customer?.pan, customer?.dob, customer?.customerId, fetchAndSyncProfile]);
 
   /* ---------- Stats ---------- */
   const activeCount = applications.filter(
@@ -266,17 +241,13 @@ export default function ProfileScreen() {
     .reduce((sum, app) => sum + app.paymentAmount, 0);
 
   /* KYC reads as verified once both identity documents are on file or verified in profile */
-  const activePan = personalDetails?.pan || customer?.pan;
-  const activeAadhaar = personalDetails?.aadhaar || customer?.aadhaar;
   const allDocuments = applications.flatMap((app) => app.documents);
   const hasUploaded = (keyword: string) =>
     allDocuments.some(
       (doc) =>
         doc.name.toLowerCase().includes(keyword) && doc.status === "Uploaded",
     );
-  const kycVerified =
-    (hasUploaded("pan") && hasUploaded("aadhaar")) ||
-    Boolean(activePan && activeAadhaar);
+  const kycVerified = (hasUploaded("pan") && hasUploaded("aadhaar")) || Boolean(customer?.pan && customer?.aadhaar);
 
   /* ---------- Profile photo ---------- */
   const pickFromLibrary = async () => {
@@ -361,12 +332,8 @@ export default function ProfileScreen() {
         router.push(row.action.href);
         return;
       case "modal":
-        if (row.action.modal === "kyc") {
-          setShowKycModal(true);
-        } else {
-          setShowPersonalModal(true);
-          fetchPersonalDetails();
-        }
+        if (row.action.modal === "kyc") setShowKycModal(true);
+        else setShowPersonalModal(true);
         return;
       case "soon":
         Alert.alert(row.label, "This section isn't available yet.");
@@ -419,16 +386,16 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <Text style={styles.heroName}>
-            {personalDetails?.name || customer?.name || "Customer Profile"}
+            {customer?.name || "Customer Profile"}
           </Text>
           <Text style={styles.heroId}>
-            Customer ID: {personalDetails?.custId || personalDetails?.customerId || customer?.customerId || "N/A"}
+            Customer ID: {customer?.customerId || "N/A"}
           </Text>
 
           <View style={styles.pillRow}>
             <View style={styles.pill}>
               <Text style={styles.pillText}>
-                {personalDetails?.customerType || customer?.customerType || "Client"}
+                {customer?.customerType || "Client"}
               </Text>
             </View>
             <View
@@ -572,36 +539,14 @@ export default function ProfileScreen() {
               Personal Information
             </Text>
 
-            {fetchingPersonal ? (
-              <View style={{ paddingVertical: 24, alignItems: "center" }}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={{ marginTop: 12, color: colors.textSecondary, fontSize: 13 }}>
-                  Fetching personal details...
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.modalBody}>
-                {infoRow("Full Name", personalDetails?.name || customer?.name || "N/A")}
-                {infoRow("Mobile", personalDetails?.mobileNumber || customer?.mobile || "N/A")}
-                {infoRow("Email", personalDetails?.email || customer?.email || "N/A")}
-                {infoRow("Date of Birth", personalDetails?.dob || customer?.dob || "N/A")}
-                {infoRow("Customer Type", personalDetails?.customerType || customer?.customerType || "N/A")}
-                {infoRow(
-                  "Address",
-                  personalDetails?.address ||
-                    customer?.address ||
-                    [
-                      personalDetails?.addressLine1,
-                      personalDetails?.city,
-                      personalDetails?.state,
-                      personalDetails?.pincode,
-                    ]
-                      .filter(Boolean)
-                      .join(", ") ||
-                    "N/A",
-                )}
-              </View>
-            )}
+            <View style={styles.modalBody}>
+              {infoRow("Full Name", customer?.name || "N/A")}
+              {infoRow("Mobile", customer?.mobile || "N/A")}
+              {infoRow("Email", customer?.email || "N/A")}
+              {infoRow("Date of Birth", customer?.dob || "N/A")}
+              {infoRow("Customer Type", customer?.customerType || "N/A")}
+              {infoRow("Address", customer?.address || "N/A")}
+            </View>
 
             <SecondaryButton
               title="Close"
@@ -632,14 +577,14 @@ export default function ProfileScreen() {
             <View style={styles.modalBody}>
               {infoRow(
                 "PAN Number",
-                activePan
-                  ? `${activePan.substring(0, 5)}****${activePan.substring(9)}`
+                customer?.pan
+                  ? `${customer.pan.substring(0, 5)}****${customer.pan.substring(9)}`
                   : "N/A",
               )}
               {infoRow(
                 "Aadhaar Number",
-                activeAadhaar
-                  ? `**** **** ${activeAadhaar.substring(Math.max(0, activeAadhaar.length - 4))}`
+                customer?.aadhaar
+                  ? `**** **** ${customer.aadhaar.substring(8)}`
                   : "N/A",
               )}
               <View style={styles.infoRow}>

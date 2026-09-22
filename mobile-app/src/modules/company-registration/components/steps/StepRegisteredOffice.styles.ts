@@ -3,7 +3,6 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: '#F8FAFC',
   },
   heading: {
     fontSize: 20,
@@ -12,28 +11,15 @@ export const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subheading: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#64748B',
     marginBottom: 20,
-    lineHeight: 18,
-  },
-  sectionHeading: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 12,
-    marginTop: 4,
-  },
-  sectionDivider: {
-    height: 1,
-    backgroundColor: '#E2E8F0',
-    marginVertical: 16,
   },
   fieldGroup: {
     marginBottom: 16,
   },
   label: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#1E293B',
     marginBottom: 6,
@@ -58,17 +44,14 @@ export const styles = StyleSheet.create({
   chipRow: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 10,
   },
   chip: {
-    flex: 1,
+    paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#CBD5E1',
     backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   chipSelected: {
     borderColor: '#083B75',
@@ -76,84 +59,37 @@ export const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 13,
-    fontWeight: '500',
     color: '#334155',
   },
   chipTextSelected: {
     color: '#FFFFFF',
     fontWeight: '600',
   },
-  infoBoxContainer: {
+  uploadBox: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 8,
+    padding: 12,
+  },
+  uploadText: {
+    fontSize: 13,
+    color: '#083B75',
+    fontWeight: '600',
+  },
+  infoNote: {
+    fontSize: 12,
+    color: '#0369A1',
     backgroundColor: '#F0F9FF',
     borderColor: '#BAE6FD',
     borderWidth: 1,
     borderRadius: 8,
     padding: 10,
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  infoIcon: {
-    marginTop: 1,
-  },
-  infoNote: {
-    flex: 1,
-    fontSize: 12,
-    color: '#0369A1',
+    marginTop: 8,
     lineHeight: 16,
   },
-  uploadBoxEmpty: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderStyle: 'dashed',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  uploadBoxSuccess: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F0FDF4',
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  fileLeftInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-  },
-  fileRightActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  uploadEmptyText: {
-    fontSize: 13,
-    color: '#083B75',
-    fontWeight: '500',
-    flex: 1,
-  },
-  uploadSuccessText: {
-    fontSize: 13,
-    color: '#15803D',
-    fontWeight: '600',
-    flex: 1,
-  },
-  removeBtn: {
-    padding: 2,
-  },
-  helperText: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 4,
-  },
 });
+

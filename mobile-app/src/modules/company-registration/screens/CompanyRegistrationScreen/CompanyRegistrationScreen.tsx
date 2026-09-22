@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppHeader } from '../../../../shared/components/AppHeader';
+import { AppHeader } from '../../../../components/AppHeader';
 import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlice';
 
 import { StepCompanyType } from '../../components/steps/StepCompanyType';
-import { StepCombinedDetails } from '../../components/steps/StepCombinedDetails';
+import { StepClassification } from '../../components/steps/StepClassification';
+import { StepBusinessActivity } from '../../components/steps/StepBusinessActivity';
+import { StepProposedNames } from '../../components/steps/StepProposedNames';
 import { StepRegisteredOffice } from '../../components/steps/StepRegisteredOffice';
 import { StepPromoters } from '../../components/steps/StepPromoters';
 import { StepCapitalShareholding } from '../../components/steps/StepCapitalShareholding';
@@ -22,7 +24,9 @@ import { styles } from './CompanyRegistrationScreen.styles';
 
 const STEP_NAMES = [
   'Company Type Selection',
-  'Company Details & Names',
+  'Company Classification',
+  'Business Activity / NIC',
+  'Proposed Company Names',
   'Registered Office Details',
   'Promoter / Director Details',
   'Shareholding & Capital',
@@ -46,59 +50,11 @@ export const CompanyRegistrationScreen: React.FC = () => {
   const progressPercent = ((currentStep + 1) / totalSteps) * 100;
 
   const handleNext = () => {
-    // Validation for combined Step 2 (Classification + Activity + Proposed Names)
-    if (currentStep === 1) {
-      if (!draft.company.primaryActivity?.trim()) {
-        Alert.alert('Validation Error', 'Please enter Primary Business Activity.');
-        return;
-      }
-      if (!draft.company.nicCode?.trim()) {
-        Alert.alert('Validation Error', 'Please enter 5-Digit NIC Code.');
-        return;
-      }
-      if (!draft.company.proposedName1?.trim()) {
-        Alert.alert('Validation Error', 'Please enter 1st Preferred Name.');
-        return;
-      }
-      if (!draft.company.proposedName2?.trim()) {
-        Alert.alert('Validation Error', 'Please enter 2nd Preferred Name.');
-        return;
-      }
+    // Basic validation before advancing step
+    if (currentStep === 3 && !draft.company.proposedName1.trim()) {
+      Alert.alert('Validation Error', 'Please enter at least 1st Preferred Name.');
+      return;
     }
-
-    // Validation for Step 3 (Promoter / Director Details)
-    if (currentStep === 3) {
-      const firstDir = draft.directors[0];
-      if (!firstDir || !firstDir.name?.trim()) {
-        Alert.alert('Validation Error', 'Please enter Full Name for Director #1.');
-        return;
-      }
-      if (!firstDir.pan?.trim()) {
-        Alert.alert('Validation Error', 'Please enter PAN Number for Director #1.');
-        return;
-      }
-      if (!firstDir.email?.trim()) {
-        Alert.alert('Validation Error', 'Please enter Email Address for Director #1.');
-        return;
-      }
-    }
-
-    // Validation for Step 5 (Documents & KYC Checklist)
-    if (currentStep === 5) {
-      const requiredIds = ['doc-pan', 'doc-aadhaar', 'doc-address', 'doc-utility'];
-      const missingMandatory = requiredIds.some((id) => {
-        const doc = draft.documents.find((d) => d.id === id);
-        return !doc || doc.status !== 'Uploaded';
-      });
-      if (missingMandatory) {
-        Alert.alert(
-          'Validation Error',
-          'Please upload all mandatory documents (PAN Card, Identity/Address Proof, Office Address Proof, and Office Utility Bill) before proceeding.'
-        );
-        return;
-      }
-    }
-
     if (currentStep < totalSteps - 1) {
       setStep(currentStep + 1);
     }
@@ -119,26 +75,30 @@ export const CompanyRegistrationScreen: React.FC = () => {
       case 0:
         return <StepCompanyType />;
       case 1:
-        return <StepCombinedDetails />;
+        return <StepClassification />;
       case 2:
-        return <StepRegisteredOffice />;
+        return <StepBusinessActivity />;
       case 3:
-        return <StepPromoters />;
+        return <StepProposedNames />;
       case 4:
-        return <StepCapitalShareholding />;
+        return <StepRegisteredOffice />;
       case 5:
-        return <StepDocumentsKYC />;
+        return <StepPromoters />;
       case 6:
-        return <StepLinkedRegistrations />;
+        return <StepCapitalShareholding />;
       case 7:
-        return <StepReviewApplication />;
+        return <StepDocumentsKYC />;
       case 8:
-        return <StepFeesPayment />;
+        return <StepLinkedRegistrations />;
       case 9:
-        return <StepApplicationTracking />;
+        return <StepReviewApplication />;
       case 10:
-        return <StepSubmissionSuccess />;
+        return <StepFeesPayment />;
       case 11:
+        return <StepApplicationTracking />;
+      case 12:
+        return <StepSubmissionSuccess />;
+      case 13:
         return <StepApplicationReceipt />;
       default:
         return <StepCompanyType />;
@@ -147,7 +107,6 @@ export const CompanyRegistrationScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* Fixed Top Header */}
       <AppHeader title="Company Registration" showBack />
 
       {/* Filling Progress Bar */}
@@ -155,21 +114,10 @@ export const CompanyRegistrationScreen: React.FC = () => {
         <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
       </View>
 
-      {/* Main Scroll Content with Keyboard Handling */}
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          automaticallyAdjustKeyboardInsets={true}
-          showsVerticalScrollIndicator={false}
-        >
-          {renderStepContent()}
-        </ScrollView>
-      </KeyboardAvoidingView>
+      {/* Main Scroll Content */}
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        {renderStepContent()}
+      </ScrollView>
 
       {/* Sticky Bottom Footer Navigation */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
@@ -177,7 +125,7 @@ export const CompanyRegistrationScreen: React.FC = () => {
           <Text style={styles.backBtnText}>{currentStep === 0 ? 'Cancel' : '← Back'}</Text>
         </TouchableOpacity>
 
-        {currentStep < 8 && (
+        {currentStep < 10 && (
           <TouchableOpacity style={styles.nextBtn} onPress={handleNext} activeOpacity={0.8}>
             <Text style={styles.nextBtnText}>Continue →</Text>
           </TouchableOpacity>
@@ -188,4 +136,3 @@ export const CompanyRegistrationScreen: React.FC = () => {
 };
 
 export default CompanyRegistrationScreen;
-

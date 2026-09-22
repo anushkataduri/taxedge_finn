@@ -72,15 +72,11 @@ export const authStorage = {
     const cleanMobile = user.mobileNumber.replace(/\D/g, "");
     const map = authStorage.getUsersMap();
     const existing = map[cleanMobile] || {};
-    const regCompleted =
-      typeof user.registrationCompleted === "boolean"
-        ? user.registrationCompleted
-        : Boolean(existing.registrationCompleted);
     map[cleanMobile] = {
       ...existing,
       ...user,
       mobileNumber: cleanMobile,
-      registrationCompleted: regCompleted,
+      registrationCompleted: Boolean(user.registrationCompleted || existing.registrationCompleted),
     };
     set(KEY_USERS, JSON.stringify(map));
   },

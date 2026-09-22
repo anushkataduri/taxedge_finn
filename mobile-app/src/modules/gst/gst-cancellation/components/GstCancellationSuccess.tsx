@@ -27,15 +27,6 @@ export function GstCancellationSuccess({
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  React.useEffect(() => {
-    const { BackHandler } = require("react-native");
-    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      router.replace("/(main)/home");
-      return true;
-    });
-    return () => sub.remove();
-  }, []);
-
   return (
     <View style={styles.successContainer}>
       <StatusBar
@@ -101,7 +92,7 @@ export function GstCancellationSuccess({
             useApplicationStore
               .getState()
               .setSelectedApplicationId(submissionResult.appId);
-            router.replace(`/application/${submissionResult.appId}`);
+            router.push(`/application/${submissionResult.appId}`);
           }}
         >
           <Text style={styles.primaryBtnText}>Track Cancellation</Text>
@@ -109,16 +100,9 @@ export function GstCancellationSuccess({
         <TouchableOpacity
           style={styles.secondaryBtn}
           activeOpacity={0.85}
-          onPress={() => router.replace("/(main)/applications")}
+          onPress={() => router.push("/(main)/applications")}
         >
-          <Text style={styles.secondaryBtnText}>My Applications</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.secondaryBtn, { marginTop: 8 }]}
-          activeOpacity={0.85}
-          onPress={() => router.replace("/(main)/home")}
-        >
-          <Text style={styles.secondaryBtnText}>Go Home</Text>
+          <Text style={styles.secondaryBtnText}>My Application</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[

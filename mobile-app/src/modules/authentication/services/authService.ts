@@ -1,6 +1,5 @@
 import { authStorage } from "./authStorage";
 import { authApi } from "./authApi";
-import { passcodeService } from "./passcodeService";
 import { tokenManager } from "../../../core/authentication/tokenManager";
 import { registerForPushNotificationsAsync } from "../../../utils/pushNotificationService";
 import type { DevUser, RegistrationData, AuthResult } from "../types/auth.types";
@@ -13,7 +12,7 @@ export interface RegisterParams extends Partial<RegistrationData> {
  
 export const authService = {
   findUserByMobile: (m: string) => authStorage.getUserByMobile(m),
-  isUserRegistered: (m: string) => Boolean(authStorage.getUserByMobile(m)?.registrationCompleted),
+  isUserRegistered: (m: string) => Boolean(authStorage.getUserByMobile(m)?.passcode),
  
   async sendOtp(mobileNumber: string): Promise<{ success: boolean; message?: string }> {
     const clean = mobileNumber.replace(/\D/g, "");
@@ -44,19 +43,15 @@ export const authService = {
     if (user) {
       authStorage.saveUser(user);
     } else if (customerExists) {
-      const existing = authStorage.getUserByMobile(clean);
       user = {
-        ...(existing || {}),
-        customerId: existing?.customerId || "",
+        customerId: `CUST-2026-${clean.slice(-5)}`,
         mobileNumber: clean,
-        name: existing?.name || "",
-        email: existing?.email || `${clean}@taxedge.in`,
-        customerType: existing?.customerType || "Individual",
-        registrationCompleted: profileCompleted || Boolean(existing?.registrationCompleted),
+        name: "",
+        email: `${clean}@taxedge.in`,
+        customerType: "Individual",
+        registrationCompleted: profileCompleted,
       };
-      if (existing) {
-        authStorage.saveUser(user);
-      }
+      authStorage.saveUser(user);
     }
 
     return {
@@ -69,38 +64,27 @@ export const authService = {
     };
   },
 
-  async checkUser(mobileNumber: string): Promise<{ success: boolean; exists: boolean; customerExists: boolean; profileCompleted: boolean; hasPasscode: boolean; user?: DevUser; error?: string }> {
+  async checkUser(mobileNumber: string): Promise<{ exists: boolean; customerExists: boolean; profileCompleted: boolean; hasPasscode: boolean; user?: DevUser }> {
     const clean = mobileNumber.replace(/\D/g, "");
     try {
       const checkRes = await authApi.checkUser(clean);
       if (checkRes && checkRes.success) {
         return {
-          success: true,
           exists: checkRes.exists,
           customerExists: checkRes.customerExists ?? checkRes.exists,
           profileCompleted: checkRes.exists,
           hasPasscode: checkRes.exists,
         };
       }
-      return {
-        success: false,
-        exists: false,
-        customerExists: false,
-        profileCompleted: false,
-        hasPasscode: false,
-        error: (checkRes as any).error || "Unable to check customer existence",
-      };
-    } catch (e: any) {
+    } catch (e) {
       console.warn("Error calling backend checkUser:", e);
-      return {
-        success: false,
-        exists: false,
-        customerExists: false,
-        profileCompleted: false,
-        hasPasscode: false,
-        error: e?.message || "Unable to check customer existence",
-      };
     }
+    return {
+      exists: false,
+      customerExists: false,
+      profileCompleted: false,
+      hasPasscode: false,
+    };
   },
  
   async registerUser(params: RegisterParams, autoLogin = false): Promise<AuthResult> {
@@ -164,13 +148,9 @@ export const authService = {
     if (apiRes.user?.customerId) {
       user.customerId = apiRes.user.customerId;
     }
-
-    if (passcode) {
-      await passcodeService.setPasscode(mobile, passcode);
-    }
-
+ 
     authStorage.saveUser(user);
-
+ 
     if (autoLogin && passcode) {
       authStorage.saveSession({
         isLoggedIn: true,
@@ -178,16 +158,16 @@ export const authService = {
         lastLoginAt: new Date().toISOString(),
       });
     }
-
+ 
     return { success: true, user, token: apiRes.token };
   },
-
+ 
   async createPasscode(mobileNumber: string, passcode: string): Promise<AuthResult> {
     const clean = mobileNumber.replace(/\D/g, "");
     const pass = passcode.replace(/\D/g, "");
     if (clean.length !== 10) return { success: false, error: "Invalid mobile number" };
     if (pass.length !== 6) return { success: false, error: "Passcode must be exactly 6 digits" };
-
+ 
     let user = authStorage.getUserByMobile(clean);
     if (!user) {
       user = {
@@ -198,96 +178,96 @@ export const authService = {
         customerType: "Individual",
       };
     }
-
+ 
+    user.passcode = pass;
     user.registrationCompleted = true;
     authStorage.saveUser(user);
-    await passcodeService.setPasscode(clean, pass);
-
+ 
     try {
       await authApi.createPasscode(clean, pass);
     } catch {}
+ 
 
     authStorage.saveSession({
       isLoggedIn: true,
       activeMobile: clean,
       lastLoginAt: new Date().toISOString(),
     });
-
+ 
     return { success: true, user };
   },
-
+ 
   async loginWithPasscode(m: string, p: string): Promise<AuthResult> {
     const clean = (m || "").replace(/\D/g, "");
     const pass = (p || "").replace(/\D/g, "");
     if (clean.length !== 10) return { success: false, error: "Please enter a valid 10-digit mobile number" };
     if (pass.length !== 6) return { success: false, error: "Passcode must be exactly 6 numeric digits" };
-
-    const verifyRes = await passcodeService.verifyPasscode(clean, pass);
-    if (!verifyRes.success) {
-      return { success: false, error: verifyRes.error || "Invalid mobile number or passcode" };
+ 
+    const apiRes = await authApi.loginPasscode(clean, pass);
+    if (!apiRes.success) {
+      return { success: false, error: apiRes.message || "Invalid mobile number or passcode" };
     }
-
-    let existingUser = authStorage.getUserByMobile(clean) || ({} as DevUser);
+ 
+    let existingUser = authStorage.getUserByMobile(clean) || {} as DevUser;
     const user: DevUser = {
       ...existingUser,
-      ...(verifyRes.user || {}),
+      ...(apiRes.user || {}),
       mobileNumber: clean,
+      passcode: pass,
       registrationCompleted: true,
     };
     authStorage.saveUser(user);
-
+ 
     authStorage.saveSession({
       isLoggedIn: true,
       activeMobile: clean,
       lastLoginAt: new Date().toISOString(),
     });
-    return { success: true, user, token: verifyRes.token };
+    return { success: true, user, token: apiRes.token };
   },
-
+ 
   async forgotPasscode(mobileNumber: string): Promise<{ success: boolean; message?: string }> {
     const clean = mobileNumber.replace(/\D/g, "");
     return authApi.forgotPasscode(clean);
   },
-
+ 
   async updatePassword(mobileNumber: string, newPasscode: string): Promise<AuthResult> {
     const clean = mobileNumber.replace(/\D/g, "");
     const pass = newPasscode.replace(/\D/g, "");
     if (clean.length !== 10) return { success: false, error: "Please enter a valid 10-digit mobile number" };
     if (pass.length !== 6) return { success: false, error: "Passcode must be 6 numeric digits" };
-
+ 
     const apiRes = await authApi.updatePassword(clean, pass);
     if (!apiRes.success) {
       return { success: false, error: apiRes.message || "Failed to update password" };
     }
-
-    await passcodeService.setPasscode(clean, pass);
+ 
     let user = authStorage.getUserByMobile(clean);
     if (user) {
-      user.registrationCompleted = true;
+      user.passcode = pass;
       authStorage.saveUser(user);
     }
-
+ 
     return { success: true, user: user || undefined, message: apiRes.message };
   },
-
+ 
   async resetPasscode(mobileNumber: string, newPasscode: string, _otp?: string): Promise<AuthResult> {
     const clean = mobileNumber.replace(/\D/g, "");
     const pass = newPasscode.replace(/\D/g, "");
     if (clean.length !== 10) return { success: false, error: "Please enter a valid 10-digit mobile number" };
     if (pass.length !== 6) return { success: false, error: "Passcode must be 6 numeric digits" };
-
+ 
     const apiRes = await authApi.updatePassword(clean, pass);
     if (!apiRes.success) {
       return { success: false, error: apiRes.message || "Failed to reset passcode" };
     }
-
-    await passcodeService.setPasscode(clean, pass);
+ 
     let user = authStorage.getUserByMobile(clean);
     if (user) {
-      user.registrationCompleted = true;
+      user.passcode = pass;
       authStorage.saveUser(user);
     }
-
+ 
     return { success: true, user: user || undefined, message: apiRes.message };
   },
  

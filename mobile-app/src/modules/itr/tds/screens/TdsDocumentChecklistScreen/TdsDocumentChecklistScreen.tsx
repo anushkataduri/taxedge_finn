@@ -199,7 +199,7 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
     saveTdsDraft?.({
       formData: tdsDraft?.formData || {},
       documents: documents as any,
-      step: "ESTIMATE",
+      step: "DOCUMENTS",
       updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     });
 

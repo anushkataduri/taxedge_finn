@@ -82,18 +82,12 @@ export function AuthenticationScreen() {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
 
-  // If already authenticated, redirect to home (unless biometric opt-in modal is open or awaiting passcode entry)
+  // If already authenticated, redirect to home (unless biometric opt-in modal is open)
   useEffect(() => {
-    if (
-      isLoggedIn &&
-      !showBiometricModal &&
-      authFlowState !== "PASSCODE_LOGIN" &&
-      authFlowState !== "RESET_PASSCODE" &&
-      authFlowState !== "FORGOT_PASSCODE_OTP"
-    ) {
+    if (isLoggedIn && !showBiometricModal) {
       router.replace("/(main)/home" as any);
     }
-  }, [isLoggedIn, showBiometricModal, authFlowState]);
+  }, [isLoggedIn, showBiometricModal]);
 
   // Timer interval
   useEffect(() => {
@@ -132,12 +126,8 @@ export function AuthenticationScreen() {
 
   const handleOtpVerify = async (code?: string) => {
     const res = await verifyOtp(code);
-    if (res.success) {
-      if (res.requiresPasscode) {
-        setAuthFlowState("PASSCODE_LOGIN");
-      } else {
-        router.replace("/(main)/home" as any);
-      }
+    if (res.success && !res.requiresPasscode) {
+      router.replace("/(main)/home" as any);
     }
   };
 

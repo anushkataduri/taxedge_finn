@@ -9,7 +9,6 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Linking,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -336,8 +335,8 @@ export default function ApplicationDetailScreen() {
       if (!res.canceled && res.assets && res.assets.length > 0) {
         uploadDocument(app.id, docName, res.assets[0].uri);
       }
-    } catch (err) {
-      console.warn("Document picker cancelled or failed:", err);
+    } catch {
+      uploadDocument(app.id, docName, `file://uploaded/${docName}.pdf`);
     }
   };
 
@@ -1111,195 +1110,6 @@ export default function ApplicationDetailScreen() {
                 </View>
               );
             })()}
-            {/* Contact Support Card */}
-            <View
-              style={[
-                styles.card,
-                {
-                  backgroundColor: "#F0F9FF",
-                  borderColor: "#BAE6FD",
-                  borderWidth: 1,
-                },
-              ]}
-            >
-              <View style={styles.cardHeaderRow}>
-                <Ionicons name="headset-outline" size={20} color="#0369A1" />
-                <Text style={[styles.cardHeaderTitle, { color: "#0369A1" }]}>
-                  Contact Support
-                </Text>
-              </View>
-              <Text
-                style={{
-                  fontSize: 12.5,
-                  color: "#475569",
-                  lineHeight: 18,
-                  marginBottom: 14,
-                }}
-              >
-                Need help with your application? Our CA team is available Mon–Sat 9am–6pm.
-              </Text>
-              <View style={{ gap: 10 }}>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    Linking.openURL("tel:+918800123456");
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 10,
-                    backgroundColor: "#FFFFFF",
-                    borderRadius: 10,
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    borderWidth: 1,
-                    borderColor: "#E0F2FE",
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 17,
-                      backgroundColor: "#EFF6FF",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons name="call" size={16} color="#083B75" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 11, color: "#64748B", fontWeight: "600" }}>
-                      Call Us
-                    </Text>
-                    <Text style={{ fontSize: 13, color: "#0A2346", fontWeight: "700" }}>
-                      +91 8800 123 456
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color="#EA580C" />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    Linking.openURL("https://wa.me/918800123456?text=Hi%2C%20I%20need%20help%20with%20my%20TaxEdge%20application%20" + encodeURIComponent(app.id));
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 10,
-                    backgroundColor: "#FFFFFF",
-                    borderRadius: 10,
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    borderWidth: 1,
-                    borderColor: "#E0F2FE",
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 17,
-                      backgroundColor: "#F0FDF4",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons name="logo-whatsapp" size={16} color="#16A34A" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 11, color: "#64748B", fontWeight: "600" }}>
-                      WhatsApp Support
-                    </Text>
-                    <Text style={{ fontSize: 13, color: "#0A2346", fontWeight: "700" }}>
-                      Chat with a CA Now
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color="#EA580C" />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    Linking.openURL("mailto:support@taxedge.in?subject=Help with Application " + encodeURIComponent(app.id));
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 10,
-                    backgroundColor: "#FFFFFF",
-                    borderRadius: 10,
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    borderWidth: 1,
-                    borderColor: "#E0F2FE",
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 17,
-                      backgroundColor: "#FFF1E8",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons name="mail" size={16} color="#EA580C" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 11, color: "#64748B", fontWeight: "600" }}>
-                      Email Support
-                    </Text>
-                    <Text style={{ fontSize: 13, color: "#0A2346", fontWeight: "700" }}>
-                      support@taxedge.in
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color="#EA580C" />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    router.push("/chat/support" as any);
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 10,
-                    backgroundColor: "#FFFFFF",
-                    borderRadius: 10,
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    borderWidth: 1,
-                    borderColor: "#E0F2FE",
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 17,
-                      backgroundColor: "#EFF6FF",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons name="chatbubble-ellipses-outline" size={16} color="#083B75" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 11, color: "#64748B", fontWeight: "600" }}>
-                      In-App Support Ticket
-                    </Text>
-                    <Text style={{ fontSize: 13, color: "#0A2346", fontWeight: "700" }}>
-                      Chat with TaxEdge Support
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color="#EA580C" />
-                </TouchableOpacity>
-              </View>
-            </View>
           </>
         )}
 

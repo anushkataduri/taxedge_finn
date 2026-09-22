@@ -45,7 +45,6 @@ export interface DevUser {
   customerType?: string;
   avatarUri?: string | null;
   passcode?: string;
-  hasPasscode?: boolean;
   pushToken?: string;
   registrationCompleted?: boolean;
   createdAt?: string;
@@ -125,15 +124,7 @@ export interface AuthStoreActions {
 
   // Business Flow Operations
   sendOtp: (overrideMobile?: string) => Promise<boolean>;
-  checkUser: (overrideMobile?: string) => Promise<any>;
-  verifyOtp: (codeToVerify?: string) => Promise<{
-    success: boolean;
-    isExistingUser?: boolean;
-    requiresPasscode?: boolean;
-    profileCompleted?: boolean;
-    error?: string;
-    message?: string;
-  }>;
+  verifyOtp: (codeToVerify?: string) => Promise<{ success: boolean; isExistingUser?: boolean; requiresPasscode?: boolean; profileCompleted?: boolean }>;
   loginWithPasscode: (passcodeToUse?: string) => Promise<{ success: boolean; error?: string }>;
   startForgotPasscode: () => Promise<boolean>;
   verifyForgotPasscodeOtp: (codeToVerify?: string) => Promise<boolean>;

@@ -1,9 +1,7 @@
 import { create } from "zustand";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthStore } from "@/store/authStore";
 import { useApplicationStore } from "@/store/applicationStore";
-import { authStorage } from "@/modules/authentication/services/authStorage";
-import { addDraftToIndex, removeDraftFromIndex } from "@/shared/hooks/useServiceDraft";
+import { customerApi } from "@/modules/customer/services/customerApi";
 import {
   ItrFilingFormData,
   ItrPersonalInfo,
@@ -70,7 +68,7 @@ interface ITRState {
   // Draft handling
   itrDraft: ItrDraftState | null;
   saveItrDraft: () => void;
-  restoreItrDraft: () => Promise<boolean>;
+  restoreItrDraft: () => boolean;
   clearItrDraft: () => void;
   resetForm: () => void;
   fetchAndPopulateUserProfile: () => Promise<void>;
@@ -888,92 +886,19 @@ export const useITRStore = create<ITRState>((set, get) => ({
       updatedAt: new Date().toISOString(),
     };
     set({ itrDraft: draft });
-
-    const authState = useAuthStore.getState();
-    const mobile =
-      authState.customer?.mobile ||
-      authState.authenticatedUser?.mobileNumber ||
-      authState.mobileNumber ||
-      "user";
-    const clean = String(mobile).replace(/\D/g, "") || "user";
-    addDraftToIndex(clean, "itr-filing");
-    AsyncStorage.setItem(
-      `@taxedge_draft_${clean}_itr-filing`,
-      JSON.stringify({
-        serviceKey: "itr-filing",
-        serviceName: "ITR Filing",
-        category: "ITR",
-        step: currentStep,
-        stepIndex: currentStep,
-        formData,
-        documents: formData.documents,
-        updatedAt: draft.updatedAt,
-      })
-    ).catch(() => {});
   },
 
-  restoreItrDraft: async () => {
-    try {
-      const authState = useAuthStore.getState();
-      const mobile =
-        authState.customer?.mobile ||
-        authState.authenticatedUser?.mobileNumber ||
-        authState.mobileNumber ||
-        "user";
-      const clean = String(mobile).replace(/\D/g, "") || "user";
-      const raw = await AsyncStorage.getItem(`@taxedge_draft_${clean}_itr-filing`);
-
-      let draftData: any = null;
-      if (raw) {
-        draftData = JSON.parse(raw);
-      } else {
-        draftData = get().itrDraft;
-      }
-
-      if (!draftData) return false;
-
-      const restoredStep =
-        typeof draftData.stepIndex === "number"
-          ? draftData.stepIndex
-          : typeof draftData.step === "number"
-            ? draftData.step
-            : 0;
-
-      const restoredFormData = draftData.formData || draftData.filingData;
-      if (restoredFormData) {
-        set({
-          currentStep: restoredStep,
-          formData: {
-            ...getInitialFormData(),
-            ...restoredFormData,
-          },
-          itrDraft: {
-            id: draftData.id || `itr-draft-${Date.now()}`,
-            stepIndex: restoredStep,
-            formData: restoredFormData,
-            updatedAt: draftData.updatedAt || new Date().toISOString(),
-          },
-        });
-        return true;
-      }
-      return false;
-    } catch {
-      return false;
-    }
+  restoreItrDraft: () => {
+    const { itrDraft } = get();
+    if (!itrDraft) return false;
+    set({
+      currentStep: itrDraft.stepIndex,
+      formData: itrDraft.formData,
+    });
+    return true;
   },
 
-  clearItrDraft: () => {
-    set({ itrDraft: null });
-    const authState = useAuthStore.getState();
-    const mobile =
-      authState.customer?.mobile ||
-      authState.authenticatedUser?.mobileNumber ||
-      authState.mobileNumber ||
-      "user";
-    const clean = String(mobile).replace(/\D/g, "") || "user";
-    removeDraftFromIndex(clean, "itr-filing");
-    AsyncStorage.removeItem(`@taxedge_draft_${clean}_itr-filing`).catch(() => {});
-  },
+  clearItrDraft: () => set({ itrDraft: null }),
 
   resetForm: () =>
     set({
@@ -984,7 +909,8 @@ export const useITRStore = create<ITRState>((set, get) => ({
 
   fetchAndPopulateUserProfile: async () => {
     try {
-      const profile = authStorage.getUser() as any;
+      const res = await customerApi.getProfile();
+      const profile = res?.data || res;
       if (profile) {
         const pan = profile.pan || profile.panNumber || "";
         const aadhaar = profile.aadhaar || profile.aadhaarNumber || "";

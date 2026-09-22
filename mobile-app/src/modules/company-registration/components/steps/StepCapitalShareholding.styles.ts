@@ -3,7 +3,6 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: '#F8FAFC',
   },
   heading: {
     fontSize: 20,
@@ -12,23 +11,15 @@ export const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subheading: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#64748B',
     marginBottom: 18,
-    lineHeight: 18,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginTop: 8,
-    marginBottom: 12,
   },
   fieldGroup: {
     marginBottom: 14,
   },
   label: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#1E293B',
     marginBottom: 6,
@@ -51,11 +42,11 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   shareCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    padding: 14,
+    padding: 12,
     marginBottom: 10,
   },
   shareRow: {
@@ -63,66 +54,30 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  shareInfo: {
-    flex: 1,
-  },
   shareName: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#0F172A',
   },
-  shareDetailText: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 2,
-  },
-  shareStatsRight: {
-    alignItems: 'flex-end',
-  },
-  shareBadge: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#BFDBFE',
+  shareInput: {
+    width: 80,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
+    borderColor: '#CBD5E1',
     borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  shareBadgeText: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
     fontSize: 14,
+    textAlign: 'center',
     fontWeight: '700',
-    color: '#083B75',
-  },
-  totalsCard: {
-    backgroundColor: '#083B75',
-    borderRadius: 10,
-    padding: 14,
-    marginTop: 6,
-    marginBottom: 14,
-  },
-  totalsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  totalsLabel: {
-    fontSize: 13,
-    color: '#93C5FD',
-    fontWeight: '500',
-  },
-  totalsValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
   validationBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     padding: 12,
     borderRadius: 8,
-    marginTop: 4,
-    marginBottom: 20,
+    marginTop: 10,
   },
   validBox: {
     backgroundColor: '#F0FDF4',
@@ -135,35 +90,7 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
   },
   validationText: {
-    fontSize: 12,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  emptyCard: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 10,
-    padding: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  emptyText: {
     fontSize: 13,
-    color: '#64748B',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  opcNote: {
-    fontSize: 12,
-    color: '#0369A1',
-    backgroundColor: '#F0F9FF',
-    borderColor: '#BAE6FD',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
-    lineHeight: 16,
+    fontWeight: '600',
   },
 });

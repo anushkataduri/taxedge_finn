@@ -9,32 +9,30 @@ export function useServiceAccessGuard() {
   const customer = useAuthStore((s) => s.customer);
   const authenticatedUser = useAuthStore((s) => s.authenticatedUser);
   const openCompleteProfileModal = useAuthStore((s) => s.openCompleteProfileModal);
+  const fetchAndSyncProfile = useAuthStore((s) => s.fetchAndSyncProfile);
 
-  const hasValidName = Boolean(
-    customer?.name &&
-    customer.name.trim() !== "" &&
-    customer.name.toLowerCase() !== "valued client" &&
-    customer.name.toLowerCase() !== "client" &&
-    customer.name.toLowerCase() !== "valued"
-  );
+  const isPlaceholderName =
+    !customer?.name ||
+    customer.name.trim() === "" ||
+    customer.name.toLowerCase() === "valued client" ||
+    customer.name.toLowerCase() === "client" ||
+    customer.name.toLowerCase() === "valued";
 
-  const hasCustomerId = Boolean(
-    (customer?.customerId && customer.customerId.trim() !== "") ||
-    (authenticatedUser?.customerId && authenticatedUser.customerId.trim() !== "")
+  const hasBackendIdentity = Boolean(
+    (customer?.customerId || authenticatedUser?.customerId) && !isPlaceholderName
   );
 
   const hasPanOrAadhaar = Boolean(
-    (customer?.pan && customer.pan.trim() !== "") ||
-    ((customer as any)?.aadhaar && (customer as any).aadhaar.trim() !== "") ||
-    (authenticatedUser?.pan && authenticatedUser.pan.trim() !== "") ||
-    ((authenticatedUser as any)?.aadhaar && (authenticatedUser as any).aadhaar.trim() !== "")
+    customer?.pan || (customer as any)?.aadhaar || authenticatedUser?.pan || (authenticatedUser as any)?.aadhaar
   );
 
   const isProfileComplete = Boolean(
-    hasValidName &&
-    hasCustomerId &&
-    hasPanOrAadhaar &&
-    (profileCompleted || customer?.profileCompleted || authenticatedUser?.registrationCompleted)
+    profileCompleted ||
+    customer?.profileCompleted ||
+    (customer as any)?.registrationCompleted ||
+    authenticatedUser?.registrationCompleted ||
+    (authenticatedUser?.passcode && authenticatedUser.passcode.length === 6) ||
+    (hasBackendIdentity && (hasPanOrAadhaar || Boolean(customer?.dob)))
   );
 
   const accessService = useCallback(
@@ -45,10 +43,24 @@ export function useServiceAccessGuard() {
         return false;
       }
 
-      // 2. Checks profile completion
-      if (!isProfileComplete) {
-        const routeToSave = typeof targetRoute === "string" ? targetRoute : targetRoute?.pathname || "/service/gst";
-        openCompleteProfileModal(routeToSave);
+      // 2. Checks profile completion using authenticated customer state
+      let complete = isProfileComplete;
+
+      // If memory state says incomplete, verify with backend before blocking
+      if (!complete) {
+        try {
+          const syncRes = await fetchAndSyncProfile();
+          if (syncRes && syncRes.isComplete) {
+            complete = true;
+          }
+        } catch (err) {
+          console.warn("⚠️ [useServiceAccessGuard] fetchAndSyncProfile check failed:", err);
+        }
+      }
+
+      if (!complete) {
+        // Shows the Complete Profile popup and remembers requested route
+        openCompleteProfileModal(typeof targetRoute === "string" ? targetRoute : targetRoute?.pathname || "/service/gst");
         return false;
       }
 
@@ -60,7 +72,7 @@ export function useServiceAccessGuard() {
       }
       return true;
     },
-    [isLoggedIn, isProfileComplete, openCompleteProfileModal, router]
+    [isLoggedIn, isProfileComplete, fetchAndSyncProfile, openCompleteProfileModal, router]
   );
 
   return {
@@ -81,32 +93,30 @@ export function useServiceProtection(targetRoute?: any) {
   const customer = useAuthStore((s) => s.customer);
   const authenticatedUser = useAuthStore((s) => s.authenticatedUser);
   const openCompleteProfileModal = useAuthStore((s) => s.openCompleteProfileModal);
+  const fetchAndSyncProfile = useAuthStore((s) => s.fetchAndSyncProfile);
 
-  const hasValidName = Boolean(
-    customer?.name &&
-    customer.name.trim() !== "" &&
-    customer.name.toLowerCase() !== "valued client" &&
-    customer.name.toLowerCase() !== "client" &&
-    customer.name.toLowerCase() !== "valued"
-  );
+  const isPlaceholderName =
+    !customer?.name ||
+    customer.name.trim() === "" ||
+    customer.name.toLowerCase() === "valued client" ||
+    customer.name.toLowerCase() === "client" ||
+    customer.name.toLowerCase() === "valued";
 
-  const hasCustomerId = Boolean(
-    (customer?.customerId && customer.customerId.trim() !== "") ||
-    (authenticatedUser?.customerId && authenticatedUser.customerId.trim() !== "")
+  const hasBackendIdentity = Boolean(
+    (customer?.customerId || authenticatedUser?.customerId) && !isPlaceholderName
   );
 
   const hasPanOrAadhaar = Boolean(
-    (customer?.pan && customer.pan.trim() !== "") ||
-    ((customer as any)?.aadhaar && (customer as any).aadhaar.trim() !== "") ||
-    (authenticatedUser?.pan && authenticatedUser.pan.trim() !== "") ||
-    ((authenticatedUser as any)?.aadhaar && (authenticatedUser as any).aadhaar.trim() !== "")
+    customer?.pan || (customer as any)?.aadhaar || authenticatedUser?.pan || (authenticatedUser as any)?.aadhaar
   );
 
   const isProfileComplete = Boolean(
-    hasValidName &&
-    hasCustomerId &&
-    hasPanOrAadhaar &&
-    (profileCompleted || customer?.profileCompleted || authenticatedUser?.registrationCompleted)
+    profileCompleted ||
+    customer?.profileCompleted ||
+    (customer as any)?.registrationCompleted ||
+    authenticatedUser?.registrationCompleted ||
+    (authenticatedUser?.passcode && authenticatedUser.passcode.length === 6) ||
+    (hasBackendIdentity && (hasPanOrAadhaar || Boolean(customer?.dob)))
   );
 
   useEffect(() => {
@@ -118,10 +128,13 @@ export function useServiceProtection(targetRoute?: any) {
       }
 
       if (!isProfileComplete) {
+        const syncRes = await fetchAndSyncProfile().catch(() => null);
         if (!isMounted) return;
-        const routeToSave = targetRoute || pathname;
-        openCompleteProfileModal(routeToSave);
-        router.back();
+        if (!syncRes?.isComplete) {
+          const routeToSave = targetRoute || pathname;
+          openCompleteProfileModal(routeToSave);
+          router.back();
+        }
       }
     };
 
@@ -129,7 +142,7 @@ export function useServiceProtection(targetRoute?: any) {
     return () => {
       isMounted = false;
     };
-  }, [isLoggedIn, isProfileComplete, targetRoute, pathname, openCompleteProfileModal, router]);
+  }, [isLoggedIn, isProfileComplete, targetRoute, pathname, openCompleteProfileModal, fetchAndSyncProfile, router]);
 
   return {
     isAuthorized: isLoggedIn && isProfileComplete,

@@ -1,0 +1,399 @@
+import React, { useState, useRef } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { BrandColors } from "../../../../../shared/theme";
+import { useAuthStore } from "../../../../authentication/store/authStore";
+import { loansApi } from "../../../services/loansApi";
+import { BUSINESS_DOCUMENTS_TEMPLATE } from "../../../mock/loanServices";
+import {
+  LoanDetailsFormData,
+  LoanBusinessFormData,
+  LoanBankingFormData,
+  LoanDocumentItem,
+  LoanApplicationDraft,
+} from "../../../types/loans.types";
+import {
+  validateLoanDetails,
+  validateLoanBusiness,
+  validateLoanBanking,
+  validateLoanDocuments,
+} from "../../../validation/loansSchema";
+import {
+  WorkingCapitalStepIndicator,
+  WorkingCapitalCustomerCard,
+  WorkingCapitalFinancialsStep,
+  WorkingCapitalBusinessStep,
+  WorkingCapitalBankingStep,
+  WorkingCapitalDocumentsStep,
+  WorkingCapitalReviewStep,
+} from "../../components";
+import { styles } from "./WorkingCapitalScreen.styles";
+
+const STEPS = ["Financials", "Enterprise", "Banking", "Documents", "Review"];
+
+export const WorkingCapitalScreen: React.FC = () => {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  const customer = useAuthStore((s) => s.customer);
+
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConsentChecked, setIsConsentChecked] = useState(true);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Step 1: Financials
+  const [loanDetails, setLoanDetails] = useState<LoanDetailsFormData>({
+    loanType: "Working Capital",
+    requiredAmount: "2500000",
+    purpose: "Cash Credit Facility",
+    preferredTenureMonths: "12",
+    hasExistingLoans: false,
+    existingEmi: "",
+    monthlyIncomeOrTurnover: "450000",
+    employmentType: "Business Owner",
+  });
+
+  // Step 2: Enterprise details
+  const [businessDetails, setBusinessDetails] = useState<LoanBusinessFormData>({
+    businessName: "",
+    gstin: "",
+    udyamRegistration: "",
+    businessVintageYears: "3",
+    annualTurnover: "4000000",
+    netProfit: "600000",
+  });
+
+  // Step 3: Banking
+  const [bankingDetails, setBankingDetails] = useState<LoanBankingFormData>({
+    primaryBankName: "",
+    accountNumber: "",
+    ifscCode: "",
+    existingLenderName: "",
+    existingLoanOutstanding: "",
+    itrFilingStatus: "Filed",
+    itrAckNumber: "",
+    grossTotalIncome: "",
+  });
+
+  // Step 4: Documents
+  const [documents, setDocuments] = useState<LoanDocumentItem[]>(() =>
+    JSON.parse(JSON.stringify(BUSINESS_DOCUMENTS_TEMPLATE))
+  );
+
+  const handleDetailsChange = (field: keyof LoanDetailsFormData, value: any) => {
+    setLoanDetails((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const handleBusinessChange = (
+    field: keyof LoanBusinessFormData,
+    value: any
+  ) => {
+    setBusinessDetails((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const handleBankingChange = (
+    field: keyof LoanBankingFormData,
+    value: string
+  ) => {
+    setBankingDetails((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const handleDocumentUploaded = (
+    docId: string,
+    fileUri: string,
+    fileName: string,
+    fileSize: string
+  ) => {
+    setDocuments((prev) =>
+      prev.map((d) =>
+        d.id === docId
+          ? {
+              ...d,
+              fileUri,
+              fileName,
+              fileSize,
+              uploadedAt: new Date().toISOString(),
+            }
+          : d
+      )
+    );
+  };
+
+  const validateCurrentStep = (): boolean => {
+    if (currentStepIndex === 0) {
+      const errs = validateLoanDetails(loanDetails);
+      setErrors(errs);
+      return Object.keys(errs).length === 0;
+    }
+
+    if (currentStepIndex === 1) {
+      const errs = validateLoanBusiness(businessDetails);
+      setErrors(errs);
+      return Object.keys(errs).length === 0;
+    }
+
+    if (currentStepIndex === 2) {
+      const errs = validateLoanBanking(bankingDetails);
+      setErrors(errs);
+      return Object.keys(errs).length === 0;
+    }
+
+    if (currentStepIndex === 3) {
+      const { isValid, missingDocs } = validateLoanDocuments(documents);
+      if (!isValid) {
+        Alert.alert(
+          "Mandatory Documents Required",
+          `Please upload all required business audit records to proceed:\n\n• ${missingDocs.slice(0, 3).join("\n• ")}`
+        );
+        return false;
+      }
+      return true;
+    }
+
+    return true;
+  };
+
+  const handleNext = () => {
+    if (!validateCurrentStep()) {
+      return;
+    }
+
+    if (currentStepIndex < STEPS.length - 1) {
+      setCurrentStepIndex((prev) => prev + 1);
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    } else {
+      handleSubmitApplication();
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex((prev) => prev - 1);
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    } else {
+      router.back();
+    }
+  };
+
+  const handleSubmitApplication = async () => {
+    if (!isConsentChecked) {
+      Alert.alert(
+        "Consent Required",
+        "Please check the authorization declaration to submit your Working Capital credit application."
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const draft: Partial<LoanApplicationDraft> = {
+        loanType: "Working Capital",
+        loanTypeId: "working-capital",
+        customerProfile: customer || undefined,
+        loanDetails,
+        businessDetails,
+        bankingDetails,
+        documents,
+      };
+
+      const response = await loansApi.applyLoan(draft);
+      Alert.alert(
+        "Working Capital Limit Lodged",
+        `Your application (Ref: ${response.referenceNumber}) has been submitted. Our commercial credit analyst will assess your drawing power shortly.`,
+        [
+          {
+            text: "Track Status",
+            onPress: () => {
+              router.replace(
+                `/service/loan-status?id=${response.applicationId}&loanType=Working+Capital` as any
+              );
+            },
+          },
+        ]
+      );
+    } catch {
+      Alert.alert("Submission Error", "Failed to lodge application. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const renderActiveStep = () => {
+    switch (currentStepIndex) {
+      case 0:
+        return (
+          <>
+            <WorkingCapitalCustomerCard profile={customer || undefined} />
+            <WorkingCapitalFinancialsStep
+              data={loanDetails}
+              onChange={handleDetailsChange}
+              errors={errors}
+            />
+          </>
+        );
+      case 1:
+        return (
+          <WorkingCapitalBusinessStep
+            data={businessDetails}
+            onChange={handleBusinessChange}
+            errors={errors}
+          />
+        );
+      case 2:
+        return (
+          <WorkingCapitalBankingStep
+            data={bankingDetails}
+            onChange={handleBankingChange}
+            errors={errors}
+            hasExistingLoans={loanDetails.hasExistingLoans}
+          />
+        );
+      case 3:
+        return (
+          <WorkingCapitalDocumentsStep
+            documents={documents}
+            onDocumentUploaded={handleDocumentUploaded}
+          />
+        );
+      case 4:
+      default:
+        return (
+          <WorkingCapitalReviewStep
+            loanDetails={loanDetails}
+            businessDetails={businessDetails}
+            bankingDetails={bankingDetails}
+            documents={documents}
+            profile={customer || undefined}
+            isConsentChecked={isConsentChecked}
+            onConsentToggle={setIsConsentChecked}
+            onGoToStep={(stepIdx) => {
+              setCurrentStepIndex(stepIdx);
+              scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+            }}
+          />
+        );
+    }
+  };
+
+  const isFinalStep = currentStepIndex === STEPS.length - 1;
+
+  return (
+    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={handleBack}>
+            <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.headerTitle}>Working Capital</Text>
+            <Text style={styles.headerSubtitle}>
+              Step {currentStepIndex + 1} of {STEPS.length} • {STEPS[currentStepIndex]}
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.saveDraftButton}
+          onPress={() => Alert.alert("Draft Saved", "Working Capital draft saved successfully.")}
+        >
+          <Text style={styles.saveDraftText}>Save Draft</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Step Progress Stepper */}
+      <WorkingCapitalStepIndicator
+        steps={STEPS}
+        currentStepIndex={currentStepIndex}
+        onStepPress={(idx) => {
+          if (idx <= currentStepIndex) {
+            setCurrentStepIndex(idx);
+          }
+        }}
+      />
+
+      {/* Scrollable Step Content */}
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {renderActiveStep()}
+      </ScrollView>
+
+      {/* Sticky Bottom Actions */}
+      <View
+        style={[
+          styles.bottomBar,
+          { paddingBottom: Math.max(insets.bottom, 12) },
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleBack}
+          disabled={isSubmitting}
+        >
+          <Text style={styles.backButtonText}>
+            {currentStepIndex === 0 ? "Cancel" : "Back"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
+          onPress={handleNext}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator size="small" color={BrandColors.WHITE} />
+          ) : (
+            <>
+              <Text style={styles.nextButtonText}>
+                {isFinalStep ? "Submit Application" : "Continue"}
+              </Text>
+              <Ionicons
+                name={isFinalStep ? "shield-checkmark" : "arrow-forward"}
+                size={18}
+                color={BrandColors.WHITE}
+              />
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+export default WorkingCapitalScreen;

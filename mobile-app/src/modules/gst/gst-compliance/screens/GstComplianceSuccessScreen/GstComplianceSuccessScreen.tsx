@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+﻿import React, { useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -70,15 +70,6 @@ export function GstComplianceSuccessScreen() {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
-
-  useEffect(() => {
-    const { BackHandler } = require("react-native");
-    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      handleGoDashboard();
-      return true;
-    });
-    return () => sub.remove();
   }, []);
 
   const handleCopyRef = () => {

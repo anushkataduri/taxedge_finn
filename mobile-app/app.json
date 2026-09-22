@@ -8,10 +8,7 @@
     "scheme": "taxedgemobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
-      "infoPlist": {
-        "NSFaceIDUsageDescription": "TaxEdge uses Face ID to securely authenticate and access your account."
-      }
+      "icon": "./assets/expo.icon"
     },
     "android": {
       "package": "com.taxedge.mobile",
@@ -67,13 +64,7 @@
         }
       ],
       "expo-image",
-      "expo-web-browser",
-      [
-        "expo-local-authentication",
-        {
-          "faceIDPermission": "TaxEdge uses Face ID to securely authenticate and access your account."
-        }
-      ]
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

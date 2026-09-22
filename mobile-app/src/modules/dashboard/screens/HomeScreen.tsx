@@ -21,6 +21,7 @@ import { useColorScheme } from "../../../hooks/use-color-scheme";
 import { useAuthStore } from "../../authentication/store/authStore";
 import { useApplicationStore } from "../../../store/applicationStore";
 import { useNotificationStore } from "../../../store/notificationStore";
+import { SavingsJarAnimation } from "../../../shared/components/Loader/SavingsJarAnimation";
 import { SERVICE_CATALOGUE } from "../../../data/catalogue";
 import { SCREEN_BOTTOM_PADDING } from "../../../shared/components/ScreenLayout/ScreenLayout";
 import { Maybe } from "../../../shared/utils/functional";
@@ -146,7 +147,7 @@ export function HomeScreen() {
   const tileFg = (item: { tint: string }) => (isDark ? colors.text : item.tint);
 
   const handleExploreCategory = (categoryId: ServiceCategoryId) => {
-    router.push({ pathname: "/services" as any, params: { selectedCategory: categoryId } });
+    accessService("/services", { selectedCategory: categoryId });
   };
 
   const openCatalogueItem = (
@@ -157,7 +158,7 @@ export function HomeScreen() {
     if (item.serviceId) {
       accessService(`/service/${item.serviceId}`);
     } else {
-      router.push({ pathname: "/services" as any, params: { selectedCategory: categoryId } });
+      handleExploreCategory(categoryId);
     }
   };
 
@@ -168,18 +169,7 @@ export function HomeScreen() {
       return;
     }
     setMoreOpen(false);
-    if (tile.route) {
-      if (
-        tile.route === "/service/gst" ||
-        tile.route === "/service/itr" ||
-        tile.route === "/service/loans" ||
-        tile.route === "/services"
-      ) {
-        router.push(tile.route as any);
-      } else {
-        accessService(tile.route);
-      }
-    }
+    if (tile.route) accessService(tile.route);
   };
 
   const catalogueQuery = moreQuery.trim().toLowerCase();
@@ -198,6 +188,15 @@ export function HomeScreen() {
     setBannerPage(page);
   };
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const next = (bannerPageRef.current + 1) % APPLY_BANNERS.length;
+      bannerPageRef.current = next;
+      setBannerPage(next);
+      bannerRef.current?.scrollTo({ x: next * CARD_WIDTH, animated: true });
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -272,6 +271,7 @@ export function HomeScreen() {
               What can we help you with today?
             </Text>
           </View>
+          <SavingsJarAnimation accent={colors.orange} scale={0.8} />
         </View>
       </View>
 

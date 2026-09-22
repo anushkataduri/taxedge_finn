@@ -387,18 +387,6 @@ export const authApi = {
       return false;
     }
   },
-
-  getCustomerDetails: async (custId: string): Promise<any> => {
-    try {
-      console.log(`🚀 [API] Fetching GET /customer/details/${custId}`);
-      const res = await apiClient.get<any>(`/customer/details/${custId}`);
-      console.log(`✅ [API] Customer details fetched successfully:`, res);
-      return { success: true, data: res };
-    } catch (error: any) {
-      console.error(`❌ [API] Error fetching customer details for ${custId}:`, error);
-      return { success: false, message: error?.message || "Failed to fetch customer details" };
-    }
-  },
 };
 
 export default authApi;

@@ -73,49 +73,6 @@ export function hasEnteredAnyField(obj: any, emptyObj?: any): boolean {
   return false;
 }
 
-export async function addDraftToIndex(cleanMobile: string, serviceKey: string) {
-  try {
-    const raw = await AsyncStorage.getItem(`@taxedge_draft_index_${cleanMobile}`);
-    const index: string[] = raw ? JSON.parse(raw) : [];
-    if (!index.includes(serviceKey)) {
-      index.push(serviceKey);
-      await AsyncStorage.setItem(`@taxedge_draft_index_${cleanMobile}`, JSON.stringify(index));
-    }
-  } catch {}
-}
-
-export async function removeDraftFromIndex(cleanMobile: string, serviceKey: string) {
-  try {
-    const raw = await AsyncStorage.getItem(`@taxedge_draft_index_${cleanMobile}`);
-    if (raw) {
-      const index: string[] = JSON.parse(raw);
-      const nextIndex = index.filter((k) => k !== serviceKey);
-      await AsyncStorage.setItem(`@taxedge_draft_index_${cleanMobile}`, JSON.stringify(nextIndex));
-    }
-  } catch {}
-}
-
-export async function getCustomerDrafts(cleanMobile: string): Promise<any[]> {
-  try {
-    const raw = await AsyncStorage.getItem(`@taxedge_draft_index_${cleanMobile}`);
-    if (!raw) return [];
-    const index: string[] = JSON.parse(raw);
-    const drafts: any[] = [];
-    for (const key of index) {
-      const draftRaw = await AsyncStorage.getItem(`@taxedge_draft_${cleanMobile}_${key}`);
-      if (draftRaw) {
-        try {
-          const parsed = JSON.parse(draftRaw);
-          drafts.push({ serviceKey: key, ...parsed });
-        } catch {}
-      }
-    }
-    return drafts;
-  } catch {
-    return [];
-  }
-}
-
 export function useServiceDraft<T extends Record<string, any>>({
   serviceKey,
   formData,
@@ -177,37 +134,34 @@ export function useServiceDraft<T extends Record<string, any>>({
   const handleSaveDraft = useCallback(async () => {
     try {
       await AsyncStorage.setItem(storageKey, JSON.stringify(formDataRef.current));
-      await addDraftToIndex(cleanMobile, serviceKey);
       if (onSaveRef.current) {
         await onSaveRef.current(formDataRef.current);
       }
     } catch (e) {
       console.warn(`Failed to save draft for ${serviceKey}:`, e);
     }
-  }, [storageKey, cleanMobile, serviceKey]);
+  }, [storageKey, serviceKey]);
 
   // Discard draft from AsyncStorage and invoke callback
   const handleDiscardDraft = useCallback(async () => {
     try {
       await AsyncStorage.removeItem(storageKey);
-      await removeDraftFromIndex(cleanMobile, serviceKey);
       if (onDiscardRef.current) {
         await onDiscardRef.current();
       }
     } catch (e) {
       console.warn(`Failed to discard draft for ${serviceKey}:`, e);
     }
-  }, [storageKey, cleanMobile, serviceKey]);
+  }, [storageKey, serviceKey]);
 
   // Clear draft explicitly (e.g. after successful submission)
   const clearDraft = useCallback(async () => {
     try {
       await AsyncStorage.removeItem(storageKey);
-      await removeDraftFromIndex(cleanMobile, serviceKey);
     } catch (e) {
       console.warn(`Failed to clear draft for ${serviceKey}:`, e);
     }
-  }, [storageKey, cleanMobile, serviceKey]);
+  }, [storageKey, serviceKey]);
 
   // Connect to navigation guard (beforeRemove)
   const guard = useUniversalDraftGuard({

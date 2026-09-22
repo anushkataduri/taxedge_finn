@@ -13,7 +13,6 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
-import { useApplicationStore } from "@/store/applicationStore";
 import { TdsCustomerIncomeFormData } from "../../types/customerIncome.types";
 import { TdsChecklistItem } from "../../types/checklist.types";
 import { TaxCalculationBreakdown } from "../../types/estimate.types";
@@ -86,7 +85,6 @@ export const TdsRefundEstimateScreen: React.FC = () => {
       }
 
       await tdsDraftService.saveApplicationId(targetAppId);
-      useApplicationStore.getState().saveTdsDraft({ step: "PAYMENT" });
 
       router.push({
         pathname: "/service/tds-payment" as any,
