@@ -55,6 +55,53 @@ export const CompanyRegistrationScreen: React.FC = () => {
       Alert.alert('Validation Error', 'Please enter at least 1st Preferred Name.');
       return;
     }
+
+
+    // Validation for Step 3 (Promoter / Director Details)
+    if (currentStep === 3) {
+      const firstDir = draft.directors[0];
+      if (!firstDir || !firstDir.name?.trim()) {
+        Alert.alert('Validation Error', 'Please enter Full Name for Director #1.');
+        return;
+      }
+      if (!firstDir.pan?.trim()) {
+        Alert.alert('Validation Error', 'Please enter PAN Number for Director #1.');
+        return;
+      }
+      if (!firstDir.email?.trim()) {
+        Alert.alert('Validation Error', 'Please enter Email Address for Director #1.');
+        return;
+      }
+    }
+
+    // Validation for Step 5 (Documents & KYC Checklist)
+    if (currentStep === 5) {
+      const requiredIds: string[] = ['doc-address', 'doc-utility'];
+
+      draft.directors.forEach((dir) => {
+        if (!dir.hasDin) {
+          requiredIds.push(`doc-idproof-${dir.id}`);
+        }
+      });
+
+      if (draft.company.companyType === 'One Person Company (OPC)' && draft.opcNominee?.name) {
+        requiredIds.push('doc-idproof-nominee');
+      }
+
+      const missingMandatory = requiredIds.some((id) => {
+        const doc = draft.documents.find((d) => d.id === id);
+        return !doc || doc.status !== 'Uploaded';
+      });
+      if (missingMandatory) {
+        Alert.alert(
+          'Validation Error',
+          'Please upload all applicable mandatory documents (Office Proofs, and Identity Proofs for persons without DIN) before proceeding.'
+        );
+        return;
+      }
+    }
+
+
     if (currentStep < totalSteps - 1) {
       setStep(currentStep + 1);
     }

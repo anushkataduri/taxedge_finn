@@ -26,6 +26,32 @@ export const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
   },
+
+  docHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  docIconTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  docIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  docTitleTextGroup: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+
   docTitle: {
     fontSize: 14,
     fontWeight: '600',
@@ -34,7 +60,9 @@ export const styles = StyleSheet.create({
   docCategory: {
     fontSize: 12,
     color: '#64748B',
-    marginTop: 2,
+    marginTop: 6,
+    marginLeft: 46,
+    lineHeight: 16,
   },
   statusBadge: {
     flexDirection: 'row',
@@ -44,12 +72,24 @@ export const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 6,
   },
+
+  uploadActionBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  uploadedContainer: {
+    marginTop: 12,
+    marginLeft: 46,
+  },
+
   uploadedBadge: {
     backgroundColor: '#DCFCE7',
   },
   pendingBadge: {
     backgroundColor: '#FEF3C7',
   },
+
   statusText: {
     fontSize: 12,
     fontWeight: '600',
@@ -59,5 +99,34 @@ export const styles = StyleSheet.create({
   },
   pendingText: {
     color: '#92400E',
+
+  fileNameText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#083B75',
+    marginBottom: 12,
+  },
+  uploadedActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    justifyContent: 'flex-start',
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionTextBtn: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#083B75',
+    marginLeft: 4,
+  },
+  removeTextBtn: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#EF4444',
+    marginLeft: 4,
+
   },
 });
