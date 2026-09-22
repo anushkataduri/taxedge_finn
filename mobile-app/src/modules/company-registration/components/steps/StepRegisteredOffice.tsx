@@ -4,6 +4,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { DocumentUploadBottomSheet } from '@/modules/itr/tds/components/upload/DocumentUploadBottomSheet/DocumentUploadBottomSheet';
+import { TdsDocumentCard } from '@/modules/itr/tds/components/upload/TdsDocumentCard/TdsDocumentCard';
+import { TdsChecklistItem } from '@/modules/itr/tds/types/checklist.types';
 import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlice';
 import { styles } from './StepRegisteredOffice.styles';
 
@@ -103,57 +105,28 @@ export const StepRegisteredOffice: React.FC = () => {
     label: string,
     type: DocType,
     fileName: string | undefined,
-    helperText?: string,
+    helperText: string | undefined,
     isRequired = true
   ) => {
-    const hasFile = !!fileName;
+    const item: TdsChecklistItem = {
+      id: type,
+      title: label.replace('*', '').trim(),
+      subtitle: helperText || (isRequired ? 'Mandatory document' : 'Optional document'),
+      status: fileName ? 'uploaded' : 'not_uploaded',
+      isMandatory: isRequired,
+      fileName: fileName,
+      fileUri: fileName ? `file://${fileName}` : undefined,
+      fileSize: fileName ? '2.4 MB' : undefined,
+    };
 
     return (
       <View style={styles.fieldGroup}>
-        <Text style={styles.label}>
-          {label} {isRequired ? '*' : ''}
-        </Text>
-
-        {hasFile ? (
-          <View style={styles.uploadBoxSuccess}>
-            <TouchableOpacity
-              style={styles.fileLeftInfo}
-              onPress={() => setActiveDocType(type)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="document-text" size={20} color="#083B75" />
-              <Text style={styles.uploadSuccessText} numberOfLines={1}>
-                {fileName}
-              </Text>
-            </TouchableOpacity>
-            <View style={styles.fileRightActions}>
-              <Ionicons name="checkmark-circle" size={20} color="#166534" />
-              <TouchableOpacity
-                onPress={() => handleRemoveDoc(type)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={styles.removeBtn}
-              >
-                <Ionicons name="trash-outline" size={18} color="#EF4444" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={styles.uploadBoxEmpty}
-            onPress={() => setActiveDocType(type)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.fileLeftInfo}>
-              <Ionicons name="cloud-upload-outline" size={20} color="#083B75" />
-              <Text style={styles.uploadEmptyText}>
-                Upload {label.replace('*', '').trim()} (PDF / Image)
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-          </TouchableOpacity>
-        )}
-
-        {helperText ? <Text style={styles.helperText}>{helperText}</Text> : null}
+        <TdsDocumentCard
+          item={item}
+          onUploadPress={() => setActiveDocType(type)}
+          onChange={() => setActiveDocType(type)}
+          onDelete={() => handleRemoveDoc(type)}
+        />
       </View>
     );
   };
