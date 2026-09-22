@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
   type NativeSyntheticEvent,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter, type Href } from "expo-router";
+import { useRouter, useFocusEffect, type Href } from "expo-router";
 import { useTheme } from "../../hooks/use-theme";
 import { useColorScheme } from "../../hooks/use-color-scheme";
 import { useAuthStore } from "../../store/authStore";
@@ -230,6 +230,12 @@ export default function HomeScreen() {
   const itrDraft = useApplicationStore((state) => state.itrDraft);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
 
+  useFocusEffect(
+    useCallback(() => {
+      useApplicationStore.getState().loadApplications();
+    }, [])
+  );
+
   const hasRealName = Boolean(
     customer?.name &&
     customer.name.trim() !== "" &&
@@ -243,15 +249,15 @@ export default function HomeScreen() {
     ? `Hello, ${customer!.name.trim().split(" ")[0]} 👋`
     : "Welcome to TaxEdge 👋";
 
-  const activeCount = applications.filter((app) => app.status !== "Completed").length;
-  const pendingDocsCount = applications.reduce(
-    (sum, app) => sum + app.documents.filter((d) => d.status === "Pending").length,
+  const activeCount = (applications || []).filter((app) => app?.status !== "Completed").length;
+  const pendingDocsCount = (applications || []).reduce(
+    (sum, app) => sum + ((app?.documents || []).filter((d) => d?.status === "Pending").length),
     0
   );
-  const completedCount = applications.filter((app) => app.status === "Completed").length;
-  const paymentDue = applications
-    .filter((app) => app.paymentStatus === "Pending")
-    .reduce((sum, app) => sum + (app.paymentAmount || 0), 0);
+  const completedCount = (applications || []).filter((app) => app?.status === "Completed").length;
+  const paymentDue = (applications || [])
+    .filter((app) => app?.paymentStatus === "Pending")
+    .reduce((sum, app) => sum + (app?.paymentAmount || 0), 0);
 
   const recentApps = applications.slice(0, 3);
 

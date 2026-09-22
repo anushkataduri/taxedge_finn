@@ -5,19 +5,37 @@
  * Strictly under 300 lines.
  */
 import React, { useState, useRef } from "react";
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, Alert, Linking } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  StatusBar,
+  Alert,
+  Linking,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as DocumentPicker from "expo-document-picker";
 import { BrandColors } from "@/shared/theme";
-import { GstServiceBanner, GstSelectModal, GstDatePickerModal } from "@/modules/gst/components/common";
+import {
+  GstServiceBanner,
+  GstSelectModal,
+  GstDatePickerModal,
+} from "@/modules/gst/components/common";
 import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
 import { GstValidators } from "@/modules/gst/utils/gstValidators";
 import { pickImageFromCamera } from "@/modules/gst/utils/imageUploadHelper";
-import { styles, CANCELLATION_REASONS, ACCEPTED_PROOFS } from "./GstCancellationScreen.styles";
+import {
+  styles,
+  CANCELLATION_REASONS,
+  ACCEPTED_PROOFS,
+} from "./GstCancellationScreen.styles";
 import { useApplicationStore } from "@/store/applicationStore";
+import { gstCancellationApi } from "@/modules/gst/services/gstCancellationApi";
 import { GstCancellationSuccess } from "../../components/GstCancellationSuccess";
 import { GstCancellationReview } from "../../components/GstCancellationReview";
 import { GstSupportingProof } from "../../components/GstSupportingProof";
@@ -28,7 +46,9 @@ export default function GstCancellationScreen() {
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const [currentStep, setCurrentStep] = useState<"FORM" | "REVIEW" | "SUCCESS">("FORM");
+  const [currentStep, setCurrentStep] = useState<"FORM" | "REVIEW" | "SUCCESS">(
+    "FORM",
+  );
   const [gstin, setGstin] = useState(""),
     [reason, setReason] = useState(""),
     [otherReason, setOtherReason] = useState("");
@@ -41,6 +61,14 @@ export default function GstCancellationScreen() {
     name: string;
     size: string;
   } | null>(null);
+
+  const [isVoluntaryUnderOneYear, setIsVoluntaryUnderOneYear] = useState<
+    boolean | null
+  >(null);
+  const [areAllReturnsFiled, setAreAllReturnsFiled] = useState<boolean | null>(
+    null,
+  );
+
   const [isProofsExpanded, setIsProofsExpanded] = useState(false);
   const [showReasonModal, setShowReasonModal] = useState(false),
     [showDateModal, setShowDateModal] = useState(false);
@@ -117,13 +145,28 @@ export default function GstCancellationScreen() {
   const validateForm = (): boolean => {
     const e: Record<string, string> = {};
     if (!GstValidators.isValidGstin(gstin))
-      e.gstin = "Enter a valid 15-character GSTIN";
+      e.gstin = "Please enter a valid 15-character GSTIN.";
     if (!reason) e.reason = "Please select a reason for cancellation.";
     if (
       reason === "Other Valid Reason" &&
       !GstValidators.isNotEmpty(otherReason, 3)
     )
       e.otherReason = "Please specify the reason.";
+
+    // New Eligibility Checks
+    if (isVoluntaryUnderOneYear === null) {
+      e.isVoluntaryUnderOneYear = "Please answer this question.";
+    } else if (isVoluntaryUnderOneYear === true) {
+      e.isVoluntaryUnderOneYear =
+        "You cannot cancel a voluntary registration before 1 year.";
+    }
+
+    if (areAllReturnsFiled === null) {
+      e.areAllReturnsFiled = "Please answer this question.";
+    } else if (areAllReturnsFiled === false) {
+      e.areAllReturnsFiled = "Please file all pending GST returns first.";
+    }
+
     if (!cancellationDate)
       e.cancellationDate = "Cancellation date is required.";
     if (!GstValidators.isNotEmpty(closingStock, 3))
@@ -136,14 +179,28 @@ export default function GstCancellationScreen() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmitCancellation = () => {
+  const handleSubmitCancellation = async () => {
     if (!isReviewDeclared)
       return Alert.alert(
         "Declaration Required",
         "Please tick the declaration checkbox to authorise filing.",
       );
     setIsSubmitting(true);
-    setTimeout(() => {
+
+    try {
+      // 1. Call Backend API
+      await gstCancellationApi.createCancellation({
+        gstin,
+        reason,
+        otherReason,
+        cancellationDate,
+        closingStock,
+        pendingLiabilities,
+        lastGstr3b,
+        supportingDoc,
+      });
+
+      // 2. Create Application in Global Store
       setIsSubmitting(false);
       markSubmitted();
       const arn = `AA290926${Math.floor(100000 + Math.random() * 900000)}`;
@@ -154,42 +211,61 @@ export default function GstCancellationScreen() {
       });
       const finalReason =
         reason === "Other Valid Reason" ? otherReason : reason;
-      const appId = useApplicationStore
-        .getState()
-        .createApplication(
-          "gst-cancellation",
-          "GST Cancellation (REG-16)",
-          "GST",
-          {
-            gstin,
-            arn,
-            reason: finalReason,
-            cancellationDate,
-            closingStock,
-            pendingLiabilities: pendingLiabilities || "Nil",
-            lastGstr3b,
-            submissionDate: date,
-            supportingDoc: supportingDoc?.name || "None",
-          },
-          supportingDoc
-            ? [supportingDoc.name, "Last GSTR-3B Filing Proof"]
-            : ["Last GSTR-3B Filing Proof", "Closing Stock Valuation"],
-          0,
-        );
+      const appId = useApplicationStore.getState().createApplication(
+        "gst-cancellation",
+        "GST Cancellation (REG-16)",
+        "GST",
+        {
+          gstin,
+          arn,
+          reason: finalReason,
+          cancellationDate,
+          closingStock,
+          pendingLiabilities: pendingLiabilities || "Nil",
+          lastGstr3b,
+          submissionDate: date,
+          supportingDoc: supportingDoc?.name || "None",
+        },
+        supportingDoc
+          ? [supportingDoc.name, "Last GSTR-3B Filing Proof"]
+          : ["Last GSTR-3B Filing Proof", "Closing Stock Valuation"],
+        0,
+      );
       setSubmissionResult({ arn, date, appId });
       setCurrentStep("SUCCESS");
-    }, 600);
+    } catch (err: any) {
+      setIsSubmitting(false);
+      Alert.alert(
+        "Submission Failed",
+        err.message || "Failed to submit GST Cancellation.",
+      );
+    }
   };
 
   /* ---------------- SCREEN 3: SUCCESSFULLY SUBMITTED ---------------- */
   if (currentStep === "SUCCESS" && submissionResult) {
-    return <GstCancellationSuccess submissionResult={submissionResult} gstin={gstin} cancellationDate={cancellationDate} />;
+    return (
+      <GstCancellationSuccess
+        submissionResult={submissionResult}
+        gstin={gstin}
+        cancellationDate={cancellationDate}
+      />
+    );
   }
   /* ---------------- SCREEN 2: REVIEW & SUBMIT ---------------- */
   if (currentStep === "REVIEW") {
     return (
-      <GstCancellationReview 
-        formData={{ gstin, reason, otherReason, cancellationDate, closingStock, pendingLiabilities, lastGstr3b, supportingDoc }}
+      <GstCancellationReview
+        formData={{
+          gstin,
+          reason,
+          otherReason,
+          cancellationDate,
+          closingStock,
+          pendingLiabilities,
+          lastGstr3b,
+          supportingDoc,
+        }}
         isReviewDeclared={isReviewDeclared}
         setIsReviewDeclared={setIsReviewDeclared}
         isSubmitting={isSubmitting}
@@ -316,6 +392,142 @@ export default function GstCancellationScreen() {
             <Text style={styles.errorText}>{errors.cancellationDate}</Text>
           ) : null}
         </View>
+
+        {/* New Eligibility Checks */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>
+            Did you register voluntarily AND is your registration less than 1
+            year old? <Text style={styles.star}>*</Text>
+          </Text>
+          <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
+            <TouchableOpacity
+              style={[
+                styles.selectBox,
+                { flex: 1, alignItems: "center", justifyContent: "center" },
+                isVoluntaryUnderOneYear === true && {
+                  borderColor: BrandColors.PRIMARY_BLUE,
+                  backgroundColor: "#F0F9FF",
+                },
+              ]}
+              activeOpacity={0.7}
+              onPress={() => {
+                setIsVoluntaryUnderOneYear(true);
+                clearError("isVoluntaryUnderOneYear");
+              }}
+            >
+              <Text
+                style={[
+                  styles.selectText,
+                  isVoluntaryUnderOneYear === true && {
+                    color: BrandColors.PRIMARY_BLUE,
+                    fontWeight: "600",
+                  },
+                ]}
+              >
+                Yes
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.selectBox,
+                { flex: 1, alignItems: "center", justifyContent: "center" },
+                isVoluntaryUnderOneYear === false && {
+                  borderColor: BrandColors.PRIMARY_BLUE,
+                  backgroundColor: "#F0F9FF",
+                },
+              ]}
+              activeOpacity={0.7}
+              onPress={() => {
+                setIsVoluntaryUnderOneYear(false);
+                clearError("isVoluntaryUnderOneYear");
+              }}
+            >
+              <Text
+                style={[
+                  styles.selectText,
+                  isVoluntaryUnderOneYear === false && {
+                    color: BrandColors.PRIMARY_BLUE,
+                    fontWeight: "600",
+                  },
+                ]}
+              >
+                No
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {errors.isVoluntaryUnderOneYear ? (
+            <Text style={styles.errorText}>
+              {errors.isVoluntaryUnderOneYear}
+            </Text>
+          ) : null}
+        </View>
+
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>
+            Are all your GST returns filed up to today?{" "}
+            <Text style={styles.star}>*</Text>
+          </Text>
+          <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
+            <TouchableOpacity
+              style={[
+                styles.selectBox,
+                { flex: 1, alignItems: "center", justifyContent: "center" },
+                areAllReturnsFiled === true && {
+                  borderColor: BrandColors.PRIMARY_BLUE,
+                  backgroundColor: "#F0F9FF",
+                },
+              ]}
+              activeOpacity={0.7}
+              onPress={() => {
+                setAreAllReturnsFiled(true);
+                clearError("areAllReturnsFiled");
+              }}
+            >
+              <Text
+                style={[
+                  styles.selectText,
+                  areAllReturnsFiled === true && {
+                    color: BrandColors.PRIMARY_BLUE,
+                    fontWeight: "600",
+                  },
+                ]}
+              >
+                Yes
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.selectBox,
+                { flex: 1, alignItems: "center", justifyContent: "center" },
+                areAllReturnsFiled === false && {
+                  borderColor: BrandColors.PRIMARY_BLUE,
+                  backgroundColor: "#F0F9FF",
+                },
+              ]}
+              activeOpacity={0.7}
+              onPress={() => {
+                setAreAllReturnsFiled(false);
+                clearError("areAllReturnsFiled");
+              }}
+            >
+              <Text
+                style={[
+                  styles.selectText,
+                  areAllReturnsFiled === false && {
+                    color: BrandColors.PRIMARY_BLUE,
+                    fontWeight: "600",
+                  },
+                ]}
+              >
+                No
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {errors.areAllReturnsFiled ? (
+            <Text style={styles.errorText}>{errors.areAllReturnsFiled}</Text>
+          ) : null}
+        </View>
+
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>
             Details of Closing Stock & Input Tax Reversal{" "}
@@ -374,8 +586,13 @@ export default function GstCancellationScreen() {
           ) : null}
         </View>
 
-        <GstSupportingProof supportingDoc={supportingDoc} setSupportingDoc={setSupportingDoc} handleBrowseFiles={handleBrowseFiles} handleScanFile={handleScanFile} />
-      
+        <GstSupportingProof
+          supportingDoc={supportingDoc}
+          setSupportingDoc={setSupportingDoc}
+          handleBrowseFiles={handleBrowseFiles}
+          handleScanFile={handleScanFile}
+        />
+
         <View style={styles.acceptedProofsCard}>
           <View style={styles.acceptedProofsHeader}>
             <Ionicons

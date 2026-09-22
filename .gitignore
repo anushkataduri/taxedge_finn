@@ -10,3 +10,7 @@ dist/
 build/
 target/
 .gradle/
+.tools/
+.agents/
+taxedge-backend/taxedge-backend/
+

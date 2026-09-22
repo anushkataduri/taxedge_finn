@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, Platform } from "react-native";
+import { View, Text, StyleSheet, Platform, Image } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors, Typography, Spacing, BorderRadius, Shadows } from "../theme";
 import { ScalePressable } from "./ScalePressable";
@@ -25,71 +25,53 @@ export interface ServiceCardData {
   badgeBg?: string;
   badgeVariant?: "start" | "rate" | "custom";
   rateText?: string;
+  iconImage?: any;
 }
 
-interface ServiceCardProps {
+export interface ServiceCardProps {
   item: ServiceCardData;
   onPress?: (item: ServiceCardData) => void;
 }
 
+const GST_3D_ICONS: Record<string, any> = {
+  "gst-registration": require("../../../assets/images/services/gst/gst_registration.png"),
+  "gst-filing": require("../../../assets/images/services/gst/gst_filing.png"),
+  "gst-compliance": require("../../../assets/images/services/gst/gst_compliance.png"),
+  "gst-amendment": require("../../../assets/images/services/gst/gst_amendment.png"),
+  "gst-cancellation": require("../../../assets/images/services/gst/gst_cancellation.png"),
+  "gst-certificate": require("../../../assets/images/services/gst/gst_certificate.png"),
+  registration: require("../../../assets/images/services/gst/gst_registration.png"),
+  filing: require("../../../assets/images/services/gst/gst_filing.png"),
+  compliance: require("../../../assets/images/services/gst/gst_compliance.png"),
+  amendment: require("../../../assets/images/services/gst/gst_amendment.png"),
+  cancellation: require("../../../assets/images/services/gst/gst_cancellation.png"),
+  certificate: require("../../../assets/images/services/gst/gst_certificate.png"),
+};
+
+const ITR_3D_ICONS: Record<string, any> = {
+  "itr-filing": require("../../../assets/images/services/itr/itr_filing.png"),
+  "tds-refund": require("../../../assets/images/services/itr/tds_refund.png"),
+  "previous-year-itr": require("../../../assets/images/services/itr/previous_year_itr.png"),
+  "revised-itr": require("../../../assets/images/services/itr/revised_itr.png"),
+  "tax-notice-assistance": require("../../../assets/images/services/itr/tax_notice_assistance.png"),
+};
+
 const renderCardIcon = (item: ServiceCardData) => {
   const bg = item.iconBg || "#EDF9F3";
+  const icon3D =
+    item.iconImage ||
+    GST_3D_ICONS[item.id] ||
+    ITR_3D_ICONS[item.id] ||
+    (item.iconType ? GST_3D_ICONS[item.iconType] : undefined);
 
-  if (item.iconType === "registration" || item.id === "gst-registration") {
+  if (icon3D) {
     return (
       <View style={[styles.iconWrapper, { backgroundColor: bg }]}>
-        <View style={styles.compositeIconContainer}>
-          <Ionicons name="document-text" size={22} color="#CBD5E1" />
-          <View style={styles.pencilOverlay}>
-            <Ionicons name="pencil" size={14} color="#F43F5E" />
-          </View>
-        </View>
-      </View>
-    );
-  }
-
-  if (item.iconType === "filing" || item.id === "gst-filing") {
-    return (
-      <View style={[styles.iconWrapper, { backgroundColor: item.iconBg || "#EDF9F3" }]}>
-        <View style={styles.chartBarsContainer}>
-          <View style={[styles.chartBar, { height: 11, backgroundColor: "#F43F5E" }]} />
-          <View style={[styles.chartBar, { height: 17, backgroundColor: "#06B6D4" }]} />
-          <View style={[styles.chartBar, { height: 23, backgroundColor: "#3B82F6" }]} />
-        </View>
-      </View>
-    );
-  }
-
-  if (item.iconType === "compliance" || item.id === "gst-compliance") {
-    return (
-      <View style={[styles.iconWrapper, { backgroundColor: bg }]}>
-        <View style={styles.greenCheckBadge}>
-          <Ionicons name="checkmark-sharp" size={14} color="#FFFFFF" />
-        </View>
-      </View>
-    );
-  }
-
-  if (item.iconType === "amendment" || item.id === "gst-amendment") {
-    return (
-      <View style={[styles.iconWrapper, { backgroundColor: bg }]}>
-        <Ionicons name="pencil" size={22} color="#F97316" />
-      </View>
-    );
-  }
-
-  if (item.iconType === "cancellation" || item.id === "gst-cancellation") {
-    return (
-      <View style={[styles.iconWrapper, { backgroundColor: bg }]}>
-        <Ionicons name="ban" size={22} color="#EF4444" />
-      </View>
-    );
-  }
-
-  if (item.iconType === "certificate" || item.id === "gst-certificate") {
-    return (
-      <View style={[styles.iconWrapper, { backgroundColor: bg }]}>
-        <Ionicons name="ribbon" size={22} color="#F59E0B" />
+        <Image
+          source={icon3D}
+          style={styles.icon3DImage}
+          resizeMode="contain"
+        />
       </View>
     );
   }
@@ -178,7 +160,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#EEF2F6",
+    borderColor: "#E2E8F0",
     ...Platform.select({
       ios: {
         shadowColor: "#0F172A",
@@ -199,36 +181,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 14,
+    overflow: "hidden",
   },
-  compositeIconContainer: {
-    width: 28,
-    height: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  pencilOverlay: {
-    position: "absolute",
-    bottom: -2,
-    right: -2,
-  },
-  chartBarsContainer: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 3,
-    height: 24,
-  },
-  chartBar: {
-    width: 5,
-    borderRadius: 2,
-  },
-  greenCheckBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: "#10B981",
-    justifyContent: "center",
-    alignItems: "center",
+  icon3DImage: {
+    width: 44,
+    height: 44,
   },
   detailsCol: {
     flex: 1,
@@ -238,7 +195,7 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#1E293B",
+    color: "#0F3567",
     letterSpacing: -0.2,
     fontFamily: Platform.select({ ios: "System", android: "sans-serif-medium" }),
   },

@@ -232,9 +232,17 @@ export function AnimatedSplashOverlay({ onFinish }: AnimatedSplashOverlayProps) 
         }
       )
     );
+
+    // Failsafe timer: unconditionally dismiss splash overlay after 2.8s
+    const failsafe = setTimeout(() => {
+      handleComplete();
+    }, 2800);
+
+    return () => clearTimeout(failsafe);
   }, []);
 
   const handleComplete = () => {
+    SplashScreen.hideAsync().catch(() => {});
     setVisible(false);
     onFinish?.();
   };

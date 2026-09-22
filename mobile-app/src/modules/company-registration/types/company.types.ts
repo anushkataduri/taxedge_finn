@@ -1,21 +1,47 @@
 export type CompanyType =
   | 'Private Limited'
-  | 'Limited Liability Partnership (LLP)'
   | 'One Person Company (OPC)'
-  | 'Public Limited'
   | 'Section 8 (NGO)'
+  | 'Public Limited'
+  | 'Limited Liability Partnership (LLP)'
   | 'Sole Proprietorship';
 
+export type CompanyClass = 'Private' | 'Public';
+export type CompanyCategory = 'Company limited by Shares' | 'Company limited by Guarantee' | 'Unlimited Company';
+export type CompanySubCategory = 'Indian Non-Government Company' | 'State Government Company' | 'Central Government Company';
+
 export interface CompanyDetails {
+  companyType: CompanyType;
+  industryCategory?: string;
+  businessActivityDescription?: string;
+  // Classification
+  companyClass: CompanyClass;
+  companyCategory: CompanyCategory;
+  companySubCategory: CompanySubCategory;
+  // Business Activity & NIC
+  primaryActivity: string;
+  nicCode: string;
+  secondaryActivity?: string;
+  // Proposed Names
   proposedName1: string;
   proposedName2: string;
-  companyType: CompanyType;
-  industryCategory: string;
-  businessActivityDescription: string;
+  proposedName3?: string;
+  nameSuffix: string;
+  nameAvailabilityStatus?: 'Available' | 'Pending Verification' | 'Reserved';
+  // Registered Office
+  registeredAddressLine: string;
+  registeredCity: string;
+  registeredState: string;
+  registeredPincode: string;
+  premisesOwnership: 'Rented' | 'Owned' | 'Leased';
+  companyEmail: string;
+  companyMobile: string;
+  officeAddressProofName?: string;
+  // Capital & Shareholding
   authorizedCapital: number;
   paidUpCapital: number;
-  registeredState: string;
-  registeredCity: string;
-  registeredPincode: string;
-  registeredAddressLine: string;
+  numberOfShares: number;
+  faceValuePerShare: number;
 }
+
+

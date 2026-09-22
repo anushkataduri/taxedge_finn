@@ -20,7 +20,9 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": []
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -57,7 +59,7 @@
         "expo-build-properties",
         {
           "android": {
-            "usesCleartextTraffic": false
+            "usesCleartextTraffic": true
           }
         }
       ],
@@ -66,14 +68,14 @@
     ],
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": true
+      "reactCompiler": false
     },
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "bb55dc52-6870-482a-8277-1912c933d410"
+        "projectId": "007a5353-78e2-492b-8dcc-d0c3a9491ddb"
       }
     },
-    "owner": "srinivas12345678"
+    "owner": "shashiprakash833"
   }
 }

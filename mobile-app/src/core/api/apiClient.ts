@@ -14,62 +14,75 @@ export interface RequestOptions {
  * Server Network Configuration
  * Change IP and Port here to point the mobile app to your backend.
  */
-export const SERVER_IP = "192.168.88.78";
+export const SERVER_IP = "192.168.88.12";
 
-export const SERVER_PORT = 8088;
+export const SERVER_PORT = 8086;
 
 export const STORAGE_KEY_SERVER_URL = "@taxedge_server_url";
 
 export function getDefaultBaseUrl(): string {
-  // 1. Highest priority: environment-driven URL for production/staging
-  if (process.env.EXPO_PUBLIC_API_URL && process.env.EXPO_PUBLIC_API_URL.trim() !== "") {
+  // 1. Highest priority: environment-driven URL for production/staging/EAS build
+  if (
+    process.env.EXPO_PUBLIC_API_URL &&
+    process.env.EXPO_PUBLIC_API_URL.trim() !== ""
+  ) {
     return process.env.EXPO_PUBLIC_API_URL.trim();
   }
 
-  // 2. Development fallbacks only
-  if (__DEV__) {
-    if (Platform.OS === "web") {
-      return `http://localhost:${SERVER_PORT}`;
-    }
-
-    try {
-      const hostUri =
-        Constants.expoConfig?.hostUri ||
-        (Constants as any).manifest?.debuggerHost ||
-        (Constants as any).manifest2?.extra?.expoGo?.debuggerHost;
-
-      if (hostUri) {
-        const ip = hostUri.split(":")[0];
-        if (ip && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
-          return `http://${ip}:${SERVER_PORT}`;
-        }
+  // 2. Web fallback
+  if (Platform.OS === "web") {
+    if (typeof window !== "undefined" && window.location?.hostname) {
+      const host = window.location.hostname;
+      if (host && host !== "localhost" && host !== "127.0.0.1") {
+        return `http://${host}:${SERVER_PORT}`;
       }
-    } catch {}
-
+    }
     return `http://${SERVER_IP}:${SERVER_PORT}`;
   }
 
-  return "";
+  // 3. Expo Go host IP detection if running inside Expo Go
+  try {
+    const hostUri =
+      Constants.expoConfig?.hostUri ||
+      (Constants as any).manifest?.debuggerHost ||
+      (Constants as any).manifest2?.extra?.expoGo?.debuggerHost;
+
+    if (hostUri) {
+      const ip = hostUri.split(":")[0];
+      if (ip && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+        return `http://${ip}:${SERVER_PORT}`;
+      }
+    }
+  } catch {}
+
+  // 4. Default fallback: configured SERVER_IP and SERVER_PORT (guarantees non-empty URL in standalone APK)
+  return `http://${SERVER_IP}:${SERVER_PORT}`;
 }
 
 export class ApiClient {
   private baseUrl: string;
+  private baseUrlLoaded = false;
   public interceptors: InterceptorManager;
 
   constructor(baseUrl: string = getDefaultBaseUrl()) {
-    this.baseUrl = baseUrl;
+    this.baseUrl = baseUrl || `http://${SERVER_IP}:${SERVER_PORT}`;
     this.interceptors = new InterceptorManager();
-    if (__DEV__) {
-      this.loadCustomBaseUrl();
-    }
+    this.loadCustomBaseUrl().catch(() => {});
   }
 
   getBaseUrl(): string {
+    if (!this.baseUrl || this.baseUrl.trim() === "") {
+      this.baseUrl = getDefaultBaseUrl();
+    }
     return this.baseUrl;
   }
 
   setBaseUrl(url: string): void {
     let clean = url.trim();
+    // Automatically correct accidental entry of Expo bundler port (8081) to backend port (8088)
+    if (clean.includes(":8081")) {
+      clean = clean.replace(":8081", `:${SERVER_PORT}`);
+    }
     if (!clean.startsWith("http://") && !clean.startsWith("https://")) {
       clean = `https://${clean}`;
     }
@@ -79,13 +92,31 @@ export class ApiClient {
     this.baseUrl = clean;
   }
 
+  async ensureBaseUrlLoaded(): Promise<string> {
+    if (this.baseUrlLoaded && this.baseUrl && this.baseUrl.trim() !== "") {
+      return this.baseUrl;
+    }
+    await this.loadCustomBaseUrl();
+    if (!this.baseUrl || this.baseUrl.trim() === "") {
+      this.baseUrl = getDefaultBaseUrl();
+    }
+    this.baseUrlLoaded = true;
+    return this.baseUrl;
+  }
+
   async loadCustomBaseUrl(): Promise<string> {
     try {
       const saved = await AsyncStorage.getItem(STORAGE_KEY_SERVER_URL);
       if (saved && saved.trim()) {
-        this.setBaseUrl(saved.trim());
+        let clean = saved.trim();
+        if (clean.includes(":8081")) {
+          clean = clean.replace(":8081", `:${SERVER_PORT}`);
+          await AsyncStorage.setItem(STORAGE_KEY_SERVER_URL, clean);
+        }
+        this.setBaseUrl(clean);
       }
     } catch {}
+    this.baseUrlLoaded = true;
     return this.baseUrl;
   }
 
@@ -105,9 +136,23 @@ export class ApiClient {
     path: string,
     params?: Record<string, string | number | boolean>,
   ): string {
-    const fullUrl = path.startsWith("http")
-      ? path
-      : `${this.baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+    let base = this.baseUrl;
+    if (!base || base.trim() === "") {
+      base = getDefaultBaseUrl();
+      if (!base || base.trim() === "") {
+        base = `http://${SERVER_IP}:${SERVER_PORT}`;
+      }
+      this.baseUrl = base;
+    }
+
+    const cleanBase = base.endsWith("/") ? base.slice(0, -1) : base;
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+
+    const fullUrl =
+      path.startsWith("http://") || path.startsWith("https://")
+        ? path
+        : `${cleanBase}${cleanPath}`;
+
     if (!params || Object.keys(params).length === 0) {
       return fullUrl;
     }
@@ -160,12 +205,17 @@ export class ApiClient {
     options?: RequestOptions,
   ): Promise<T> {
     try {
+      await this.ensureBaseUrlLoaded();
       const initialUrl = this.buildUrl(path, options?.params);
       const initialHeaders: Record<string, string> = {
         "Content-Type": "application/json",
         Accept: "application/json",
         ...(options?.headers || {}),
       };
+
+      if (body instanceof FormData) {
+        delete initialHeaders["Content-Type"];
+      }
 
       const interceptedConfig = await this.interceptors.runRequestInterceptors({
         url: initialUrl,
@@ -174,19 +224,26 @@ export class ApiClient {
       });
 
       if (__DEV__) {
-        console.log(`🌐 [API] ${interceptedConfig.method} ${interceptedConfig.url}`);
+        console.log(
+          `🌐 [API] ${interceptedConfig.method} ${interceptedConfig.url}`,
+        );
       }
 
       const controller = new AbortController();
-      const timeoutMs = options?.timeoutMs || 10000;
+      const timeoutMs = options?.timeoutMs || 30000;
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
       let response: Response;
       try {
+        let fetchBody: any = undefined;
+        if (body) {
+          fetchBody = body instanceof FormData ? body : JSON.stringify(body);
+        }
+
         response = await fetch(interceptedConfig.url, {
           method: interceptedConfig.method,
           headers: interceptedConfig.headers,
-          body: body ? JSON.stringify(body) : undefined,
+          body: fetchBody,
           signal: controller.signal,
         });
       } finally {
@@ -244,7 +301,8 @@ export class ApiClient {
         errMessage.includes("Network request failed") ||
         errMessage.includes("fetch failed")
       ) {
-        errMessage = "Unable to connect to server. Please check your internet connection.";
+        errMessage =
+          "Unable to connect to server. Please check your internet connection.";
       }
       return this.interceptors.runErrorInterceptors(
         new ApiError(errMessage, 500, "NETWORK_ERROR"),

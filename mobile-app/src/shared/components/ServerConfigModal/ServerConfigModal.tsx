@@ -41,6 +41,10 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
 
   const handleTest = async () => {
     let target = url.trim();
+    if (target.includes(":8081")) {
+      target = target.replace(":8081", ":8088");
+      setUrl(target);
+    }
     if (!target.startsWith("http://") && !target.startsWith("https://")) {
       target = `http://${target}`;
     }
@@ -76,6 +80,10 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
 
   const handleSave = async () => {
     let clean = url.trim();
+    if (clean.includes(":8081")) {
+      clean = clean.replace(":8081", ":8088");
+      setUrl(clean);
+    }
     if (!clean) {
       Alert.alert("Invalid URL", "Please enter a valid IP address or server URL.");
       return;
@@ -114,12 +122,28 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
               setUrl(txt);
               setTestResult(null);
             }}
-            placeholder="http://192.168.88.2:8088"
+            placeholder="http://192.168.88.7:8088"
             placeholderTextColor="#94A3B8"
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="url"
           />
+
+          {url.includes(":8081") && (
+            <TouchableOpacity
+              style={{ backgroundColor: "#FFF2EA", borderColor: "#FED7AA", borderWidth: 1, padding: 8, borderRadius: 8, marginBottom: 8, flexDirection: "row", alignItems: "center", gap: 6 }}
+              onPress={() => {
+                setUrl(url.replace(":8081", ":8088"));
+                setTestResult(null);
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="warning-outline" size={16} color="#EA580C" />
+              <Text style={{ fontSize: 12, color: "#EA580C", flex: 1, fontWeight: "600" }}>
+                Port 8081 is Expo. Tap here to switch to Backend port 8088!
+              </Text>
+            </TouchableOpacity>
+          )}
 
           {testResult && (
             <View style={[styles.resultBadge, getResultBadgeStyle(testResult.success)]}>

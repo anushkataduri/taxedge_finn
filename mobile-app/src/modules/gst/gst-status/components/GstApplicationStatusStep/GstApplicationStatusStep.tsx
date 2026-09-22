@@ -169,23 +169,6 @@ export const GstApplicationStatusStep: React.FC<GstApplicationStatusStepProps> =
 
       {/* Navigation & Action Buttons */}
       <View style={styles.actionButtonsCol}>
-        {isFiling && (
-          <TouchableOpacity
-            style={styles.reuploadBtn}
-            activeOpacity={0.8}
-            onPress={() => {
-              if (onReuploadDocuments) {
-                onReuploadDocuments();
-              } else {
-                router.push("/(main)/applications");
-              }
-            }}
-          >
-            <Ionicons name="cloud-upload-outline" size={18} color="#0284C7" />
-            <Text style={styles.reuploadBtnText}>Missing Documents? Re-upload Here</Text>
-          </TouchableOpacity>
-        )}
-
         <TouchableOpacity
           style={styles.primaryHomeBtn}
           activeOpacity={0.85}

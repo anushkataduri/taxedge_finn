@@ -8,7 +8,8 @@ export const GST_SERVICES: GstServiceItem[] = [
     iconName: "document-text",
     iconType: "registration",
     iconColor: "#3B82F6",
-    iconBg: "#EDF9F3",
+    iconBg: "#EDF4FE",
+    iconImage: require("../../../../assets/images/services/gst/gst_registration.png"),
     route: "/service/gst-registration",
   },
   {
@@ -18,7 +19,8 @@ export const GST_SERVICES: GstServiceItem[] = [
     iconName: "stats-chart",
     iconType: "filing",
     iconColor: "#3B82F6",
-    iconBg: "#EDF9F3",
+    iconBg: "#EDF4FE",
+    iconImage: require("../../../../assets/images/services/gst/gst_filing.png"),
     route: "/service/gst-filing",
   },
   {
@@ -28,7 +30,8 @@ export const GST_SERVICES: GstServiceItem[] = [
     iconName: "checkbox",
     iconType: "compliance",
     iconColor: "#10B981",
-    iconBg: "#EDF9F3",
+    iconBg: "#EBF9F5",
+    iconImage: require("../../../../assets/images/services/gst/gst_compliance.png"),
     route: "/service/gst-compliance",
   },
   {
@@ -38,7 +41,8 @@ export const GST_SERVICES: GstServiceItem[] = [
     iconName: "pencil",
     iconType: "amendment",
     iconColor: "#F97316",
-    iconBg: "#EDF9F3",
+    iconBg: "#FEF2E8",
+    iconImage: require("../../../../assets/images/services/gst/gst_amendment.png"),
     route: "/service/gst-amendment",
   },
   {
@@ -48,7 +52,8 @@ export const GST_SERVICES: GstServiceItem[] = [
     iconName: "ban",
     iconType: "cancellation",
     iconColor: "#EF4444",
-    iconBg: "#EDF9F3",
+    iconBg: "#FEF2F2",
+    iconImage: require("../../../../assets/images/services/gst/gst_cancellation.png"),
     route: "/service/gst-cancellation",
   },
   {
@@ -58,7 +63,8 @@ export const GST_SERVICES: GstServiceItem[] = [
     iconName: "ribbon",
     iconType: "certificate",
     iconColor: "#F59E0B",
-    iconBg: "#EDF9F3",
+    iconBg: "#FEF9EE",
+    iconImage: require("../../../../assets/images/services/gst/gst_certificate.png"),
     route: "/service/gst-certificate",
   },
 ];

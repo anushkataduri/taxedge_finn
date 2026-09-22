@@ -64,9 +64,20 @@ export const authStorage = {
   },
   getUserByMobile: (mobile: string): DevUser | null =>
     authStorage.getUsersMap()[mobile.replace(/\D/g, "")] || null,
+  getUser: (): DevUser | null => {
+    const s = authStorage.getSession();
+    return s.activeMobile ? authStorage.getUserByMobile(s.activeMobile) : null;
+  },
   saveUser: (user: DevUser) => {
+    const cleanMobile = user.mobileNumber.replace(/\D/g, "");
     const map = authStorage.getUsersMap();
-    map[user.mobileNumber] = user;
+    const existing = map[cleanMobile] || {};
+    map[cleanMobile] = {
+      ...existing,
+      ...user,
+      mobileNumber: cleanMobile,
+      registrationCompleted: Boolean(user.registrationCompleted || existing.registrationCompleted),
+    };
     set(KEY_USERS, JSON.stringify(map));
   },
   getSession: () => {
