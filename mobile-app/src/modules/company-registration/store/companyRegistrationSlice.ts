@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import type { CompanyRegistrationDraft, LinkedRegistrations, ApplicationReceipt, CompanyDoc } from '../types/registration.types';
 import type { CompanyType, CompanyDetails } from '../types/company.types';
 import type { DirectorInfo, OpcNomineeInfo, PartnerInfo } from '../types/director.types';
-import type { DocumentStatus } from '../../../types/domain';
+import type { DocumentStatus, Application } from '../../../types/domain';
+import { useApplicationStore } from '../../../store/applicationStore';
 
 interface CompanyRegistrationState {
   draft: CompanyRegistrationDraft;
@@ -274,12 +275,44 @@ export const useCompanyRegistrationStore = create<CompanyRegistrationState>((set
         applicationId: state.draft.id,
         companyName: state.draft.company.proposedName1,
         companyType: state.draft.company.companyType,
-        appliedDate: '18 Sep 2026',
+        appliedDate: new Date().toISOString().split("T")[0],
         totalAmount: state.draft.feeBreakdown.totalAmount,
         paymentStatus: 'Paid',
         paymentMethod,
         transactionId: `TXN-${Math.floor(10000000 + Math.random() * 90000000)}`,
       };
+
+      const mappedApp: Application = {
+        id: state.draft.id,
+        serviceId: 'company-registration',
+        serviceName: 'Company Registration',
+        category: 'BUSINESS',
+        status: 'Under Verification',
+        progress: 100,
+        assignedExecutive: 'TaxEdge Compliance Team',
+        paymentAmount: state.draft.feeBreakdown.totalAmount,
+        paymentStatus: 'Paid',
+        createdAt: new Date().toISOString().split("T")[0],
+        formData: {
+          companyType: state.draft.company.companyType,
+          proposedName: state.draft.company.proposedName1,
+        },
+        documents: state.draft.documents.map(d => ({
+          name: d.name,
+          status: d.status as any,
+          fileUri: d.fileUri
+        })),
+        timeline: state.draft.trackingStages?.map((stg) => ({
+          title: stg.title,
+          description: stg.description,
+          status: stg.status as "completed" | "current" | "pending",
+          date: stg.updatedAt || 'Today',
+        })) || [],
+        chatHistory: [],
+      };
+
+      useApplicationStore.getState().addApplication(mappedApp);
+
       return {
         draft: {
           ...state.draft,
