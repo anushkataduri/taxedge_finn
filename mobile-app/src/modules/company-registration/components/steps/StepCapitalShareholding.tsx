@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TextInput } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlice';
+import { CompanySectionCard } from '../CompanySectionCard/CompanySectionCard';
 import { styles } from './StepCapitalShareholding.styles';
 
 export const StepCapitalShareholding: React.FC = () => {
@@ -33,15 +34,12 @@ export const StepCapitalShareholding: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Shareholding & Capital</Text>
-      <Text style={styles.subheading}>
-        Define authorized capital, subscribed capital, and equity share allocation.
-      </Text>
-
       {/* Capital Details */}
-      <Text style={styles.sectionTitle}>Capital Details</Text>
-
-      <View style={styles.row}>
+      <CompanySectionCard
+        title="Capital Details"
+        description="Define authorized capital, subscribed capital, and equity share allocation."
+      >
+        <View style={styles.row}>
         <View style={[styles.fieldGroup, styles.halfField]}>
           <Text style={styles.label}>Authorised Capital (₹) *</Text>
           <TextInput
@@ -92,11 +90,11 @@ export const StepCapitalShareholding: React.FC = () => {
           />
         </View>
       </View>
+      </CompanySectionCard>
 
       {/* Shareholding Pattern */}
-      <Text style={styles.sectionTitle}>Shareholding Pattern</Text>
-
-      {isOpc && (
+      <CompanySectionCard title="Shareholding Pattern">
+        {isOpc && (
         <Text style={styles.opcNote}>
           In a One Person Company (OPC), 100% equity shareholding is automatically allocated to the single member.
         </Text>
@@ -177,6 +175,7 @@ export const StepCapitalShareholding: React.FC = () => {
           </Text>
         </View>
       </View>
+      </CompanySectionCard>
     </View>
   );
 };

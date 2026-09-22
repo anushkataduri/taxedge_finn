@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TextInput } from 'react-native';
 import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlice';
+import { CompanySectionCard } from '../CompanySectionCard/CompanySectionCard';
 import { styles } from './StepBusinessActivity.styles';
 
 export const StepBusinessActivity: React.FC = () => {
@@ -8,10 +9,10 @@ export const StepBusinessActivity: React.FC = () => {
   const updateDetails = useCompanyRegistrationStore((state) => state.updateCompanyDetails);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Business Activity / NIC</Text>
-      <Text style={styles.subheading}>Define the main objective and National Industrial Classification code of your company.</Text>
-
+    <CompanySectionCard
+      title="Business Activity / NIC"
+      description="Define the main objective and National Industrial Classification code of your company."
+    >
       {/* Primary Business Activity */}
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>Primary Business Activity *</Text>
@@ -51,6 +52,6 @@ export const StepBusinessActivity: React.FC = () => {
           placeholderTextColor="#94A3B8"
         />
       </View>
-    </View>
+    </CompanySectionCard>
   );
 };

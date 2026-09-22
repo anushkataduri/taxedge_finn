@@ -9,6 +9,7 @@ import { TdsChecklistItem } from '@/modules/itr/tds/types/checklist.types';
 import { DocumentPreviewModal } from '@/modules/itr/itr-filing/components/DocumentPreviewModal/DocumentPreviewModal';
 import { ItrDocumentItem } from '@/modules/itr/itr-filing/types/itrFiling.types';
 import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlice';
+import { CompanySectionCard } from '../CompanySectionCard/CompanySectionCard';
 import { styles } from './StepRegisteredOffice.styles';
 
 type DocType = 'proof' | 'ownership' | 'noc';
@@ -152,12 +153,12 @@ export const StepRegisteredOffice: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Registered Office Details</Text>
-      <Text style={styles.subheading}>
-        Provide official communication address for MCA, ROC, and statutory authorities.
-      </Text>
-
-      {/* Building / Address Line */}
+      {/* CARD A — BUILDING / ADDRESS */}
+      <CompanySectionCard
+        title="Building / Address"
+        description="Provide official communication address for MCA, ROC, and statutory authorities."
+      >
+        {/* Building / Address Line */}
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>Building / Premises Address Line *</Text>
         <TextInput
@@ -219,8 +220,11 @@ export const StepRegisteredOffice: React.FC = () => {
           />
         </View>
       </View>
+      </CompanySectionCard>
 
-      {/* Premises Ownership Status */}
+      {/* CARD B — PREMISES OWNERSHIP */}
+      <CompanySectionCard title="Premises Ownership">
+        {/* Premises Ownership Status */}
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>Premises Ownership Status *</Text>
         <View style={styles.chipRow}>
@@ -248,9 +252,11 @@ export const StepRegisteredOffice: React.FC = () => {
           </Text>
         </View>
       </View>
+      </CompanySectionCard>
 
-      {/* Contact Details */}
-      <View style={styles.row}>
+      {/* CARD C — CONTACT DETAILS */}
+      <CompanySectionCard title="Contact Details">
+        <View style={styles.row}>
         <View style={[styles.fieldGroup, styles.halfField]}>
           <Text style={styles.label}>Company Email *</Text>
           <TextInput
@@ -276,12 +282,11 @@ export const StepRegisteredOffice: React.FC = () => {
           />
         </View>
       </View>
+      </CompanySectionCard>
 
-      {/* Document Section */}
-      <View style={styles.sectionDivider} />
-      <Text style={styles.sectionHeading}>Mandatory Documents</Text>
-
-      {/* 1. Address Proof / Utility Bill */}
+      {/* CARD D — OFFICE DOCUMENTS */}
+      <CompanySectionCard title="Office Documents">
+        {/* 1. Address Proof / Utility Bill */}
       {renderDocCard(
         'Office Address Proof / Utility Bill',
         'proof',
@@ -310,6 +315,7 @@ export const StepRegisteredOffice: React.FC = () => {
         'Required only for rented/leased/third-party premises.',
         isNocRequired
       )}
+      </CompanySectionCard>
 
       {/* ITR Document Upload Bottom Sheet Reused */}
       <DocumentUploadBottomSheet
