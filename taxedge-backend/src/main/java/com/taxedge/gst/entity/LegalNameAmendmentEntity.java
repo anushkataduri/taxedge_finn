@@ -33,7 +33,7 @@ public class LegalNameAmendmentEntity {
     private String fileType;
 
     @Lob
-    @Column(columnDefinition = "LONGTEXT")
+    @Column(columnDefinition = "TEXT")
     private String imageData;
 
     @Enumerated(EnumType.STRING)
