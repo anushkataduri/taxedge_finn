@@ -3,6 +3,8 @@ import { View, Text, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, 
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../../shared/components/AppHeader';
+import { UniversalDraftModal } from '@/shared/components/UniversalDraftModal';
+import { useUniversalDraftGuard } from '@/shared/hooks/useUniversalDraftGuard';
 import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlice';
 
 import { StepCompanyType } from '../../components/steps/StepCompanyType';
@@ -40,10 +42,30 @@ export const CompanyRegistrationScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const draft = useCompanyRegistrationStore((state) => state.draft);
   const setStep = useCompanyRegistrationStore((state) => state.setStep);
+  const resetRegistration = useCompanyRegistrationStore((state) => state.resetRegistration);
 
   const currentStep = draft.currentStep;
   const totalSteps = STEP_NAMES.length;
   const progressPercent = ((currentStep + 1) / totalSteps) * 100;
+
+  const {
+    showDraftModal,
+    handleSaveAndExit,
+    handleDiscardAndExit,
+    handleCancel,
+  } = useUniversalDraftGuard({
+    isDirty: () => {
+      // Dirty if they advanced past step 0 or typed something in step 0
+      return currentStep > 0 || !!draft.company.companyType;
+    },
+    onSaveDraft: () => {
+      // Draft state is already preserved in Zustand store
+    },
+    onDiscardDraft: () => {
+      resetRegistration();
+    },
+    isSubmitted: () => currentStep >= 10,
+  });
 
   const handleNext = () => {
     // Validation for combined Step 2 (Classification + Activity + Proposed Names)
@@ -101,16 +123,6 @@ export const CompanyRegistrationScreen: React.FC = () => {
 
     if (currentStep < totalSteps - 1) {
       setStep(currentStep + 1);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep === totalSteps - 1) {
-      setStep(0);
-    } else if (currentStep > 0) {
-      setStep(currentStep - 1);
-    } else {
-      router.back();
     }
   };
 
@@ -172,17 +184,25 @@ export const CompanyRegistrationScreen: React.FC = () => {
       </KeyboardAvoidingView>
 
       {/* Sticky Bottom Footer Navigation */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={handleBack} activeOpacity={0.8}>
-          <Text style={styles.backBtnText}>{currentStep === 0 ? 'Cancel' : '← Back'}</Text>
-        </TouchableOpacity>
-
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16), justifyContent: 'flex-end' }]}>
         {currentStep < 8 && (
           <TouchableOpacity style={styles.nextBtn} onPress={handleNext} activeOpacity={0.8}>
             <Text style={styles.nextBtnText}>Continue →</Text>
           </TouchableOpacity>
         )}
       </View>
+
+      <UniversalDraftModal
+        visible={showDraftModal}
+        title="Save Filing Progress?"
+        message="You have unsaved changes in your application. Save your progress so you can resume anytime without re-entering details."
+        saveButtonText="Save as Draft & Exit"
+        discardButtonText="Discard & Exit"
+        cancelButtonText="Keep Editing"
+        onSaveAndExit={handleSaveAndExit}
+        onDiscardAndExit={handleDiscardAndExit}
+        onCancel={handleCancel}
+      />
     </View>
   );
 };
