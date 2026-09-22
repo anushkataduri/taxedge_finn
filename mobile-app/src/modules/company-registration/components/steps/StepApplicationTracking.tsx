@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlice';
 import { styles } from './StepApplicationTracking.styles';
 
 export const StepApplicationTracking: React.FC = () => {
+  const router = useRouter();
   const draft = useCompanyRegistrationStore((state) => state.draft);
   const setStep = useCompanyRegistrationStore((state) => state.setStep);
   const stages = draft.trackingStages || [];
@@ -79,10 +81,18 @@ export const StepApplicationTracking: React.FC = () => {
         })}
       </View>
 
-      {/* View Receipt CTA */}
-      <TouchableOpacity style={styles.receiptBtn} onPress={() => setStep(11)} activeOpacity={0.8}>
-        <Text style={styles.receiptBtnText}>View / Download Application Receipt →</Text>
-      </TouchableOpacity>
+      {/* Action Buttons */}
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity style={styles.homeBtn} onPress={() => router.replace('/(main)/home')} activeOpacity={0.8}>
+          <Ionicons name="home-outline" size={20} color="#FFFFFF" />
+          <Text style={styles.homeBtnText}>Go to Home Dashboard</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.trackBtn} onPress={() => router.replace('/(main)/applications')} activeOpacity={0.8}>
+          <Ionicons name="folder-open-outline" size={20} color="#475569" />
+          <Text style={styles.trackBtnText}>Track in My Applications</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };

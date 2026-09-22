@@ -122,18 +122,37 @@ export const styles = StyleSheet.create({
     color: '#166534',
     fontWeight: '700',
   },
-  receiptBtn: {
-    backgroundColor: '#083B75',
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+  buttonsContainer: {
     marginTop: 8,
     marginBottom: 24,
+    gap: 12,
   },
-  receiptBtnText: {
+  homeBtn: {
+    backgroundColor: '#F97316',
+    borderRadius: 10,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  homeBtnText: {
     fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  trackBtn: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 10,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  trackBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#475569',
   },
 });
