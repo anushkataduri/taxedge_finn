@@ -64,7 +64,7 @@ export const CompanyRegistrationScreen: React.FC = () => {
     onDiscardDraft: () => {
       resetRegistration();
     },
-    isSubmitted: () => currentStep >= 10,
+    isSubmitted: () => draft.status === 'Submitted',
     discardDestination: '/(main)/home',
   });
 
