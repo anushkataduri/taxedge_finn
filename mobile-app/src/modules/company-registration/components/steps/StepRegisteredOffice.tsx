@@ -35,11 +35,11 @@ export const StepRegisteredOffice: React.FC = () => {
     }
   };
 
-  const handleDocumentSelected = (fileName: string) => {
+  const handleDocumentSelected = (fileName: string, fileUri?: string) => {
     if (!activeDocType) return;
-    if (activeDocType === 'proof') updateDetails({ officeAddressProofName: fileName });
-    if (activeDocType === 'ownership') updateDetails({ ownershipDocName: fileName });
-    if (activeDocType === 'noc') updateDetails({ ownerNocName: fileName });
+    if (activeDocType === 'proof') updateDetails({ officeAddressProofName: fileName, officeAddressProofUri: fileUri });
+    if (activeDocType === 'ownership') updateDetails({ ownershipDocName: fileName, ownershipDocUri: fileUri });
+    if (activeDocType === 'noc') updateDetails({ ownerNocName: fileName, ownerNocUri: fileUri });
     setActiveDocType(null);
   };
 
@@ -50,7 +50,7 @@ export const StepRegisteredOffice: React.FC = () => {
         copyToCacheDirectory: true,
       });
       if (!res.canceled && res.assets && res.assets.length > 0) {
-        handleDocumentSelected(res.assets[0].name);
+        handleDocumentSelected(res.assets[0].name, res.assets[0].uri);
       }
     } catch (e: any) {
       Alert.alert('Upload Error', e?.message || 'Failed to select document.');
@@ -71,7 +71,7 @@ export const StepRegisteredOffice: React.FC = () => {
       if (!res.canceled && res.assets && res.assets.length > 0) {
         const asset = res.assets[0];
         const name = asset.fileName || `gallery_doc_${Date.now()}.jpg`;
-        handleDocumentSelected(name);
+        handleDocumentSelected(name, asset.uri);
       }
     } catch (e: any) {
       Alert.alert('Upload Error', e?.message || 'Failed to select image from gallery.');
@@ -91,7 +91,7 @@ export const StepRegisteredOffice: React.FC = () => {
       if (!res.canceled && res.assets && res.assets.length > 0) {
         const asset = res.assets[0];
         const name = asset.fileName || `camera_doc_${Date.now()}.jpg`;
-        handleDocumentSelected(name);
+        handleDocumentSelected(name, asset.uri);
       }
     } catch (e: any) {
       Alert.alert('Upload Error', e?.message || 'Failed to take photo.');
@@ -99,15 +99,16 @@ export const StepRegisteredOffice: React.FC = () => {
   };
 
   const handleRemoveDoc = (type: DocType) => {
-    if (type === 'proof') updateDetails({ officeAddressProofName: '' });
-    if (type === 'ownership') updateDetails({ ownershipDocName: '' });
-    if (type === 'noc') updateDetails({ ownerNocName: '' });
+    if (type === 'proof') updateDetails({ officeAddressProofName: '', officeAddressProofUri: '' });
+    if (type === 'ownership') updateDetails({ ownershipDocName: '', ownershipDocUri: '' });
+    if (type === 'noc') updateDetails({ ownerNocName: '', ownerNocUri: '' });
   };
 
   const renderDocCard = (
     label: string,
     type: DocType,
     fileName: string | undefined,
+    fileUri: string | undefined,
     helperText: string | undefined,
     isRequired = true
   ) => {
@@ -118,7 +119,7 @@ export const StepRegisteredOffice: React.FC = () => {
       status: fileName ? 'uploaded' : 'not_uploaded',
       isMandatory: isRequired,
       fileName: fileName,
-      fileUri: fileName ? `file://${fileName}` : undefined,
+      fileUri: fileUri || (fileName ? `file://${fileName}` : undefined),
       fileSize: fileName ? '2.4 MB' : undefined,
     };
 
@@ -138,7 +139,7 @@ export const StepRegisteredOffice: React.FC = () => {
                 tier: isRequired ? 'REQUIRED' : 'NOT_REQUIRED',
                 required: isRequired,
                 docGroup: 'common',
-                fileUri: `file://${fileName}`,
+                fileUri: fileUri || `file://${fileName}`,
                 fileName: fileName,
                 fileSize: '2.4 MB',
               });
@@ -285,6 +286,7 @@ export const StepRegisteredOffice: React.FC = () => {
         'Office Address Proof / Utility Bill',
         'proof',
         company.officeAddressProofName,
+        company.officeAddressProofUri,
         'Utility bill should be recent (not older than 2 months).',
         true
       )}
@@ -294,6 +296,7 @@ export const StepRegisteredOffice: React.FC = () => {
         'Ownership / Rent / Lease Document',
         'ownership',
         company.ownershipDocName,
+        company.ownershipDocUri,
         undefined,
         true
       )}
@@ -303,6 +306,7 @@ export const StepRegisteredOffice: React.FC = () => {
         'Owner NOC',
         'noc',
         company.ownerNocName,
+        company.ownerNocUri,
         'Required only for rented/leased/third-party premises.',
         isNocRequired
       )}
