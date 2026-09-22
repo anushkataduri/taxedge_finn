@@ -65,7 +65,16 @@ export const CompanyRegistrationScreen: React.FC = () => {
       resetRegistration();
     },
     isSubmitted: () => currentStep >= 10,
+    discardDestination: '/(main)/home',
   });
+
+  const handleHeaderBack = () => {
+    if (currentStep > 0) {
+      setStep(currentStep - 1);
+    } else {
+      router.back();
+    }
+  };
 
   const handleNext = () => {
     // Validation for combined Step 2 (Classification + Activity + Proposed Names)
@@ -160,11 +169,16 @@ export const CompanyRegistrationScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* Fixed Top Header */}
-      <AppHeader title="Company Registration" showBack />
+      <AppHeader title="Company Registration" showBack onBack={handleHeaderBack} />
 
       {/* Filling Progress Bar */}
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+      <View style={styles.progressContainer}>
+        <Text style={styles.progressText}>
+          {currentStep + 1} / {totalSteps} screens completed
+        </Text>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+        </View>
       </View>
 
       {/* Main Scroll Content with Keyboard Handling */}
