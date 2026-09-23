@@ -10,6 +10,8 @@ export interface UseUniversalDraftGuardOptions {
   onDiscardDraft: () => void;
   /** Return true if screen is in final success/completed state where user can navigate away freely */
   isSubmitted?: () => boolean;
+  /** Optional explicit route to navigate to when discarding, overriding the original back action */
+  discardDestination?: string;
 }
 
 export const useUniversalDraftGuard = ({
@@ -17,6 +19,7 @@ export const useUniversalDraftGuard = ({
   onSaveDraft,
   onDiscardDraft,
   isSubmitted = () => false,
+  discardDestination,
 }: UseUniversalDraftGuardOptions) => {
   const router = useRouter();
   const navigation = useNavigation();
@@ -37,6 +40,9 @@ export const useUniversalDraftGuard = ({
 
   const onDiscardDraftRef = useRef(onDiscardDraft);
   onDiscardDraftRef.current = onDiscardDraft;
+
+  const discardDestinationRef = useRef(discardDestination);
+  discardDestinationRef.current = discardDestination;
 
   const markSubmitted = useCallback(() => {
     hasSubmittedRef.current = true;
@@ -80,7 +86,9 @@ export const useUniversalDraftGuard = ({
     setShowDraftModal(false);
     hasSubmittedRef.current = true;
 
-    if (pendingNavigationActionRef.current) {
+    if (discardDestinationRef.current) {
+      router.replace(discardDestinationRef.current as any);
+    } else if (pendingNavigationActionRef.current) {
       navigation.dispatch(pendingNavigationActionRef.current);
     } else {
       router.back();

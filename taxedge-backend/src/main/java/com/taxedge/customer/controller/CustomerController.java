@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,10 +53,33 @@ public class CustomerController {
         return ResponseEntity.ok(java.util.Map.of("exists", exists, "mobileNumber", mobileNumber));
     }
     
+    
+    @PutMapping("/update")
+    public ResponseEntity<String> updateCustomer(@RequestBody CustomerDto customerDto) {
+        return ResponseEntity.ok(customerService.updateCustomer(customerDto));
+    }
+    
+    
     @GetMapping("/details/{custId}")
     public ResponseEntity<CustomerDto> getDetails(@PathVariable String custId) {
         return ResponseEntity.ok(customerService.getDetails(custId));
     }
-    
-    
+
+    @Autowired
+    private com.taxedge.notification.email.service.EmailService emailService;
+
+    @GetMapping("/email-diagnostics")
+    public ResponseEntity<java.util.Map<String, Object>> getEmailDiagnostics() {
+        return ResponseEntity.ok(emailService.getDiagnostics());
+    }
+
+    @PostMapping("/test-email")
+    public ResponseEntity<java.util.Map<String, Object>> sendTestEmail(@org.springframework.web.bind.annotation.RequestParam String to) {
+        boolean sent = emailService.sendTestEmail(to);
+        return ResponseEntity.ok(java.util.Map.of(
+                "success", sent,
+                "recipient", to,
+                "status", sent ? "DELIVERED_TO_SMTP" : "FAILED_OR_BYPASSED"
+        ));
+    }
 }

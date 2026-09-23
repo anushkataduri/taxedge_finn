@@ -69,6 +69,15 @@ export interface LoanDetailsFormData {
   loanType: LoanType | string;
   requiredAmount: string;
   purpose: string;
+  customPurpose?: string;
+  propertyStage?:
+    | "Ready to Move"
+    | "Under Construction"
+    | "Resale Property"
+    | "Plot + Construction"
+    | "Self Construction";
+  estimatedPropertyValue?: string;
+  propertyCity?: string;
   preferredTenureMonths: string;
   hasExistingLoans: boolean;
   existingEmi: string;
@@ -101,6 +110,7 @@ export type LoanDocumentCategory =
   | "Identity & Address"
   | "Income & Banking"
   | "Business & Tax"
+  | "Property & Collateral"
   | "Collateral & Others";
 
 export interface LoanDocumentItem {

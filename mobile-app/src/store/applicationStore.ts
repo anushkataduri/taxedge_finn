@@ -304,6 +304,8 @@ export interface ApplicationState {
   clearGstAmendmentDraft: () => void;
   saveGstCertificateDraft: (draft: any) => void;
   clearGstCertificateDraft: () => void;
+  /** Injects a predefined generic application directly into the central store and persists it */
+  addApplication: (app: Application) => void;
   /** Creates an application and returns its generated id. */
   createApplication: (
     serviceId: string,
@@ -901,6 +903,19 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
     }
 
     return appId;
+  },
+  addApplication: (newApp) => {
+    set((state) => ({
+      applications: [
+        newApp,
+        ...state.applications.filter((a) => a.id !== newApp.id),
+      ],
+    }));
+
+    // Asynchronously persist to backend database
+    applicationService.createApplication(newApp).catch((err) => {
+      console.warn("Backend application persistence error:", err);
+    });
   },
   uploadDocument: (appId, docName, fileUri) =>
     set((state) => {

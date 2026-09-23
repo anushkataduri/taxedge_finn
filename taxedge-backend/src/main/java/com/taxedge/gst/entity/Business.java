@@ -2,6 +2,7 @@ package com.taxedge.gst.entity;
 
 import java.time.LocalDate;
 
+import com.taxedge.customer.entity.Customer;
 import com.taxedge.gst.enums.AccountType;
 import com.taxedge.gst.enums.CompositionScheme;
 import com.taxedge.gst.enums.ConstitutionOfBusiness;
@@ -13,9 +14,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-
 import lombok.Data;
 
 @Entity
@@ -28,6 +32,12 @@ public class Business {
 	private String gstId;
 	
 
+//	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+//    @JoinColumn(name = "cust_id",referencedColumnName = "cust_id",nullable = false,
+//        foreignKey = @ForeignKey(name = "fk_business_customer")
+//    )
+//    private Customer customer;
+	
     @Column(name = "legal_name", nullable = false, length = 100)
     private String legalName;
 

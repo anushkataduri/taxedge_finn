@@ -29,7 +29,7 @@ export interface RequestOptions {
  * Server Network Configuration
  * Change IP and Port here to point the mobile app to your backend.
  */
-export const SERVER_IP = "192.168.29.65";
+export const SERVER_IP = "192.168.88.25";
 
 export const SERVER_PORT = 8086;
 
@@ -68,7 +68,7 @@ export function getDefaultBaseUrl(): string {
         return `http://${ip}:${SERVER_PORT}`;
       }
     }
-  } catch {}
+  } catch { }
 
   // 4. Default fallback: configured SERVER_IP and SERVER_PORT (guarantees non-empty URL in standalone APK)
   return `http://${SERVER_IP}:${SERVER_PORT}`;
@@ -82,7 +82,7 @@ export class ApiClient {
   constructor(baseUrl: string = getDefaultBaseUrl()) {
     this.baseUrl = baseUrl || `http://${SERVER_IP}:${SERVER_PORT}`;
     this.interceptors = new InterceptorManager();
-    this.loadCustomBaseUrl().catch(() => {});
+    this.loadCustomBaseUrl().catch(() => { });
   }
 
   getBaseUrl(): string {
@@ -130,7 +130,7 @@ export class ApiClient {
         }
         this.setBaseUrl(clean);
       }
-    } catch {}
+    } catch { }
     this.baseUrlLoaded = true;
     return this.baseUrl;
   }
@@ -317,14 +317,14 @@ export class ApiClient {
           !this.isAuthEndpoint(path)
         ) {
           console.log(
-            `🔄 [API] 401 received for ${path} — attempting silent token refresh...`,
+            `🔄 [API] 401 received for ${path} — attempting silent token refresh...`
           );
 
           const refreshed = await tokenRefreshManager.attemptRefresh();
 
           if (refreshed) {
             console.log(
-              `🔄 [API] Token refreshed — retrying original request: ${method} ${path}`,
+              `🔄 [API] Token refreshed — retrying original request: ${method} ${path}`
             );
             // Retry ONCE with the new token. The request interceptor in
             // AppBootstrap will pick up the fresh token from tokenManager.
@@ -332,7 +332,7 @@ export class ApiClient {
           }
 
           console.warn(
-            `🔄 [API] Token refresh failed — propagating 401 for ${path}`,
+            `🔄 [API] Token refresh failed — propagating 401 for ${path}`
           );
         }
 

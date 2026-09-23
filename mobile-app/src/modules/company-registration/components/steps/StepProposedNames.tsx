@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TextInput } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlice';
+import { CompanySectionCard } from '../CompanySectionCard/CompanySectionCard';
 import { styles } from './StepProposedNames.styles';
 
 export const StepProposedNames: React.FC = () => {
@@ -22,10 +23,10 @@ export const StepProposedNames: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Proposed Company Names</Text>
-      <Text style={styles.subheading}>Provide up to 2 preferred names for SPICe+ Part A name reservation / incorporation.</Text>
-
+    <CompanySectionCard
+      title="Proposed Company Names"
+      description="Provide up to 2 preferred names for SPICe+ Part A name reservation / incorporation."
+    >
       {/* 1st Preferred Name */}
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>First Preferred Name *</Text>
@@ -68,6 +69,6 @@ export const StepProposedNames: React.FC = () => {
           </Text>
         </View>
       </View>
-    </View>
+    </CompanySectionCard>
   );
 };

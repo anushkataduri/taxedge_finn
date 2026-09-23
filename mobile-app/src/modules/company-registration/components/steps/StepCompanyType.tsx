@@ -78,7 +78,8 @@ export const StepCompanyType: React.FC = () => {
               <Ionicons
                 name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
                 size={22}
-                color={isSelected ? '#083B75' : '#94A3B8'}
+                color={isSelected ? '#F97316' : '#94A3B8'}
+                style={isSelected ? { backgroundColor: '#FFFFFF', borderRadius: 11, overflow: 'hidden' } : undefined}
               />
             </View>
             <Text style={styles.description}>{item.desc}</Text>

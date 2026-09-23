@@ -28,6 +28,8 @@ export function validateLoanDetails(
 
   if (!values.purpose || values.purpose.trim() === "") {
     errors.purpose = "Purpose of loan is required";
+  } else if (values.purpose === "Others" && (!values.customPurpose || values.customPurpose.trim() === "")) {
+    errors.customPurpose = "Please specify your loan purpose";
   }
 
   const tenureNum = Number(values.preferredTenureMonths);

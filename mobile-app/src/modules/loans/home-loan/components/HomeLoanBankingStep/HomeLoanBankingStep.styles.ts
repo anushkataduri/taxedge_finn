@@ -1,56 +1,80 @@
 import { StyleSheet } from "react-native";
-import { BrandColors, Typography } from "../../../../../shared/theme";
+import { BrandColors, Typography, Spacing, BorderRadius } from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   container: {
-    paddingBottom: 24,
+    paddingBottom: Spacing.xl,
   },
-  sectionTitle: {
-    fontSize: Typography.fontSize.lg,
-    fontWeight: "700",
-    color: "#0F172A",
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: BorderRadius.md,
+    padding: Spacing.base,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    marginBottom: Spacing.md,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  cardHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 4,
   },
-  sectionSubtitle: {
-    fontSize: Typography.fontSize.sm,
+  cardHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  cardTitle: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.bold,
+    color: "#0F172A",
+  },
+  cardDescription: {
+    fontSize: Typography.fontSize.xs,
     color: "#64748B",
-    marginBottom: 16,
+    marginBottom: Spacing.md,
+    lineHeight: 18,
   },
   fieldGroup: {
-    marginBottom: 18,
+    marginBottom: 12,
   },
   label: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: "600",
+    fontSize: Typography.fontSize.xs,
+    fontWeight: Typography.fontWeight.semiBold,
     color: "#334155",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   requiredStar: {
     color: "#EF4444",
   },
   optionalTag: {
-    fontSize: Typography.fontSize.xs,
-    color: "#64748B",
+    fontSize: Typography.fontSize.xs - 1,
+    color: "#94A3B8",
     fontWeight: "normal",
   },
   helperText: {
-    fontSize: Typography.fontSize.xs,
+    fontSize: Typography.fontSize.xs - 1,
     color: "#64748B",
     marginTop: 4,
   },
   errorText: {
-    fontSize: Typography.fontSize.xs,
+    fontSize: Typography.fontSize.xs - 1,
     color: "#EF4444",
     marginTop: 4,
   },
   input: {
-    backgroundColor: BrandColors.WHITE,
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#CBD5E1",
-    borderRadius: 8,
+    borderRadius: BorderRadius.sm,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: Typography.fontSize.base,
+    paddingVertical: 11,
+    fontSize: Typography.fontSize.sm,
     color: "#0F172A",
   },
   inputError: {
@@ -58,43 +82,29 @@ export const styles = StyleSheet.create({
   },
   statusRow: {
     flexDirection: "row",
-    gap: 10,
-    marginTop: 8,
+    gap: 8,
+    marginTop: 4,
   },
   statusChip: {
     flex: 1,
     paddingVertical: 10,
     alignItems: "center",
-    borderRadius: 8,
+    borderRadius: BorderRadius.sm,
     backgroundColor: "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#CBD5E1",
   },
   statusChipActive: {
-    backgroundColor: "#EFF6FF",
-    borderColor: BrandColors.PRIMARY_BLUE,
+    backgroundColor: "#FEF0E6",
+    borderColor: BrandColors.PRIMARY_ORANGE,
   },
   statusChipText: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: "500",
+    fontSize: Typography.fontSize.xs,
+    fontWeight: Typography.fontWeight.medium,
     color: "#64748B",
   },
   statusChipTextActive: {
-    color: BrandColors.PRIMARY_BLUE,
-    fontWeight: "700",
-  },
-  subCard: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 10,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    marginBottom: 16,
-  },
-  subCardTitle: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: "700",
-    color: "#1E293B",
-    marginBottom: 10,
+    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
+    fontWeight: Typography.fontWeight.bold,
   },
 });

@@ -1,5 +1,6 @@
 package com.taxedge.itr.helper;
 
+import java.security.SecureRandom;
 import java.util.Random;
 
 public class RandomNumberGenerator {
@@ -25,23 +26,18 @@ public class RandomNumberGenerator {
         return String.format("DOC%06d", number);
     }
     
-    public static String generateRevisedItrId() {
-        int number = random.nextInt(1_000_000);
-        return String.format("RITR%06d", number);
-    }
     
-    public static String generateRevisionReasonId() {
-        int number = random.nextInt(1_000_000);
-        return String.format("RR%06d", number);
-    }
-    
-    public static String generateRevisedItrDetailsId() {
-        int number = random.nextInt(1_000_000);
-        return String.format("RID%06d", number);
-    }
-    
-    public static String generateRevisedItrDocumentId() {
-        int number = random.nextInt(1_000_000);
-        return String.format("RID%06d", number);
+    private static final String CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+   
+
+    /** e.g. TDSR-7K3QX9MB */
+    public static String generateTdsRefundId() {
+        StringBuilder sb = new StringBuilder("TDSR-");
+        for (int i = 0; i < 8; i++) {
+            sb.append(CHARS.charAt(RANDOM.nextInt(CHARS.length())));
+        }
+        return sb.toString();
     }
 }
