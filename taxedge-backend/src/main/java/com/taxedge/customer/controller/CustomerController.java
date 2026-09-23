@@ -56,6 +56,22 @@ public class CustomerController {
     public ResponseEntity<CustomerDto> getDetails(@PathVariable String custId) {
         return ResponseEntity.ok(customerService.getDetails(custId));
     }
-    
-    
+
+    @Autowired
+    private com.taxedge.notification.email.service.EmailService emailService;
+
+    @GetMapping("/email-diagnostics")
+    public ResponseEntity<java.util.Map<String, Object>> getEmailDiagnostics() {
+        return ResponseEntity.ok(emailService.getDiagnostics());
+    }
+
+    @PostMapping("/test-email")
+    public ResponseEntity<java.util.Map<String, Object>> sendTestEmail(@org.springframework.web.bind.annotation.RequestParam String to) {
+        boolean sent = emailService.sendTestEmail(to);
+        return ResponseEntity.ok(java.util.Map.of(
+                "success", sent,
+                "recipient", to,
+                "status", sent ? "DELIVERED_TO_SMTP" : "FAILED_OR_BYPASSED"
+        ));
+    }
 }
