@@ -38,7 +38,7 @@ import {
 } from "../../components";
 import { styles } from "./BusinessLoanScreen.styles";
 
-const STEPS = ["Financials", "Business", "Banking", "Documents", "Review"];
+const STEPS = ["Loan & Applicant", "Business", "Banking", "Documents", "Review"];
 
 export const BusinessLoanScreen: React.FC = () => {
   const router = useRouter();
@@ -52,26 +52,31 @@ export const BusinessLoanScreen: React.FC = () => {
   const [isConsentChecked, setIsConsentChecked] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Step 1: Financials
+  // Step 1: Loan & Applicant
   const [loanDetails, setLoanDetails] = useState<LoanDetailsFormData>({
     loanType: "Business Loan",
-    requiredAmount: "1500000",
-    purpose: "Business Expansion & Working Capital",
-    preferredTenureMonths: "48",
-    hasExistingLoans: false,
+    requiredAmount: "",
+    purpose: "",
+    preferredTenureMonths: "",
+    hasExistingLoans: undefined,
     existingEmi: "",
-    monthlyIncomeOrTurnover: "250000",
-    employmentType: "Business Owner",
+    monthlyIncomeOrTurnover: "",
+    employmentType: "" as any,
   });
 
   // Step 2: Business details
   const [businessDetails, setBusinessDetails] = useState<LoanBusinessFormData>({
     businessName: "",
+    businessConstitution: "",
     gstin: "",
+    hasUdyam: false,
     udyamRegistration: "",
-    businessVintageYears: "3",
-    annualTurnover: "3000000",
-    netProfit: "450000",
+    businessVintageYears: "",
+    annualTurnover: "",
+    netProfit: "",
+    signatoryName: "",
+    signatoryDesignation: "",
+    signatoryEmail: "",
   });
 
   // Step 3: Banking
@@ -81,7 +86,7 @@ export const BusinessLoanScreen: React.FC = () => {
     ifscCode: "",
     existingLenderName: "",
     existingLoanOutstanding: "",
-    itrFilingStatus: "Filed",
+    itrFilingStatus: "Not Filed",
     itrAckNumber: "",
     grossTotalIncome: "",
   });
@@ -137,51 +142,65 @@ export const BusinessLoanScreen: React.FC = () => {
     fileSize: string
   ) => {
     setDocuments((prev) =>
-      prev.map((d) =>
-        d.id === docId
-          ? {
-              ...d,
-              fileUri,
-              fileName,
-              fileSize,
-              uploadedAt: new Date().toISOString(),
-            }
-          : d
-      )
+      prev.map((d) => {
+        const targetId = docId.replace(/^doc-/, "");
+        const itemCleanId = d.id.replace(/^doc-/, "");
+        if (d.id === docId || itemCleanId === targetId) {
+          return {
+            ...d,
+            fileUri,
+            fileName,
+            fileSize,
+            uploadedAt: new Date().toISOString(),
+          };
+        }
+        return d;
+      })
     );
   };
 
   const validateCurrentStep = (): boolean => {
     if (currentStepIndex === 0) {
-      const errs = validateLoanDetails(loanDetails);
-      setErrors(errs);
-      return Object.keys(errs).length === 0;
-    }
-
-    if (currentStepIndex === 1) {
-      const errs = validateLoanBusiness(businessDetails);
-      setErrors(errs);
-      return Object.keys(errs).length === 0;
-    }
-
-    if (currentStepIndex === 2) {
-      const errs = validateLoanBanking(bankingDetails);
-      setErrors(errs);
-      return Object.keys(errs).length === 0;
-    }
-
-    if (currentStepIndex === 3) {
-      const { isValid, missingDocs } = validateLoanDocuments(documents);
-      if (!isValid) {
+      const step1Errors = validateLoanDetails(loanDetails);
+      if (Object.keys(step1Errors).length > 0) {
+        setErrors(step1Errors);
         Alert.alert(
-          "Mandatory Documents Required",
-          `Please upload all required business documents to proceed:\n\n• ${missingDocs.slice(0, 3).join("\n• ")}`
+          "Required Fields Missing",
+          "Please fill in all required fields in Step 1 before proceeding."
         );
         return false;
       }
-      return true;
+    } else if (currentStepIndex === 1) {
+      const step2Errors = validateLoanBusiness(businessDetails);
+      if (Object.keys(step2Errors).length > 0) {
+        setErrors(step2Errors);
+        Alert.alert(
+          "Required Fields Missing",
+          "Please fill in all required fields in Step 2 before proceeding."
+        );
+        return false;
+      }
+    } else if (currentStepIndex === 2) {
+      const step3Errors = validateLoanBanking(bankingDetails);
+      if (Object.keys(step3Errors).length > 0) {
+        setErrors(step3Errors);
+        Alert.alert(
+          "Required Fields Missing",
+          "Please fill in all required banking details (Bank Name, Account Number, IFSC) in Step 3 before proceeding."
+        );
+        return false;
+      }
+    } else if (currentStepIndex === 3) {
+      const uploadedDocs = documents.filter((d) => d.fileUri && d.fileUri.trim() !== "");
+      if (uploadedDocs.length === 0) {
+        Alert.alert(
+          "Document Required",
+          "Please upload at least one required document in Step 4 before proceeding to the review page."
+        );
+        return false;
+      }
     }
-
+    setErrors({});
     return true;
   };
 
@@ -308,41 +327,30 @@ export const BusinessLoanScreen: React.FC = () => {
   };
 
   const isFinalStep = currentStepIndex === STEPS.length - 1;
+  const progressPercent = `${((currentStepIndex + 1) / STEPS.length) * 100}%`;
 
   return (
     <View style={[styles.safeArea, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={handleBack}>
-            <Ionicons name="arrow-back" size={24} color="#0F172A" />
-          </TouchableOpacity>
-          <View>
-            <Text style={styles.headerTitle}>Business Loan</Text>
-            <Text style={styles.headerSubtitle}>
-              Step {currentStepIndex + 1} of {STEPS.length} • {STEPS[currentStepIndex]}
-            </Text>
-          </View>
+      {/* Header Bar matching Screenshot 1 */}
+      <View style={styles.headerBar}>
+        <TouchableOpacity style={styles.circularBtn} onPress={handleBack} activeOpacity={0.7}>
+          <Ionicons name="chevron-back" size={20} color="#0F172A" />
+        </TouchableOpacity>
+
+        <View style={styles.headerCenterContent}>
+          <Text style={styles.headerTitle}>Business Loan</Text>
+          <Text style={styles.headerSubtitle}>
+            Step {currentStepIndex + 1} of {STEPS.length} • {STEPS[currentStepIndex]}
+          </Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.saveDraftButton}
-          onPress={() => Alert.alert("Draft Saved", "Business loan draft saved successfully.")}
-        >
-          <Text style={styles.saveDraftText}>Save Draft</Text>
-        </TouchableOpacity>
+        <View style={{ width: 36 }} />
       </View>
 
-      {/* Step Progress Indicator */}
-      <BusinessLoanStepIndicator
-        steps={STEPS}
-        currentStepIndex={currentStepIndex}
-        onStepPress={(idx) => {
-          if (idx <= currentStepIndex) {
-            setCurrentStepIndex(idx);
-          }
-        }}
-      />
+      {/* Top Progress Bar Track */}
+      <View style={styles.progressBarTrack}>
+        <View style={[styles.progressBarFill, { width: progressPercent as any }]} />
+      </View>
 
       {/* Scrollable Form Content */}
       <ScrollView
@@ -362,25 +370,16 @@ export const BusinessLoanScreen: React.FC = () => {
         ]}
       >
         <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBack}
-          disabled={isSubmitting}
-        >
-          <Text style={styles.backButtonText}>
-            {currentStepIndex === 0 ? "Cancel" : "Back"}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
+          style={[styles.continueBtn, isSubmitting && styles.continueBtnDisabled]}
           onPress={handleNext}
           disabled={isSubmitting}
+          activeOpacity={0.8}
         >
           {isSubmitting ? (
             <ActivityIndicator size="small" color={BrandColors.WHITE} />
           ) : (
             <>
-              <Text style={styles.nextButtonText}>
+              <Text style={styles.continueBtnText}>
                 {isFinalStep ? "Submit Application" : "Continue"}
               </Text>
               <Ionicons

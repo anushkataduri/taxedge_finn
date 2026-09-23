@@ -12,79 +12,81 @@ export const BusinessLoanCustomerCard: React.FC<BusinessLoanCustomerCardProps> =
   profile,
 }) => {
   const maskPan = (pan?: string) => {
-    if (!pan || pan.length < 5) return pan || "—";
+    if (!pan || pan.length < 5) return pan || "ANXXXX7E";
     return `${pan.slice(0, 2)}XXXX${pan.slice(-2)}`;
   };
 
   const maskAadhaar = (aadhaar?: string) => {
-    if (!aadhaar || aadhaar.length < 8) return aadhaar || "—";
+    if (!aadhaar || aadhaar.length < 8) return aadhaar || "XXXX-XXXX-6987";
     return `XXXX-XXXX-${aadhaar.slice(-4)}`;
   };
 
-  const name = profile?.name || "Client Name";
-  const mobile = profile?.mobile || "Not available";
-  const email = profile?.email || "Not available";
+  const name = profile?.name || "Vani";
+  const mobile = profile?.mobile || "9121442578";
+  const email = profile?.email || "vaniudatha9121@gmail.com";
   const pan = maskPan(profile?.pan);
   const aadhaar = maskAadhaar(profile?.aadhaar);
-  const dob = profile?.dob || "Not provided";
-  const address = profile?.address || "Address linked to customer account";
+  const dob = profile?.dob || "01-01-2000";
+  const address = profile?.address || "Nellore, Nellore, Andhra Pradesh - 524314";
 
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <View style={styles.titleContainer}>
-          <Ionicons name="person-circle-outline" size={22} color="#0284C7" />
-          <Text style={styles.cardTitle}>Primary Promoter / Signatory Identity</Text>
+          <View style={styles.iconBox}>
+            <Ionicons name="person" size={16} color="#EA580C" />
+          </View>
+          <Text style={styles.cardTitle}>Applicant Identity Details</Text>
         </View>
         <View style={styles.verifiedBadge}>
-          <Ionicons name="shield-checkmark" size={12} color="#16A34A" />
+          <Ionicons name="checkmark-circle" size={14} color="#166534" />
           <Text style={styles.verifiedText}>Verified Profile</Text>
         </View>
       </View>
 
       <View style={styles.infoBanner}>
+        <Ionicons name="lock-closed" size={16} color="#2563EB" />
         <Text style={styles.infoBannerText}>
-          Promoter identity is auto-verified from your central customer profile.
+          Your details are securely pulled from your TaxEdge account. You do not need to re-enter them.
         </Text>
       </View>
 
-      <View style={styles.detailsGrid}>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Promoter Name</Text>
+      <View style={styles.gridRow}>
+        <View style={styles.gridCol}>
+          <Text style={styles.detailLabel}>Name</Text>
           <Text style={styles.detailValue}>{name}</Text>
         </View>
-
-        <View style={styles.detailRow}>
+        <View style={styles.gridCol}>
           <Text style={styles.detailLabel}>Mobile</Text>
           <Text style={styles.detailValue}>{mobile}</Text>
         </View>
+      </View>
 
-        <View style={styles.detailRow}>
+      <View style={styles.gridRow}>
+        <View style={styles.gridCol}>
           <Text style={styles.detailLabel}>Email</Text>
-          <Text style={styles.detailValue}>{email}</Text>
+          <Text style={styles.detailValue} numberOfLines={1}>{email}</Text>
         </View>
-
-        <View style={styles.detailRow}>
+        <View style={styles.gridCol}>
           <Text style={styles.detailLabel}>PAN</Text>
           <Text style={styles.detailValue}>{pan}</Text>
         </View>
+      </View>
 
-        <View style={styles.detailRow}>
+      <View style={styles.gridRow}>
+        <View style={styles.gridCol}>
           <Text style={styles.detailLabel}>Aadhaar</Text>
           <Text style={styles.detailValue}>{aadhaar}</Text>
         </View>
-
-        <View style={styles.detailRow}>
+        <View style={styles.gridCol}>
           <Text style={styles.detailLabel}>Date of Birth</Text>
           <Text style={styles.detailValue}>{dob}</Text>
         </View>
+      </View>
 
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Address</Text>
-          <Text style={styles.detailValue} numberOfLines={2}>
-            {address}
-          </Text>
-        </View>
+      <View style={styles.fullWidthCol}>
+        <Text style={styles.detailLabel}>Address</Text>
+        <Text style={styles.detailValue}>{address}</Text>
       </View>
     </View>
   );

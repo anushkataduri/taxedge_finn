@@ -51,7 +51,7 @@ interface SignupForm {
   customerType: string;
 }
 
-type SignupErrors = Partial<Record<keyof SignupForm, string>>;
+type SignupErrors = Partial<Record<keyof SignupForm | "terms", string>>;
 
 interface CustomerTypeOption {
   key: string;
@@ -213,6 +213,53 @@ export default function CreateProfileScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
+  // Keyboard and focused field tracking for keyboard-aware scrolling
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const fieldYOffsets = useRef<Record<string, number>>({});
+  const activeFieldKey = useRef<string | null>(null);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      const h = e?.endCoordinates?.height || 280;
+      setKeyboardHeight(h);
+      if (activeFieldKey.current) {
+        const y = fieldYOffsets.current[activeFieldKey.current];
+        if (y !== undefined) {
+          scrollRef.current?.scrollTo({
+            y: Math.max(0, y - 70),
+            animated: true,
+          });
+        }
+      }
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+      activeFieldKey.current = null;
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const handleFieldFocus = (fieldKey: string) => {
+    activeFieldKey.current = fieldKey;
+    const y = fieldYOffsets.current[fieldKey];
+    if (y !== undefined) {
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({
+          y: Math.max(0, y - 70),
+          animated: true,
+        });
+      }, 120);
+    }
+  };
+
   // Modals
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGenderModal, setShowGenderModal] = useState(false);
@@ -267,6 +314,55 @@ export default function CreateProfileScreen() {
     }
   }, [storeMobileNumber]);
 
+  // Dynamic PAN Keyboard: Chars 1-5 -> Alphabet, Chars 6-9 -> Numeric, Char 10 -> Alphabet
+  const panKeyboardType = useMemo((): "default" | "number-pad" => {
+    const len = form.pan.length;
+    if (len >= 5 && len < 9) {
+      return "number-pad";
+    }
+    return "default";
+  }, [form.pan]);
+
+  // PAN Character-by-character Input Controller
+  const handlePanChange = (text: string) => {
+    const clean = text.toUpperCase().replace(/\s+/g, "");
+
+    // Allow backspace / character deletion
+    if (clean.length < form.pan.length && form.pan.startsWith(clean)) {
+      updateForm("pan", clean);
+      return;
+    }
+
+    let sanitized = "";
+    for (let i = 0; i < clean.length && i < 10; i++) {
+      const ch = clean[i];
+      if (i < 5) {
+        // Positions 0..4 (chars 1-5): Letters only [A-Z]
+        if (/[A-Z]/.test(ch)) {
+          sanitized += ch;
+        } else {
+          break;
+        }
+      } else if (i < 9) {
+        // Positions 5..8 (chars 6-9): Numbers only [0-9]
+        if (/[0-9]/.test(ch)) {
+          sanitized += ch;
+        } else {
+          break;
+        }
+      } else if (i === 9) {
+        // Position 9 (char 10): Letter only [A-Z]
+        if (/[A-Z]/.test(ch)) {
+          sanitized += ch;
+        } else {
+          break;
+        }
+      }
+    }
+
+    updateForm("pan", sanitized);
+  };
+
   const updateForm = (key: keyof SignupForm, val: string) => {
     setForm((p) => ({ ...p, [key]: val }));
 
@@ -279,7 +375,7 @@ export default function CreateProfileScreen() {
       if (clean.length === 10) {
         setProfileErrors((p) => ({
           ...p,
-          pan: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(clean) ? "" : "Invalid PAN",
+          pan: /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(clean) ? "" : "Invalid PAN",
         }));
       }
     } else if (key === "aadhaar") {
@@ -337,14 +433,18 @@ export default function CreateProfileScreen() {
       }
       case "gender":
         return val ? "" : "Required";
-      case "dob":
-        return val.trim() ? "" : "Required";
+      case "dob": {
+        const clean = val.trim();
+        if (!clean) return "Required";
+        if (!/^\d{2}-\d{2}-\d{4}$/.test(clean)) return "Invalid Date of Birth";
+        return "";
+      }
       case "fatherSpouseName":
         return val.trim() ? "" : "Required";
       case "pan": {
         const clean = val.trim().toUpperCase();
         if (!clean) return "Required";
-        if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(clean)) {
+        if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(clean)) {
           return "Invalid PAN";
         }
         return "";
@@ -496,42 +596,53 @@ export default function CreateProfileScreen() {
       return;
     }
 
-    const requiredKeys: (keyof SignupForm)[] = [
-      "name",
-      "email",
-      "gender",
-      "dob",
-      "fatherSpouseName",
-      "pan",
-      "aadhaar",
-      "addressLine1",
-      "city",
-      "pincode",
-      "state",
-      "password",
-      "confirmPassword",
+    const fieldOrder: { key: keyof SignupForm; ref?: React.RefObject<TextInput | null> }[] = [
+      { key: "name", ref: nameRef },
+      { key: "email", ref: emailRef },
+      { key: "gender" },
+      { key: "dob", ref: dobRef },
+      { key: "fatherSpouseName", ref: fatherSpouseRef },
+      { key: "pan", ref: panRef },
+      { key: "aadhaar", ref: aadhaarRef },
+      { key: "addressLine1", ref: address1Ref },
+      { key: "city", ref: cityRef },
+      { key: "pincode", ref: pinRef },
+      { key: "state" },
+      { key: "password", ref: passcodeRef },
+      { key: "confirmPassword", ref: confirmPasscodeRef },
     ];
 
     const errs: SignupErrors = {};
-    requiredKeys.forEach((k) => {
-      const err = validateField(k, form[k]);
-      if (err) errs[k] = err;
-    });
+    for (const item of fieldOrder) {
+      const err = validateField(item.key, form[item.key]);
+      if (err) {
+        errs[item.key] = err;
+      }
+    }
 
     if (!agreedToTerms) {
-      Alert.alert(
-        "Terms Required",
-        "Please accept the Terms of Service and Privacy Policy to continue."
-      );
-      return;
+      errs.terms = "Please accept the Terms of Service and Privacy Policy to continue.";
     }
 
     if (Object.keys(errs).length > 0) {
       setProfileErrors(errs);
-      Alert.alert(
-        "Incomplete Form",
-        "Please fill in all required fields."
-      );
+      const firstInvalid = fieldOrder.find((item) => Boolean(errs[item.key]));
+      if (firstInvalid) {
+        const y = fieldYOffsets.current[firstInvalid.key];
+        if (y !== undefined) {
+          scrollRef.current?.scrollTo({
+            y: Math.max(0, y - 70),
+            animated: true,
+          });
+        }
+        if (firstInvalid.ref?.current) {
+          setTimeout(() => {
+            firstInvalid.ref?.current?.focus();
+          }, 150);
+        }
+      } else if (errs.terms) {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      }
       return;
     }
 
@@ -644,8 +755,8 @@ export default function CreateProfileScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
       style={[styles.container, { backgroundColor: BrandColors.BACKGROUND }]}
     >
       <ScrollView
@@ -656,12 +767,14 @@ export default function CreateProfileScreen() {
             paddingBottom:
               currentStep === 1
                 ? Math.max(insets.bottom + 90, 110)
+                : keyboardHeight > 0
+                ? keyboardHeight + (Platform.OS === "android" ? 100 : 60)
                 : Math.max(insets.bottom + Spacing.xl, 40),
           },
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets={true}
+        keyboardDismissMode="on-drag"
       >
         {/* Top Wave Header */}
         <View style={styles.waveHeaderWrapper}>
@@ -822,10 +935,14 @@ export default function CreateProfileScreen() {
             {/* Full Name */}
             <Field
               ref={nameRef}
+              containerOnLayout={(e) => {
+                fieldYOffsets.current["name"] = e.nativeEvent.layout.y;
+              }}
               label="Full Name"
               leftIcon="person-outline"
               value={form.name}
               onChangeText={(t) => updateForm("name", t)}
+              onFocus={() => handleFieldFocus("name")}
               onBlur={() => handleBlur("name")}
               placeholder="Full Name"
               error={profileErrors.name}
@@ -836,10 +953,14 @@ export default function CreateProfileScreen() {
             {/* Email */}
             <Field
               ref={emailRef}
+              containerOnLayout={(e) => {
+                fieldYOffsets.current["email"] = e.nativeEvent.layout.y;
+              }}
               label="Email"
               leftIcon="mail-outline"
               value={form.email}
               onChangeText={(t) => updateForm("email", t)}
+              onFocus={() => handleFieldFocus("email")}
               onBlur={() => handleBlur("email")}
               placeholder="Email"
               keyboardType="email-address"
@@ -850,22 +971,37 @@ export default function CreateProfileScreen() {
             />
 
             {/* Gender */}
-            <View style={styles.fieldContainer}>
+            <View
+              style={styles.fieldContainer}
+              onLayout={(e) => {
+                fieldYOffsets.current["gender"] = e.nativeEvent.layout.y;
+              }}
+            >
               <Text style={styles.label}>Gender</Text>
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => setShowGenderModal(true)}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setShowGenderModal(true);
+                }}
                 style={[
                   styles.inputBox,
                   profileErrors.gender
-                    ? { borderColor: Colors.error, backgroundColor: "#FEF2F2" }
-                    : null,
+                    ? {
+                        borderColor: Colors.error,
+                        backgroundColor: "#FEF2F2",
+                        borderWidth: BorderWidth.regular,
+                      }
+                    : {
+                        borderColor: BrandColors.BORDER,
+                        borderWidth: BorderWidth.thin,
+                      },
                 ]}
               >
                 <Ionicons
                   name="transgender-outline"
                   size={20}
-                  color={BrandColors.PRIMARY_ORANGE}
+                  color={profileErrors.gender ? Colors.error : BrandColors.PRIMARY_ORANGE}
                   style={styles.leftIcon}
                 />
                 <Text
@@ -891,10 +1027,14 @@ export default function CreateProfileScreen() {
             {/* Date of Birth */}
             <Field
               ref={dobRef}
+              containerOnLayout={(e) => {
+                fieldYOffsets.current["dob"] = e.nativeEvent.layout.y;
+              }}
               label="Date of Birth"
               leftIcon="calendar-outline"
               value={form.dob}
               onChangeText={handleDobChange}
+              onFocus={() => handleFieldFocus("dob")}
               placeholder="DD-MM-YYYY"
               keyboardType="number-pad"
               maxLength={10}
@@ -908,10 +1048,14 @@ export default function CreateProfileScreen() {
             {/* Father's / Spouse Name */}
             <Field
               ref={fatherSpouseRef}
+              containerOnLayout={(e) => {
+                fieldYOffsets.current["fatherSpouseName"] = e.nativeEvent.layout.y;
+              }}
               label="Father's / Spouse Name"
               leftIcon="people-outline"
               value={form.fatherSpouseName}
               onChangeText={(t) => updateForm("fatherSpouseName", t)}
+              onFocus={() => handleFieldFocus("fatherSpouseName")}
               onBlur={() => handleBlur("fatherSpouseName")}
               placeholder="Father's / Spouse Name"
               error={profileErrors.fatherSpouseName}
@@ -922,13 +1066,18 @@ export default function CreateProfileScreen() {
             {/* PAN Number */}
             <Field
               ref={panRef}
+              containerOnLayout={(e) => {
+                fieldYOffsets.current["pan"] = e.nativeEvent.layout.y;
+              }}
               label="PAN Number"
               leftIcon="card-outline"
               value={form.pan}
-              onChangeText={(t) => updateForm("pan", t.toUpperCase())}
+              onChangeText={handlePanChange}
+              onFocus={() => handleFieldFocus("pan")}
               onBlur={() => handleBlur("pan")}
               placeholder="PAN Number"
               autoCapitalize="characters"
+              keyboardType={panKeyboardType}
               maxLength={10}
               error={profileErrors.pan}
               returnKeyType="next"
@@ -938,12 +1087,16 @@ export default function CreateProfileScreen() {
             {/* Aadhaar Number */}
             <Field
               ref={aadhaarRef}
+              containerOnLayout={(e) => {
+                fieldYOffsets.current["aadhaar"] = e.nativeEvent.layout.y;
+              }}
               label="Aadhaar Number"
               leftIcon="newspaper-outline"
               value={form.aadhaar}
               onChangeText={(t) =>
                 updateForm("aadhaar", t.replace(/\D/g, "").slice(0, 12))
               }
+              onFocus={() => handleFieldFocus("aadhaar")}
               onBlur={() => handleBlur("aadhaar")}
               placeholder="Aadhaar Number"
               keyboardType="number-pad"
@@ -956,6 +1109,9 @@ export default function CreateProfileScreen() {
             {/* Address Line 1 */}
             <Field
               ref={address1Ref}
+              containerOnLayout={(e) => {
+                fieldYOffsets.current["addressLine1"] = e.nativeEvent.layout.y;
+              }}
               label="Address Line 1 *"
               labelRightElement={
                 !showAddressLine2 ? (
@@ -983,6 +1139,7 @@ export default function CreateProfileScreen() {
               leftIcon="home-outline"
               value={form.addressLine1}
               onChangeText={(t) => updateForm("addressLine1", t)}
+              onFocus={() => handleFieldFocus("addressLine1")}
               onBlur={() => handleBlur("addressLine1")}
               placeholder="House / Building / Street"
               error={profileErrors.addressLine1}
@@ -1004,6 +1161,7 @@ export default function CreateProfileScreen() {
                 leftIcon="location-outline"
                 value={form.addressLine2}
                 onChangeText={(t) => updateForm("addressLine2", t)}
+                onFocus={() => handleFieldFocus("addressLine2")}
                 placeholder="Locality, Landmark"
                 returnKeyType="next"
                 onSubmitEditing={() => cityRef.current?.focus()}
@@ -1011,7 +1169,13 @@ export default function CreateProfileScreen() {
             )}
 
             {/* City & PIN Code (Side by side on the same row) */}
-            <View style={styles.cityPinRow}>
+            <View
+              style={styles.cityPinRow}
+              onLayout={(e) => {
+                fieldYOffsets.current["city"] = e.nativeEvent.layout.y;
+                fieldYOffsets.current["pincode"] = e.nativeEvent.layout.y;
+              }}
+            >
               <View style={styles.cityCol}>
                 <Field
                   ref={cityRef}
@@ -1019,6 +1183,7 @@ export default function CreateProfileScreen() {
                   leftIcon="business-outline"
                   value={form.city}
                   onChangeText={(t) => updateForm("city", t)}
+                  onFocus={() => handleFieldFocus("city")}
                   onBlur={() => handleBlur("city")}
                   placeholder="City"
                   error={profileErrors.city}
@@ -1036,6 +1201,7 @@ export default function CreateProfileScreen() {
                   onChangeText={(t) =>
                     updateForm("pincode", t.replace(/\D/g, "").slice(0, 6))
                   }
+                  onFocus={() => handleFieldFocus("pincode")}
                   onBlur={() => handleBlur("pincode")}
                   placeholder="PIN Code"
                   keyboardType="number-pad"
@@ -1043,6 +1209,7 @@ export default function CreateProfileScreen() {
                   error={profileErrors.pincode}
                   returnKeyType="next"
                   onSubmitEditing={() => {
+                    Keyboard.dismiss();
                     setStateSearchQuery("");
                     setShowStateModal(true);
                   }}
@@ -1051,25 +1218,38 @@ export default function CreateProfileScreen() {
             </View>
 
             {/* State / UT */}
-            <View style={styles.fieldContainer}>
+            <View
+              style={styles.fieldContainer}
+              onLayout={(e) => {
+                fieldYOffsets.current["state"] = e.nativeEvent.layout.y;
+              }}
+            >
               <Text style={styles.label}>State / UT</Text>
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => {
+                  Keyboard.dismiss();
                   setStateSearchQuery("");
                   setShowStateModal(true);
                 }}
                 style={[
                   styles.inputBox,
                   profileErrors.state
-                    ? { borderColor: Colors.error, backgroundColor: "#FEF2F2" }
-                    : null,
+                    ? {
+                        borderColor: Colors.error,
+                        backgroundColor: "#FEF2F2",
+                        borderWidth: BorderWidth.regular,
+                      }
+                    : {
+                        borderColor: BrandColors.BORDER,
+                        borderWidth: BorderWidth.thin,
+                      },
                 ]}
               >
                 <Ionicons
                   name="map-outline"
                   size={20}
-                  color={BrandColors.PRIMARY_ORANGE}
+                  color={profileErrors.state ? Colors.error : BrandColors.PRIMARY_ORANGE}
                   style={styles.leftIcon}
                 />
                 <Text
@@ -1095,12 +1275,16 @@ export default function CreateProfileScreen() {
             {/* Passcode */}
             <Field
               ref={passcodeRef}
+              containerOnLayout={(e) => {
+                fieldYOffsets.current["password"] = e.nativeEvent.layout.y;
+              }}
               label="Passcode"
               leftIcon="lock-closed-outline"
               value={form.password}
               onChangeText={(t) =>
                 updateForm("password", t.replace(/\D/g, "").slice(0, 6))
               }
+              onFocus={() => handleFieldFocus("password")}
               onBlur={() => handleBlur("password")}
               placeholder="Passcode"
               keyboardType="number-pad"
@@ -1116,12 +1300,16 @@ export default function CreateProfileScreen() {
             {/* Confirm Passcode */}
             <Field
               ref={confirmPasscodeRef}
+              containerOnLayout={(e) => {
+                fieldYOffsets.current["confirmPassword"] = e.nativeEvent.layout.y;
+              }}
               label="Confirm Passcode"
               leftIcon="lock-closed-outline"
               value={form.confirmPassword}
               onChangeText={(t) =>
                 updateForm("confirmPassword", t.replace(/\D/g, "").slice(0, 6))
               }
+              onFocus={() => handleFieldFocus("confirmPassword")}
               onBlur={() => handleBlur("confirmPassword")}
               placeholder="Confirm Passcode"
               keyboardType="number-pad"
@@ -1135,11 +1323,27 @@ export default function CreateProfileScreen() {
             />
 
             {/* Terms Checkbox */}
-            <View style={styles.termsRow}>
+            <View
+              style={styles.termsRow}
+              onLayout={(e) => {
+                fieldYOffsets.current["terms"] = e.nativeEvent.layout.y;
+              }}
+            >
               <TouchableOpacity
                 activeOpacity={0.7}
-                onPress={() => setAgreedToTerms((prev) => !prev)}
-                style={[styles.checkbox, agreedToTerms && styles.checkboxChecked]}
+                onPress={() => {
+                  setAgreedToTerms((prev) => !prev);
+                  if (profileErrors.terms) {
+                    setProfileErrors((p) => ({ ...p, terms: "" }));
+                  }
+                }}
+                style={[
+                  styles.checkbox,
+                  agreedToTerms && styles.checkboxChecked,
+                  profileErrors.terms
+                    ? { borderColor: Colors.error, borderWidth: 2 }
+                    : null,
+                ]}
               >
                 {agreedToTerms && (
                   <Ionicons name="checkmark" size={16} color={BrandColors.WHITE} />
@@ -1174,26 +1378,26 @@ export default function CreateProfileScreen() {
                 .
               </Text>
             </View>
+            {profileErrors.terms ? (
+              <Text style={[styles.errorText, { marginBottom: 8, paddingHorizontal: 2 }]}>
+                {profileErrors.terms}
+              </Text>
+            ) : null}
 
             {/* Create Account / Final Registration Button */}
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={handleFinalRegistration}
-              disabled={!isScreen1Valid || profileLoading}
+              disabled={profileLoading}
               style={[
                 styles.submitBtnOrange,
-                (!isScreen1Valid || profileLoading) && styles.submitBtnDisabled,
+                profileLoading && styles.submitBtnDisabled,
               ]}
             >
               {profileLoading ? (
                 <ActivityIndicator color={BrandColors.WHITE} size="small" />
               ) : (
-                <Text
-                  style={[
-                    styles.submitBtnText,
-                    (!isScreen1Valid || profileLoading) && styles.submitBtnTextDisabled,
-                  ]}
-                >
+                <Text style={styles.submitBtnText}>
                   Create Account
                 </Text>
               )}
@@ -1554,7 +1758,7 @@ export default function CreateProfileScreen() {
 interface FieldProps
   extends Omit<
     TextInputProps,
-    "value" | "onChangeText" | "placeholder" | "style" | "onBlur"
+    "value" | "onChangeText" | "placeholder" | "style" | "onBlur" | "onFocus"
   > {
   label?: string;
   labelRightElement?: React.ReactNode;
@@ -1562,10 +1766,12 @@ interface FieldProps
   value: string;
   onChangeText: (text: string) => void;
   onBlur?: () => void;
+  onFocus?: () => void;
   placeholder?: string;
   rightIcon?: IconName;
   onRightIconPress?: () => void;
   error?: string;
+  containerOnLayout?: (event: any) => void;
 }
 
 const Field = React.forwardRef<TextInput, FieldProps>(function Field(
@@ -1576,6 +1782,7 @@ const Field = React.forwardRef<TextInput, FieldProps>(function Field(
     value,
     onChangeText,
     onBlur,
+    onFocus,
     placeholder,
     rightIcon,
     onRightIconPress,
@@ -1584,6 +1791,7 @@ const Field = React.forwardRef<TextInput, FieldProps>(function Field(
     maxLength,
     returnKeyType,
     onSubmitEditing,
+    containerOnLayout,
     ...props
   },
   ref
@@ -1591,7 +1799,7 @@ const Field = React.forwardRef<TextInput, FieldProps>(function Field(
   const [isFocused, setIsFocused] = useState(false);
 
   return (
-    <View style={styles.fieldContainer}>
+    <View style={styles.fieldContainer} onLayout={containerOnLayout}>
       {label ? (
         labelRightElement ? (
           <View style={styles.labelWithActionRow}>
@@ -1634,7 +1842,10 @@ const Field = React.forwardRef<TextInput, FieldProps>(function Field(
           style={styles.input}
           value={value}
           onChangeText={onChangeText}
-          onFocus={() => setIsFocused(true)}
+          onFocus={() => {
+            setIsFocused(true);
+            if (onFocus) onFocus();
+          }}
           onBlur={() => {
             setIsFocused(false);
             if (onBlur) onBlur();

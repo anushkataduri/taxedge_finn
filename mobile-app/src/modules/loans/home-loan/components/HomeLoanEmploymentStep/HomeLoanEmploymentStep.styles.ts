@@ -52,21 +52,6 @@ export const styles = StyleSheet.create({
   requiredStar: {
     color: "#EF4444",
   },
-  optionalTag: {
-    fontSize: Typography.fontSize.xs - 1,
-    color: "#94A3B8",
-    fontWeight: "normal",
-  },
-  helperText: {
-    fontSize: Typography.fontSize.xs - 1,
-    color: "#64748B",
-    marginTop: 4,
-  },
-  errorText: {
-    fontSize: Typography.fontSize.xs - 1,
-    color: "#EF4444",
-    marginTop: 4,
-  },
   input: {
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
@@ -80,30 +65,71 @@ export const styles = StyleSheet.create({
   inputError: {
     borderColor: "#EF4444",
   },
-  statusRow: {
-    flexDirection: "row",
-    gap: 8,
+  errorText: {
+    fontSize: Typography.fontSize.xs - 1,
+    color: "#EF4444",
     marginTop: 4,
   },
-  statusChip: {
+  // Selection Pills
+  pillRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  pill: {
     flex: 1,
+    minWidth: "30%",
     paddingVertical: 10,
-    alignItems: "center",
+    paddingHorizontal: 8,
     borderRadius: BorderRadius.sm,
     backgroundColor: "#F8FAFC",
     borderWidth: 1,
     borderColor: "#CBD5E1",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  statusChipActive: {
+  pillActive: {
     backgroundColor: "#FEF0E6",
     borderColor: BrandColors.PRIMARY_ORANGE,
   },
-  statusChipText: {
+  pillText: {
+    fontSize: Typography.fontSize.xs,
+    fontWeight: Typography.fontWeight.medium,
+    color: "#475569",
+    textAlign: "center",
+  },
+  pillTextActive: {
+    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
+    fontWeight: Typography.fontWeight.bold,
+  },
+  // Toggle Switch Container
+  toggleContainer: {
+    flexDirection: "row",
+    backgroundColor: "#F1F5F9",
+    borderRadius: BorderRadius.sm,
+    padding: 3,
+    marginBottom: 12,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 9,
+    alignItems: "center",
+    borderRadius: 6,
+  },
+  toggleButtonActive: {
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  toggleText: {
     fontSize: Typography.fontSize.xs,
     fontWeight: Typography.fontWeight.medium,
     color: "#64748B",
   },
-  statusChipTextActive: {
+  toggleTextActive: {
     color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
     fontWeight: Typography.fontWeight.bold,
   },
