@@ -42,7 +42,7 @@ server:
 
 jwt:
   secret: 7fK9mQ2xV8pL4zR6tY13sH8jA0eB6uI9oP2vX4kG7nM5qZ1rT8
-  expiration: 180000 # 3 minutes for testing
+  expiration: 3600000    # 3 minutes for testing
 
 
 # ===============================
