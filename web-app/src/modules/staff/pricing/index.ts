@@ -1,0 +1,1 @@
+export { staffPricingRoutes } from './routes'

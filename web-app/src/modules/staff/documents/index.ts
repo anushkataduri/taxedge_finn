@@ -1,0 +1,1 @@
+export { staffDocumentsRoutes } from './routes'
