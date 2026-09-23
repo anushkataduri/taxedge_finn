@@ -3,6 +3,7 @@ package com.taxedge.itr.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -83,5 +84,31 @@ public class TdsRefundController{
 	    public ResponseEntity<String> update(@PathVariable Long id,
 	                                         @RequestBody TdsDocumentsDto dto) {
 	        return ResponseEntity.ok(docservice.updateDocuments(id, dto));
+	    }
+	    
+	    
+	    @GetMapping("/refund-bank-account/{id}")
+	    public ResponseEntity<RefundBankAccountDto> getBankAccount(@PathVariable String id) {
+	        return ResponseEntity.ok(service.getBankAccount(id));
+	    }
+
+	    @GetMapping("/refund-bank-account/customer/{custId}")
+	    public ResponseEntity<RefundBankAccountDto> getBankAccountByCustomer(@PathVariable String custId) {
+	        return ResponseEntity.ok(service.getBankAccountByCustId(custId));
+	    }
+
+	    @GetMapping("/tds-taxes-paid/{tdsRefundId}")
+	    public ResponseEntity<TdsTaxesPaidDto> getTaxesPaid(@PathVariable String tdsRefundId) {
+	        return ResponseEntity.ok(tdsservice.getTaxesPaid(tdsRefundId));
+	    }
+
+	    @GetMapping("/income-tax-info/{tdsRefundId}")
+	    public ResponseEntity<IncomeTaxInfoDto> getIncomeTaxInfo(@PathVariable String tdsRefundId) {
+	        return ResponseEntity.ok(incomeservice.getIncomeTaxInfo(tdsRefundId));
+	    }
+
+	    @GetMapping("/tds-documents/{tdsRefundId}")
+	    public ResponseEntity<TdsDocumentsDto> getDocuments(@PathVariable String tdsRefundId) {
+	        return ResponseEntity.ok(docservice.getDocuments(tdsRefundId));
 	    }
 }

@@ -7,4 +7,6 @@ public interface IncomeTaxInfoService {
     String saveIncomeTaxInfo(IncomeTaxInfoDto dto);
 
     String updateIncomeTaxInfo(Long id, IncomeTaxInfoDto dto);
+    
+    IncomeTaxInfoDto     getIncomeTaxInfo(String tdsRefundId);
 }

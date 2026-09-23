@@ -6,10 +6,12 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  BackHandler,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { BrandColors } from "../../../../../shared/theme";
 import { loansApi } from "../../../services/loansApi";
 import {
   LoanApplicationResponse,
@@ -21,7 +23,7 @@ import { styles } from "./LoanStatusScreen.styles";
 export const LoanStatusScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ id?: string; loanType?: string }>();
+  const params = useLocalSearchParams<{ id?: string; loanType?: string; isSuccess?: string }>();
   const appId = params.id || "LN-849201";
 
   const [isLoading, setIsLoading] = useState(true);
@@ -38,6 +40,14 @@ export const LoanStatusScreen: React.FC = () => {
         setIsLoading(false);
       });
   }, [appId]);
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      router.replace("/(main)/home" as any);
+      return true;
+    });
+    return () => sub.remove();
+  }, []);
 
   const handleDownloadSanction = () => {
     Alert.alert(
@@ -58,7 +68,7 @@ export const LoanStatusScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.replace("/service/loans" as any)}>
+          <TouchableOpacity onPress={() => router.replace("/(main)/home" as any)}>
             <Ionicons name="arrow-back" size={24} color="#0F172A" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Loan Application Status</Text>
@@ -79,6 +89,18 @@ export const LoanStatusScreen: React.FC = () => {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
+          {/* Application Submitted Successfully Banner */}
+          <View style={styles.successCard}>
+            <View style={styles.successCheckCircle}>
+              <Ionicons name="checkmark-circle" size={40} color="#16A34A" />
+            </View>
+            <Text style={styles.successTitle}>Application Submitted Successfully</Text>
+            <Text style={styles.successSubtitle}>
+              Your {params.loanType || data?.loanType || "Loan"} application has been lodged successfully.
+              Our credit verification officer and underwriting desk will initiate verification shortly.
+            </Text>
+          </View>
+
           {/* Summary Card */}
           <View style={styles.summaryCard}>
             <View style={styles.appIdRow}>
@@ -130,20 +152,39 @@ export const LoanStatusScreen: React.FC = () => {
             />
           </View>
 
-          {/* Bottom Actions */}
+          {/* 2 Redirect Buttons: Track My Applications and Go to Home */}
           <View style={styles.bottomActions}>
             <TouchableOpacity
               style={styles.primaryBtn}
-              onPress={handleDownloadSanction}
+              onPress={() => router.replace("/(main)/applications" as any)}
+              activeOpacity={0.85}
             >
-              <Text style={styles.primaryBtnText}>Download Sanction Letter</Text>
+              <Ionicons name="list-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.primaryBtnText}>Track My Applications</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.secondaryBtn}
-              onPress={() => router.replace("/service/loans" as any)}
+              onPress={() => router.replace("/(main)/home" as any)}
+              activeOpacity={0.85}
             >
-              <Text style={styles.secondaryBtnText}>Back to Loan Marketplace</Text>
+              <Ionicons name="home-outline" size={20} color="#0F172A" />
+              <Text style={styles.secondaryBtnText}>Go to Home</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.downloadReceiptBtn}
+              onPress={handleDownloadSanction}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="download-outline"
+                size={16}
+                color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
+              />
+              <Text style={styles.downloadReceiptText}>
+                Download Sanction Letter / Receipt
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

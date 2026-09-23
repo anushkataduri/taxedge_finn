@@ -7,6 +7,7 @@ export interface PersonalLoanFinancialsStepProps {
   data: LoanDetailsFormData;
   onChange: (field: keyof LoanDetailsFormData, value: any) => void;
   errors?: Record<string, string>;
+  onInputFocus?: (field: string) => void;
 }
 
 const COMMON_PURPOSES = [
@@ -21,6 +22,8 @@ const COMMON_PURPOSES = [
 ];
 
 const TENURE_OPTIONS = [
+  { label: "3 Months", value: "3" },
+  { label: "6 Months", value: "6" },
   { label: "12 Mos (1 Yr)", value: "12" },
   { label: "24 Mos (2 Yrs)", value: "24" },
   { label: "36 Mos (3 Yrs)", value: "36" },
@@ -40,12 +43,13 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
   data,
   onChange,
   errors = {},
+  onInputFocus,
 }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Loan Requirement & Capacity</Text>
+      <Text style={styles.sectionTitle}>Financial Requirements</Text>
       <Text style={styles.sectionSubtitle}>
-        Specify how much personal capital you need and your current monthly repayment capacity.
+        Tell us how much you need and your current repayment capacity.
       </Text>
 
       {/* Required Amount */}
@@ -59,6 +63,7 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
           placeholderTextColor="#94A3B8"
           keyboardType="numeric"
           value={data.requiredAmount}
+          onFocus={() => onInputFocus?.("requiredAmount")}
           onChangeText={(text) => onChange("requiredAmount", text)}
         />
         <View style={styles.chipRow}>
@@ -87,6 +92,7 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
           placeholder="Specify personal reason"
           placeholderTextColor="#94A3B8"
           value={data.purpose}
+          onFocus={() => onInputFocus?.("purpose")}
           onChangeText={(text) => onChange("purpose", text)}
         />
         <View style={styles.chipRow}>
@@ -161,6 +167,7 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
           placeholderTextColor="#94A3B8"
           keyboardType="numeric"
           value={data.monthlyIncomeOrTurnover}
+          onFocus={() => onInputFocus?.("monthlyIncomeOrTurnover")}
           onChangeText={(text) => onChange("monthlyIncomeOrTurnover", text)}
         />
         {errors.monthlyIncomeOrTurnover && (
@@ -207,25 +214,6 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
         </View>
       </View>
 
-      {/* Existing EMI */}
-      {data.hasExistingLoans && (
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Total Current Monthly EMI (₹) <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, errors.existingEmi && styles.inputError]}
-            placeholder="e.g. 15000"
-            placeholderTextColor="#94A3B8"
-            keyboardType="numeric"
-            value={data.existingEmi}
-            onChangeText={(text) => onChange("existingEmi", text)}
-          />
-          {errors.existingEmi && (
-            <Text style={styles.errorText}>{errors.existingEmi}</Text>
-          )}
-        </View>
-      )}
     </View>
   );
 };

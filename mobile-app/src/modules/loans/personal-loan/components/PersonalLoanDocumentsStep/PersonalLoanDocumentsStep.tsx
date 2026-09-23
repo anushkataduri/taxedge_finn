@@ -1,15 +1,13 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Modal } from "react-native";
+import React, { useRef } from "react";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
+import { DocumentUploadBottomSheet } from "../../../../../shared/components/DocumentUploadBottomSheet";
+import { useDocumentUploadHelper } from "../../../../../shared/hooks/useDocumentUploadHelper";
 import {
   LoanDocumentItem,
   LoanDocumentCategory,
 } from "../../../types/loans.types";
-import {
-  pickLoanImageFromGallery,
-  pickLoanImageFromCamera,
-} from "../../../services/documentUploadHelper";
 import { styles } from "./PersonalLoanDocumentsStep.styles";
 
 export interface PersonalLoanDocumentsStepProps {
@@ -20,6 +18,8 @@ export interface PersonalLoanDocumentsStepProps {
     fileName: string,
     fileSize: string
   ) => void;
+  onDocumentRemoved: (docId: string) => void;
+  scrollRef?: React.RefObject<ScrollView | null>;
 }
 
 const CATEGORIES: LoanDocumentCategory[] = [
@@ -32,9 +32,20 @@ const CATEGORIES: LoanDocumentCategory[] = [
 export const PersonalLoanDocumentsStep: React.FC<PersonalLoanDocumentsStepProps> = ({
   documents,
   onDocumentUploaded,
+  onDocumentRemoved,
+  scrollRef,
 }) => {
-  const [activeDocId, setActiveDocId] = useState<string | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  const documentPositions = useRef<Record<string, number>>({});
+  const uploadHelper = useDocumentUploadHelper({
+    scrollRef,
+    onSuccess: (file, docId) => {
+      if (!docId) return;
+      const size = file.size
+        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+        : "2.4 MB";
+      onDocumentUploaded(docId, file.uri, file.name, size);
+    },
+  });
 
   const totalRequired = documents.filter((d) => d.required).length;
   const uploadedRequired = documents.filter(
@@ -45,40 +56,8 @@ export const PersonalLoanDocumentsStep: React.FC<PersonalLoanDocumentsStepProps>
       ? Math.round((uploadedRequired / totalRequired) * 100)
       : 100;
 
-  const handleOpenUploadSheet = (docId: string) => {
-    setActiveDocId(docId);
-    setModalVisible(true);
-  };
-
-  const handlePickGallery = async () => {
-    setModalVisible(false);
-    if (!activeDocId) return;
-    const file = await pickLoanImageFromGallery();
-    if (file) {
-      onDocumentUploaded(activeDocId, file.uri, file.name, file.size);
-    }
-  };
-
-  const handlePickCamera = async () => {
-    setModalVisible(false);
-    if (!activeDocId) return;
-    const file = await pickLoanImageFromCamera();
-    if (file) {
-      onDocumentUploaded(activeDocId, file.uri, file.name, file.size);
-    }
-  };
-
-  const handleMockPdf = () => {
-    setModalVisible(false);
-    if (!activeDocId) return;
-    const doc = documents.find((d) => d.id === activeDocId);
-    const mockName = `${doc?.name.replace(/\s+/g, "_") || "statement"}_verified.pdf`;
-    onDocumentUploaded(
-      activeDocId,
-      `file:///mock/storage/${mockName}`,
-      mockName,
-      "2.4 MB"
-    );
+  const handleOpenUploadSheet = (docId: string, title: string) => {
+    uploadHelper.openUploadSheet(docId, title, documentPositions.current[docId]);
   };
 
   return (
@@ -102,7 +81,7 @@ export const PersonalLoanDocumentsStep: React.FC<PersonalLoanDocumentsStepProps>
               height: "100%",
               width: `${progressPercent}%`,
               backgroundColor:
-                progressPercent === 100 ? "#16A34A" : BrandColors.PRIMARY_BLUE,
+                progressPercent === 100 ? BrandColors.PRIMARY_ORANGE : BrandColors.PRIMARY_BLUE,
               borderRadius: 3,
             }}
           />
@@ -123,6 +102,9 @@ export const PersonalLoanDocumentsStep: React.FC<PersonalLoanDocumentsStepProps>
               return (
                 <View
                   key={doc.id}
+                  onLayout={(event) => {
+                    documentPositions.current[doc.id] = event.nativeEvent.layout.y;
+                  }}
                   style={[
                     styles.docCard,
                     isUploaded && styles.docCardUploaded,
@@ -165,7 +147,7 @@ export const PersonalLoanDocumentsStep: React.FC<PersonalLoanDocumentsStepProps>
                           <Ionicons
                             name="checkmark-circle"
                             size={14}
-                            color="#16A34A"
+                            color={BrandColors.PRIMARY_ORANGE}
                           />
                           <Text style={styles.fileNameText} numberOfLines={1}>
                             {doc.fileName || "Uploaded"}
@@ -179,18 +161,27 @@ export const PersonalLoanDocumentsStep: React.FC<PersonalLoanDocumentsStepProps>
                   </View>
 
                   {isUploaded ? (
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() => handleOpenUploadSheet(doc.id)}
-                      style={styles.replaceButton}
-                    >
-                      <Ionicons name="refresh" size={14} color="#16A34A" />
-                      <Text style={styles.replaceButtonText}>Replace</Text>
-                    </TouchableOpacity>
+                    <View style={styles.uploadActions}>
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => handleOpenUploadSheet(doc.id, doc.name)}
+                        style={styles.replaceButton}
+                      >
+                        <Ionicons name="refresh" size={14} color={BrandColors.PRIMARY_ORANGE} />
+                        <Text style={styles.replaceButtonText}>Replace</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => onDocumentRemoved(doc.id)}
+                        style={styles.removeButton}
+                      >
+                        <Ionicons name="trash-outline" size={14} color="#DC2626" />
+                      </TouchableOpacity>
+                    </View>
                   ) : (
                     <TouchableOpacity
                       activeOpacity={0.7}
-                      onPress={() => handleOpenUploadSheet(doc.id)}
+                      onPress={() => handleOpenUploadSheet(doc.id, doc.name)}
                       style={styles.uploadButton}
                     >
                       <Ionicons
@@ -208,64 +199,17 @@ export const PersonalLoanDocumentsStep: React.FC<PersonalLoanDocumentsStepProps>
         );
       })}
 
-      {/* Upload Modal */}
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setModalVisible(false)}
-        >
-          <View style={styles.sheetContent}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Select Upload Method</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={22} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.sheetOption}
-              onPress={handlePickCamera}
-            >
-              <Ionicons
-                name="camera-outline"
-                size={22}
-                color={BrandColors.PRIMARY_BLUE}
-              />
-              <Text style={styles.sheetOptionText}>Take Photo with Camera</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.sheetOption}
-              onPress={handlePickGallery}
-            >
-              <Ionicons
-                name="images-outline"
-                size={22}
-                color={BrandColors.PRIMARY_BLUE}
-              />
-              <Text style={styles.sheetOptionText}>Choose from Gallery</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.sheetOption}
-              onPress={handleMockPdf}
-            >
-              <Ionicons
-                name="document-attach-outline"
-                size={22}
-                color={BrandColors.PRIMARY_BLUE}
-              />
-              <Text style={styles.sheetOptionText}>Attach Salary/Bank PDF</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      <DocumentUploadBottomSheet
+        visible={uploadHelper.isSheetVisible}
+        documentTitle={uploadHelper.currentDocTitle}
+        maxSizeBytesText="10 MB"
+        onClose={uploadHelper.closeUploadSheet}
+        onPickFiles={uploadHelper.pickFiles}
+        onPickGallery={uploadHelper.pickGallery}
+        onTakePhoto={uploadHelper.takePhoto}
+        allowGallery={!['bank-statements', 'salary-slips'].includes(uploadHelper.activeDocKey || '')}
+        allowCamera={!['bank-statements', 'salary-slips'].includes(uploadHelper.activeDocKey || '')}
+      />
     </View>
   );
 };

@@ -45,6 +45,6 @@ public class Documents {
     @Column(name = "file_type", length = 100)
     private String fileType;
 
-    @Column(name = "image_data", columnDefinition = "TEXT")
+    @Column(name = "image_data", columnDefinition = "LONGTEXT")
     private String imageData;
 }

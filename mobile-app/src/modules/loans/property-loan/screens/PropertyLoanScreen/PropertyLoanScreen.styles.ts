@@ -1,45 +1,56 @@
 import { StyleSheet } from "react-native";
-import { BrandColors, Typography } from "../../../../../shared/theme";
+import { BrandColors } from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: BrandColors.WHITE,
   },
-  header: {
+  headerBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
     backgroundColor: BrandColors.WHITE,
   },
-  headerLeft: {
-    flexDirection: "row",
+  circularBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
     alignItems: "center",
-    gap: 12,
+    justifyContent: "center",
+  },
+  headerCenterContent: {
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+    paddingHorizontal: 12,
   },
   headerTitle: {
-    fontSize: Typography.fontSize.lg,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#0F2052",
+    textAlign: "center",
   },
   headerSubtitle: {
-    fontSize: Typography.fontSize.xs,
-    color: "#64748B",
-  },
-  saveDraftButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: "#F1F5F9",
-  },
-  saveDraftText: {
-    fontSize: Typography.fontSize.xs,
+    fontSize: 12,
     fontWeight: "600",
-    color: "#475569",
+    color: "#EA580C",
+    marginTop: 2,
+    textAlign: "center",
+  },
+  progressBarTrack: {
+    width: "100%",
+    height: 4,
+    backgroundColor: "#E2E8F0",
+  },
+  progressBarFill: {
+    height: "100%",
+    backgroundColor: "#EA580C",
   },
   scrollView: {
     flex: 1,
@@ -50,46 +61,52 @@ export const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   bottomBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: BrandColors.WHITE,
     borderTopWidth: 1,
     borderTopColor: "#E2E8F0",
+  },
+  bottomRow: {
+    flexDirection: "row",
     gap: 12,
   },
-  backButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backButtonText: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: "600",
-    color: "#475569",
-  },
-  nextButton: {
+  prevBtn: {
     flex: 1,
-    flexDirection: "row",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    backgroundColor: BrandColors.PRIMARY_BLUE,
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "#0F2052",
+    backgroundColor: BrandColors.WHITE,
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
   },
-  nextButtonDisabled: {
-    backgroundColor: "#94A3B8",
+  prevBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0F2052",
   },
-  nextButtonText: {
-    fontSize: Typography.fontSize.sm,
+  continueBtn: {
+    width: "100%",
+    paddingVertical: 14,
+    borderRadius: 10,
+    backgroundColor: "#EA580C",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  continueBtnFlex: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 10,
+    backgroundColor: "#EA580C",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  continueBtnDisabled: {
+    backgroundColor: "#FDBA74",
+  },
+  continueBtnText: {
+    fontSize: 15,
     fontWeight: "700",
     color: BrandColors.WHITE,
   },

@@ -34,10 +34,10 @@ public class GstCompliance {
     @Column(name = "gstr_2b_number", length = 50)
     private String gstr2bNumber;
 
-    @Column(name = "reconciliation_file_1", columnDefinition = "TEXT")
+    @Column(name = "reconciliation_file_1", columnDefinition = "LONGTEXT")
     private String reconciliationFile1;
 
-    @Column(name = "reconciliation_file_2", columnDefinition = "TEXT")
+    @Column(name = "reconciliation_file_2", columnDefinition = "LONGTEXT")
     private String reconciliationFile2;
 
     @Column(name = "notice_number", length = 100)
@@ -49,9 +49,9 @@ public class GstCompliance {
     @Column(name = "reply_due_date")
     private LocalDate replyDueDate;
 
-    @Column(name = "notice_file", columnDefinition = "TEXT")
+    @Column(name = "notice_file", columnDefinition = "LONGTEXT")
     private String noticeFile;
 
-    @Column(name = "message", columnDefinition = "TEXT")
+    @Column(name = "message", columnDefinition = "LONGTEXT")
     private String message;
 }

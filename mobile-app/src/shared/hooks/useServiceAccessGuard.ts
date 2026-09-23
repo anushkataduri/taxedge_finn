@@ -6,16 +6,19 @@ export function useServiceAccessGuard() {
   const router = useRouter();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const profileCompleted = useAuthStore((s) => s.profileCompleted);
+  const isExistingUser = useAuthStore((s) => s.isExistingUser);
+  const customerExists = useAuthStore((s) => s.customerExists);
   const customer = useAuthStore((s) => s.customer);
   const authenticatedUser = useAuthStore((s) => s.authenticatedUser);
   const openCompleteProfileModal = useAuthStore((s) => s.openCompleteProfileModal);
 
+  const rawName = customer?.name || authenticatedUser?.name || "";
   const hasValidName = Boolean(
-    customer?.name &&
-    customer.name.trim() !== "" &&
-    customer.name.toLowerCase() !== "valued client" &&
-    customer.name.toLowerCase() !== "client" &&
-    customer.name.toLowerCase() !== "valued"
+    rawName &&
+    rawName.trim() !== "" &&
+    rawName.toLowerCase() !== "valued client" &&
+    rawName.toLowerCase() !== "client" &&
+    rawName.toLowerCase() !== "valued"
   );
 
   const hasCustomerId = Boolean(
@@ -31,10 +34,9 @@ export function useServiceAccessGuard() {
   );
 
   const isProfileComplete = Boolean(
-    hasValidName &&
-    hasCustomerId &&
-    hasPanOrAadhaar &&
-    (profileCompleted || customer?.profileCompleted || authenticatedUser?.registrationCompleted)
+    (hasValidName && (profileCompleted || customer?.profileCompleted || authenticatedUser?.registrationCompleted || isExistingUser || customerExists)) ||
+    (hasValidName && hasCustomerId) ||
+    (hasValidName && hasPanOrAadhaar)
   );
 
   const accessService = useCallback(
@@ -78,16 +80,19 @@ export function useServiceProtection(targetRoute?: any) {
   const pathname = usePathname();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const profileCompleted = useAuthStore((s) => s.profileCompleted);
+  const isExistingUser = useAuthStore((s) => s.isExistingUser);
+  const customerExists = useAuthStore((s) => s.customerExists);
   const customer = useAuthStore((s) => s.customer);
   const authenticatedUser = useAuthStore((s) => s.authenticatedUser);
   const openCompleteProfileModal = useAuthStore((s) => s.openCompleteProfileModal);
 
+  const rawName = customer?.name || authenticatedUser?.name || "";
   const hasValidName = Boolean(
-    customer?.name &&
-    customer.name.trim() !== "" &&
-    customer.name.toLowerCase() !== "valued client" &&
-    customer.name.toLowerCase() !== "client" &&
-    customer.name.toLowerCase() !== "valued"
+    rawName &&
+    rawName.trim() !== "" &&
+    rawName.toLowerCase() !== "valued client" &&
+    rawName.toLowerCase() !== "client" &&
+    rawName.toLowerCase() !== "valued"
   );
 
   const hasCustomerId = Boolean(
@@ -103,10 +108,9 @@ export function useServiceProtection(targetRoute?: any) {
   );
 
   const isProfileComplete = Boolean(
-    hasValidName &&
-    hasCustomerId &&
-    hasPanOrAadhaar &&
-    (profileCompleted || customer?.profileCompleted || authenticatedUser?.registrationCompleted)
+    (hasValidName && (profileCompleted || customer?.profileCompleted || authenticatedUser?.registrationCompleted || isExistingUser || customerExists)) ||
+    (hasValidName && hasCustomerId) ||
+    (hasValidName && hasPanOrAadhaar)
   );
 
   useEffect(() => {

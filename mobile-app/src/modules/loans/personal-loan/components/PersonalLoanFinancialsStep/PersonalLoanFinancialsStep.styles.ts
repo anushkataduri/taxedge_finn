@@ -8,7 +8,7 @@ export const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: Typography.fontSize.lg,
     fontWeight: "700",
-    color: "#0F172A",
+    color: BrandColors.PRIMARY_BLUE_DARK,
     marginBottom: 4,
   },
   sectionSubtitle: {
@@ -22,7 +22,7 @@ export const styles = StyleSheet.create({
   label: {
     fontSize: Typography.fontSize.sm,
     fontWeight: "600",
-    color: "#334155",
+    color: BrandColors.PRIMARY_BLUE_DARK,
     marginBottom: 8,
   },
   requiredStar: {
@@ -66,8 +66,8 @@ export const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
   },
   chipActive: {
-    backgroundColor: "#EFF6FF",
-    borderColor: BrandColors.PRIMARY_BLUE,
+    backgroundColor: BrandColors.PRIMARY_LIGHT_ORANGE,
+    borderColor: BrandColors.PRIMARY_ORANGE,
   },
   chipText: {
     fontSize: Typography.fontSize.xs,
@@ -75,7 +75,7 @@ export const styles = StyleSheet.create({
     color: "#475569",
   },
   chipTextActive: {
-    color: BrandColors.PRIMARY_BLUE,
+    color: BrandColors.PRIMARY_ORANGE_DARK,
     fontWeight: "700",
   },
   toggleContainer: {
@@ -104,7 +104,7 @@ export const styles = StyleSheet.create({
     color: "#64748B",
   },
   toggleTextActive: {
-    color: BrandColors.PRIMARY_BLUE,
+    color: BrandColors.PRIMARY_ORANGE_DARK,
     fontWeight: "700",
   },
   tenureGrid: {
@@ -121,15 +121,15 @@ export const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
   },
   tenureBoxActive: {
-    backgroundColor: "#EFF6FF",
-    borderColor: BrandColors.PRIMARY_BLUE,
+    backgroundColor: BrandColors.PRIMARY_LIGHT_ORANGE,
+    borderColor: BrandColors.PRIMARY_ORANGE,
   },
   tenureText: {
     fontSize: Typography.fontSize.sm,
     color: "#475569",
   },
   tenureTextActive: {
-    color: BrandColors.PRIMARY_BLUE,
+    color: BrandColors.PRIMARY_ORANGE_DARK,
     fontWeight: "700",
   },
 });

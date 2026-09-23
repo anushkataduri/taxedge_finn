@@ -40,6 +40,6 @@ public class GstFilingDocuments {
     @Column(name = "file_type", nullable = false, length = 100)
     private String fileType;
 
-    @Column(name = "file_data", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "file_data", nullable = false, columnDefinition = "LONGTEXT")
     private String fileData;
 }

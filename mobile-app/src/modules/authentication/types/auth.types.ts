@@ -5,7 +5,8 @@ export type AuthFlowState =
   | "OTP_VERIFICATION"
   | "PASSCODE_LOGIN"
   | "FORGOT_PASSCODE_OTP"
-  | "RESET_PASSCODE";
+  | "RESET_PASSCODE"
+  | "BIOMETRIC_REAUTH";
 
 export interface RegistrationData {
   name: string;

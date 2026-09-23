@@ -127,7 +127,7 @@ export const tdsDraftService = {
     return null;
   },
 
-  saveDocumentsDraft: async (documents: TdsChecklistItem[]): Promise<void> => {
+  saveDocumentsDraft: async (documents: any[]): Promise<void> => {
     try {
       const cleanMobile = getCleanMobile();
       await AsyncStorage.setItem(getStorageKeyDocs(), JSON.stringify(documents));
@@ -151,7 +151,7 @@ export const tdsDraftService = {
     }
   },
 
-  getDocumentsDraft: async (): Promise<TdsChecklistItem[] | null> => {
+  getDocumentsDraft: async (): Promise<any[] | null> => {
     try {
       const raw = await AsyncStorage.getItem(getStorageKeyDocs());
       if (raw) {

@@ -42,7 +42,7 @@ public class SignatoryAmendmentEntity {
     private String fileName;
     private String fileType;
     @Lob
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "LONGTEXT")
     private String imageData;
     @Enumerated(EnumType.STRING)
     private AmendmentStatus status;

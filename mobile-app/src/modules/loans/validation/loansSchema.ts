@@ -46,13 +46,14 @@ export function validateLoanDetails(
     errors.employmentType = "Please select employment or business type";
   }
 
-  const incomeNum = Number(values.monthlyIncomeOrTurnover);
-  if (
-    !values.monthlyIncomeOrTurnover ||
-    isNaN(incomeNum) ||
-    incomeNum <= 0
-  ) {
+  const incomeStr = values.monthlyIncomeOrTurnover?.trim();
+  if (!incomeStr) {
     errors.monthlyIncomeOrTurnover = "Enter valid monthly income or annual turnover";
+  } else {
+    const incomeNum = Number(incomeStr);
+    if (!isNaN(incomeNum) && incomeNum <= 0) {
+      errors.monthlyIncomeOrTurnover = "Enter valid monthly income or annual turnover";
+    }
   }
 
   if (values.hasExistingLoans) {

@@ -54,8 +54,8 @@ export const PersonalLoanReviewStep: React.FC<PersonalLoanReviewStepProps> = ({
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Applicant Information</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <Ionicons name="checkmark-circle" size={14} color="#16A34A" />
-            <Text style={{ fontSize: 11, fontWeight: "600", color: "#16A34A" }}>
+            <Ionicons name="checkmark-circle" size={14} color={BrandColors.PRIMARY_ORANGE} />
+            <Text style={{ fontSize: 11, fontWeight: "600", color: BrandColors.PRIMARY_ORANGE_DARK }}>
               Verified Profile
             </Text>
           </View>
@@ -161,10 +161,6 @@ export const PersonalLoanReviewStep: React.FC<PersonalLoanReviewStepProps> = ({
           <Text style={styles.label}>IFSC Code</Text>
           <Text style={styles.value}>{bankingDetails.ifscCode || "—"}</Text>
         </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>ITR Filing Status</Text>
-          <Text style={styles.value}>{bankingDetails.itrFilingStatus}</Text>
-        </View>
       </View>
 
       {/* Uploaded Documents Card */}
@@ -187,7 +183,7 @@ export const PersonalLoanReviewStep: React.FC<PersonalLoanReviewStepProps> = ({
         <View style={styles.docsGrid}>
           {uploadedDocs.map((doc) => (
             <View key={doc.id} style={styles.docBadge}>
-              <Ionicons name="document-text" size={12} color="#15803D" />
+              <Ionicons name="document-text" size={12} color={BrandColors.PRIMARY_BLUE} />
               <Text style={styles.docBadgeText}>{doc.name}</Text>
             </View>
           ))}

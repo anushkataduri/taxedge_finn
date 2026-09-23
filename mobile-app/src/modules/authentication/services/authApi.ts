@@ -399,6 +399,33 @@ export const authApi = {
       return { success: false, message: error?.message || "Failed to fetch customer details" };
     }
   },
+
+  updateCustomerProfile: async (customerData: any): Promise<{ success: boolean; message?: string }> => {
+    try {
+      // Format DOB from DD/MM/YYYY or DD-MM-YYYY to YYYY-MM-DD for Spring Boot LocalDate if needed
+      let formattedDob = customerData.dob || "";
+      if (formattedDob && typeof formattedDob === "string") {
+        if (/^\d{2}[-\/]\d{2}[-\/]\d{4}$/.test(formattedDob)) {
+          const parts = formattedDob.split(/[-\/]/);
+          formattedDob = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+      }
+
+      const payload = {
+        ...customerData,
+        mobileNumber: customerData.mobileNumber ? customerData.mobileNumber.replace(/\D/g, "").slice(-10) : undefined,
+        dob: formattedDob || customerData.dob,
+      };
+
+      console.log("🚀 [API] Sending PUT /customer/update Payload:", payload);
+      const res = await apiClient.put<any>("/customer/update", payload);
+      console.log("✅ [API] Customer profile updated successfully on backend:", res);
+      return { success: true, message: typeof res === "string" ? res : "Profile updated successfully" };
+    } catch (error: any) {
+      console.error("❌ [API] Customer profile update error:", error);
+      return { success: false, message: error?.message || "Failed to update profile" };
+    }
+  },
 };
 
 export default authApi;

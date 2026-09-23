@@ -26,13 +26,13 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dotCompleted: {
-    backgroundColor: "#16A34A",
-    borderColor: "#16A34A",
-  },
-  dotCurrent: {
     backgroundColor: BrandColors.PRIMARY_BLUE,
     borderColor: BrandColors.PRIMARY_BLUE,
-    shadowColor: BrandColors.PRIMARY_BLUE,
+  },
+  dotCurrent: {
+    backgroundColor: BrandColors.PRIMARY_ORANGE,
+    borderColor: BrandColors.PRIMARY_ORANGE,
+    shadowColor: BrandColors.PRIMARY_ORANGE,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.4,
     shadowRadius: 4,
@@ -54,7 +54,7 @@ export const styles = StyleSheet.create({
     marginTop: 4,
   },
   lineCompleted: {
-    backgroundColor: "#16A34A",
+    backgroundColor: BrandColors.PRIMARY_BLUE,
   },
   contentCol: {
     flex: 1,
@@ -71,7 +71,7 @@ export const styles = StyleSheet.create({
     color: "#64748B",
   },
   stageTitleCurrent: {
-    color: BrandColors.PRIMARY_BLUE,
+    color: BrandColors.PRIMARY_ORANGE_DARK,
     fontWeight: "700",
   },
   stageTitleCompleted: {

@@ -1,135 +1,209 @@
 import { StyleSheet } from "react-native";
-import { BrandColors, Typography } from "../../../../../shared/theme";
+import { BrandColors } from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   container: {
     paddingBottom: 24,
   },
+  card: {
+    backgroundColor: BrandColors.WHITE,
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
   sectionTitle: {
-    fontSize: Typography.fontSize.lg,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#0F2052",
     marginBottom: 4,
   },
   sectionSubtitle: {
-    fontSize: Typography.fontSize.sm,
+    fontSize: 13,
     color: "#64748B",
-    marginBottom: 16,
+    marginBottom: 20,
+    lineHeight: 18,
   },
   fieldGroup: {
     marginBottom: 18,
   },
   label: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: "600",
-    color: "#334155",
-    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#0F2052",
+    marginBottom: 6,
   },
   requiredStar: {
     color: "#EF4444",
   },
-  helperText: {
-    fontSize: Typography.fontSize.xs,
-    color: "#64748B",
-    marginTop: 4,
-  },
-  errorText: {
-    fontSize: Typography.fontSize.xs,
-    color: "#EF4444",
-    marginTop: 4,
-  },
-  input: {
+  dropdownBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: BrandColors.WHITE,
     borderWidth: 1,
     borderColor: "#CBD5E1",
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: Typography.fontSize.base,
-    color: "#0F172A",
+  },
+  dropdownText: {
+    fontSize: 14,
+    color: "#0F2052",
+    fontWeight: "500",
+  },
+  dropdownPlaceholder: {
+    fontSize: 14,
+    color: "#334155",
+    fontWeight: "400",
+  },
+  dropdownMenu: {
+    backgroundColor: BrandColors.WHITE,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    borderRadius: 8,
+    marginTop: 4,
+    overflow: "hidden",
+  },
+  dropdownMenuItem: {
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+  },
+  dropdownMenuItemActive: {
+    backgroundColor: "#F0F7FF",
+  },
+  dropdownMenuText: {
+    fontSize: 13,
+    color: "#334155",
+    fontWeight: "500",
+  },
+  dropdownMenuTextActive: {
+    color: "#0F4C81",
+    fontWeight: "700",
+  },
+  amountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    borderRadius: 8,
+    overflow: "hidden",
+    backgroundColor: BrandColors.WHITE,
+  },
+  currencyPrefix: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#F1F5F9",
+    borderRightWidth: 1,
+    borderRightColor: "#CBD5E1",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  currencyPrefixText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0F2052",
+  },
+  amountInput: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#0F2052",
+  },
+  helperText: {
+    fontSize: 11,
+    color: "#64748B",
+    marginTop: 6,
+    lineHeight: 15,
+  },
+  errorText: {
+    fontSize: 11,
+    color: "#EF4444",
+    marginTop: 4,
   },
   inputError: {
     borderColor: "#EF4444",
   },
-  chipRow: {
+  segmentedToggle: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 8,
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: "#F1F5F9",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  chipActive: {
-    backgroundColor: "#EFF6FF",
-    borderColor: BrandColors.PRIMARY_BLUE,
-  },
-  chipText: {
-    fontSize: Typography.fontSize.xs,
-    fontWeight: "500",
-    color: "#475569",
-  },
-  chipTextActive: {
-    color: BrandColors.PRIMARY_BLUE,
-    fontWeight: "700",
-  },
-  toggleContainer: {
-    flexDirection: "row",
-    backgroundColor: "#F1F5F9",
+    borderColor: "#0F4C81",
     borderRadius: 8,
-    padding: 4,
+    overflow: "hidden",
+    marginTop: 4,
   },
-  toggleButton: {
+  toggleOption: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: "center",
-    borderRadius: 6,
-  },
-  toggleButtonActive: {
+    justifyContent: "center",
     backgroundColor: BrandColors.WHITE,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
-  toggleText: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: "500",
-    color: "#64748B",
+  toggleOptionActive: {
+    backgroundColor: "#0F4C81",
   },
-  toggleTextActive: {
-    color: BrandColors.PRIMARY_BLUE,
-    fontWeight: "700",
+  toggleOptionText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0F2052",
   },
-  tenureGrid: {
+  toggleOptionTextActive: {
+    color: BrandColors.WHITE,
+  },
+  emiCard: {
+    backgroundColor: "#F0F6FF",
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 10,
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+    alignItems: "flex-start",
+    gap: 12,
   },
-  tenureBox: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+  calcIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#DBEAFE",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  tenureBoxActive: {
-    backgroundColor: "#EFF6FF",
-    borderColor: BrandColors.PRIMARY_BLUE,
+  emiContent: {
+    flex: 1,
   },
-  tenureText: {
-    fontSize: Typography.fontSize.sm,
+  emiHeader: {
+    fontSize: 11,
+    fontWeight: "600",
     color: "#475569",
   },
-  tenureTextActive: {
-    color: BrandColors.PRIMARY_BLUE,
-    fontWeight: "700",
+  emiAmountRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 4,
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  emiAmount: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#0F2052",
+  },
+  emiPeriod: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#475569",
+  },
+  emiSubtitle: {
+    fontSize: 11,
+    color: "#64748B",
+    lineHeight: 15,
   },
 });

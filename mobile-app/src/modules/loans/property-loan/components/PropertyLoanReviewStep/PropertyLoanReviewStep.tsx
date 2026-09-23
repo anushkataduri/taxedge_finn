@@ -4,6 +4,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
 import {
   LoanDetailsFormData,
+  LoanPropertyFormData,
   LoanBusinessFormData,
   LoanBankingFormData,
   LoanDocumentItem,
@@ -13,6 +14,7 @@ import { styles } from "./PropertyLoanReviewStep.styles";
 
 export interface PropertyLoanReviewStepProps {
   loanDetails: LoanDetailsFormData;
+  propertyDetails?: LoanPropertyFormData;
   businessDetails: LoanBusinessFormData;
   bankingDetails: LoanBankingFormData;
   documents: LoanDocumentItem[];
@@ -24,6 +26,7 @@ export interface PropertyLoanReviewStepProps {
 
 export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
   loanDetails,
+  propertyDetails,
   businessDetails,
   bankingDetails,
   documents,
@@ -33,7 +36,7 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
   onGoToStep,
 }) => {
   const formatCurrency = (val?: string | number) => {
-    const num = Number(val);
+    const num = Number((val || "").toString().replace(/[^0-9]/g, ""));
     if (!val || isNaN(num)) return "₹0";
     return "₹" + num.toLocaleString("en-IN");
   };
@@ -52,10 +55,10 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
         Double-check your loan against property terms, title details, and financial papers.
       </Text>
 
-      {/* Title Holder Card */}
+      {/* Applicant Card */}
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Title Holder Information</Text>
+          <Text style={styles.cardTitle}>Applicant Information</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <Ionicons name="checkmark-circle" size={14} color="#16A34A" />
             <Text style={{ fontSize: 11, fontWeight: "600", color: "#16A34A" }}>
@@ -81,7 +84,7 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
       {/* Loan Facility Card */}
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Mortgage Facility</Text>
+          <Text style={styles.cardTitle}>Loan Requirement</Text>
           <TouchableOpacity
             style={styles.editAction}
             onPress={() => onGoToStep(0)}
@@ -102,7 +105,7 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
           </Text>
         </View>
         <View style={styles.row}>
-          <Text style={styles.label}>Collateral Purpose</Text>
+          <Text style={styles.label}>Loan Purpose</Text>
           <Text style={styles.value}>{loanDetails.purpose || "—"}</Text>
         </View>
         <View style={styles.row}>
@@ -113,13 +116,52 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
         </View>
       </View>
 
-      {/* Business Entity Card */}
+      {/* Property Details Card */}
+      {propertyDetails ? (
+        <View style={styles.summaryCard}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Property & Asset Details</Text>
+            <TouchableOpacity
+              style={styles.editAction}
+              onPress={() => onGoToStep(1)}
+            >
+              <Ionicons
+                name="create-outline"
+                size={14}
+                color={BrandColors.PRIMARY_BLUE}
+              />
+              <Text style={styles.editText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.row}>
+            <Text style={styles.label}>Property Type</Text>
+            <Text style={styles.value}>{propertyDetails.propertyType || "—"}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Ownership</Text>
+            <Text style={styles.value}>{propertyDetails.ownershipType || "—"}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Market Valuation</Text>
+            <Text style={styles.highlightValue}>
+              {formatCurrency(propertyDetails.estimatedMarketValue)}
+            </Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Location</Text>
+            <Text style={styles.value}>{propertyDetails.propertyAddress || "—"}</Text>
+          </View>
+        </View>
+      ) : null}
+
+      {/* Entity Details Card */}
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Entity & Asset Details</Text>
+          <Text style={styles.cardTitle}>Entity & Commercial Profile</Text>
           <TouchableOpacity
             style={styles.editAction}
-            onPress={() => onGoToStep(1)}
+            onPress={() => onGoToStep(2)}
           >
             <Ionicons
               name="create-outline"
@@ -131,8 +173,8 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
         </View>
 
         <View style={styles.row}>
-          <Text style={styles.label}>Entity / Firm Name</Text>
-          <Text style={styles.value}>{businessDetails.businessName}</Text>
+          <Text style={styles.label}>Entity Name</Text>
+          <Text style={styles.value}>{businessDetails.businessName || "—"}</Text>
         </View>
         {businessDetails.gstin ? (
           <View style={styles.row}>
@@ -141,16 +183,8 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
           </View>
         ) : null}
         <View style={styles.row}>
-          <Text style={styles.label}>Vintage</Text>
-          <Text style={styles.value}>{businessDetails.businessVintageYears} Years</Text>
-        </View>
-        <View style={styles.row}>
           <Text style={styles.label}>Annual Inflows</Text>
           <Text style={styles.value}>{formatCurrency(businessDetails.annualTurnover)}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Net Profit / Yield</Text>
-          <Text style={styles.value}>{formatCurrency(businessDetails.netProfit)}</Text>
         </View>
       </View>
 
@@ -160,7 +194,7 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
           <Text style={styles.cardTitle}>Disbursement Bank Account</Text>
           <TouchableOpacity
             style={styles.editAction}
-            onPress={() => onGoToStep(2)}
+            onPress={() => onGoToStep(3)}
           >
             <Ionicons
               name="create-outline"
@@ -193,7 +227,7 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
           <Text style={styles.cardTitle}>Uploaded Records</Text>
           <TouchableOpacity
             style={styles.editAction}
-            onPress={() => onGoToStep(3)}
+            onPress={() => onGoToStep(4)}
           >
             <Ionicons
               name="create-outline"

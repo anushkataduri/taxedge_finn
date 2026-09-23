@@ -62,14 +62,19 @@ export const authStorage = {
       return {};
     }
   },
-  getUserByMobile: (mobile: string): DevUser | null =>
-    authStorage.getUsersMap()[mobile.replace(/\D/g, "")] || null,
+  getUserByMobile: (mobile: string): DevUser | null => {
+    if (!mobile) return null;
+    const clean = mobile.replace(/\D/g, "").slice(-10);
+    return authStorage.getUsersMap()[clean] || null;
+  },
   getUser: (): DevUser | null => {
     const s = authStorage.getSession();
     return s.activeMobile ? authStorage.getUserByMobile(s.activeMobile) : null;
   },
   saveUser: (user: DevUser) => {
-    const cleanMobile = user.mobileNumber.replace(/\D/g, "");
+    const rawMob = user.mobileNumber || "";
+    const cleanMobile = rawMob.replace(/\D/g, "").slice(-10);
+    if (!cleanMobile) return;
     const map = authStorage.getUsersMap();
     const existing = map[cleanMobile] || {};
     const regCompleted =

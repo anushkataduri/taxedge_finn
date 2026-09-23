@@ -3,12 +3,10 @@ package com.taxedge.itr.entity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.taxedge.itr.enums.TaxRegime;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -36,8 +34,9 @@ public class IncomeTaxInfo {
     private Long id;                                 
 
 
-    @ManyToOne
-    @JoinColumn(name = "refund_bank_account_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tds_refund_id",
+                foreignKey = @ForeignKey(name = "fk_income_tax_refund"))
     private RefundBankAccount refundBankAccount;
 
     @Column(name = "salary_income")

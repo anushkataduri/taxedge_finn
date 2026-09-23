@@ -3,6 +3,7 @@ import type { Customer, CustomerProfile } from "../../../shared/types/domain";
 import type { DevUser, AuthState, AuthFlowState } from "../types/auth.types";
 import { authService } from "../services/authService";
 import { authStorage } from "../services/authStorage";
+import { authApi } from "../services/authApi";
 import { biometricService } from "../services/biometricService";
 import {
   validateLoginPhone,
@@ -41,10 +42,12 @@ const toCustomer = (u: DevUser): Customer => {
     avatarUri: u.avatarUri,
     profileCompleted: Boolean(
       !isPlaceholderName &&
-      u.customerId &&
-      u.customerId.trim() !== "" &&
-      (u.pan || u.aadhaar || (u as any).adhar) &&
-      (u.registrationCompleted || (u as any).profileCompleted)
+      (
+        Boolean(u.customerId && u.customerId.trim() !== "") ||
+        Boolean(u.registrationCompleted) ||
+        Boolean((u as any).profileCompleted) ||
+        Boolean(u.pan || u.aadhaar || (u as any).adhar)
+      )
     ),
     hasPasscode: Boolean(u.passcode || (u as any).hasPasscode || hasBackendIdentity),
   };
@@ -67,6 +70,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     initialUser &&
     (initialUser.registrationCompleted ||
      (initialUser as any).profileCompleted ||
+     Boolean(initialUser.customerId && initialUser.customerId.trim() !== "") ||
      (initialUser.passcode && initialUser.passcode.length === 6))
   ),
   hasPasscode: Boolean(initialUser && (initialUser.passcode || (initialUser as any).hasPasscode)),
@@ -149,7 +153,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return res;
   },
 
-  // Sync customer profile into auth state from local storage
+  // Sync customer profile into auth state from local storage and backend API
   fetchAndSyncProfile: async (identifier?: string) => {
     try {
       const activeMobile =
@@ -166,10 +170,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return { success: false, isComplete: false, customer: null };
       }
       const cleanMobile = String(activeMobile).replace(/\D/g, "");
-      const d: any = (cleanMobile ? authStorage.getUserByMobile(cleanMobile) : null) || authStorage.getUser();
+
+      // 1. Fetch fresh customer profile details from backend database if available
+      let backendCustomer: any = null;
+      try {
+        const backendRes = await authApi.getCustomerDetails(cleanMobile);
+        if (backendRes?.success && backendRes?.data) {
+          backendCustomer = backendRes.data;
+        }
+      } catch (err) {
+        console.warn("⚠️ [authStore] Backend getCustomerDetails failed in fetchAndSyncProfile:", err);
+      }
+
+      const d: any = backendCustomer || (cleanMobile ? authStorage.getUserByMobile(cleanMobile) : null) || authStorage.getUser();
       if (d && typeof d === "object") {
-        const custId = d.customerId || d.custId || "";
-        const name = d.name || d.fullName || "";
+        const currentU = get().authenticatedUser || authStorage.getUser();
+        const custId = d.customerId || d.custId || currentU?.customerId || "";
+        const name = d.name || d.fullName || currentU?.name || "";
         const isPlaceholderName =
           !name ||
           name.trim() === "" ||
@@ -177,15 +194,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           name.toLowerCase() === "client" ||
           name.toLowerCase() === "valued";
 
-        const hasRealIdentity = Boolean(custId && custId.trim() !== "" && !isPlaceholderName);
-        const hasPanOrAadhaar = Boolean(d.pan || d.aadhaar || d.adhar);
+        const hasRealIdentity = Boolean(name && name.trim() !== "" && !isPlaceholderName);
         const isComplete = Boolean(
           hasRealIdentity &&
-          hasPanOrAadhaar &&
-          (d.profileCompleted === true || d.registrationCompleted === true)
+          (Boolean(custId) || d.profileCompleted === true || d.registrationCompleted === true || Boolean(d.pan || d.aadhaar || d.adhar))
         );
 
-        const currentU = get().authenticatedUser || authStorage.getUser();
         const mergedUser: DevUser = {
           customerId: custId || currentU?.customerId || "",
           name: name || currentU?.name || "",
@@ -212,10 +226,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const custObj = toCustomer(mergedUser);
 
         set({
-          customerExists: Boolean(custId),
-          isExistingUser: Boolean(custId),
+          customerExists: Boolean(custId || hasRealIdentity),
+          isExistingUser: Boolean(custId || hasRealIdentity),
           profileCompleted: isComplete,
-          hasPasscode: Boolean(mergedUser.passcode),
+          hasPasscode: Boolean(mergedUser.passcode || custId),
           authenticatedUser: mergedUser,
           customer: custObj,
         });

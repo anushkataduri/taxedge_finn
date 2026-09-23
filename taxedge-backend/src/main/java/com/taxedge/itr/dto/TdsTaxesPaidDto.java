@@ -15,7 +15,7 @@ public class TdsTaxesPaidDto {
 
 	private Long id;
 	private String custId;
-//	private String refundBankAccountId;          // new
+	private String tdsRefundId;
 	private BigDecimal totalTdsDeducted;
 	private BigDecimal tcsAmount;
 	private BigDecimal advanceTax;

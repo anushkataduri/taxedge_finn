@@ -56,12 +56,25 @@ const ITR_3D_ICONS: Record<string, any> = {
   "tax-notice-assistance": require("../../../assets/images/services/itr/tax_notice_assistance.png"),
 };
 
+const LOAN_3D_ICONS: Record<string, any> = {
+  "business-loan": require("../../../assets/images/services/loans/business-loan.png"),
+  "personal-loan": require("../../../assets/images/services/loans/personal-loan.png"),
+  "home-loan": require("../../../assets/images/services/loans/home-loan.png"),
+  "property-loan": require("../../../assets/images/services/loans/property-loan.png"),
+  "vehicle-loan": require("../../../assets/images/services/loans/vehicle-loan.png"),
+  "working-capital": require("../../../assets/images/services/loans/working-capital.png"),
+  "machinery-loan": require("../../../assets/images/services/loans/machinery-loan.png"),
+  "project-finance": require("../../../assets/images/services/loans/project-finance.png"),
+  "msme-loan": require("../../../assets/images/services/loans/msme-loan.png"),
+};
+
 const renderCardIcon = (item: ServiceCardData) => {
   const bg = item.iconBg || "#EDF9F3";
   const icon3D =
     item.iconImage ||
     GST_3D_ICONS[item.id] ||
     ITR_3D_ICONS[item.id] ||
+    LOAN_3D_ICONS[item.id] ||
     (item.iconType ? GST_3D_ICONS[item.iconType] : undefined);
 
   if (icon3D) {

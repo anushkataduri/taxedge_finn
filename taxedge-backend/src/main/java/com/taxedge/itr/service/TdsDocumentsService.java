@@ -7,4 +7,6 @@ public interface TdsDocumentsService {
     String saveDocuments(TdsDocumentsDto dto);
 
     String updateDocuments(Long id, TdsDocumentsDto dto);
+    
+    TdsDocumentsDto      getDocuments(String tdsRefundId);
 }

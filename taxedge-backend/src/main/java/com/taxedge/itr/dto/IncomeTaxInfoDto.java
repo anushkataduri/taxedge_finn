@@ -20,6 +20,7 @@ import lombok.Setter;
 @Builder
 public class IncomeTaxInfoDto {
 	private Long id;                                 
+	private String tdsRefundId;
 
     private BigDecimal salaryIncome;
 

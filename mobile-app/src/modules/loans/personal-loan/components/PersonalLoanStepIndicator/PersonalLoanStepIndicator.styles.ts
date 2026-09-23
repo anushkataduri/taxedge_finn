@@ -29,12 +29,12 @@ export const styles = StyleSheet.create({
     borderColor: "#CBD5E1",
   },
   stepCircleActive: {
-    backgroundColor: BrandColors.PRIMARY_BLUE,
-    borderColor: BrandColors.PRIMARY_BLUE,
+    backgroundColor: BrandColors.PRIMARY_ORANGE,
+    borderColor: BrandColors.PRIMARY_ORANGE,
   },
   stepCircleCompleted: {
-    backgroundColor: "#16A34A",
-    borderColor: "#16A34A",
+    backgroundColor: BrandColors.PRIMARY_BLUE,
+    borderColor: BrandColors.PRIMARY_BLUE,
   },
   stepNumber: {
     fontSize: Typography.fontSize.xs,
@@ -52,7 +52,7 @@ export const styles = StyleSheet.create({
     textAlign: "center",
   },
   stepTitleActive: {
-    color: BrandColors.PRIMARY_BLUE,
+    color: BrandColors.PRIMARY_ORANGE_DARK,
     fontWeight: "700",
   },
   stepLine: {
@@ -65,6 +65,6 @@ export const styles = StyleSheet.create({
     zIndex: -1,
   },
   stepLineCompleted: {
-    backgroundColor: "#16A34A",
+    backgroundColor: BrandColors.PRIMARY_BLUE,
   },
 });

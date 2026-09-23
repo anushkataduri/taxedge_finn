@@ -21,11 +21,8 @@ export default function Index() {
       hasTriggeredLaunch.current = true;
 
       try {
-        // 1. Initialize authStorage with 800ms safety timeout
-        await Promise.race([
-          authStorage.initAsync(),
-          new Promise((resolve) => setTimeout(resolve, 800)),
-        ]);
+        // Wait for persisted auth data before deciding which launch flow to show.
+        await authStorage.initAsync();
 
         const session = authStorage.getSession();
         const activeMobile = session?.activeMobile;
@@ -36,11 +33,11 @@ export default function Index() {
           // Sync profile in background if available
           useAuthStore.getState().fetchAndSyncProfile(user.mobileNumber).catch(() => {});
 
-          // Step 1: Check if Biometric authentication is enabled for this user on this device
+          // Step 1: Returning users with enrolled biometrics start at Welcome Back.
           let isBioEnabled = false;
           try {
             isBioEnabled = await Promise.race([
-              biometricService.isBiometricEnabled(user.mobileNumber),
+              biometricService.isBiometricAvailable(),
               new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 800)),
             ]);
           } catch {
@@ -48,48 +45,25 @@ export default function Index() {
           }
 
           if (isBioEnabled) {
-            // YES: Prompt Face ID / Fingerprint immediately
-            const typeLabel = await biometricService.getBiometricTypeLabel().catch(() => "Biometrics");
-            const authRes = await biometricService.authenticate({
-              promptMessage: `Authenticate with ${typeLabel}`,
-              disableDeviceFallback: true,
+            // Biometric enabled: navigate to auth screen in BIOMETRIC_REAUTH mode.
+            // The auth screen will trigger the biometric prompt automatically after mounting.
+            // We do NOT call biometricService.authenticate() here — the UI must be visible first.
+            useAuthStore.setState({
+              isLoggedIn: false,
+              mobileNumber: user.mobileNumber,
+              authFlowState: "BIOMETRIC_REAUTH",
             });
-
-            if (!isMounted) return;
-
-            if (authRes.success) {
-              // Biometric succeeds -> Go to Home / Dashboard
-              authStorage.saveSession({
-                isLoggedIn: true,
-                activeMobile: user.mobileNumber,
-                lastLoginAt: new Date().toISOString(),
-              });
-              useAuthStore.getState().syncFromDevAuth();
-              if (!hasNavigated.current) {
-                hasNavigated.current = true;
-                router.replace("/(main)/home" as any);
-              }
-              return;
-            } else {
-              // Biometric fails or is cancelled -> Fall back to App Passcode or Login
-              const hasPass = (await passcodeService.hasPasscode(user.mobileNumber)) || Boolean(user.hasPasscode);
-              useAuthStore.setState({
-                isLoggedIn: false,
-                mobileNumber: user.mobileNumber,
-                authFlowState: hasPass ? "PASSCODE_LOGIN" : "ENTER_MOBILE",
-              });
-              if (!hasNavigated.current) {
-                hasNavigated.current = true;
-                router.replace("/(auth)/login" as any);
-              }
-              return;
+            if (!hasNavigated.current) {
+              hasNavigated.current = true;
+              router.replace("/(auth)/login" as any);
             }
+            return;
           }
 
-          // Step 2: Biometric is NO. Is App Passcode enabled?
+          // Step 2: Biometric is disabled. Is App Passcode enabled?
           const hasPass = (await passcodeService.hasPasscode(user.mobileNumber)) || Boolean(user.hasPasscode);
           if (hasPass) {
-            // YES: Prompt App Passcode -> Go to Home upon successful passcode entry
+            // Prompt App Passcode — numpad will appear in the auth screen
             useAuthStore.setState({
               isLoggedIn: false,
               mobileNumber: user.mobileNumber,

@@ -34,8 +34,9 @@ public class TdsTaxesPaid {
     private Long id;                                  
 
 
-    @ManyToOne
-    @JoinColumn(name = "refund_bank_account_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tds_refund_id",
+                foreignKey = @ForeignKey(name = "fk_tds_taxes_refund"))
     private RefundBankAccount refundBankAccount;
 
     @Column(name = "total_tds_deducted", nullable = false)

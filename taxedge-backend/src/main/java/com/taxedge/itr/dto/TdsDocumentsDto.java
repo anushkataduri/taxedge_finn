@@ -19,6 +19,7 @@ import lombok.Setter;
 public class TdsDocumentsDto {
 
 	private Long id;
+	private String tdsRefundId;
 
     private byte[] panFile;
 

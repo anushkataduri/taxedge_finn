@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,9 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Keyboard,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,6 +17,8 @@ import { BrandColors } from "../../../../../shared/theme";
 import { useAuthStore } from "../../../../authentication/store/authStore";
 import { loansApi } from "../../../services/loansApi";
 import { INDIVIDUAL_DOCUMENTS_TEMPLATE } from "../../../mock/loanServices";
+import { UniversalDraftModal } from "../../../../../shared/components/UniversalDraftModal";
+import { useServiceDraft } from "../../../../../shared/hooks/useServiceDraft";
 import {
   LoanDetailsFormData,
   LoanBankingFormData,
@@ -36,11 +41,60 @@ import {
 import { styles } from "./PersonalLoanScreen.styles";
 
 const STEPS = ["Financials", "Banking", "Documents", "Review"];
+const PERSONAL_LOAN_DOCUMENTS_TEMPLATE = INDIVIDUAL_DOCUMENTS_TEMPLATE.filter((doc) =>
+  ["pan", "aadhaar", "bank-statements", "salary-slips", "address-proof", "photograph"].includes(doc.id)
+);
+
+const INITIAL_LOAN_DETAILS: LoanDetailsFormData = {
+  loanType: "Personal Loan",
+  requiredAmount: "",
+  purpose: "",
+  preferredTenureMonths: "",
+  hasExistingLoans: false,
+  existingEmi: "",
+  monthlyIncomeOrTurnover: "",
+  employmentType: "Salaried",
+};
+
+const INITIAL_BANKING_DETAILS: LoanBankingFormData = {
+  primaryBankName: "",
+  accountNumber: "",
+  ifscCode: "",
+};
 
 export const PersonalLoanScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (event) => setKeyboardHeight(event.endCoordinates.height)
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboardHeight(0)
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  const handleInputFocus = (field: string) => {
+    const offsets: Record<string, number> = {
+      requiredAmount: 80,
+      purpose: 220,
+      monthlyIncomeOrTurnover: 520,
+    };
+    scrollViewRef.current?.scrollTo({
+      y: offsets[field] || 0,
+      animated: true,
+    });
+  };
 
   const customer = useAuthStore((s) => s.customer);
 
@@ -50,31 +104,52 @@ export const PersonalLoanScreen: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Form State
-  const [loanDetails, setLoanDetails] = useState<LoanDetailsFormData>({
-    loanType: "Personal Loan",
-    requiredAmount: "500000",
-    purpose: "Personal Requirement",
-    preferredTenureMonths: "36",
-    hasExistingLoans: false,
-    existingEmi: "",
-    monthlyIncomeOrTurnover: "75000",
-    employmentType: "Salaried",
-  });
-
-  const [bankingDetails, setBankingDetails] = useState<LoanBankingFormData>({
-    primaryBankName: "",
-    accountNumber: "",
-    ifscCode: "",
-    existingLenderName: "",
-    existingLoanOutstanding: "",
-    itrFilingStatus: "Filed",
-    itrAckNumber: "",
-    grossTotalIncome: "",
-  });
+  const [loanDetails, setLoanDetails] = useState<LoanDetailsFormData>(INITIAL_LOAN_DETAILS);
+  const [bankingDetails, setBankingDetails] = useState<LoanBankingFormData>(INITIAL_BANKING_DETAILS);
 
   const [documents, setDocuments] = useState<LoanDocumentItem[]>(() =>
-    JSON.parse(JSON.stringify(INDIVIDUAL_DOCUMENTS_TEMPLATE))
+    JSON.parse(JSON.stringify(PERSONAL_LOAN_DOCUMENTS_TEMPLATE))
   );
+
+  const isFormDirty = useCallback(() => {
+    return Boolean(
+      loanDetails.requiredAmount.trim() ||
+        loanDetails.purpose.trim() ||
+        loanDetails.preferredTenureMonths ||
+      loanDetails.hasExistingLoans ||
+      loanDetails.existingEmi.trim() ||
+        loanDetails.monthlyIncomeOrTurnover.trim() ||
+      loanDetails.employmentType !== INITIAL_LOAN_DETAILS.employmentType ||
+        bankingDetails.primaryBankName.trim() ||
+        bankingDetails.accountNumber.trim() ||
+        bankingDetails.ifscCode.trim() ||
+        documents.some((document) => document.fileUri) ||
+        currentStepIndex > 0
+    );
+  }, [bankingDetails, currentStepIndex, documents, loanDetails]);
+
+  const {
+    showDraftModal,
+    openDraftModal,
+    markSubmitted,
+    handleSaveAndExit,
+    handleDiscardAndExit,
+    handleCancel,
+    clearDraft,
+  } = useServiceDraft({
+    serviceKey: "personal-loan",
+    formData: { currentStepIndex, loanDetails, bankingDetails, documents },
+    isDirty: isFormDirty,
+    onRestore: (saved) => {
+      if (saved.loanDetails) setLoanDetails(saved.loanDetails);
+      if (saved.bankingDetails) setBankingDetails(saved.bankingDetails);
+      if (saved.documents) setDocuments(saved.documents);
+      if (typeof saved.currentStepIndex === "number") {
+        setCurrentStepIndex(saved.currentStepIndex);
+      }
+    },
+    isSubmitted: isSubmitting,
+  });
 
   const handleDetailsChange = (field: keyof LoanDetailsFormData, value: any) => {
     setLoanDetails((prev) => ({ ...prev, [field]: value }));
@@ -89,7 +164,7 @@ export const PersonalLoanScreen: React.FC = () => {
 
   const handleBankingChange = (
     field: keyof LoanBankingFormData,
-    value: string
+    value: any
   ) => {
     setBankingDetails((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -122,9 +197,25 @@ export const PersonalLoanScreen: React.FC = () => {
     );
   };
 
+  const handleDocumentRemoved = (docId: string) => {
+    setDocuments((prev) =>
+      prev.map((document) =>
+        document.id === docId
+          ? {
+              ...document,
+              fileUri: undefined,
+              fileName: undefined,
+              fileSize: undefined,
+              uploadedAt: undefined,
+            }
+          : document
+      )
+    );
+  };
+
   const validateCurrentStep = (): boolean => {
     if (currentStepIndex === 0) {
-      const errs = validateLoanDetails(loanDetails);
+      const errs = validateLoanDetails(loanDetails, { requireExistingEmi: false });
       setErrors(errs);
       return Object.keys(errs).length === 0;
     }
@@ -167,6 +258,8 @@ export const PersonalLoanScreen: React.FC = () => {
     if (currentStepIndex > 0) {
       setCurrentStepIndex((prev) => prev - 1);
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    } else if (isFormDirty()) {
+      openDraftModal();
     } else {
       router.back();
     }
@@ -193,6 +286,8 @@ export const PersonalLoanScreen: React.FC = () => {
       };
 
       const response = await loansApi.applyLoan(draft);
+      markSubmitted();
+      await clearDraft();
       Alert.alert(
         "Personal Loan Submitted",
         `Your application (Ref: ${response.referenceNumber}) has been submitted. Our credit team will verify your dossier shortly.`,
@@ -201,7 +296,7 @@ export const PersonalLoanScreen: React.FC = () => {
             text: "Track Status",
             onPress: () => {
               router.replace(
-                `/service/loan-status?id=${response.applicationId}&loanType=Personal+Loan` as any
+                `/service/loan-status?id=${response.applicationId}&loanType=Personal+Loan&amount=${response.amount}` as any
               );
             },
           },
@@ -224,6 +319,7 @@ export const PersonalLoanScreen: React.FC = () => {
               data={loanDetails}
               onChange={handleDetailsChange}
               errors={errors}
+              onInputFocus={handleInputFocus}
             />
           </>
         );
@@ -233,7 +329,6 @@ export const PersonalLoanScreen: React.FC = () => {
             data={bankingDetails}
             onChange={handleBankingChange}
             errors={errors}
-            hasExistingLoans={loanDetails.hasExistingLoans}
           />
         );
       case 2:
@@ -241,6 +336,8 @@ export const PersonalLoanScreen: React.FC = () => {
           <PersonalLoanDocumentsStep
             documents={documents}
             onDocumentUploaded={handleDocumentUploaded}
+            onDocumentRemoved={handleDocumentRemoved}
+            scrollRef={scrollViewRef}
           />
         );
       case 3:
@@ -280,12 +377,7 @@ export const PersonalLoanScreen: React.FC = () => {
           </View>
         </View>
 
-        <TouchableOpacity
-          style={styles.saveDraftButton}
-          onPress={() => Alert.alert("Draft Saved", "Personal loan draft saved.")}
-        >
-          <Text style={styles.saveDraftText}>Save Draft</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRightSpacer} />
       </View>
 
       {/* Step Progress Stepper */}
@@ -299,30 +391,41 @@ export const PersonalLoanScreen: React.FC = () => {
         }}
       />
 
-      {/* Scrollable Step Form */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
       >
-        {renderActiveStep()}
-      </ScrollView>
+        {/* Scrollable Step Form */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: Math.max(keyboardHeight + 96, insets.bottom + 40) },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets
+        >
+          {renderActiveStep()}
+        </ScrollView>
 
-      {/* Sticky Bottom Actions */}
-      <View
-        style={[
-          styles.bottomBar,
-          { paddingBottom: Math.max(insets.bottom, 12) },
-        ]}
-      >
+        {/* Sticky Bottom Actions */}
+        <View
+          style={[
+            styles.bottomBar,
+            { paddingBottom: Math.max(insets.bottom, 12) },
+          ]}
+        >
         <TouchableOpacity
           style={styles.backButton}
           onPress={handleBack}
           disabled={isSubmitting}
         >
           <Text style={styles.backButtonText}>
-            {currentStepIndex === 0 ? "Cancel" : "Back"}
+            Back
           </Text>
         </TouchableOpacity>
 
@@ -346,7 +449,17 @@ export const PersonalLoanScreen: React.FC = () => {
             </>
           )}
         </TouchableOpacity>
-      </View>
+        </View>
+      </KeyboardAvoidingView>
+
+      <UniversalDraftModal
+        visible={showDraftModal}
+        title="Save Personal Loan Draft?"
+        message="You have entered information for your personal loan. Save your progress to resume anytime."
+        onSaveAndExit={handleSaveAndExit}
+        onDiscardAndExit={handleDiscardAndExit}
+        onCancel={handleCancel}
+      />
     </View>
   );
 };

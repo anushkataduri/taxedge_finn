@@ -3,6 +3,7 @@ import { View, Text } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { CustomerProfileSummary } from "../../../types/loans.types";
 import { styles } from "./PersonalLoanCustomerCard.styles";
+import { BrandColors } from "../../../../../shared/theme";
 
 export interface PersonalLoanCustomerCardProps {
   profile?: Partial<CustomerProfileSummary>;
@@ -37,7 +38,7 @@ export const PersonalLoanCustomerCard: React.FC<PersonalLoanCustomerCardProps> =
           <Text style={styles.cardTitle}>Applicant Identity Details</Text>
         </View>
         <View style={styles.verifiedBadge}>
-          <Ionicons name="shield-checkmark" size={12} color="#16A34A" />
+          <Ionicons name="shield-checkmark" size={12} color={BrandColors.PRIMARY_ORANGE} />
           <Text style={styles.verifiedText}>Verified Profile</Text>
         </View>
       </View>

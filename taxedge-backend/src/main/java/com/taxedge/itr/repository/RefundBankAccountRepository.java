@@ -9,4 +9,5 @@ import com.taxedge.itr.entity.RefundBankAccount;
 public interface RefundBankAccountRepository extends JpaRepository<RefundBankAccount, String> {
 
     Optional<RefundBankAccount> findByIdAndCustId(String id, String custId);
+    Optional<RefundBankAccount> findTopByCustIdOrderByCreatedAtDesc(String custId);
 }

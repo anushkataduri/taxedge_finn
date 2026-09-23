@@ -58,7 +58,7 @@ export const BusinessLoanScreen: React.FC = () => {
     requiredAmount: "",
     purpose: "",
     preferredTenureMonths: "",
-    hasExistingLoans: undefined,
+    hasExistingLoans: false,
     existingEmi: "",
     monthlyIncomeOrTurnover: "",
     employmentType: "" as any,

@@ -136,7 +136,7 @@ export const styles = StyleSheet.create({
   fileNameText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#15803D",
+    color: BrandColors.PRIMARY_BLUE,
     maxWidth: 160,
   },
   fileSizeText: {
@@ -162,51 +162,23 @@ export const styles = StyleSheet.create({
   replaceButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#DCFCE7",
+    backgroundColor: BrandColors.PRIMARY_LIGHT_ORANGE,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 6,
     gap: 4,
   },
+  uploadActions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   replaceButtonText: {
     fontSize: Typography.fontSize.xs,
     fontWeight: "600",
-    color: "#16A34A",
+    color: BrandColors.PRIMARY_ORANGE_DARK,
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "flex-end",
-  },
-  sheetContent: {
-    backgroundColor: BrandColors.WHITE,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 36,
-  },
-  sheetHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  sheetTitle: {
-    fontSize: Typography.fontSize.base,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  sheetOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-    gap: 12,
-  },
-  sheetOptionText: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: "600",
-    color: "#1E293B",
+  removeButton: {
+    padding: 7,
+    marginLeft: 4,
   },
 });

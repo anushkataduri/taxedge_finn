@@ -14,7 +14,6 @@ import com.taxedge.customer.exception.DuplicateResourceException;
 import com.taxedge.customer.exception.InvalidCredentialsException;
 import com.taxedge.customer.helper.CustomerHelper;
 import com.taxedge.customer.repository.CustomerRepository;
-import com.taxedge.notification.email.service.EmailService;
 import com.taxedge.notification.service.FcmNotificationServiceImpl;
 import com.taxedge.security.jwt.CustomerJwt;
 import com.taxedge.security.jwt.service.JwtService;
@@ -27,9 +26,6 @@ public class CustomerServiceImpl implements CustomerService {
 
 	@Autowired
 	private FcmNotificationServiceImpl fcmNotificationService;
-
-	@Autowired
-	private EmailService emailService;
 	
     @Autowired
     private CustomerRepository customerRepository;
@@ -77,19 +73,6 @@ public class CustomerServiceImpl implements CustomerService {
                     savedCustomer.getPushToken(),
                     savedCustomer.getName()
             );
-        }
-
-        // Trigger welcome email (isolated so SMTP failure never impacts registration success)
-        try {
-            if (savedCustomer.getEmail() != null && !savedCustomer.getEmail().isBlank()) {
-                emailService.sendWelcomeEmail(
-                        savedCustomer.getEmail(),
-                        savedCustomer.getName(),
-                        savedCustomer.getCustId()
-                );
-            }
-        } catch (Exception e) {
-            // Fail-safe guarantee: registration stays successful
         }
 
         String accessToken = jwtService.generateToken(
@@ -178,8 +161,17 @@ public class CustomerServiceImpl implements CustomerService {
 
 	@Override
 	public CustomerDto getDetails(String custId) {
-		Customer customer = customerRepository.findById(custId)
-				.orElseThrow(() -> new RuntimeException("Customer not found with id: " + custId));
+		Customer customer = (custId != null && !custId.isBlank())
+				? customerRepository.findById(custId).orElse(null)
+				: null;
+
+		if (customer == null && custId != null && !custId.isBlank()) {
+			customer = customerRepository.findByMobileNumber(custId.trim()).orElse(null);
+		}
+
+		if (customer == null) {
+			throw new RuntimeException("Customer not found with id or mobile: " + custId);
+		}
 
 		CustomerDto customerDto = CustomerDto.builder()
 				.custId(customer.getCustId())

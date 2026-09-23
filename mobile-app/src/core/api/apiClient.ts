@@ -1,9 +1,15 @@
-import Constants from "expo-constants";
-import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ApiError } from "./apiError";
 import { InterceptorManager } from "./interceptors";
 import { tokenRefreshManager } from "../authentication/tokenRefreshManager";
+import {
+  getDefaultBaseUrl,
+  SERVER_IP,
+  SERVER_PORT,
+  STORAGE_KEY_SERVER_URL,
+} from "./apiConfig";
+
+export { getDefaultBaseUrl, SERVER_IP, SERVER_PORT, STORAGE_KEY_SERVER_URL } from "./apiConfig";
 
 /**
  * Paths that should NEVER trigger a silent refresh on 401.
@@ -29,51 +35,6 @@ export interface RequestOptions {
  * Server Network Configuration
  * Change IP and Port here to point the mobile app to your backend.
  */
-export const SERVER_IP = "192.168.88.25";
-
-export const SERVER_PORT = 8086;
-
-export const STORAGE_KEY_SERVER_URL = "@taxedge_server_url";
-
-export function getDefaultBaseUrl(): string {
-  // 1. Highest priority: environment-driven URL for production/staging/EAS build
-  if (
-    process.env.EXPO_PUBLIC_API_URL &&
-    process.env.EXPO_PUBLIC_API_URL.trim() !== ""
-  ) {
-    return process.env.EXPO_PUBLIC_API_URL.trim();
-  }
-
-  // 2. Web fallback
-  if (Platform.OS === "web") {
-    if (typeof window !== "undefined" && window.location?.hostname) {
-      const host = window.location.hostname;
-      if (host && host !== "localhost" && host !== "127.0.0.1") {
-        return `http://${host}:${SERVER_PORT}`;
-      }
-    }
-    return `http://${SERVER_IP}:${SERVER_PORT}`;
-  }
-
-  // 3. Expo Go host IP detection if running inside Expo Go
-  try {
-    const hostUri =
-      Constants.expoConfig?.hostUri ||
-      (Constants as any).manifest?.debuggerHost ||
-      (Constants as any).manifest2?.extra?.expoGo?.debuggerHost;
-
-    if (hostUri) {
-      const ip = hostUri.split(":")[0];
-      if (ip && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
-        return `http://${ip}:${SERVER_PORT}`;
-      }
-    }
-  } catch { }
-
-  // 4. Default fallback: configured SERVER_IP and SERVER_PORT (guarantees non-empty URL in standalone APK)
-  return `http://${SERVER_IP}:${SERVER_PORT}`;
-}
-
 export class ApiClient {
   private baseUrl: string;
   private baseUrlLoaded = false;

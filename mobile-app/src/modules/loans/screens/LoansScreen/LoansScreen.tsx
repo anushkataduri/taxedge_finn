@@ -27,7 +27,7 @@ export const LoansScreen: React.FC = () => {
     <View style={styles.container}>
       <ServiceHeader
         title="Loan Marketplace & Assistance"
-        subtitle="Select your required loan facility. Instant eligibility check and expert CA assistance across 50+ banking partners."
+        
         tag="Capital & Financing"
         iconName="wallet"
       />

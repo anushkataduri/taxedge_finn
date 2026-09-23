@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,8 +18,12 @@ import {
   TdsDocumentCard,
 } from "../../components/documents";
 import { useApplicationStore } from "@/store/applicationStore";
+import { useAuthStore } from "@/modules/authentication/store/authStore";
+import { authStorage } from "@/modules/authentication/services/authStorage";
 import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
+import { tdsApiService } from "../../services/tdsApiService";
+import { tdsDraftService } from "../../services/tdsDraftService";
 import {
   styles,
   getContainerInsetsStyle,
@@ -29,75 +34,81 @@ import {
 export const TdsDocumentChecklistScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [isSaving, setIsSaving] = useState(false);
 
   const tdsDraft = useApplicationStore((state) => state.tdsDraft);
   const saveTdsDraft = useApplicationStore((state) => state.saveTdsDraft);
   const clearTdsDraft = useApplicationStore((state) => state.clearTdsDraft);
 
-  // Pure functional initial state: restore uploaded docs from draft synchronously - zero loops
+  // Initialize checklist items from draft store or fallback default constants
   const [documents, setDocuments] = useState<TdsDocumentItem[]>(() => {
-    const draft = useApplicationStore.getState().tdsDraft;
+    const draft = tdsDraft as any;
     if (draft && draft.documents && Array.isArray(draft.documents) && draft.documents.length > 0) {
       const savedMap = new Map(draft.documents.map((d: any) => [d.id, d]));
       return INITIAL_TDS_DOCUMENTS.map((doc) => {
-        const saved = savedMap.get(doc.id);
-        if (!saved) return doc;
-        return {
-          ...doc,
-          status: (saved.status === "uploaded" ? "uploaded" : "not_uploaded") as TdsDocumentItem["status"],
-          fileUri: saved.fileUri,
-          fileName: saved.fileName,
-          fileSize: saved.fileSize,
-          mimeType: saved.mimeType,
-          fileTypeLabel: saved.fileTypeLabel,
-        };
-      });
-    }
-    return INITIAL_TDS_DOCUMENTS;
-  });
-
-  // Keep state synchronized with draft store functionally - zero loops
-  useEffect(() => {
-    if (tdsDraft && tdsDraft.documents && Array.isArray(tdsDraft.documents) && tdsDraft.documents.length > 0) {
-      const savedMap = new Map(tdsDraft.documents.map((d: any) => [d.id, d]));
-      setDocuments((prev) =>
-        prev.map((doc) => {
-          const saved = savedMap.get(doc.id);
-          if (!saved) return doc;
+        const saved = savedMap.get(doc.id) as any;
+        if (saved && (saved.fileUri || saved.status === "uploaded")) {
           return {
             ...doc,
-            status: (saved.status === "uploaded" ? "uploaded" : "not_uploaded") as TdsDocumentItem["status"],
+            status: "uploaded" as const,
             fileUri: saved.fileUri,
             fileName: saved.fileName,
             fileSize: saved.fileSize,
             mimeType: saved.mimeType,
             fileTypeLabel: saved.fileTypeLabel,
           };
-        })
-      );
+        }
+        return doc;
+      });
     }
-  }, [tdsDraft?.documents]);
+    return INITIAL_TDS_DOCUMENTS;
+  });
 
-  // Universal draft guard hook (same pattern as GST and ITR)
+  // Restore existing documents from backend on mount
+  useEffect(() => {
+    async function loadBackendDocuments() {
+      try {
+        const tdsRefundId = await tdsDraftService.getApplicationId();
+        if (tdsRefundId) {
+          const backendDocs = await tdsApiService.fetchAndMapDocumentsList(tdsRefundId, documents);
+          setDocuments(backendDocs);
+        }
+      } catch (err) {
+        console.warn("[TDS Docs Screen] Error fetching backend documents:", err);
+      }
+    }
+    loadBackendDocuments();
+  }, []);
+
+  // Universal Draft Guard Hook for page exit
   const {
     showDraftModal,
-    openDraftModal,
-    handleSaveAndExit,
-    handleDiscardAndExit,
-    handleCancel,
+    markSubmitted,
+    handleSaveAndExit: openDraftModal,
+    handleDiscardAndExit: discardDraft,
+    handleCancel: cancelExit,
   } = useUniversalDraftGuard({
     isDirty: () =>
       documents.some((d) => Boolean(d.fileUri || d.status === "uploaded")),
-    onSaveDraft: () => {
+    onSaveDraft: async () => {
       saveTdsDraft?.({
         formData: tdsDraft?.formData || {},
         documents: documents as any,
         step: "DOCUMENTS",
         updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       });
+      await tdsDraftService.saveDocumentsDraft(documents);
+      try {
+        const tdsRefundId = await getOrFetchRefundId();
+        if (tdsRefundId) {
+          await tdsApiService.saveDocuments(documents, tdsRefundId);
+        }
+      } catch (err) {
+        console.warn("[TDS Docs Screen] Draft save to backend warning:", err);
+      }
     },
-    onDiscardDraft: () => {
-      clearTdsDraft?.();
+    onDiscardDraft: async () => {
+      await tdsDraftService.clearDraft();
     },
   });
 
@@ -107,13 +118,34 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
   ).length;
   const totalCount = documents.length;
 
-  // Check mandatory completeness functionally - zero loops
   const mandatoryDocs = documents.filter((d) => d.isMandatory);
   const isMandatoryComplete = mandatoryDocs.every(
     (d) => d.status === "uploaded" || !!d.fileUri
   );
 
-  const handleUploadSuccess = (id: string, payload: DocumentUploadPayload) => {
+  const getOrFetchRefundId = async (): Promise<string | null> => {
+    let appId = await tdsDraftService.getApplicationId();
+    if (!appId) {
+      const activeMobile =
+        useAuthStore.getState().customer?.mobile ||
+        authStorage.getSession().activeMobile ||
+        useAuthStore.getState().mobileNumber ||
+        "";
+      const cleanMob = activeMobile ? String(activeMobile).replace(/\D/g, "").slice(-10) : "";
+      if (cleanMob) {
+        const bank = await tdsApiService.getBankAccountByCustId(cleanMob);
+        if (bank && bank.id) {
+          appId = bank.id;
+          await tdsDraftService.saveApplicationId(appId);
+        } else {
+          appId = `REFUND-${cleanMob}`;
+        }
+      }
+    }
+    return appId;
+  };
+
+  const handleUploadSuccess = async (id: string, payload: DocumentUploadPayload) => {
     const updated = documents.map((doc) =>
       doc.id === id
         ? {
@@ -137,6 +169,17 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
       step: "DOCUMENTS",
       updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     });
+    await tdsDraftService.saveDocumentsDraft(updated);
+
+    // Sync uploaded document to backend database
+    try {
+      const tdsRefundId = await getOrFetchRefundId();
+      if (tdsRefundId) {
+        await tdsApiService.saveDocuments(updated, tdsRefundId);
+      }
+    } catch (err) {
+      console.warn("[TDS Docs Screen] Backend document upload save warning:", err);
+    }
   };
 
   const handleUploadError = (id: string, errorMessage: string) => {
@@ -153,7 +196,7 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
     );
   };
 
-  const handleRemove = (id: string) => {
+  const handleRemove = async (id: string) => {
     const updated = documents.map((doc) =>
       doc.id === id
         ? {
@@ -177,9 +220,20 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
       step: "DOCUMENTS",
       updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     });
+    await tdsDraftService.saveDocumentsDraft(updated);
+
+    // Sync updated list to backend database
+    try {
+      const tdsRefundId = await getOrFetchRefundId();
+      if (tdsRefundId) {
+        await tdsApiService.saveDocuments(updated, tdsRefundId);
+      }
+    } catch (err) {
+      console.warn("[TDS Docs Screen] Backend document removal sync warning:", err);
+    }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!isMandatoryComplete) {
       // Mark missing mandatory documents with inline card errors functionally - zero loops
       setDocuments((prev) =>
@@ -195,13 +249,28 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
       return;
     }
 
-    // Save state into draft store
+    setIsSaving(true);
+    // Save state into backend database & draft store
+    try {
+      const tdsRefundId = await getOrFetchRefundId();
+      if (tdsRefundId) {
+        console.log("🚀 [TDS Docs] Explicitly saving documents before review for refund ID:", tdsRefundId);
+        const res = await tdsApiService.saveDocuments(documents, tdsRefundId);
+        console.log("✅ [TDS Docs] Backend document save response:", res);
+      }
+    } catch (err: any) {
+      console.warn("[TDS Docs Screen] Backend save before estimate warning:", err?.message || err);
+    } finally {
+      setIsSaving(false);
+    }
+
     saveTdsDraft?.({
       formData: tdsDraft?.formData || {},
       documents: documents as any,
       step: "ESTIMATE",
       updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     });
+    await tdsDraftService.saveDocumentsDraft(documents);
 
     // Navigate to next screen: TDS Refund Estimate & Review Screen
     router.push("/service/tds-estimate" as any);
@@ -257,20 +326,27 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleContinue}
+          disabled={isSaving || !isMandatoryComplete}
           style={[
             styles.continueButton,
-            isMandatoryComplete
+            isMandatoryComplete && !isSaving
               ? styles.continueActive
               : styles.continueDisabled,
           ]}
         >
-          <Text style={styles.continueButtonText}>Proceed to Review</Text>
-          <Ionicons
-            name="arrow-forward"
-            size={18}
-            color="#FFFFFF"
-            style={styles.buttonIcon}
-          />
+          {isSaving ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <Text style={styles.continueButtonText}>Proceed to Review</Text>
+              <Ionicons
+                name="arrow-forward"
+                size={18}
+                color="#FFFFFF"
+                style={styles.buttonIcon}
+              />
+            </>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -282,9 +358,9 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
         saveButtonText="Save as Draft & Exit"
         discardButtonText="Discard & Exit"
         cancelButtonText="Keep Editing"
-        onSaveAndExit={handleSaveAndExit}
-        onDiscardAndExit={handleDiscardAndExit}
-        onCancel={handleCancel}
+        onSaveAndExit={openDraftModal}
+        onDiscardAndExit={discardDraft}
+        onCancel={cancelExit}
       />
     </View>
   );

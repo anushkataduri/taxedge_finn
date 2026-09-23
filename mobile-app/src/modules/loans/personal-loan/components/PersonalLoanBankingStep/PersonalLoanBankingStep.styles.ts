@@ -8,7 +8,7 @@ export const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: Typography.fontSize.lg,
     fontWeight: "700",
-    color: "#0F172A",
+    color: BrandColors.PRIMARY_BLUE_DARK,
     marginBottom: 4,
   },
   sectionSubtitle: {
@@ -22,21 +22,36 @@ export const styles = StyleSheet.create({
   label: {
     fontSize: Typography.fontSize.sm,
     fontWeight: "600",
-    color: "#334155",
+    color: BrandColors.PRIMARY_BLUE_DARK,
     marginBottom: 8,
   },
   requiredStar: {
     color: "#EF4444",
   },
-  optionalTag: {
-    fontSize: Typography.fontSize.xs,
-    color: "#64748B",
-    fontWeight: "normal",
-  },
   helperText: {
     fontSize: Typography.fontSize.xs,
     color: "#64748B",
     marginTop: 4,
+  },
+  ifscLoadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 8,
+  },
+  ifscSuccessBox: {
+    backgroundColor: "#F0FDF4",
+    borderWidth: 1,
+    borderColor: "#BBF7D0",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginTop: 8,
+  },
+  ifscSuccessText: {
+    fontSize: Typography.fontSize.xs,
+    color: BrandColors.PRIMARY_BLUE,
+    fontWeight: "600",
   },
   errorText: {
     fontSize: Typography.fontSize.xs,
@@ -55,33 +70,6 @@ export const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: "#EF4444",
-  },
-  statusRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 8,
-  },
-  statusChip: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: "center",
-    borderRadius: 8,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  statusChipActive: {
-    backgroundColor: "#EFF6FF",
-    borderColor: BrandColors.PRIMARY_BLUE,
-  },
-  statusChipText: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: "500",
-    color: "#64748B",
-  },
-  statusChipTextActive: {
-    color: BrandColors.PRIMARY_BLUE,
-    fontWeight: "700",
   },
   subCard: {
     backgroundColor: "#F8FAFC",

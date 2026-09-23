@@ -42,15 +42,36 @@ export const TdsRefundEstimateScreen: React.FC = () => {
     (async () => {
       const savedForm = await tdsDraftService.getFormDraft();
       const savedDocs = await tdsDraftService.getDocumentsDraft();
+      const existingAppId = await tdsDraftService.getApplicationId();
+
+      const custId = savedForm.personal?.mobileNumber
+        ? savedForm.personal.mobileNumber.replace(/\D/g, "")
+        : "CUST-DEFAULT";
+
+      let finalForm = savedForm;
+      let finalDocs = savedDocs || [];
+
+      try {
+        const backendApp = await tdsApiService.fetchFullTdsApplication(custId, existingAppId || undefined);
+        if (backendApp) {
+          if (backendApp.bank) finalForm.bank = { ...finalForm.bank, ...backendApp.bank };
+          if (backendApp.income) finalForm.income = { ...finalForm.income, ...backendApp.income };
+          if (backendApp.documents && backendApp.documents.length > 0) {
+            finalDocs = backendApp.documents as any;
+          }
+        }
+      } catch (err) {
+        console.warn("[TDS Estimate Screen] Backend fetch warning:", err);
+      }
 
       if (isMounted) {
-        setFormData(savedForm);
-        setDocuments(savedDocs || []);
+        setFormData(finalForm);
+        setDocuments(finalDocs);
 
-        const calcResult = tdsCalculationService.calculate(savedForm);
+        const calcResult = tdsCalculationService.calculate(finalForm);
         setCalculation(calcResult);
 
-        const reconResult = tdsReconciliationService.reconcile(savedForm, savedDocs || []);
+        const reconResult = tdsReconciliationService.reconcile(finalForm, finalDocs);
         setReconciliation(reconResult);
       }
     })();
@@ -75,7 +96,7 @@ export const TdsRefundEstimateScreen: React.FC = () => {
       const existingAppId = await tdsDraftService.getApplicationId();
       const response = await tdsApiService.submitApplicationDraft(
         formData,
-        documents,
+        documents as any,
         calculation,
         existingAppId || undefined
       );

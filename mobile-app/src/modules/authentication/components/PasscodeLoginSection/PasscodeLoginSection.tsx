@@ -15,6 +15,8 @@ interface PasscodeLoginSectionProps {
   onBiometricLogin?: () => void;
   isBiometricEnabled?: boolean;
   biometricTypeLabel?: string;
+  /** If false, suppresses the automatic keyboard focus on mount. Defaults to true. */
+  autoFocus?: boolean;
 }
 
 export function PasscodeLoginSection({
@@ -27,17 +29,19 @@ export function PasscodeLoginSection({
   onBiometricLogin,
   isBiometricEnabled,
   biometricTypeLabel = "Biometrics",
+  autoFocus = true,
 }: PasscodeLoginSectionProps) {
   const colors = useTheme();
   const inputRef = useRef<TextInput>(null);
   const themed = getThemedStyles(colors);
 
   useEffect(() => {
+    if (!autoFocus) return;
     const t = setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
     return () => clearTimeout(t);
-  }, []);
+  }, [autoFocus]);
 
   const handleChangeText = (text: string) => {
     const clean = text.replace(/[^0-9]/g, "");

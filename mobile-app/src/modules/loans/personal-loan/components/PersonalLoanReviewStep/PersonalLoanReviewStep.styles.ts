@@ -78,9 +78,9 @@ export const styles = StyleSheet.create({
   docBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F0FDF4",
+    backgroundColor: BrandColors.PRIMARY_LIGHT_ORANGE,
     borderWidth: 1,
-    borderColor: "#86EFAC",
+    borderColor: BrandColors.PRIMARY_ORANGE,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -89,7 +89,7 @@ export const styles = StyleSheet.create({
   docBadgeText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#15803D",
+    color: BrandColors.PRIMARY_BLUE,
   },
   consentContainer: {
     flexDirection: "row",

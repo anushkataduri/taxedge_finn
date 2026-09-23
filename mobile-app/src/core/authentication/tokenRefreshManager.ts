@@ -1,5 +1,10 @@
 import { tokenManager } from "../authentication/tokenManager";
-import { apiClient } from "../api/apiClient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  getDefaultBaseUrl,
+  SERVER_PORT,
+  STORAGE_KEY_SERVER_URL,
+} from "../api/apiConfig";
 
 /**
  * Backend response shape from POST /auth/refresh
@@ -84,14 +89,16 @@ class TokenRefreshManager {
     }
 
     try {
-      // ── Load the resolved base URL (respects AsyncStorage custom URL) ────
-      // Use apiClient.ensureBaseUrlLoaded() — NOT getDefaultBaseUrl() —
-      // to honour any custom IP configured in developer settings.
-      const baseUrl = await apiClient.ensureBaseUrlLoaded();
+      // Respect any custom server URL without importing apiClient, avoiding a module cycle.
+      const savedBaseUrl = await AsyncStorage.getItem(STORAGE_KEY_SERVER_URL);
+      const baseUrl = (savedBaseUrl?.trim() || getDefaultBaseUrl()).replace(/\/$/, "");
+      const normalizedBaseUrl = baseUrl.includes(":8081")
+        ? baseUrl.replace(":8081", `:${SERVER_PORT}`)
+        : baseUrl;
 
       console.log("[TokenRefresh] Calling POST /auth/refresh...");
 
-      const response = await fetch(`${baseUrl}/auth/refresh`, {
+      const response = await fetch(`${normalizedBaseUrl}/auth/refresh`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

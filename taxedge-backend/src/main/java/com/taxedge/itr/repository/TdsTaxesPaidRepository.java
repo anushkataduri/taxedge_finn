@@ -8,4 +8,5 @@ import com.taxedge.itr.entity.TdsTaxesPaid;
 public interface TdsTaxesPaidRepository extends JpaRepository<TdsTaxesPaid, Long> {
 
     Optional<TdsTaxesPaid> findByIdAndRefundBankAccount_CustId(Long id, String custId);
+    Optional<TdsTaxesPaid> findByRefundBankAccount_Id(String tdsRefundId);
 }

@@ -430,7 +430,43 @@ export const TdsRefundPersonalInfoCard: React.FC<TdsRefundPersonalInfoCardProps>
   // ========================================================
   // 4. READ-ONLY COMPACT CARD (DEFAULT)
   // ========================================================
-  const addressInfo = formatAddress();
+  const activeData: PersonalDetails = {
+    fullName: editForm.fullName ?? personalData.fullName,
+    pan: editForm.pan ?? personalData.pan,
+    aadhaar: editForm.aadhaar ?? personalData.aadhaar,
+    dob: editForm.dob ?? personalData.dob,
+    mobileNumber: editForm.mobileNumber ?? personalData.mobileNumber,
+    email: editForm.email ?? personalData.email,
+    residentialAddress: editForm.residentialAddress ?? personalData.residentialAddress,
+    city: editForm.city ?? personalData.city,
+    state: editForm.state ?? personalData.state,
+    pinCode: editForm.pinCode ?? personalData.pinCode,
+  };
+
+  const formatAddressForData = (data: PersonalDetails): { text: string; isMissing: boolean } => {
+    const lines: string[] = [];
+    if (data.residentialAddress?.trim()) {
+      lines.push(data.residentialAddress.trim());
+    }
+    const cityState: string[] = [];
+    if (data.city?.trim()) cityState.push(data.city.trim());
+    if (data.state?.trim()) cityState.push(data.state.trim());
+    const region = cityState.join(", ");
+    if (region && data.pinCode?.trim()) {
+      lines.push(`${region} - ${data.pinCode.trim()}`);
+    } else if (region) {
+      lines.push(region);
+    } else if (data.pinCode?.trim()) {
+      lines.push(`PIN: ${data.pinCode.trim()}`);
+    }
+
+    if (lines.length === 0) {
+      return { text: "Not provided", isMissing: true };
+    }
+    return { text: lines.join("\n"), isMissing: false };
+  };
+
+  const addressInfo = formatAddressForData(activeData);
 
   return (
     <View style={styles.card}>
@@ -459,11 +495,11 @@ export const TdsRefundPersonalInfoCard: React.FC<TdsRefundPersonalInfoCardProps>
           <Text
             style={[
               styles.infoValue,
-              !personalData.fullName?.trim() ? styles.infoValueMissing : null,
+              !activeData.fullName?.trim() ? styles.infoValueMissing : null,
             ]}
             numberOfLines={1}
           >
-            {personalData.fullName?.trim() || "Not provided"}
+            {activeData.fullName?.trim() || "Not provided"}
           </Text>
         </View>
 
@@ -473,10 +509,10 @@ export const TdsRefundPersonalInfoCard: React.FC<TdsRefundPersonalInfoCardProps>
           <Text
             style={[
               styles.infoValue,
-              !personalData.pan?.trim() ? styles.infoValueMissing : null,
+              !activeData.pan?.trim() ? styles.infoValueMissing : null,
             ]}
           >
-            {formatPan(personalData.pan)}
+            {formatPan(activeData.pan)}
           </Text>
         </View>
 
@@ -486,10 +522,10 @@ export const TdsRefundPersonalInfoCard: React.FC<TdsRefundPersonalInfoCardProps>
           <Text
             style={[
               styles.infoValue,
-              !personalData.aadhaar?.trim() ? styles.infoValueMissing : null,
+              !activeData.aadhaar?.trim() ? styles.infoValueMissing : null,
             ]}
           >
-            {maskAadhaar(personalData.aadhaar)}
+            {maskAadhaar(activeData.aadhaar)}
           </Text>
         </View>
 
@@ -499,10 +535,10 @@ export const TdsRefundPersonalInfoCard: React.FC<TdsRefundPersonalInfoCardProps>
           <Text
             style={[
               styles.infoValue,
-              !personalData.dob?.trim() ? styles.infoValueMissing : null,
+              !activeData.dob?.trim() ? styles.infoValueMissing : null,
             ]}
           >
-            {formatDob(personalData.dob)}
+            {formatDob(activeData.dob)}
           </Text>
         </View>
 
@@ -512,10 +548,10 @@ export const TdsRefundPersonalInfoCard: React.FC<TdsRefundPersonalInfoCardProps>
           <Text
             style={[
               styles.infoValue,
-              !personalData.mobileNumber?.trim() ? styles.infoValueMissing : null,
+              !activeData.mobileNumber?.trim() ? styles.infoValueMissing : null,
             ]}
           >
-            {formatMobile(personalData.mobileNumber)}
+            {formatMobile(activeData.mobileNumber)}
           </Text>
         </View>
 
@@ -525,11 +561,11 @@ export const TdsRefundPersonalInfoCard: React.FC<TdsRefundPersonalInfoCardProps>
           <Text
             style={[
               styles.infoValue,
-              !personalData.email?.trim() ? styles.infoValueMissing : null,
+              !activeData.email?.trim() ? styles.infoValueMissing : null,
             ]}
             numberOfLines={2}
           >
-            {personalData.email?.trim() || "Not provided"}
+            {activeData.email?.trim() || "Not provided"}
           </Text>
         </View>
 

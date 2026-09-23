@@ -25,6 +25,8 @@ export interface DocumentUploadBottomSheetProps {
   onPickGallery?: () => void;
   onSelectGallery?: () => void;
   onTakePhoto?: () => void;
+  allowGallery?: boolean;
+  allowCamera?: boolean;
 }
 
 export const DocumentUploadBottomSheet: React.FC<DocumentUploadBottomSheetProps> = ({
@@ -40,6 +42,8 @@ export const DocumentUploadBottomSheet: React.FC<DocumentUploadBottomSheetProps>
   onPickGallery,
   onSelectGallery,
   onTakePhoto,
+  allowGallery = true,
+  allowCamera = true,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -117,44 +121,48 @@ export const DocumentUploadBottomSheet: React.FC<DocumentUploadBottomSheetProps>
                   </TouchableOpacity>
 
                   {/* 2. Gallery */}
-                  <TouchableOpacity
-                    activeOpacity={0.75}
-                    onPress={handlePickGallery}
-                    style={styles.optionItem}
-                  >
-                    <View style={styles.optionIconBox}>
-                      <Ionicons
-                        name="images-outline"
-                        size={22}
-                        color={BrandColors.PRIMARY_ORANGE}
-                      />
-                    </View>
-                    <View style={styles.optionTextBox}>
-                      <Text style={styles.optionTitle}>Select from Gallery</Text>
-                      <Text style={styles.optionDesc}>Photos & Saved documents</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
-                  </TouchableOpacity>
+                  {allowGallery && (
+                    <TouchableOpacity
+                      activeOpacity={0.75}
+                      onPress={handlePickGallery}
+                      style={styles.optionItem}
+                    >
+                      <View style={styles.optionIconBox}>
+                        <Ionicons
+                          name="images-outline"
+                          size={22}
+                          color={BrandColors.PRIMARY_ORANGE}
+                        />
+                      </View>
+                      <View style={styles.optionTextBox}>
+                        <Text style={styles.optionTitle}>Select from Gallery</Text>
+                        <Text style={styles.optionDesc}>Photos & Saved documents</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+                    </TouchableOpacity>
+                  )}
 
                   {/* 3. Camera */}
-                  <TouchableOpacity
-                    activeOpacity={0.75}
-                    onPress={handleTakePhoto}
-                    style={styles.optionItem}
-                  >
-                    <View style={styles.optionIconBox}>
-                      <Ionicons
-                        name="camera-outline"
-                        size={22}
-                        color={BrandColors.PRIMARY_ORANGE}
-                      />
-                    </View>
-                    <View style={styles.optionTextBox}>
-                      <Text style={styles.optionTitle}>Take Photo with Camera</Text>
-                      <Text style={styles.optionDesc}>Capture document clearly</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
-                  </TouchableOpacity>
+                  {allowCamera && (
+                    <TouchableOpacity
+                      activeOpacity={0.75}
+                      onPress={handleTakePhoto}
+                      style={styles.optionItem}
+                    >
+                      <View style={styles.optionIconBox}>
+                        <Ionicons
+                          name="camera-outline"
+                          size={22}
+                          color={BrandColors.PRIMARY_ORANGE}
+                        />
+                      </View>
+                      <View style={styles.optionTextBox}>
+                        <Text style={styles.optionTitle}>Take Photo with Camera</Text>
+                        <Text style={styles.optionDesc}>Capture document clearly</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 {/* Cancel Button */}

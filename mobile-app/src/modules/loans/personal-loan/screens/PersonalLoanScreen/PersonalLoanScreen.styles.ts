@@ -30,20 +30,15 @@ export const styles = StyleSheet.create({
     fontSize: Typography.fontSize.xs,
     color: "#64748B",
   },
-  saveDraftButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: "#F1F5F9",
-  },
-  saveDraftText: {
-    fontSize: Typography.fontSize.xs,
-    fontWeight: "600",
-    color: "#475569",
+  headerRightSpacer: {
+    width: 24,
   },
   scrollView: {
     flex: 1,
     backgroundColor: "#F8FAFC",
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
   scrollContent: {
     padding: 16,

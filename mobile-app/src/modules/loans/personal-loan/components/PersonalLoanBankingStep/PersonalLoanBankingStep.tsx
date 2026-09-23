@@ -1,32 +1,58 @@
-import React from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import React, { useRef, useState } from "react";
+import { View, Text, TextInput, ActivityIndicator } from "react-native";
+import { ifscService } from "../../../../gst/services/ifscService";
 import { LoanBankingFormData } from "../../../types/loans.types";
 import { styles } from "./PersonalLoanBankingStep.styles";
 
 export interface PersonalLoanBankingStepProps {
   data: LoanBankingFormData;
-  onChange: (field: keyof LoanBankingFormData, value: string) => void;
+  onChange: (field: keyof LoanBankingFormData, value: any) => void;
   errors?: Record<string, string>;
-  hasExistingLoans?: boolean;
 }
-
-const ITR_STATUS_OPTIONS: ("Filed" | "Not Filed" | "Exempt")[] = [
-  "Filed",
-  "Not Filed",
-  "Exempt",
-];
 
 export const PersonalLoanBankingStep: React.FC<PersonalLoanBankingStepProps> = ({
   data,
   onChange,
   errors = {},
-  hasExistingLoans = false,
 }) => {
+  const [isIfscLoading, setIsIfscLoading] = useState(false);
+  const [ifscError, setIfscError] = useState<string | null>(null);
+  const lookupRequest = useRef(0);
+
+  const handleIfscChange = async (value: string) => {
+    const cleanIfsc = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const requestId = ++lookupRequest.current;
+    setIfscError(null);
+    onChange("ifscCode", cleanIfsc);
+    onChange("branchName", "");
+    onChange("isIfscVerified", false);
+
+    if (!ifscService.isValidFormat(cleanIfsc)) {
+      setIsIfscLoading(false);
+      return;
+    }
+
+    setIsIfscLoading(true);
+    try {
+      const details = await ifscService.lookup(cleanIfsc);
+      if (requestId !== lookupRequest.current) return;
+      onChange("primaryBankName", details.bank);
+      onChange("branchName", details.branch);
+      onChange("isIfscVerified", true);
+    } catch {
+      if (requestId !== lookupRequest.current) return;
+      setIfscError("Invalid IFSC code. Please check branch details.");
+      onChange("isIfscVerified", false);
+    } finally {
+      if (requestId === lookupRequest.current) setIsIfscLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Banking & Tax Compliance</Text>
+      <Text style={styles.sectionTitle}>Banking Details</Text>
       <Text style={styles.sectionSubtitle}>
-        Provide primary disbursement account and Income Tax Return filing records.
+        Provide the account where the approved loan should be disbursed.
       </Text>
 
       {/* Primary Bank Name */}
@@ -76,111 +102,24 @@ export const PersonalLoanBankingStep: React.FC<PersonalLoanBankingStepProps> = (
           autoCapitalize="characters"
           maxLength={11}
           value={data.ifscCode}
-          onChangeText={(text) => onChange("ifscCode", text.toUpperCase())}
+          onChangeText={handleIfscChange}
         />
         <Text style={styles.helperText}>11-digit alphanumeric bank code</Text>
-        {errors.ifscCode && (
-          <Text style={styles.errorText}>{errors.ifscCode}</Text>
+        {isIfscLoading && (
+          <View style={styles.ifscLoadingRow}>
+            <ActivityIndicator size="small" color="#F97316" />
+            <Text style={styles.helperText}>Verifying IFSC...</Text>
+          </View>
         )}
-      </View>
-
-      {/* Existing Loans Section */}
-      {hasExistingLoans && (
-        <View style={styles.subCard}>
-          <Text style={styles.subCardTitle}>Existing Personal Loan Details</Text>
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Current Lender / Bank Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. ICICI Bank / Bajaj Finance"
-              placeholderTextColor="#94A3B8"
-              value={data.existingLenderName || ""}
-              onChangeText={(text) => onChange("existingLenderName", text)}
-            />
+        {data.branchName && data.isIfscVerified && (
+          <View style={styles.ifscSuccessBox}>
+            <Text style={styles.ifscSuccessText}>
+              {data.primaryBankName} • {data.branchName}
+            </Text>
           </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Approximate Total Outstanding (₹)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. 250000"
-              placeholderTextColor="#94A3B8"
-              keyboardType="numeric"
-              value={data.existingLoanOutstanding || ""}
-              onChangeText={(text) => onChange("existingLoanOutstanding", text)}
-            />
-          </View>
-        </View>
-      )}
-
-      {/* ITR Details */}
-      <View style={styles.subCard}>
-        <Text style={styles.subCardTitle}>Income Tax Return (ITR) Details</Text>
-
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>ITR Filing Status for Last Assessment Year</Text>
-          <View style={styles.statusRow}>
-            {ITR_STATUS_OPTIONS.map((status) => {
-              const isSelected = data.itrFilingStatus === status;
-              return (
-                <TouchableOpacity
-                  key={status}
-                  onPress={() => onChange("itrFilingStatus", status)}
-                  style={[
-                    styles.statusChip,
-                    isSelected && styles.statusChipActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.statusChipText,
-                      isSelected && styles.statusChipTextActive,
-                    ]}
-                  >
-                    {status}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {data.itrFilingStatus === "Filed" && (
-          <>
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>
-                ITR Acknowledgement Number (15 Digits){" "}
-                <Text style={styles.optionalTag}>(Optional)</Text>
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  errors.itrAckNumber && styles.inputError,
-                ]}
-                placeholder="e.g. 123456789012345"
-                placeholderTextColor="#94A3B8"
-                keyboardType="number-pad"
-                maxLength={15}
-                value={data.itrAckNumber || ""}
-                onChangeText={(text) => onChange("itrAckNumber", text)}
-              />
-              {errors.itrAckNumber && (
-                <Text style={styles.errorText}>{errors.itrAckNumber}</Text>
-              )}
-            </View>
-
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Gross Total Income as per ITR (₹)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g. 900000"
-                placeholderTextColor="#94A3B8"
-                keyboardType="numeric"
-                value={data.grossTotalIncome || ""}
-                onChangeText={(text) => onChange("grossTotalIncome", text)}
-              />
-            </View>
-          </>
+        )}
+        {(errors.ifscCode || ifscError) && (
+          <Text style={styles.errorText}>{errors.ifscCode || ifscError}</Text>
         )}
       </View>
     </View>

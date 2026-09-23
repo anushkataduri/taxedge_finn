@@ -23,15 +23,15 @@ public class GstCancellation {
     @Column(name = "date_cancellation_is_sought", nullable = false)
     private LocalDate dateCancellationIsSought;
 
-    @Column(name = "closing_stock_and_input_tax_reversal", columnDefinition = "TEXT")
+    @Column(name = "closing_stock_and_input_tax_reversal", columnDefinition = "LONGTEXT")
     private String closingStockAndInputTaxReversal;
 
-    @Column(name = "pending_dues_liabilities", columnDefinition = "TEXT")
+    @Column(name = "pending_dues_liabilities", columnDefinition = "LONGTEXT")
     private String pendingDuesLiabilities;
 
     @Column(name = "last_gstr3b_filed_arn_period")
     private String lastGstr3bFiledArnPeriod;
 
-    @Column(name = "supporting_proof_document", columnDefinition = "TEXT")
+    @Column(name = "supporting_proof_document", columnDefinition = "LONGTEXT")
     private String supportingProofDocument;
 }

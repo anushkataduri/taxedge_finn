@@ -34,7 +34,7 @@ export const styles = StyleSheet.create({
   verifiedBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#DCFCE7",
+    backgroundColor: BrandColors.PRIMARY_LIGHT_ORANGE,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 20,
@@ -43,7 +43,7 @@ export const styles = StyleSheet.create({
   verifiedText: {
     fontSize: Typography.fontSize.xs,
     fontWeight: "600",
-    color: "#16A34A",
+    color: BrandColors.PRIMARY_ORANGE_DARK,
   },
   infoBanner: {
     backgroundColor: "#F8FAFC",

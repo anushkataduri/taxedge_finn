@@ -42,7 +42,7 @@ public class ContactAmendmentEntity {
     private String fileType;
 
     @Lob
-    @Column(name = "image_data", columnDefinition = "TEXT")
+    @Column(name = "image_data", columnDefinition = "LONGTEXT")
     private String imageData;
 
     @Enumerated(EnumType.STRING)

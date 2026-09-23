@@ -19,6 +19,7 @@ import { ifscService } from "@/modules/gst/services/ifscService";
 import { useAuthStore } from "@/modules/authentication/store/authStore";
 import { authStorage } from "@/modules/authentication/services/authStorage";
 import { useCustomerStore } from "@/modules/customer/store/customerStore";
+import { authApi } from "@/modules/authentication/services/authApi";
 import type { Customer } from "@/shared/types/domain";
 import {
   TdsCustomerIncomeFormData,
@@ -40,6 +41,7 @@ import {
   tdsDraftService,
   INITIAL_TDS_FORM_DATA,
 } from "../../services/tdsDraftService";
+import { tdsApiService } from "../../services/tdsApiService";
 import { TdsRefundPersonalInfoCard } from "../../components/personal/TdsRefundPersonalInfoCard";
 import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
 import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
@@ -115,8 +117,22 @@ export const TdsRefundFormScreen: React.FC = () => {
         (currentAuthUser as any)?.customerId ||
         (currentAuthUser as any)?.custId;
 
-      const cleanMob = activeMobile ? String(activeMobile).replace(/\D/g, "") : "";
-      const apiRes: any = (cleanMob ? authStorage.getUserByMobile(cleanMob) : null) || authStorage.getUser();
+      const cleanMob = activeMobile ? String(activeMobile).replace(/\D/g, "").slice(-10) : "";
+
+      // 1. Try fetching fresh details from Spring Boot backend first
+      let apiRes: any = null;
+      const lookupId = activeCustId || cleanMob;
+      if (lookupId) {
+        const backendRes = await authApi.getCustomerDetails(lookupId);
+        if (backendRes.success && backendRes.data) {
+          apiRes = backendRes.data;
+        }
+      }
+
+      // 2. Fallback to authStorage local user
+      if (!apiRes) {
+        apiRes = (cleanMob ? authStorage.getUserByMobile(cleanMob) : null) || authStorage.getUser();
+      }
 
       if (apiRes && (apiRes.name || apiRes.fullName || apiRes.mobileNumber || apiRes.mobile || apiRes.pan || apiRes.aadhaar)) {
         const mergedCust: Customer = {
@@ -204,14 +220,37 @@ export const TdsRefundFormScreen: React.FC = () => {
       // 1. Always fetch fresh personal details from database first
       const freshPersonal = await fetchAndPopulateProfile();
 
-      // 2. Load draft if exists, but merge bank and income without overriding personal info
+      const currentMobile = useAuthStore.getState().customer?.mobile ||
+        authStorage.getSession().activeMobile ||
+        useAuthStore.getState().mobileNumber ||
+        freshPersonal?.mobileNumber;
+
+      const custId = currentMobile ? String(currentMobile).replace(/\D/g, "") : "CUST-DEFAULT";
+
+      // 2. Fetch existing TDS Refund application from backend if available
+      try {
+        const existingAppId = await tdsDraftService.getApplicationId();
+        const backendApp = await tdsApiService.fetchFullTdsApplication(custId, existingAppId || undefined);
+        if (backendApp && backendApp.bank) {
+          if (backendApp.tdsRefundId) {
+            await tdsDraftService.saveApplicationId(backendApp.tdsRefundId);
+          }
+          setFormData((prev) => ({
+            ...prev,
+            bank: { ...prev.bank, ...backendApp.bank },
+            income: { ...prev.income, ...backendApp.income },
+            personal: freshPersonal || prev.personal,
+          }));
+          initialSnapshotRef.current = JSON.stringify({ bank: backendApp.bank, income: backendApp.income });
+          return;
+        }
+      } catch (err) {
+        console.warn("[TDS Screen] Backend fetch warning:", err);
+      }
+
+      // 3. Fallback to local draft if exists
       const savedDraft = await tdsDraftService.getFormDraft();
       if (savedDraft) {
-        const currentMobile = useAuthStore.getState().customer?.mobile ||
-          authStorage.getSession().activeMobile ||
-          useAuthStore.getState().mobileNumber;
-
-        // Isolate customer: only restore if draft belongs to current user or has no conflicting mobile
         const isSameCustomer = !savedDraft.personal?.mobileNumber ||
           !currentMobile ||
           savedDraft.personal.mobileNumber.replace(/\D/g, "") === currentMobile.replace(/\D/g, "");
@@ -221,12 +260,11 @@ export const TdsRefundFormScreen: React.FC = () => {
             ...prev,
             bank: savedDraft.bank || prev.bank,
             income: savedDraft.income || prev.income,
-            personal: freshPersonal || prev.personal, // ensure database data is preserved!
+            personal: freshPersonal || prev.personal,
           }));
           initialSnapshotRef.current = JSON.stringify({ bank: savedDraft.bank, income: savedDraft.income });
           return;
         } else {
-          // Different customer's draft: discard to prevent leakage
           await tdsDraftService.clearDraft();
         }
       }
@@ -238,33 +276,41 @@ export const TdsRefundFormScreen: React.FC = () => {
 
   // Save edited profile back to stores & backend
   const handleSaveProfile = async (updated: PersonalDetails) => {
-    setFormData((prev) => ({
-      ...prev,
-      personal: updated,
+    const cleanMob = updated.mobileNumber ? updated.mobileNumber.replace(/\D/g, "").slice(-10) : "";
+    const normalizedPersonal: PersonalDetails = {
+      ...updated,
+      mobileNumber: cleanMob || updated.mobileNumber,
+    };
+
+    const nextFormState: TdsCustomerIncomeFormData = {
+      ...formData,
+      personal: normalizedPersonal,
       bank: {
-        ...prev.bank,
-        accountHolderName: prev.bank.accountHolderName || updated.fullName,
+        ...formData.bank,
+        accountHolderName: formData.bank.accountHolderName || normalizedPersonal.fullName,
       },
-    }));
+    };
+
+    setFormData(nextFormState);
 
     const currentCust = useAuthStore.getState().customer;
     const currentAuthUser = useAuthStore.getState().authenticatedUser;
 
     const updatedCustomer: Customer = {
-      name: updated.fullName,
-      email: updated.email,
-      mobile: updated.mobileNumber,
-      pan: updated.pan,
-      aadhaar: updated.aadhaar,
-      dob: updated.dob,
+      name: normalizedPersonal.fullName,
+      email: normalizedPersonal.email,
+      mobile: cleanMob || normalizedPersonal.mobileNumber,
+      pan: normalizedPersonal.pan,
+      aadhaar: normalizedPersonal.aadhaar,
+      dob: normalizedPersonal.dob,
       customerType: currentCust?.customerType || "Individual",
-      addressLine1: updated.residentialAddress,
+      addressLine1: normalizedPersonal.residentialAddress,
       addressLine2: currentCust?.addressLine2 || "",
-      city: updated.city,
-      state: updated.state,
-      pincode: updated.pinCode,
-      address: `${updated.residentialAddress}, ${updated.city}, ${updated.state} - ${updated.pinCode}`,
-      customerId: currentCust?.customerId || (currentAuthUser as any)?.customerId || "",
+      city: normalizedPersonal.city,
+      state: normalizedPersonal.state,
+      pincode: normalizedPersonal.pinCode,
+      address: `${normalizedPersonal.residentialAddress}, ${normalizedPersonal.city}, ${normalizedPersonal.state} - ${normalizedPersonal.pinCode}`,
+      customerId: currentCust?.customerId || (currentAuthUser as any)?.customerId || (currentAuthUser as any)?.custId || "",
       avatarUri: currentCust?.avatarUri || null,
       profileCompleted: true,
       hasPasscode: currentCust?.hasPasscode ?? Boolean(currentAuthUser?.passcode),
@@ -293,12 +339,45 @@ export const TdsRefundFormScreen: React.FC = () => {
         pincode: updatedCustomer.pincode,
         customerType: updatedCustomer.customerType,
       } as any);
+
+      if (cleanMob) {
+        authStorage.saveSession({
+          ...authStorage.getSession(),
+          isLoggedIn: true,
+          activeMobile: cleanMob,
+        });
+      }
     } catch {}
 
-    await tdsDraftService.saveFormDraft({
-      ...formData,
-      personal: updated,
-    });
+    // Hit backend PUT /customer/update endpoint
+    try {
+      console.log("🚀 [TDS Form] Calling authApi.updateCustomerProfile for customer:", updatedCustomer.mobile);
+      const updateResult = await authApi.updateCustomerProfile({
+        custId: updatedCustomer.customerId || undefined,
+        name: updatedCustomer.name,
+        email: updatedCustomer.email,
+        mobileNumber: updatedCustomer.mobile,
+        pan: updatedCustomer.pan,
+        aadhaar: updatedCustomer.aadhaar,
+        dob: updatedCustomer.dob,
+        addressLine1: updatedCustomer.addressLine1,
+        addressLine2: updatedCustomer.addressLine2,
+        city: updatedCustomer.city,
+        state: updatedCustomer.state,
+        pincode: updatedCustomer.pincode,
+        address: updatedCustomer.address,
+      });
+
+      if (updateResult.success) {
+        console.log("✅ [TDS Form] Customer profile updated successfully on backend!");
+      } else {
+        console.warn("⚠️ [TDS Form] Customer profile update warning from backend:", updateResult.message);
+      }
+    } catch (err: any) {
+      console.warn("⚠️ [TDS Form] Error sending customer update to backend:", err?.message);
+    }
+
+    await tdsDraftService.saveFormDraft(nextFormState);
   };
 
   // Live calculation estimate
@@ -389,6 +468,25 @@ export const TdsRefundFormScreen: React.FC = () => {
         "Please complete all required fields correctly to proceed to document upload."
       );
       return;
+    }
+
+    try {
+      const activeMobile = formData.personal.mobileNumber || useAuthStore.getState().customer?.mobile || "CUST-DEFAULT";
+      const custId = activeMobile.replace(/\D/g, "");
+      const existingAppId = await tdsDraftService.getApplicationId();
+
+      const savedTdsId = await tdsApiService.saveFullTdsApplication(
+        formData,
+        [],
+        custId,
+        existingAppId || undefined
+      );
+
+      if (savedTdsId) {
+        await tdsDraftService.saveApplicationId(savedTdsId);
+      }
+    } catch (err) {
+      console.warn("[TDS Screen] Backend save warning:", err);
     }
 
     await tdsDraftService.saveFormDraft(formData);

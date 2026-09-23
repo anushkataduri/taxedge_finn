@@ -77,7 +77,7 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
-    marginRight: 10,
+    marginRight: 8,
   },
   iconBox: {
     width: 40,
@@ -85,7 +85,7 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
+    marginRight: 10,
   },
   docInfo: {
     flex: 1,
@@ -93,7 +93,7 @@ export const styles = StyleSheet.create({
   docNameRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 4,
     flexWrap: "wrap",
   },
   docName: {
@@ -101,26 +101,10 @@ export const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#0F172A",
   },
-  requiredBadge: {
-    backgroundColor: "#FEE2E2",
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 4,
-  },
-  requiredText: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "#DC2626",
-  },
-  optionalBadge: {
-    backgroundColor: "#F1F5F9",
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 4,
-  },
-  optionalText: {
-    fontSize: 10,
-    color: "#64748B",
+  starText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#EF4444",
   },
   docSubtitle: {
     fontSize: Typography.fontSize.xs,
@@ -130,25 +114,62 @@ export const styles = StyleSheet.create({
   fileMetaRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 4,
     marginTop: 4,
   },
   fileNameText: {
     fontSize: 11,
     fontWeight: "600",
     color: "#15803D",
-    maxWidth: 160,
+    maxWidth: 130,
   },
   fileSizeText: {
     fontSize: 10,
     color: "#64748B",
   },
-  uploadButton: {
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  viewButton: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#EFF6FF",
     borderWidth: 1,
-    borderColor: BrandColors.PRIMARY_BLUE,
+    borderColor: "#3B82F6",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 6,
+    gap: 3,
+  },
+  viewButtonText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#2563EB",
+  },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEE2E2",
+    borderWidth: 1,
+    borderColor: "#EF4444",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 6,
+    gap: 3,
+  },
+  deleteButtonText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#DC2626",
+  },
+  uploadButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderWidth: 1,
+    borderColor: BrandColors.PRIMARY_ORANGE,
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 6,
@@ -157,21 +178,7 @@ export const styles = StyleSheet.create({
   uploadButtonText: {
     fontSize: Typography.fontSize.xs,
     fontWeight: "600",
-    color: BrandColors.PRIMARY_BLUE,
-  },
-  replaceButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#DCFCE7",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    gap: 4,
-  },
-  replaceButtonText: {
-    fontSize: Typography.fontSize.xs,
-    fontWeight: "600",
-    color: "#16A34A",
+    color: BrandColors.PRIMARY_ORANGE,
   },
   modalBackdrop: {
     flex: 1,
@@ -208,5 +215,26 @@ export const styles = StyleSheet.create({
     fontSize: Typography.fontSize.sm,
     fontWeight: "600",
     color: "#1E293B",
+  },
+  previewCard: {
+    backgroundColor: "#F8FAFC",
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 16,
+  },
+  previewFileName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0F2052",
+    marginTop: 8,
+  },
+  previewFileSize: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 2,
   },
 });

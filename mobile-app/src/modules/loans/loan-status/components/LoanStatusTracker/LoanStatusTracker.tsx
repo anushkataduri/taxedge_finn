@@ -23,33 +23,40 @@ export const LoanStatusTracker: React.FC<LoanStatusTrackerProps> = ({
   currentStatus,
   timeline,
 }) => {
+  const currentStageIndex = getStageIndex(currentStatus);
+  const stages = [
+    "Application Submitted",
+    "Agent Review",
+    "Lender Review",
+    "Sanctioned",
+    "Disbursed",
+  ];
+
   return (
     <View style={styles.container}>
-      {timeline.map((item, index) => {
-        const isLast = index === timeline.length - 1;
-        const isRejected = item.status === "Rejected" && item.isCurrent;
-        const isOnHold = item.status === "On Hold" && item.isCurrent;
+      {stages.map((title, index) => {
+        const isLast = index === stages.length - 1;
+        const isCompleted = index < currentStageIndex;
+        const isCurrent = index === currentStageIndex;
 
         return (
-          <View key={item.status} style={styles.stageRow}>
+          <View key={title} style={styles.stageRow}>
             {/* Vertical timeline indicator */}
             <View style={styles.timelineCol}>
               <View
                 style={[
                   styles.dot,
-                  item.completed && styles.dotCompleted,
-                  item.isCurrent && styles.dotCurrent,
-                  isRejected && styles.dotRejected,
-                  isOnHold && styles.dotHold,
+                  isCompleted && styles.dotCompleted,
+                  isCurrent && styles.dotCurrent,
                 ]}
               >
-                {item.completed ? (
+                {isCompleted ? (
                   <Ionicons
                     name="checkmark"
                     size={12}
                     color={BrandColors.COLOR_WHITE}
                   />
-                ) : item.isCurrent ? (
+                ) : isCurrent ? (
                   <Ionicons
                     name="ellipse"
                     size={8}
@@ -62,7 +69,7 @@ export const LoanStatusTracker: React.FC<LoanStatusTrackerProps> = ({
                 <View
                   style={[
                     styles.line,
-                    item.completed && styles.lineCompleted,
+                    isCompleted && styles.lineCompleted,
                   ]}
                 />
               )}
@@ -74,34 +81,17 @@ export const LoanStatusTracker: React.FC<LoanStatusTrackerProps> = ({
                 <Text
                   style={[
                     styles.stageTitle,
-                    item.completed && styles.stageTitleCompleted,
-                    item.isCurrent && styles.stageTitleCurrent,
+                    isCompleted && styles.stageTitleCompleted,
+                    isCurrent && styles.stageTitleCurrent,
                   ]}
                 >
-                  {item.title}
+                  {title}
                 </Text>
-                {item.timestamp ? (
-                  <Text style={styles.timestamp}>{item.timestamp}</Text>
-                ) : null}
               </View>
 
-              <Text style={styles.description}>{item.description}</Text>
-
-              {item.isCurrent && item.status === "Query Raised" && (
-                <View style={styles.actionBox}>
-                  <Text style={styles.actionText}>
-                    Action Required: Please provide the requested clarifications to resume review.
-                  </Text>
-                </View>
-              )}
-
-              {item.isCurrent && item.status === "Sanction Letter" && (
-                <View style={styles.actionBox}>
-                  <Text style={styles.actionText}>
-                    Ready for Download: Official Sanction Letter available.
-                  </Text>
-                </View>
-              )}
+              <Text style={styles.description}>
+                {isCurrent ? currentStatus : isCompleted ? "Completed" : "Pending"}
+              </Text>
             </View>
           </View>
         );
@@ -109,5 +99,35 @@ export const LoanStatusTracker: React.FC<LoanStatusTrackerProps> = ({
     </View>
   );
 };
+
+function getStageIndex(status: LoanApplicationStatus): number {
+  switch (status) {
+    case "New Lead":
+    case "Application Received":
+    case "Documents Pending":
+      return 0;
+    case "Documents Received":
+    case "Eligibility Verification":
+    case "Application Prepared":
+      return 1;
+    case "Submitted to Lender":
+    case "Under Credit Review":
+    case "Query Raised":
+    case "Query Resolved":
+      return 2;
+    case "Sanctioned":
+    case "Sanction Letter":
+    case "Documentation":
+      return 3;
+    case "Disbursement":
+    case "Completed":
+      return 4;
+    case "Rejected":
+    case "On Hold":
+      return 2;
+    default:
+      return 0;
+  }
+}
 
 export default LoanStatusTracker;

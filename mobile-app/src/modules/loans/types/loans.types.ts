@@ -85,13 +85,26 @@ export interface LoanDetailsFormData {
   employmentType: LoanEmploymentType;
 }
 
+export interface ExistingLoanDetail {
+  lenderName: string;
+  sanctionedAmount: string;
+  currentOutstanding: string;
+  monthlyEmi: string;
+  loanType: string;
+}
+
 export interface LoanBusinessFormData {
   businessName: string;
+  businessConstitution?: string;
+  hasUdyam?: boolean;
   gstin: string;
   udyamRegistration: string;
   businessVintageYears: string;
   annualTurnover: string;
   netProfit: string;
+  signatoryName?: string;
+  signatoryDesignation?: string;
+  signatoryEmail?: string;
 }
 
 export interface LoanBankingFormData {
