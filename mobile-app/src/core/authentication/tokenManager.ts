@@ -1,5 +1,10 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { secureStorage } from "../storage/secureStorage";
-import { apiClient } from "../api/apiClient";
+import {
+  getDefaultBaseUrl,
+  SERVER_PORT,
+  STORAGE_KEY_SERVER_URL,
+} from "../api/apiConfig";
 
 export interface AuthTokens {
   accessToken: string;
@@ -186,12 +191,23 @@ class TokenManager {
     if (!token) return null;
 
     try {
-      // apiClient already attaches "Authorization: Bearer <token>" via the
-      // request interceptor registered in AppBootstrap.ts
-      const response = await apiClient.get<ServerValidationResponse>(
-        "/auth/validate"
-      );
-      return response;
+      const savedBaseUrl = await AsyncStorage.getItem(STORAGE_KEY_SERVER_URL);
+      const baseUrl = (savedBaseUrl?.trim() || getDefaultBaseUrl()).replace(/\/$/, "");
+      const normalizedBaseUrl = baseUrl.includes(":8081")
+        ? baseUrl.replace(":8081", `:${SERVER_PORT}`)
+        : baseUrl;
+      const response = await fetch(`${normalizedBaseUrl}/auth/validate`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        return { valid: false, reason: `Server rejected token (${response.status})` };
+      }
+
+      return (await response.json()) as ServerValidationResponse;
     } catch (err: any) {
       // 401 from the server means the signature/expiry check failed
       if (err?.status === 401 || err?.code === "API_ERROR") {

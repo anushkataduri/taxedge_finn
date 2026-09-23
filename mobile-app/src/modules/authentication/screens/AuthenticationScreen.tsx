@@ -95,12 +95,14 @@ export function AuthenticationScreen() {
   // ─── BIOMETRIC REAUTH animation state ─────────────────────────────────────
   // Whether the passcode section is currently shown (after biometric dismissal)
   const [passcodeVisible, setPasscodeVisible] = useState(false);
+  const [biometricDismissed, setBiometricDismissed] = useState(false);
   // Whether passcode auto-focus is allowed (only after the slide animation finishes)
   const [passcodeAutoFocus, setPasscodeAutoFocus] = useState(false);
 
   // Reanimated shared values for biometric ↔ passcode slide
   const biometricAreaY = useSharedValue(0);  // starts at natural position
   const passcodeAreaY = useSharedValue(320); // starts below the viewport
+  const reauthScrollRef = useRef<ScrollView>(null);
 
   const biometricAnimStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: biometricAreaY.value }],
@@ -129,11 +131,20 @@ export function AuthenticationScreen() {
       hasBioTriggered.current = false;
       hasNavigated.current = false;
       setPasscodeVisible(false);
+      setBiometricDismissed(false);
       setPasscodeAutoFocus(false);
       biometricAreaY.value = 0;
       passcodeAreaY.value = 320;
     }
   }, [authFlowState]);
+
+  useEffect(() => {
+    if (!passcodeVisible) return;
+    const timer = setTimeout(() => {
+      reauthScrollRef.current?.scrollToEnd({ animated: true });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [passcodeVisible]);
 
   // Trigger only after the auth route is focused and its Welcome Back UI is mounted.
   useFocusEffect(
@@ -254,6 +265,7 @@ export function AuthenticationScreen() {
       }, (finished) => {
         if (finished) {
           // After animation: show passcode and enable auto-focus
+          runOnJS(setBiometricDismissed)(true);
           runOnJS(setPasscodeVisible)(true);
           runOnJS(setPasscodeAutoFocus)(true);
         }
@@ -409,10 +421,17 @@ export function AuthenticationScreen() {
   // ─── BIOMETRIC_REAUTH render ───────────────────────────────────────────────
   if (authFlowState === "BIOMETRIC_REAUTH") {
     return (
-      <View style={[styles.container, themed.container, { flex: 1 }]}>
+      <KeyboardAvoidingView
+        style={[styles.container, themed.container, { flex: 1 }]}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
+      >
         <ScrollView
+          ref={reauthScrollRef}
           contentContainerStyle={[styles.scroll, dynamicScroll]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.wrapper}>
@@ -446,7 +465,8 @@ export function AuthenticationScreen() {
             <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
             {/* ── Biometric Area (slides down on dismiss) ── */}
-            <Reanimated.View style={[reauthStyles.animatedSection, biometricAnimStyle]}>
+            {!biometricDismissed && (
+              <Reanimated.View style={[reauthStyles.animatedSection, biometricAnimStyle]}>
               <View style={reauthStyles.biometricCard}>
                 <View style={reauthStyles.biometricIconRing}>
                   <Ionicons
@@ -488,7 +508,8 @@ export function AuthenticationScreen() {
                   </Text>
                 </TouchableOpacity>
               </View>
-            </Reanimated.View>
+              </Reanimated.View>
+            )}
 
             {/* ── Passcode Area (slides up after biometric dismiss) ── */}
             {passcodeVisible && (
@@ -512,6 +533,8 @@ export function AuthenticationScreen() {
                     // Allow retrying biometric from passcode view
                     hasBioTriggered.current = false;
                     setPasscodeVisible(false);
+                    setBiometricDismissed(false);
+                    setPasscodeAutoFocus(false);
                     biometricAreaY.value = 0;
                     passcodeAreaY.value = 320;
                     handleBiometricReauth();
@@ -538,7 +561,7 @@ export function AuthenticationScreen() {
           visible={showServerModal}
           onClose={() => setShowServerModal(false)}
         />
-      </View>
+      </KeyboardAvoidingView>
     );
   }
 
