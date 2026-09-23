@@ -25,6 +25,26 @@ public class RandomNumberGenerator {
         int number = random.nextInt(1_000_000);
         return String.format("DOC%06d", number);
     }
+
+    public static String generateRevisedItrId() {
+        int number = random.nextInt(1_000_000);
+        return String.format("RIT%06d", number);
+    }
+
+    public static String generateRevisedItrDetailsId() {
+        int number = random.nextInt(1_000_000);
+        return String.format("RDT%06d", number);
+    }
+
+    public static String generateRevisedItrDocumentId() {
+        int number = random.nextInt(1_000_000);
+        return String.format("RDC%06d", number);
+    }
+
+    public static String generateRevisionReasonId() {
+        int number = random.nextInt(1_000_000);
+        return String.format("RSN%06d", number);
+    }
     
     
     private static final String CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
