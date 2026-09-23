@@ -1,6 +1,15 @@
-import React from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
-import { LoanDetailsFormData, LoanEmploymentType } from "../../../types/loans.types";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Modal,
+  ScrollView,
+} from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { BrandColors } from "../../../../../shared/theme";
+import { LoanDetailsFormData } from "../../../types/loans.types";
 import { styles } from "./HomeLoanFinancialsStep.styles";
 
 export interface HomeLoanFinancialsStepProps {
@@ -9,13 +18,15 @@ export interface HomeLoanFinancialsStepProps {
   errors?: Record<string, string>;
 }
 
-const HOME_PURPOSES = [
-  "New Apartment / Flat",
-  "House Construction",
-  "Resale Property",
-  "Plot + Construction",
-  "Home Renovation",
-  "Balance Transfer",
+const PROPERTY_PURPOSES = [
+  "New Apartment / Flat Purchase",
+  "House Construction (Self-build)",
+  "Resale Property Purchase",
+  "Plot Purchase + Construction",
+  "Home Renovation / Extension",
+  "Balance Transfer (Takeover)",
+  "Top-up on Existing Home Loan",
+  "Others",
 ];
 
 const TENURE_OPTIONS = [
@@ -34,10 +45,18 @@ const AMOUNT_PRESETS = [
   { label: "₹2 Crores", value: "20000000" },
 ];
 
-const EMPLOYMENT_TYPES: { label: string; value: LoanEmploymentType }[] = [
-  { label: "Salaried", value: "Salaried" },
-  { label: "Self-Employed Professional", value: "Self-Employed Professional" },
-  { label: "Business Owner", value: "Business Owner" },
+const PROPERTY_STAGES: (
+  | "Ready to Move"
+  | "Under Construction"
+  | "Resale Property"
+  | "Plot + Construction"
+  | "Self Construction"
+)[] = [
+  "Ready to Move",
+  "Under Construction",
+  "Resale Property",
+  "Plot + Construction",
+  "Self Construction",
 ];
 
 export const HomeLoanFinancialsStep: React.FC<HomeLoanFinancialsStepProps> = ({
@@ -45,88 +64,154 @@ export const HomeLoanFinancialsStep: React.FC<HomeLoanFinancialsStepProps> = ({
   onChange,
   errors = {},
 }) => {
+  const [isPurposeModalOpen, setIsPurposeModalOpen] = useState(false);
+
+  const isOthersSelected = data.purpose === "Others";
+
+  const handleSelectPurpose = (item: string) => {
+    onChange("purpose", item);
+    setIsPurposeModalOpen(false);
+    if (item !== "Others") {
+      onChange("customPurpose", "");
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Housing Loan Requirement</Text>
-      <Text style={styles.sectionSubtitle}>
-        Specify your housing capital requirements, property purchase intent, and income status.
-      </Text>
-
-      {/* Required Amount */}
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>
-          Required Home Loan Amount (₹) <Text style={styles.requiredStar}>*</Text>
-        </Text>
-        <TextInput
-          style={[styles.input, errors.requiredAmount && styles.inputError]}
-          placeholder="e.g. 5000000"
-          placeholderTextColor="#94A3B8"
-          keyboardType="numeric"
-          value={data.requiredAmount}
-          onChangeText={(text) => onChange("requiredAmount", text)}
-        />
-        <View style={styles.chipRow}>
-          {AMOUNT_PRESETS.map((item) => (
-            <TouchableOpacity
-              key={item.value}
-              onPress={() => onChange("requiredAmount", item.value)}
-              style={styles.chip}
-            >
-              <Text style={styles.chipText}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
+      {/* 1. Required Loan Amount Card */}
+      <View style={styles.card}>
+        <View style={styles.cardHeaderRow}>
+          <View style={styles.cardHeaderLeft}>
+            <Ionicons name="cash-outline" size={20} color={BrandColors.PRIMARY_ORANGE || "#EA580C"} />
+            <Text style={styles.cardTitle}>Required Home Loan Amount</Text>
+          </View>
         </View>
-        {errors.requiredAmount && (
-          <Text style={styles.errorText}>{errors.requiredAmount}</Text>
-        )}
-      </View>
-
-      {/* Purpose of Loan */}
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>
-          Property Intent / Purpose <Text style={styles.requiredStar}>*</Text>
+        <Text style={styles.cardDescription}>
+          Enter your required loan amount or select one of the quick presets below.
         </Text>
-        <TextInput
-          style={[styles.input, errors.purpose && styles.inputError]}
-          placeholder="e.g. Purchase of 3BHK flat"
-          placeholderTextColor="#94A3B8"
-          value={data.purpose}
-          onChangeText={(text) => onChange("purpose", text)}
-        />
-        <View style={styles.chipRow}>
-          {HOME_PURPOSES.map((purpose) => {
-            const isSelected = data.purpose === purpose;
-            return (
-              <TouchableOpacity
-                key={purpose}
-                onPress={() => onChange("purpose", purpose)}
-                style={[styles.chip, isSelected && styles.chipActive]}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    isSelected && styles.chipTextActive,
-                  ]}
+
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>
+            Amount (₹) <Text style={styles.requiredStar}>*</Text>
+          </Text>
+          <TextInput
+            style={[styles.input, errors.requiredAmount && styles.inputError]}
+            placeholder="Enter required loan amount (₹)"
+            placeholderTextColor="#94A3B8"
+            keyboardType="numeric"
+            value={data.requiredAmount}
+            onChangeText={(text) => onChange("requiredAmount", text)}
+          />
+          {errors.requiredAmount && (
+            <Text style={styles.errorText}>{errors.requiredAmount}</Text>
+          )}
+
+          <View style={styles.chipRow}>
+            {AMOUNT_PRESETS.map((item) => {
+              const isSelected = Boolean(data.requiredAmount) && data.requiredAmount === item.value;
+              return (
+                <TouchableOpacity
+                  key={item.value}
+                  activeOpacity={0.7}
+                  onPress={() => onChange("requiredAmount", item.value)}
+                  style={[styles.chip, isSelected && styles.chipActive]}
                 >
-                  {purpose}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+                  <Text
+                    style={[
+                      styles.chipText,
+                      isSelected && styles.chipTextActive,
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
-        {errors.purpose && (
-          <Text style={styles.errorText}>{errors.purpose}</Text>
-        )}
       </View>
 
-      {/* Preferred Tenure */}
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>
-          Repayment Tenure <Text style={styles.requiredStar}>*</Text>
+      {/* 2. Property Intent / Purpose Card (Dropdown with Others) */}
+      <View style={styles.card}>
+        <View style={styles.cardHeaderRow}>
+          <View style={styles.cardHeaderLeft}>
+            <Ionicons name="business-outline" size={20} color={BrandColors.PRIMARY_ORANGE || "#EA580C"} />
+            <Text style={styles.cardTitle}>Property Intent / Purpose</Text>
+          </View>
+        </View>
+        <Text style={styles.cardDescription}>
+          Select the housing requirement. Select "Others" if your specific property purpose is not listed.
         </Text>
+
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>
+            Select Intent / Purpose <Text style={styles.requiredStar}>*</Text>
+          </Text>
+          <TouchableOpacity
+            style={[
+              styles.dropdownSelector,
+              Boolean(data.purpose) && styles.dropdownSelectorActive,
+              errors.purpose && styles.inputError,
+            ]}
+            onPress={() => setIsPurposeModalOpen(true)}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={
+                data.purpose ? styles.dropdownText : styles.dropdownPlaceholder
+              }
+            >
+              {data.purpose || "Select Property Intent / Purpose..."}
+            </Text>
+            <Ionicons
+              name="chevron-down"
+              size={18}
+              color={data.purpose ? (BrandColors.PRIMARY_ORANGE || "#EA580C") : "#64748B"}
+            />
+          </TouchableOpacity>
+          {errors.purpose && (
+            <Text style={styles.errorText}>{errors.purpose}</Text>
+          )}
+
+          {/* Conditional input if Others is selected */}
+          {isOthersSelected && (
+            <View style={styles.customInputContainer}>
+              <Text style={styles.label}>
+                Specify Custom Property Intent <Text style={styles.requiredStar}>*</Text>
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  errors.customPurpose && styles.inputError,
+                ]}
+                placeholder="Enter custom property intent / purpose"
+                placeholderTextColor="#94A3B8"
+                value={data.customPurpose || ""}
+                onChangeText={(text) => onChange("customPurpose", text)}
+              />
+              {errors.customPurpose && (
+                <Text style={styles.errorText}>{errors.customPurpose}</Text>
+              )}
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* 3. Preferred Tenure Card */}
+      <View style={styles.card}>
+        <View style={styles.cardHeaderRow}>
+          <View style={styles.cardHeaderLeft}>
+            <Ionicons name="time-outline" size={20} color={BrandColors.PRIMARY_ORANGE || "#EA580C"} />
+            <Text style={styles.cardTitle}>Repayment Tenure</Text>
+          </View>
+        </View>
+        <Text style={styles.cardDescription}>
+          Select your intended loan tenure. Longer tenure lowers monthly EMI burden.
+        </Text>
+
         <View style={styles.tenureGrid}>
           {TENURE_OPTIONS.map((item) => {
-            const isSelected = data.preferredTenureMonths === item.value;
+            const isSelected = Boolean(data.preferredTenureMonths) && data.preferredTenureMonths === item.value;
             return (
               <TouchableOpacity
                 key={item.value}
@@ -151,113 +236,114 @@ export const HomeLoanFinancialsStep: React.FC<HomeLoanFinancialsStepProps> = ({
         )}
       </View>
 
-      {/* Employment Type */}
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>
-          Employment / Income Category <Text style={styles.requiredStar}>*</Text>
-        </Text>
-        <View style={styles.chipRow}>
-          {EMPLOYMENT_TYPES.map((emp) => {
-            const isSelected = data.employmentType === emp.value;
-            return (
-              <TouchableOpacity
-                key={emp.value}
-                onPress={() => onChange("employmentType", emp.value)}
-                style={[styles.chip, isSelected && styles.chipActive]}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    isSelected && styles.chipTextActive,
-                  ]}
-                >
-                  {emp.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+      {/* 4. Property Stage & Estimated Cost Card */}
+      <View style={styles.card}>
+        <View style={styles.cardHeaderRow}>
+          <View style={styles.cardHeaderLeft}>
+            <Ionicons name="home-outline" size={20} color={BrandColors.PRIMARY_ORANGE || "#EA580C"} />
+            <Text style={styles.cardTitle}>Property Details & Valuation</Text>
+          </View>
         </View>
-      </View>
-
-      {/* Monthly Net Income */}
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>
-          Monthly Net Household Income (₹) <Text style={styles.requiredStar}>*</Text>
+        <Text style={styles.cardDescription}>
+          Current development stage and total agreement or estimated cost of the target property.
         </Text>
-        <TextInput
-          style={[
-            styles.input,
-            errors.monthlyIncomeOrTurnover && styles.inputError,
-          ]}
-          placeholder="e.g. 150000"
-          placeholderTextColor="#94A3B8"
-          keyboardType="numeric"
-          value={data.monthlyIncomeOrTurnover}
-          onChangeText={(text) => onChange("monthlyIncomeOrTurnover", text)}
-        />
-        {errors.monthlyIncomeOrTurnover && (
-          <Text style={styles.errorText}>{errors.monthlyIncomeOrTurnover}</Text>
-        )}
-      </View>
 
-      {/* Existing Loans Toggle */}
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>Existing Active Loans / EMIs?</Text>
-        <View style={styles.toggleContainer}>
-          <TouchableOpacity
-            onPress={() => onChange("hasExistingLoans", false)}
-            style={[
-              styles.toggleButton,
-              !data.hasExistingLoans && styles.toggleButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.toggleText,
-                !data.hasExistingLoans && styles.toggleTextActive,
-              ]}
-            >
-              No Other EMIs
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => onChange("hasExistingLoans", true)}
-            style={[
-              styles.toggleButton,
-              data.hasExistingLoans && styles.toggleButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.toggleText,
-                data.hasExistingLoans && styles.toggleTextActive,
-              ]}
-            >
-              Yes, Paying EMIs
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Existing EMI */}
-      {data.hasExistingLoans && (
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Total Ongoing Monthly EMI (₹) <Text style={styles.requiredStar}>*</Text>
-          </Text>
+          <Text style={styles.label}>Property Construction Stage</Text>
+          <View style={styles.stageGrid}>
+            {PROPERTY_STAGES.map((stage) => {
+              const isSelected = Boolean(data.propertyStage) && data.propertyStage === stage;
+              return (
+                <TouchableOpacity
+                  key={stage}
+                  activeOpacity={0.7}
+                  onPress={() => onChange("propertyStage", stage)}
+                  style={[styles.stagePill, isSelected && styles.stagePillActive]}
+                >
+                  <Text
+                    style={[
+                      styles.stagePillText,
+                      isSelected && styles.stagePillTextActive,
+                    ]}
+                  >
+                    {stage}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Estimated Total Property Cost / Agreement Value (₹)</Text>
           <TextInput
-            style={[styles.input, errors.existingEmi && styles.inputError]}
-            placeholder="e.g. 20000"
+            style={styles.input}
+            placeholder="Enter estimated property cost / agreement value (₹)"
             placeholderTextColor="#94A3B8"
             keyboardType="numeric"
-            value={data.existingEmi}
-            onChangeText={(text) => onChange("existingEmi", text)}
+            value={data.estimatedPropertyValue || ""}
+            onChangeText={(text) => onChange("estimatedPropertyValue", text)}
           />
-          {errors.existingEmi && (
-            <Text style={styles.errorText}>{errors.existingEmi}</Text>
-          )}
         </View>
-      )}
+      </View>
+
+      {/* Dropdown Modal for Purpose */}
+      <Modal
+        visible={isPurposeModalOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsPurposeModalOpen(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsPurposeModalOpen(false)}
+        >
+          <View
+            style={styles.modalContent}
+            onStartShouldSetResponder={() => true}
+          >
+            <View style={styles.modalHeaderRow}>
+              <Text style={styles.modalTitle}>Select Property Intent / Purpose</Text>
+              <TouchableOpacity onPress={() => setIsPurposeModalOpen(false)}>
+                <Ionicons name="close-circle" size={24} color="#94A3B8" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {PROPERTY_PURPOSES.map((purpose) => {
+                const isSelected = data.purpose === purpose;
+                return (
+                  <TouchableOpacity
+                    key={purpose}
+                    style={[
+                      styles.optionItem,
+                      isSelected && styles.optionItemActive,
+                    ]}
+                    onPress={() => handleSelectPurpose(purpose)}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        isSelected && styles.optionTextActive,
+                      ]}
+                    >
+                      {purpose}
+                    </Text>
+                    {isSelected && (
+                      <Ionicons
+                        name="checkmark"
+                        size={18}
+                        color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };

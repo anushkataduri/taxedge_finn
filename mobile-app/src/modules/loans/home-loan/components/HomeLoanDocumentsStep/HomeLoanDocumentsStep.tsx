@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Modal } from "react-native";
+import { View, Text, TouchableOpacity, Modal, Alert } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
 import {
@@ -9,7 +9,9 @@ import {
 import {
   pickLoanImageFromGallery,
   pickLoanImageFromCamera,
+  pickLoanDocumentFromFiles,
 } from "../../../services/documentUploadHelper";
+import { DocumentPreviewModal } from "../DocumentPreviewModal";
 import { styles } from "./HomeLoanDocumentsStep.styles";
 
 export interface HomeLoanDocumentsStepProps {
@@ -20,21 +22,23 @@ export interface HomeLoanDocumentsStepProps {
     fileName: string,
     fileSize: string
   ) => void;
+  onDocumentDeleted?: (docId: string) => void;
 }
 
-const CATEGORIES: LoanDocumentCategory[] = [
-  "Identity & Address",
-  "Income & Banking",
-  "Business & Tax",
-  "Collateral & Others",
+const CATEGORIES: { name: LoanDocumentCategory; icon: string }[] = [
+  { name: "Identity & Address", icon: "person-circle-outline" },
+  { name: "Income & Banking", icon: "wallet-outline" },
+  { name: "Property & Collateral", icon: "home-outline" },
 ];
 
 export const HomeLoanDocumentsStep: React.FC<HomeLoanDocumentsStepProps> = ({
   documents,
   onDocumentUploaded,
+  onDocumentDeleted,
 }) => {
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<LoanDocumentItem | null>(null);
 
   const totalRequired = documents.filter((d) => d.required).length;
   const uploadedRequired = documents.filter(
@@ -68,138 +72,161 @@ export const HomeLoanDocumentsStep: React.FC<HomeLoanDocumentsStepProps> = ({
     }
   };
 
-  const handleMockPdf = () => {
+  const handlePickFiles = async () => {
     setModalVisible(false);
     if (!activeDocId) return;
-    const doc = documents.find((d) => d.id === activeDocId);
-    const mockName = `${doc?.name.replace(/\s+/g, "_") || "document"}_verified.pdf`;
-    onDocumentUploaded(
-      activeDocId,
-      `file:///mock/storage/${mockName}`,
-      mockName,
-      "2.1 MB"
+    const file = await pickLoanDocumentFromFiles();
+    if (file) {
+      onDocumentUploaded(activeDocId, file.uri, file.name, file.size);
+    }
+  };
+
+  const handleDelete = (item: LoanDocumentItem) => {
+    Alert.alert(
+      "Remove Document?",
+      `Are you sure you want to remove "${item.name}"? You will need to upload it again before submission.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => onDocumentDeleted?.(item.id),
+        },
+      ]
     );
   };
 
+  const activeDoc = documents.find((d) => d.id === activeDocId);
+
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Home Loan Property & Income Dossier</Text>
-      <Text style={styles.sectionSubtitle}>
-        Upload your KYC, property allotment/deed papers, salary slips, and bank statements.
-      </Text>
-
-      {/* Progress Bar */}
+      {/* 1. Mandatory Progress Tracker Card */}
       <View style={styles.progressContainer}>
         <View style={styles.progressHeader}>
-          <Text style={styles.progressTitle}>Mandatory Document Progress</Text>
+          <Text style={styles.progressTitle}>Document Checklist Progress</Text>
           <Text style={styles.progressCount}>
             {uploadedRequired} of {totalRequired} ({progressPercent}%)
           </Text>
         </View>
         <View style={styles.progressBarTrack}>
           <View
-            style={{
-              height: "100%",
-              width: `${progressPercent}%`,
-              backgroundColor:
-                progressPercent === 100 ? "#16A34A" : BrandColors.PRIMARY_BLUE,
-              borderRadius: 3,
-            }}
+            style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
           />
         </View>
+        <Text style={styles.formatHint}>
+          Supported formats: PDF, JPG, PNG, Word (.docx), Excel (.xlsx) • Max 10MB per file
+        </Text>
       </View>
 
-      {/* Categorized Document List */}
-      {CATEGORIES.map((category) => {
-        const categoryDocs = documents.filter((d) => d.category === category);
-        if (categoryDocs.length === 0) return null;
+      {/* 2. Grouped Category Cards */}
+      {CATEGORIES.map(({ name: cat, icon }) => {
+        const catDocs = documents.filter((d) => d.category === cat);
+        if (catDocs.length === 0) return null;
 
         return (
-          <View key={category} style={styles.categoryContainer}>
-            <Text style={styles.categoryHeader}>{category}</Text>
-            {categoryDocs.map((doc) => {
-              const isUploaded = Boolean(doc.fileUri);
+          <View key={cat} style={styles.categoryContainer}>
+            <View style={styles.categoryHeaderRow}>
+              <Ionicons
+                name={icon as any}
+                size={16}
+                color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
+              />
+              <Text style={styles.categoryHeader}>{cat}</Text>
+            </View>
+
+            {catDocs.map((item) => {
+              const isUploaded = Boolean(item.fileUri);
 
               return (
                 <View
-                  key={doc.id}
+                  key={item.id}
                   style={[
                     styles.docCard,
                     isUploaded && styles.docCardUploaded,
                   ]}
                 >
-                  <View style={styles.docLeft}>
-                    <View
-                      style={[
-                        styles.iconBox,
-                        { backgroundColor: doc.iconBg || "#F1F5F9" },
-                      ]}
-                    >
-                      <Ionicons
-                        name={(doc.iconName as any) || "document-text"}
-                        size={20}
-                        color={doc.iconColor || BrandColors.PRIMARY_BLUE}
-                      />
-                    </View>
-
-                    <View style={styles.docInfo}>
-                      <View style={styles.docNameRow}>
-                        <Text style={styles.docName}>{doc.name}</Text>
-                        {doc.required ? (
-                          <View style={styles.requiredBadge}>
-                            <Text style={styles.requiredText}>Required</Text>
-                          </View>
-                        ) : (
-                          <View style={styles.optionalBadge}>
-                            <Text style={styles.optionalText}>Optional</Text>
-                          </View>
-                        )}
+                  <View style={styles.docCardTopRow}>
+                    <View style={styles.docLeft}>
+                      <View style={styles.iconBox}>
+                        <Ionicons
+                          name={item.iconName as any}
+                          size={20}
+                          color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
+                        />
                       </View>
 
-                      <Text style={styles.docSubtitle} numberOfLines={2}>
-                        {doc.subtitle}
-                      </Text>
-
-                      {isUploaded && (
-                        <View style={styles.fileMetaRow}>
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={14}
-                            color="#16A34A"
-                          />
-                          <Text style={styles.fileNameText} numberOfLines={1}>
-                            {doc.fileName || "Uploaded"}
-                          </Text>
-                          <Text style={styles.fileSizeText}>
-                            ({doc.fileSize || "1.8 MB"})
-                          </Text>
+                      <View style={styles.docInfo}>
+                        <View style={styles.docNameRow}>
+                          <Text style={styles.docName}>{item.name}</Text>
+                          {item.required ? (
+                            <View style={styles.requiredBadge}>
+                              <Text style={styles.requiredText}>Required</Text>
+                            </View>
+                          ) : (
+                            <View style={styles.optionalBadge}>
+                              <Text style={styles.optionalText}>Optional</Text>
+                            </View>
+                          )}
                         </View>
-                      )}
+                        <Text style={styles.docSubtitle}>{item.subtitle}</Text>
+                        {isUploaded && item.fileName && (
+                          <Text style={styles.docFileDetails}>
+                            ✓ {item.fileName} ({item.fileSize || "File"})
+                          </Text>
+                        )}
+                      </View>
                     </View>
+
+                    {!isUploaded && (
+                      <TouchableOpacity
+                        style={styles.uploadButton}
+                        onPress={() => handleOpenUploadSheet(item.id)}
+                      >
+                        <Ionicons
+                          name="arrow-up-circle-outline"
+                          size={15}
+                          color={BrandColors.PRIMARY_ORANGE_DARK || "#EA580C"}
+                        />
+                        <Text style={styles.uploadButtonText}>Upload</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
 
-                  {isUploaded ? (
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() => handleOpenUploadSheet(doc.id)}
-                      style={styles.replaceButton}
-                    >
-                      <Ionicons name="refresh" size={14} color="#16A34A" />
-                      <Text style={styles.replaceButtonText}>Replace</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() => handleOpenUploadSheet(doc.id)}
-                      style={styles.uploadButton}
-                    >
-                      <Ionicons
-                        name="cloud-upload-outline"
-                        size={14}
-                        color={BrandColors.PRIMARY_BLUE}
-                      />
-                      <Text style={styles.uploadButtonText}>Upload</Text>
-                    </TouchableOpacity>
+                  {/* Actions for Uploaded Documents: Preview, Replace, Delete */}
+                  {isUploaded && (
+                    <View style={styles.docActionsRow}>
+                      <TouchableOpacity
+                        style={styles.previewButton}
+                        onPress={() => setPreviewDoc(item)}
+                      >
+                        <Ionicons name="eye-outline" size={14} color="#0F172A" />
+                        <Text style={styles.previewButtonText}>Preview</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.reuploadButton}
+                        onPress={() => handleOpenUploadSheet(item.id)}
+                      >
+                        <Ionicons
+                          name="cloud-upload-outline"
+                          size={14}
+                          color="#64748B"
+                        />
+                        <Text style={styles.reuploadButtonText}>Replace</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleDelete(item)}
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={13}
+                          color="#DC2626"
+                        />
+                        <Text style={styles.deleteButtonText}>Delete</Text>
+                      </TouchableOpacity>
+                    </View>
                   )}
                 </View>
               );
@@ -208,7 +235,7 @@ export const HomeLoanDocumentsStep: React.FC<HomeLoanDocumentsStepProps> = ({
         );
       })}
 
-      {/* Upload Modal */}
+      {/* Upload Bottom Sheet Modal */}
       <Modal
         visible={modalVisible}
         transparent
@@ -216,56 +243,93 @@ export const HomeLoanDocumentsStep: React.FC<HomeLoanDocumentsStepProps> = ({
         onRequestClose={() => setModalVisible(false)}
       >
         <TouchableOpacity
-          style={styles.modalBackdrop}
+          style={styles.modalOverlay}
           activeOpacity={1}
           onPress={() => setModalVisible(false)}
         >
-          <View style={styles.sheetContent}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Select Upload Method</Text>
+          <View
+            style={styles.modalContent}
+            onStartShouldSetResponder={() => true}
+          >
+            <View style={styles.modalHeaderRow}>
+              <Text style={styles.modalTitle}>
+                Upload {activeDoc?.name || "Document"}
+              </Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={22} color="#64748B" />
+                <Ionicons name="close-circle" size={24} color="#94A3B8" />
               </TouchableOpacity>
             </View>
+            <Text style={styles.modalSubtitle}>
+              Ensure all text and stamps are clearly legible. Max 10MB.
+            </Text>
 
             <TouchableOpacity
-              style={styles.sheetOption}
+              style={styles.modalOption}
               onPress={handlePickCamera}
             >
               <Ionicons
-                name="camera-outline"
+                name="camera"
                 size={22}
-                color={BrandColors.PRIMARY_BLUE}
+                color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
               />
-              <Text style={styles.sheetOptionText}>Take Photo with Camera</Text>
+              <View>
+                <Text style={styles.modalOptionText}>Take Photo</Text>
+                <Text style={styles.modalOptionSub}>
+                  Capture original paper document using camera
+                </Text>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.sheetOption}
+              style={styles.modalOption}
               onPress={handlePickGallery}
             >
               <Ionicons
-                name="images-outline"
+                name="images"
                 size={22}
-                color={BrandColors.PRIMARY_BLUE}
+                color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
               />
-              <Text style={styles.sheetOptionText}>Choose from Gallery</Text>
+              <View>
+                <Text style={styles.modalOptionText}>Photo Library / Gallery</Text>
+                <Text style={styles.modalOptionSub}>
+                  Upload clear JPG or PNG image from phone
+                </Text>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.sheetOption}
-              onPress={handleMockPdf}
+              style={styles.modalOption}
+              onPress={handlePickFiles}
             >
               <Ionicons
-                name="document-attach-outline"
+                name="document-text"
                 size={22}
-                color={BrandColors.PRIMARY_BLUE}
+                color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
               />
-              <Text style={styles.sheetOptionText}>Attach Document PDF</Text>
+              <View>
+                <Text style={styles.modalOptionText}>Files / Google Drive / PDF</Text>
+                <Text style={styles.modalOptionSub}>
+                  Browse storage, Google Drive, PDF, Word, or Excel
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Document Preview Modal */}
+      <DocumentPreviewModal
+        visible={Boolean(previewDoc)}
+        document={previewDoc}
+        onClose={() => setPreviewDoc(null)}
+      />
     </View>
   );
 };

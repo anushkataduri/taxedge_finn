@@ -1,9 +1,9 @@
 import { StyleSheet } from "react-native";
-import { BrandColors, Typography } from "../../../../../shared/theme";
+import { BrandColors } from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   container: {
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     backgroundColor: BrandColors.WHITE,
     borderBottomWidth: 1,
@@ -17,29 +17,31 @@ export const styles = StyleSheet.create({
   stepItem: {
     alignItems: "center",
     flex: 1,
+    position: "relative",
   },
   stepCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#F1F5F9",
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#EFF6FF",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1.5,
-    borderColor: "#CBD5E1",
+    borderColor: "#DBEAFE",
+    zIndex: 2,
   },
   stepCircleActive: {
-    backgroundColor: BrandColors.PRIMARY_BLUE,
-    borderColor: BrandColors.PRIMARY_BLUE,
+    backgroundColor: "#EA580C",
+    borderColor: "#EA580C",
   },
   stepCircleCompleted: {
     backgroundColor: "#16A34A",
     borderColor: "#16A34A",
   },
   stepNumber: {
-    fontSize: Typography.fontSize.xs,
+    fontSize: 12,
     fontWeight: "700",
-    color: "#64748B",
+    color: "#475569",
   },
   stepNumberActive: {
     color: BrandColors.WHITE,
@@ -47,22 +49,22 @@ export const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 10,
     color: "#64748B",
-    marginTop: 4,
+    marginTop: 6,
     fontWeight: "500",
     textAlign: "center",
   },
   stepTitleActive: {
-    color: BrandColors.PRIMARY_BLUE,
+    color: "#EA580C",
     fontWeight: "700",
   },
   stepLine: {
     position: "absolute",
-    top: 14,
+    top: 15,
     left: "50%",
     right: "-50%",
     height: 2,
     backgroundColor: "#E2E8F0",
-    zIndex: -1,
+    zIndex: 1,
   },
   stepLineCompleted: {
     backgroundColor: "#16A34A",

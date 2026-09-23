@@ -1,45 +1,56 @@
 import { StyleSheet } from "react-native";
-import { BrandColors, Typography } from "../../../../../shared/theme";
+import { BrandColors } from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: BrandColors.WHITE,
   },
-  header: {
+  headerBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
     backgroundColor: BrandColors.WHITE,
   },
-  headerLeft: {
-    flexDirection: "row",
+  circularBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
     alignItems: "center",
-    gap: 12,
+    justifyContent: "center",
+  },
+  headerCenterContent: {
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+    paddingHorizontal: 12,
   },
   headerTitle: {
-    fontSize: Typography.fontSize.lg,
+    fontSize: 16,
     fontWeight: "700",
     color: "#0F172A",
+    textAlign: "center",
   },
   headerSubtitle: {
-    fontSize: Typography.fontSize.xs,
-    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#EA580C",
+    marginTop: 2,
+    textAlign: "center",
   },
-  saveDraftButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
+  progressBarTrack: {
+    width: "100%",
+    height: 3,
     backgroundColor: "#F1F5F9",
   },
-  saveDraftText: {
-    fontSize: Typography.fontSize.xs,
-    fontWeight: "600",
-    color: "#475569",
+  progressBarFill: {
+    height: "100%",
+    backgroundColor: "#EA580C",
   },
   scrollView: {
     flex: 1,
@@ -48,6 +59,48 @@ export const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 40,
+  },
+  titleCardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  pageTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#0F172A",
+  },
+  pageSubtitle: {
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
+    marginTop: 2,
+  },
+  quickBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderWidth: 1,
+    borderColor: "#FFEDD5",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    maxWidth: 180,
+    gap: 6,
+  },
+  quickBannerTextCol: {
+    flex: 1,
+  },
+  quickBannerTitle: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#9A3412",
+  },
+  quickBannerDesc: {
+    fontSize: 9,
+    color: "#C2410C",
+    lineHeight: 12,
   },
   bottomBar: {
     flexDirection: "row",
@@ -58,38 +111,23 @@ export const styles = StyleSheet.create({
     backgroundColor: BrandColors.WHITE,
     borderTopWidth: 1,
     borderTopColor: "#E2E8F0",
-    gap: 12,
   },
-  backButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backButtonText: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: "600",
-    color: "#475569",
-  },
-  nextButton: {
+  continueBtn: {
     flex: 1,
     flexDirection: "row",
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
-    backgroundColor: BrandColors.PRIMARY_BLUE,
+    backgroundColor: "#EA580C",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 6,
   },
-  nextButtonDisabled: {
-    backgroundColor: "#94A3B8",
+  continueBtnDisabled: {
+    backgroundColor: "#FDBA74",
   },
-  nextButtonText: {
-    fontSize: Typography.fontSize.sm,
+  continueBtnText: {
+    fontSize: 14,
     fontWeight: "700",
     color: BrandColors.WHITE,
   },

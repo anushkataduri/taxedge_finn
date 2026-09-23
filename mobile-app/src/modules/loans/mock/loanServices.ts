@@ -345,10 +345,137 @@ export const BUSINESS_DOCUMENTS_TEMPLATE: LoanDocumentItem[] = [
   },
 ];
 
+export const HOME_LOAN_DOCUMENTS_TEMPLATE: LoanDocumentItem[] = [
+  {
+    id: "pan",
+    name: "PAN Card",
+    subtitle: "Clear photo or PDF copy of applicant PAN",
+    required: true,
+    iconName: "card",
+    iconBg: "#FEF0E6",
+    iconColor: "#EA580C",
+    category: "Identity & Address",
+  },
+  {
+    id: "aadhaar",
+    name: "Aadhaar Card",
+    subtitle: "Front & back copy with readable QR code",
+    required: true,
+    iconName: "finger-print",
+    iconBg: "#FEF0E6",
+    iconColor: "#EA580C",
+    category: "Identity & Address",
+  },
+  {
+    id: "photograph",
+    name: "Passport Size Photograph",
+    subtitle: "Recent passport photo of applicant",
+    required: true,
+    iconName: "camera",
+    iconBg: "#FEF0E6",
+    iconColor: "#EA580C",
+    category: "Identity & Address",
+  },
+  {
+    id: "address-proof",
+    name: "Address Proof",
+    subtitle: "Utility bill / Rent Agreement / Voter ID",
+    required: true,
+    iconName: "home",
+    iconBg: "#FEF0E6",
+    iconColor: "#EA580C",
+    category: "Identity & Address",
+  },
+  {
+    id: "bank-statements",
+    name: "Bank Statements (6-12 Months)",
+    subtitle: "Continuous bank statement of salary/primary account",
+    required: true,
+    iconName: "document-text",
+    iconBg: "#FEF0E6",
+    iconColor: "#EA580C",
+    category: "Income & Banking",
+  },
+  {
+    id: "salary-slips",
+    name: "Salary Slips / Income Proof",
+    subtitle: "Last 3-6 months payslips or business income statement",
+    required: true,
+    iconName: "receipt",
+    iconBg: "#FEF0E6",
+    iconColor: "#EA580C",
+    category: "Income & Banking",
+  },
+  {
+    id: "form-16-itr",
+    name: "Form 16 / ITR & Computation (2 Years)",
+    subtitle: "Latest 2 assessment years tax returns or Form 16 Part A & B",
+    required: true,
+    iconName: "stats-chart",
+    iconBg: "#FEF0E6",
+    iconColor: "#EA580C",
+    category: "Income & Banking",
+  },
+  {
+    id: "sale-agreement",
+    name: "Agreement to Sell / Allotment Letter",
+    subtitle: "Executed BBA, Allotment Letter or Agreement to Sell copy",
+    required: true,
+    iconName: "document-attach",
+    iconBg: "#FEF0E6",
+    iconColor: "#EA580C",
+    category: "Property & Collateral",
+  },
+  {
+    id: "approved-plan",
+    name: "Approved Building Plan & Sanction Map",
+    subtitle: "Municipal / RERA sanctioned building plan and NOC",
+    required: true,
+    iconName: "map",
+    iconBg: "#FEF0E6",
+    iconColor: "#EA580C",
+    category: "Property & Collateral",
+  },
+  {
+    id: "title-deed",
+    name: "Title Deed / Chain of Deeds",
+    subtitle: "Prior title documents, mother deed or link documents",
+    required: true,
+    iconName: "key",
+    iconBg: "#FEF0E6",
+    iconColor: "#EA580C",
+    category: "Property & Collateral",
+  },
+  {
+    id: "property-tax-ec",
+    name: "Encumbrance Certificate & Tax Receipts",
+    subtitle: "Form 15/16 EC and latest property tax paid receipt",
+    required: false,
+    iconName: "receipt-outline",
+    iconBg: "#FEF0E6",
+    iconColor: "#EA580C",
+    category: "Property & Collateral",
+  },
+  {
+    id: "down-payment-receipts",
+    name: "Own Contribution / Down Payment Proof",
+    subtitle: "Bank debits / Builder receipts of customer margin paid",
+    required: false,
+    iconName: "cash",
+    iconBg: "#FEF0E6",
+    iconColor: "#EA580C",
+    category: "Property & Collateral",
+  },
+];
+
 export function getDocumentsForLoanType(
   loanType: string,
   isBusiness: boolean
 ): LoanDocumentItem[] {
+  if (loanType === "Home Loan") {
+    return JSON.parse(JSON.stringify(HOME_LOAN_DOCUMENTS_TEMPLATE));
+  }
+
   const isBusinessCategory =
     isBusiness ||
     [

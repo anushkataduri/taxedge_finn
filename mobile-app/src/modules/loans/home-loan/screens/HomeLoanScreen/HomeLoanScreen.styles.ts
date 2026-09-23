@@ -4,42 +4,7 @@ import { BrandColors, Typography } from "../../../../../shared/theme";
 export const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: BrandColors.WHITE,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-    backgroundColor: BrandColors.WHITE,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  headerTitle: {
-    fontSize: Typography.fontSize.lg,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  headerSubtitle: {
-    fontSize: Typography.fontSize.xs,
-    color: "#64748B",
-  },
-  saveDraftButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: "#F1F5F9",
-  },
-  saveDraftText: {
-    fontSize: Typography.fontSize.xs,
-    fontWeight: "600",
-    color: "#475569",
+    backgroundColor: "#FFFFFF",
   },
   scrollView: {
     flex: 1,
@@ -55,7 +20,7 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: BrandColors.WHITE,
+    backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
     borderTopColor: "#E2E8F0",
     gap: 12,
@@ -68,6 +33,7 @@ export const styles = StyleSheet.create({
     borderColor: "#CBD5E1",
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#FFFFFF",
   },
   backButtonText: {
     fontSize: Typography.fontSize.sm,
@@ -80,7 +46,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
-    backgroundColor: BrandColors.PRIMARY_BLUE,
+    backgroundColor: BrandColors.PRIMARY_ORANGE || "#EA580C",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
@@ -91,6 +57,6 @@ export const styles = StyleSheet.create({
   nextButtonText: {
     fontSize: Typography.fontSize.sm,
     fontWeight: "700",
-    color: BrandColors.WHITE,
+    color: "#FFFFFF",
   },
 });

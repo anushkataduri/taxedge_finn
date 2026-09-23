@@ -29,7 +29,7 @@ export interface RequestOptions {
  * Server Network Configuration
  * Change IP and Port here to point the mobile app to your backend.
  */
-export const SERVER_IP = "192.168.88.24";
+export const SERVER_IP = "192.168.88.25";
 
 export const SERVER_PORT = 8086;
 
@@ -68,7 +68,7 @@ export function getDefaultBaseUrl(): string {
         return `http://${ip}:${SERVER_PORT}`;
       }
     }
-  } catch {}
+  } catch { }
 
   // 4. Default fallback: configured SERVER_IP and SERVER_PORT (guarantees non-empty URL in standalone APK)
   return `http://${SERVER_IP}:${SERVER_PORT}`;
@@ -82,7 +82,7 @@ export class ApiClient {
   constructor(baseUrl: string = getDefaultBaseUrl()) {
     this.baseUrl = baseUrl || `http://${SERVER_IP}:${SERVER_PORT}`;
     this.interceptors = new InterceptorManager();
-    this.loadCustomBaseUrl().catch(() => {});
+    this.loadCustomBaseUrl().catch(() => { });
   }
 
   getBaseUrl(): string {
@@ -130,7 +130,7 @@ export class ApiClient {
         }
         this.setBaseUrl(clean);
       }
-    } catch {}
+    } catch { }
     this.baseUrlLoaded = true;
     return this.baseUrl;
   }
