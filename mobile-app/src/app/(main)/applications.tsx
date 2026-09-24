@@ -27,6 +27,7 @@ const CATEGORY_TABS: { id: "ALL" | ServiceCategoryId; label: string }[] = [
   { id: "ALL", label: "All" },
   { id: "GST", label: "GST" },
   { id: "ITR", label: "ITR" },
+  { id: "LOANS", label: "Loans" },
 ];
 
 /** Custom Tagged Document Icon (GST / ITR) */
@@ -553,7 +554,9 @@ export default function ApplicationsScreen() {
                   <View style={styles.metaChip}>
                     <Ionicons name="card-outline" size={12} color="#64748B" />
                     <Text style={styles.metaChipText}>
-                      {item.paymentStatus}
+                      {item.category === "LOANS" && item.formData?.requestedAmount
+                        ? `₹${Number(item.formData.requestedAmount).toLocaleString("en-IN")}`
+                        : item.paymentStatus}
                     </Text>
                   </View>
                   <View style={styles.cardActionTextWrap}>

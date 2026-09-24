@@ -213,10 +213,16 @@ export default function ApplicationDetailScreen() {
         currentCustomerName ||
         "Verified Business");
 
+  const isLoans =
+    app.category === "LOANS" ||
+    (app.serviceId || "").startsWith("loan") ||
+    app.serviceId === "machinery-loan";
+
   const appliedDate =
     formData.submissionDate || formatDisplayDate(app.createdAt);
-  const assignedCA =
-    app.assignedExecutive && app.assignedExecutive.trim() !== ""
+  const assignedCA = isLoans
+    ? "TaxEdge Loan Agent"
+    : app.assignedExecutive && app.assignedExecutive.trim() !== ""
       ? app.assignedExecutive.trim()
       : isGstAmendment
         ? isCore
@@ -378,8 +384,8 @@ export default function ApplicationDetailScreen() {
         : `Total: ₹${totalAmount.toLocaleString()} • Status: ${app.paymentStatus}`,
     },
     CHAT: {
-      nav: "Chat with CA",
-      title: "CA Consultation",
+      nav: isLoans ? "Chat with Loan Agent" : "Chat with CA",
+      title: isLoans ? "Loan Agent Support" : "CA Consultation",
       sub: `Application #${displayId} • ${assignedCA}`,
     },
   }[activeTab];
@@ -567,7 +573,9 @@ export default function ApplicationDetailScreen() {
                   ]}
                   numberOfLines={1}
                 >
-                  {tab.label}
+                  {tab.id === "CHAT" && isLoans
+                    ? "Chat with Loan Agent"
+                    : tab.label}
                 </Text>
                 <View
                   style={
@@ -859,7 +867,7 @@ export default function ApplicationDetailScreen() {
                       fontWeight: "700",
                     }}
                   >
-                    Chat with CA
+                    {isLoans ? "Chat with Loan Agent" : "Chat with CA"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -1871,7 +1879,9 @@ export default function ApplicationDetailScreen() {
             style={styles.actionBtnFilled}
           >
             <Ionicons name="chatbubbles-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.actionBtnFilledText}>Chat with CA</Text>
+            <Text style={styles.actionBtnFilledText}>
+              {isLoans ? "Chat with Loan Agent" : "Chat with CA"}
+            </Text>
           </TouchableOpacity>
         </View>
       )}

@@ -32,9 +32,8 @@ const STEP_NAMES = [
   'Linked Registrations',
   'Review Application',
   'Fees & Payment Breakdown',
-  'Application Tracking',
   'Submission Success',
-  'Application Receipt',
+  'Application Tracking',
 ];
 
 export const CompanyRegistrationScreen: React.FC = () => {
@@ -156,11 +155,9 @@ export const CompanyRegistrationScreen: React.FC = () => {
       case 8:
         return <StepFeesPayment />;
       case 9:
-        return <StepApplicationTracking />;
-      case 10:
         return <StepSubmissionSuccess />;
-      case 11:
-        return <StepApplicationReceipt />;
+      case 10:
+        return <StepApplicationTracking />;
       default:
         return <StepCompanyType />;
     }
