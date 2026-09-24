@@ -36,7 +36,9 @@ export * from "./InsuranceDetailsCard/InsuranceDetailsCard";
 export * from "./OtherComplianceCard/OtherComplianceCard";
 
 export * from "./UploadDocumentsCard/UploadDocumentsCard";
-export * from "./UploadDocumentsCard/DocumentPreviewModal";
+export {
+  DocumentPreviewModal as ProjectFinanceDocumentPreviewModal,
+} from "./UploadDocumentsCard/DocumentPreviewModal";
 export * from "./ReviewApplicationCard/ReviewApplicationCard";
 export * from "./DeclarationCard/DeclarationCard";
 export * from "./SubmitApplicationCard/SubmitApplicationCard";

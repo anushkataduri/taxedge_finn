@@ -34,31 +34,6 @@ export const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 40,
   },
-  successCard: {
-    backgroundColor: "#F0FDF4",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#DCFCE7",
-    marginBottom: 16,
-    alignItems: "center",
-  },
-  successCheckCircle: {
-    marginBottom: 8,
-  },
-  successTitle: {
-    fontSize: Typography.FONT_SIZE_BASE,
-    fontWeight: "700",
-    color: "#166534",
-    marginBottom: 4,
-    textAlign: "center",
-  },
-  successSubtitle: {
-    fontSize: Typography.FONT_SIZE_XS,
-    color: "#15803D",
-    textAlign: "center",
-    lineHeight: 18,
-  },
   summaryCard: {
     backgroundColor: BrandColors.COLOR_WHITE,
     borderRadius: 12,
