@@ -165,7 +165,7 @@ export const StepRegisteredOffice: React.FC = () => {
           style={styles.input}
           value={company.registeredAddressLine}
           onChangeText={(val) => updateDetails({ registeredAddressLine: val })}
-          placeholder="Plot 42, Tech Park Phase 2, HITEC City"
+          placeholder="Enter registered address"
           placeholderTextColor="#94A3B8"
         />
       </View>
@@ -178,7 +178,7 @@ export const StepRegisteredOffice: React.FC = () => {
             style={styles.input}
             value={company.registeredCity}
             onChangeText={(val) => updateDetails({ registeredCity: val })}
-            placeholder="Hyderabad"
+            placeholder="Enter city"
             placeholderTextColor="#94A3B8"
           />
         </View>
@@ -189,7 +189,7 @@ export const StepRegisteredOffice: React.FC = () => {
             style={styles.input}
             value={company.registeredDistrict || ''}
             onChangeText={(val) => updateDetails({ registeredDistrict: val })}
-            placeholder="Rangareddy"
+            placeholder="Enter district"
             placeholderTextColor="#94A3B8"
           />
         </View>
@@ -203,7 +203,7 @@ export const StepRegisteredOffice: React.FC = () => {
             style={styles.input}
             value={company.registeredState}
             onChangeText={(val) => updateDetails({ registeredState: val })}
-            placeholder="Telangana"
+            placeholder="Enter state"
             placeholderTextColor="#94A3B8"
           />
         </View>
@@ -214,7 +214,7 @@ export const StepRegisteredOffice: React.FC = () => {
             style={styles.input}
             value={company.registeredPincode}
             onChangeText={(val) => updateDetails({ registeredPincode: val })}
-            placeholder="500081"
+            placeholder="Enter PIN code"
             keyboardType="numeric"
             placeholderTextColor="#94A3B8"
           />
@@ -263,7 +263,7 @@ export const StepRegisteredOffice: React.FC = () => {
             style={styles.input}
             value={company.companyEmail}
             onChangeText={(val) => updateDetails({ companyEmail: val })}
-            placeholder="contact@taxedgetech.com"
+            placeholder="Enter company email"
             keyboardType="email-address"
             autoCapitalize="none"
             placeholderTextColor="#94A3B8"
@@ -276,7 +276,7 @@ export const StepRegisteredOffice: React.FC = () => {
             style={styles.input}
             value={company.companyMobile}
             onChangeText={(val) => updateDetails({ companyMobile: val })}
-            placeholder="9876543210"
+            placeholder="Enter company mobile"
             keyboardType="phone-pad"
             placeholderTextColor="#94A3B8"
           />

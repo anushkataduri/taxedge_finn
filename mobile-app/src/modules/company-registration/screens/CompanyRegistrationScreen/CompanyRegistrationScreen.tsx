@@ -6,6 +6,8 @@ import { AppHeader } from '../../../../shared/components/AppHeader';
 import { UniversalDraftModal } from '@/shared/components/UniversalDraftModal';
 import { useUniversalDraftGuard } from '@/shared/hooks/useUniversalDraftGuard';
 import { useCompanyRegistrationStore } from '../../store/companyRegistrationSlice';
+import { companySchema } from '../../validation/companySchema';
+import { directorSchema } from '../../validation/directorSchema';
 
 import { StepCompanyType } from '../../components/steps/StepCompanyType';
 import { StepCombinedDetails } from '../../components/steps/StepCombinedDetails';
@@ -45,7 +47,7 @@ export const CompanyRegistrationScreen: React.FC = () => {
 
   const currentStep = draft.currentStep;
   const totalSteps = STEP_NAMES.length;
-  const progressPercent = ((currentStep + 1) / totalSteps) * 100;
+  const progressPercent = (currentStep / totalSteps) * 100;
 
   const {
     showDraftModal,
@@ -76,39 +78,59 @@ export const CompanyRegistrationScreen: React.FC = () => {
   };
 
   const handleNext = () => {
-    // Validation for combined Step 2 (Classification + Activity + Proposed Names)
-    if (currentStep === 1) {
-      if (!draft.company.primaryActivity?.trim()) {
-        Alert.alert('Validation Error', 'Please enter Primary Business Activity.');
-        return;
-      }
-      if (!draft.company.nicCode?.trim()) {
-        Alert.alert('Validation Error', 'Please enter 5-Digit NIC Code.');
-        return;
-      }
-      if (!draft.company.proposedName1?.trim()) {
-        Alert.alert('Validation Error', 'Please enter 1st Preferred Name.');
-        return;
-      }
-      if (!draft.company.proposedName2?.trim()) {
-        Alert.alert('Validation Error', 'Please enter 2nd Preferred Name.');
+    // Step 0: Company Type
+    if (currentStep === 0) {
+      if (!draft.company.companyType) {
+        Alert.alert('Validation Error', 'Please select a Company Type to proceed.');
         return;
       }
     }
 
-    // Validation for Step 3 (Promoter / Director Details)
+    // Step 1: Combined Details (Classification, Activity, Names)
+    if (currentStep === 1) {
+      const { valid, errors } = companySchema.validateStep(1, draft.company);
+      if (!valid && errors.length > 0) {
+        Alert.alert('Validation Error', errors[0]);
+        return;
+      }
+    }
+
+    // Step 2: Registered Office
+    if (currentStep === 2) {
+      const { valid, errors } = companySchema.validateStep(2, draft.company);
+      if (!valid && errors.length > 0) {
+        Alert.alert('Validation Error', errors[0]);
+        return;
+      }
+    }
+
+    // Step 3: Promoter / Director Details
     if (currentStep === 3) {
-      const firstDir = draft.directors[0];
-      if (!firstDir || !firstDir.name?.trim()) {
-        Alert.alert('Validation Error', 'Please enter Full Name for Director #1.');
+      if (draft.directors.length === 0) {
+        Alert.alert('Validation Error', 'At least one promoter/director is required.');
         return;
       }
-      if (!firstDir.pan?.trim()) {
-        Alert.alert('Validation Error', 'Please enter PAN Number for Director #1.');
+
+      for (let i = 0; i < draft.directors.length; i++) {
+        const { valid, errors } = directorSchema.validateDirector(draft.directors[i]);
+        if (!valid && errors.length > 0) {
+          Alert.alert(`Validation Error - Director ${i + 1}`, errors[0]);
+          return;
+        }
+      }
+    }
+
+    // Step 4: Shareholding & Capital
+    if (currentStep === 4) {
+      const { valid, errors } = companySchema.validateStep(4, draft.company);
+      if (!valid && errors.length > 0) {
+        Alert.alert('Validation Error', errors[0]);
         return;
       }
-      if (!firstDir.email?.trim()) {
-        Alert.alert('Validation Error', 'Please enter Email Address for Director #1.');
+      // Check if total shares equals the sum of directors' shares
+      const totalSubscribed = draft.directors.reduce((sum, d) => sum + (Number(d.numberOfShares) || 0), 0);
+      if (totalSubscribed !== draft.company.numberOfShares) {
+        Alert.alert('Validation Error', 'Total subscribed shares by directors must equal the total number of shares of the company.');
         return;
       }
     }
@@ -123,9 +145,31 @@ export const CompanyRegistrationScreen: React.FC = () => {
       if (missingMandatory) {
         Alert.alert(
           'Validation Error',
-          'Please upload all mandatory documents (PAN Card, Identity/Address Proof, Office Address Proof, and Office Utility Bill) before proceeding.'
+          'Please upload all mandatory documents before proceeding.'
         );
         return;
+      }
+      
+      const isNocRequired = draft.company.premisesOwnership === 'Rented' || draft.company.premisesOwnership === 'Leased';
+      if (isNocRequired) {
+        const nocDoc = draft.documents.find((d) => d.id === 'doc-noc');
+        if (!nocDoc || nocDoc.status !== 'Uploaded') {
+          Alert.alert('Validation Error', 'Owner NOC is required for Rented/Leased premises.');
+          return;
+        }
+      }
+    }
+
+    // Clean stale data right before final review
+    if (currentStep === 6) {
+      // e.g. clean NOC if ownership is owned
+      if (draft.company.premisesOwnership === 'Owned') {
+         draft.company.ownerNocName = '';
+         draft.company.ownerNocUri = '';
+      }
+      // OPC data cleaning
+      if (draft.company.companyType === 'One Person Company (OPC)') {
+         // ensure only 1 director
       }
     }
 
@@ -171,7 +215,7 @@ export const CompanyRegistrationScreen: React.FC = () => {
       {/* Filling Progress Bar */}
       <View style={styles.progressContainer}>
         <Text style={styles.progressText}>
-          {currentStep + 1} / {totalSteps} screens completed
+          {currentStep} / {totalSteps} screens completed
         </Text>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
