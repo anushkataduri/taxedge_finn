@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Screen: GST Amendment
  * Follows exact structural and UX references from design screenshots.
  * STRICT: Preserves TaxEdge Orange + Blue theme (NO green theme).
@@ -521,7 +521,64 @@ export const styles = StyleSheet.create({
     backgroundColor: "#F1F5F9",
   },
 
-  /* Current vs Requested Side-by-Side */
+  /* Requested Details Card (Review) */
+  requestedDetailsCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: BorderRadius.base + 2,
+    borderWidth: 1.5,
+    borderColor: "#FFD8BF",
+    padding: 16,
+    gap: 10,
+  },
+  requestedCardHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  requestedCardTitle: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: "800",
+    color: BrandColors.PRIMARY_ORANGE_DARK,
+    letterSpacing: 0.5,
+  },
+  editOptionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#FFF1E8",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderColor: "#FED7AA",
+  },
+  editOptionText: {
+    fontSize: Typography.fontSize.xs + 1.5,
+    fontWeight: "700",
+    color: BrandColors.PRIMARY_ORANGE,
+  },
+  reviewFieldRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingVertical: 4,
+    gap: 12,
+  },
+  reviewFieldLabel: {
+    fontSize: Typography.fontSize.sm,
+    color: "#64748B",
+    fontWeight: "500",
+    flex: 1,
+  },
+  reviewFieldValue: {
+    fontSize: Typography.fontSize.sm,
+    color: "#0F172A",
+    fontWeight: "700",
+    flex: 1.4,
+    textAlign: "right",
+  },
+
+  /* Current vs Requested Side-by-Side (Deprecated fallback) */
   comparisonRow: {
     flexDirection: "row",
     gap: 12,
@@ -843,6 +900,14 @@ export const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 6,
     paddingRight: 4,
+  },
+  acceptedProofDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: BrandColors.PRIMARY_ORANGE,
+    marginTop: 7,
+    marginRight: 8,
   },
   acceptedProofBullet: {
     fontSize: 14,

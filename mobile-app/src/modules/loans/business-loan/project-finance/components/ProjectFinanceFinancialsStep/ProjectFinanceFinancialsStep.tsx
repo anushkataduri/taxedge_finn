@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
-import { LoanDetailsFormData, LoanEmploymentType } from "../../../types/loans.types";
+import { LoanDetailsFormData, LoanEmploymentType } from "../../../../types/loans.types";
 import { styles } from "./ProjectFinanceFinancialsStep.styles";
 
 export interface ProjectFinanceFinancialsStepProps {

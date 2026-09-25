@@ -104,6 +104,7 @@ export const PromotersCard: React.FC<PromotersCardProps> = ({
 
       {/* Modal */}
       <PromoterModal
+        key={editingPromoter?.id ?? "new-promoter"}
         visible={modalVisible}
         initialData={editingPromoter}
         onSave={handleSaveModal}

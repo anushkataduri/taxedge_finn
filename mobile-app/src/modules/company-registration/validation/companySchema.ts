@@ -28,9 +28,12 @@ export const companySchema = {
     }
 
     if (step === 4) {
+      const authorizedCapital = details.authorizedCapital ?? 0;
+      const paidUpCapital = details.paidUpCapital ?? 0;
+
       if (!details.authorizedCapital || details.authorizedCapital <= 0) errors.push('Please enter valid Authorized Capital.');
       if (!details.paidUpCapital || details.paidUpCapital <= 0) errors.push('Please enter valid Paid-up Capital.');
-      if (details.paidUpCapital > (details.authorizedCapital || 0)) errors.push('Paid-up Capital cannot exceed Authorized Capital.');
+      if (paidUpCapital > authorizedCapital) errors.push('Paid-up Capital cannot exceed Authorized Capital.');
       if (!details.numberOfShares || details.numberOfShares <= 0) errors.push('Please enter valid Number of Shares.');
       if (!details.faceValuePerShare || details.faceValuePerShare <= 0) errors.push('Please enter valid Face Value per Share.');
     }

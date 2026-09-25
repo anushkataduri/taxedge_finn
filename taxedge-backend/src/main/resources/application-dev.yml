@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/taxedge
+    url: jdbc:mysql://localhost:3306/taxedge?createDatabaseIfNotExist=true
     username: root
     password: "shashi/4274"
     driver-class-name: com.mysql.cj.jdbc.Driver

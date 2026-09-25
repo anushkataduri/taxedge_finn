@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Modal } from "react-native";
 import { PromoterSponsorItem } from "../../types/projectFinance.types";
 import { modalStyles as styles } from "./PromoterModal.styles";
@@ -16,21 +16,13 @@ export const PromoterModal: React.FC<PromoterModalProps> = ({
   onSave,
   onClose,
 }) => {
-  const [name, setName] = useState("");
-  const [type, setType] = useState<"Individual" | "Corporate">("Individual");
-  const [share, setShare] = useState("");
-
-  useEffect(() => {
-    if (initialData) {
-      setName(initialData.name);
-      setType(initialData.type);
-      setShare(initialData.sharePercentage.toString());
-    } else {
-      setName("");
-      setType("Individual");
-      setShare("");
-    }
-  }, [initialData, visible]);
+  const [name, setName] = useState(initialData?.name ?? "");
+  const [type, setType] = useState<"Individual" | "Corporate">(
+    initialData?.type ?? "Individual"
+  );
+  const [share, setShare] = useState(
+    initialData ? String(initialData.sharePercentage) : ""
+  );
 
   const handleSave = () => {
     if (!name.trim()) return;

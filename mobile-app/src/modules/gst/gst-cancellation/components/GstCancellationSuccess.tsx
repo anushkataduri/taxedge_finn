@@ -4,8 +4,8 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  StatusBar,
 } from "react-native";
+import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -38,7 +38,7 @@ export function GstCancellationSuccess({
 
   return (
     <View style={styles.successContainer}>
-      <StatusBar
+      <FocusAwareStatusBar
         barStyle="light-content"
         backgroundColor={BrandColors.PRIMARY_BLUE}
       />

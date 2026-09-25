@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Modal } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { BrandColors } from "../../../../../shared/theme";
+import { BrandColors } from "../../../../../../shared/theme";
 import {
   LoanDocumentItem,
   LoanDocumentCategory,
-} from "../../../types/loans.types";
+} from "../../../../types/loans.types";
 import {
   pickLoanImageFromGallery,
   pickLoanImageFromCamera,
-} from "../../../services/documentUploadHelper";
+} from "../../../../services/documentUploadHelper";
 import { styles } from "./ProjectFinanceDocumentsStep.styles";
 
 export interface ProjectFinanceDocumentsStepProps {

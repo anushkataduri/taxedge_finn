@@ -14,7 +14,6 @@ import {
 import {
   calculateRepaymentSchedule,
   calculateAutoDSCR,
-  calculateSuggestedLoan,
 } from "../../utils/loanCalculations";
 
 export interface Step5LoanRequirementViewProps {
@@ -62,10 +61,6 @@ export const Step5LoanRequirementView: React.FC<Step5LoanRequirementViewProps> =
     ownContributionFromScreen3?.trim() ||
     loanRequirement.ownContribution ||
     "";
-
-  const suggestedLoan = useMemo(() => {
-    return calculateSuggestedLoan(effectiveTotalCost, effectiveOwnContribution);
-  }, [effectiveTotalCost, effectiveOwnContribution]);
 
   const effectiveLoanRequired = loanRequirement.loanRequired || "";
 

@@ -20,6 +20,8 @@ import { styles } from "./GstAmendmentScreen.styles";
 import { useApplicationStore } from "@/store/applicationStore";
 import { useNotificationStore } from "@/store/notificationStore";
 import { useAuthStore } from "@/store/authStore";
+import { gstAmendmentApi } from "@/modules/gst/services/gstAmendmentApi";
+import { apiClient } from "@/core/api/apiClient";
 import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
 
@@ -41,7 +43,7 @@ const AMENDMENT_SECTIONS: AmendmentSectionConfig[] = [
     id: "legal-name",
     title: "Legal Business Name",
     type: "core",
-    typeLabel: "Core amendment â€” officer approval required",
+    typeLabel: "Core amendment - officer approval required",
     icon: "pricetag",
     iconBg: "#FFF1E8",
     iconColor: BrandColors.PRIMARY_ORANGE,
@@ -50,7 +52,7 @@ const AMENDMENT_SECTIONS: AmendmentSectionConfig[] = [
     id: "principal-place",
     title: "Principal Place of Business",
     type: "core",
-    typeLabel: "Core amendment â€” officer approval required",
+    typeLabel: "Core amendment - officer approval required",
     icon: "business",
     iconBg: "#EAF1FE",
     iconColor: BrandColors.PRIMARY_BLUE,
@@ -59,7 +61,7 @@ const AMENDMENT_SECTIONS: AmendmentSectionConfig[] = [
     id: "additional-place",
     title: "Additional Place of Business",
     type: "core",
-    typeLabel: "Core amendment â€” officer approval required",
+    typeLabel: "Core amendment - officer approval required",
     icon: "storefront",
     iconBg: "#EAF1FE",
     iconColor: BrandColors.PRIMARY_BLUE_ACCENT,
@@ -69,7 +71,7 @@ const AMENDMENT_SECTIONS: AmendmentSectionConfig[] = [
     id: "bank-accounts",
     title: "Bank Accounts",
     type: "non-core",
-    typeLabel: "Non-core â€” auto-approved",
+    typeLabel: "Non-core - auto-approved",
     icon: "wallet",
     iconBg: "#F3E8FF",
     iconColor: "#7E22CE",
@@ -78,7 +80,7 @@ const AMENDMENT_SECTIONS: AmendmentSectionConfig[] = [
     id: "authorised-signatories",
     title: "Authorised Signatories",
     type: "non-core",
-    typeLabel: "Non-core â€” auto-approved",
+    typeLabel: "Non-core - auto-approved",
     icon: "create",
     iconBg: "#FFF1E8",
     iconColor: BrandColors.PRIMARY_ORANGE_DARK,
@@ -87,7 +89,7 @@ const AMENDMENT_SECTIONS: AmendmentSectionConfig[] = [
     id: "contact-details",
     title: "Contact Details",
     type: "non-core",
-    typeLabel: "Non-core â€” auto-approved",
+    typeLabel: "Non-core - auto-approved",
     icon: "call",
     iconBg: "#FCE7F3",
     iconColor: "#DB2777",
@@ -257,6 +259,8 @@ export function GstAmendmentScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
 
   const customer = useAuthStore((state) => state.customer);
+  const gstDraft = useApplicationStore((state) => state.gstDraft);
+  const applications = useApplicationStore((state) => state.applications);
   const createApplication = useApplicationStore((state) => state.createApplication);
   const saveGstAmendmentDraft = useApplicationStore((state) => state.saveGstAmendmentDraft);
   const clearGstAmendmentDraft = useApplicationStore((state) => state.clearGstAmendmentDraft);
@@ -264,7 +268,13 @@ export function GstAmendmentScreen() {
 
   // Workflow state
   const [currentStep, setCurrentStep] = useState<AmendmentStep>("LANDING");
-  const [gstin, setGstin] = useState("");
+  const [gstin, setGstin] = useState(
+    () =>
+      (customer as any)?.gstId ||
+      gstDraft?.createdGstId ||
+      applications.find((a) => a.formData?.createdGstId || a.formData?.gstId || a.formData?.gstin)?.formData?.createdGstId ||
+      ""
+  );
   const [selectedSectionId, setSelectedSectionId] = useState<string>("legal-name");
 
   // Form inputs for all 6 sections (Exact registration fields)
@@ -333,39 +343,182 @@ export function GstAmendmentScreen() {
     isCore: boolean;
   } | null>(null);
 
-  // Read-only registered details (Exact values matching reference Screenshots)
-  const registeredDetails = {
-    legalBusinessName: customer?.name ? `${customer.name} Enterprises` : "Akhil Enterprises",
-    principalAddress: "MG Road, Bengaluru",
-    principalCity: "Bengaluru",
-    principalDistrict: "Bengaluru Urban",
-    principalState: "Karnataka",
-    principalPincode: "560001",
-    principalProofType: "Rental Agreement",
-    
-    // Additional Place of Business (Screenshot 01)
-    additionalAddress: "Peenya Industrial Area",
-    additionalCity: "Bengaluru",
-    additionalPincode: "560058",
-    additionalNatureOfPremises: "Warehouse",
+  const targetGstId =
+    gstin ||
+    (customer as any)?.gstId ||
+    gstDraft?.createdGstId ||
+    applications.find((a) => a.formData?.createdGstId || a.formData?.gstId || a.formData?.gstin)?.formData?.createdGstId ||
+    applications.find((a) => a.formData?.createdGstId || a.formData?.gstId || a.formData?.gstin)?.formData?.gstId ||
+    applications.find((a) => a.formData?.createdGstId || a.formData?.gstId || a.formData?.gstin)?.formData?.gstin ||
+    "GST29AAACU9876P1Z5";
 
-    // Bank Accounts (Screenshot 02)
-    bankName: "HDFC Bank",
-    bankAccountNumber: "XXXXX1234",
-    ifscCode: "HDFC0001234",
-    accountType: "Current",
+  // Read-only registered details state (dynamically fetched from backend database)
+  const [registeredDetails, setRegisteredDetails] = useState({
+    legalBusinessName: "-",
+    principalAddress: "-",
+    principalCity: "-",
+    principalDistrict: "-",
+    principalState: "-",
+    principalPincode: "-",
+    principalProofType: "-",
 
-    // Authorised Signatories (Screenshot 03)
-    signatoryName: "Akhil Kumar",
-    signatoryPan: "AKHIL1234K",
-    signatoryDesignation: "Proprietor",
-    signatoryMobile: "+91 98765 43210",
-    signatoryEmail: "akhil@business.com",
+    // Additional Place of Business
+    additionalAddress: "-",
+    additionalCity: "-",
+    additionalPincode: "-",
+    additionalNatureOfPremises: "-",
 
-    // Contact Details (Screenshot 04)
-    contactMobile: "+91 98765 43210",
-    contactEmail: "akhil@business.com",
-  };
+    // Bank Accounts
+    bankName: "-",
+    bankAccountNumber: "-",
+    ifscCode: "-",
+    accountType: "-",
+
+    // Authorised Signatories
+    signatoryName: "-",
+    signatoryPan: "-",
+    signatoryDesignation: "-",
+    signatoryMobile: "-",
+    signatoryEmail: "-",
+
+    // Contact Details
+    contactMobile: "-",
+    contactEmail: "-",
+  });
+
+  // Fetch live registered details from backend database for all 6 modules using /api/v1/gst/business/{gstId}
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchAllRegisteredDetails = async () => {
+      try {
+        const idToFetch = targetGstId || "DEFAULT";
+
+        // Fetch from @GetMapping("/business/{gstId}") as primary source
+        const [
+          businessRes,
+          legalRes,
+          principalRes,
+          additionalRes,
+          bankRes,
+          signatoryRes,
+          contactRes,
+        ] = await Promise.allSettled([
+          apiClient.get<any>(`/api/v1/gst/business/${idToFetch}`),
+          gstAmendmentApi.getExistingLegalName(idToFetch),
+          gstAmendmentApi.getExistingPrincipalPlace(idToFetch),
+          gstAmendmentApi.getExistingAdditionalPlace(idToFetch),
+          gstAmendmentApi.getExistingBankAccount(idToFetch),
+          gstAmendmentApi.getExistingSignatory(idToFetch),
+          gstAmendmentApi.getExistingContact(idToFetch),
+        ]);
+
+        if (!isMounted) return;
+
+        setRegisteredDetails((prev) => {
+          const updated = { ...prev };
+
+          // 1. Primary data source: /api/v1/gst/business/{gstId}
+          if (businessRes.status === "fulfilled" && businessRes.value) {
+            const b = businessRes.value;
+            if (b.legalName) updated.legalBusinessName = b.legalName;
+            else if (b.tradeName) updated.legalBusinessName = b.tradeName;
+
+            if (b.businessAddress) updated.principalAddress = b.businessAddress;
+            if (b.city) updated.principalCity = b.city;
+            if (b.district) updated.principalDistrict = b.district;
+            if (b.state) updated.principalState = b.state;
+            if (b.pinCode) updated.principalPincode = b.pinCode;
+
+            // Additional Place defaults
+            if (b.businessAddress) updated.additionalAddress = b.businessAddress;
+            if (b.city) updated.additionalCity = b.city;
+            if (b.pinCode) updated.additionalPincode = b.pinCode;
+            if (b.natureOfBusiness) updated.additionalNatureOfPremises = String(b.natureOfBusiness);
+
+            if (b.bankName) updated.bankName = b.bankName;
+            if (b.bankAccountNumber) updated.bankAccountNumber = b.bankAccountNumber;
+            if (b.ifscCode) updated.ifscCode = b.ifscCode;
+            if (b.accountType) updated.accountType = b.accountType;
+
+            if (b.signatoryName) updated.signatoryName = b.signatoryName;
+            else if (b.authorisedSignatory) updated.signatoryName = b.authorisedSignatory;
+            else if (b.accountHolderName) updated.signatoryName = b.accountHolderName;
+
+            if (b.signatoryPan) updated.signatoryPan = b.signatoryPan;
+            if (b.designation) updated.signatoryDesignation = b.designation;
+            if (b.signatoryMobile) {
+              updated.signatoryMobile = b.signatoryMobile;
+              updated.contactMobile = b.signatoryMobile;
+            }
+            if (b.signatoryEmail) {
+              updated.signatoryEmail = b.signatoryEmail;
+              updated.contactEmail = b.signatoryEmail;
+            }
+          }
+
+          // 2. Specific module overrides if existing amendments exist
+          if (legalRes.status === "fulfilled" && legalRes.value?.newLegalName) {
+            updated.legalBusinessName = legalRes.value.newLegalName;
+          }
+
+          if (principalRes.status === "fulfilled" && principalRes.value) {
+            const p = principalRes.value;
+            if (p.newBusinessAddress) updated.principalAddress = p.newBusinessAddress;
+            if (p.newCity) updated.principalCity = p.newCity;
+            if (p.newDistrict) updated.principalDistrict = p.newDistrict;
+            if (p.newState) updated.principalState = p.newState;
+            if (p.newPinCode) updated.principalPincode = p.newPinCode;
+          }
+
+          if (additionalRes.status === "fulfilled" && additionalRes.value) {
+            const addList = Array.isArray(additionalRes.value) ? additionalRes.value : [additionalRes.value];
+            if (addList.length > 0 && addList[0]) {
+              const a = addList[0];
+              if (a.address) updated.additionalAddress = a.address;
+              if (a.city) updated.additionalCity = a.city;
+              if (a.pinCode) updated.additionalPincode = a.pinCode;
+              if (a.natureOfPremises) updated.additionalNatureOfPremises = String(a.natureOfPremises);
+            }
+          }
+
+          if (bankRes.status === "fulfilled" && bankRes.value) {
+            const bk = bankRes.value;
+            if (bk.newBankName) updated.bankName = bk.newBankName;
+            if (bk.newBankAccountNumber) updated.bankAccountNumber = bk.newBankAccountNumber;
+            if (bk.newIfscCode) updated.ifscCode = bk.newIfscCode;
+            if (bk.newAccountType) updated.accountType = bk.newAccountType;
+          }
+
+          if (signatoryRes.status === "fulfilled" && signatoryRes.value) {
+            const s = signatoryRes.value;
+            if (s.newSignatoryName) updated.signatoryName = s.newSignatoryName;
+            if (s.newSignatoryPan) updated.signatoryPan = s.newSignatoryPan;
+            if (s.newDesignation) updated.signatoryDesignation = s.newDesignation;
+            if (s.newSignatoryMobile) updated.signatoryMobile = s.newSignatoryMobile;
+            if (s.newSignatoryEmail) updated.signatoryEmail = s.newSignatoryEmail;
+          }
+
+          if (contactRes.status === "fulfilled" && contactRes.value) {
+            const c = contactRes.value;
+            if (c.newMobileNumber) updated.contactMobile = c.newMobileNumber;
+            if (c.newEmail) updated.contactEmail = c.newEmail;
+          }
+
+          return updated;
+        });
+      } catch (err) {
+        console.warn("Error fetching registered amendment details from database:", err);
+      }
+    };
+
+    fetchAllRegisteredDetails();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [targetGstId, selectedSectionId]);
+
 
   const selectedSection = AMENDMENT_SECTIONS.find((s) => s.id === selectedSectionId) || AMENDMENT_SECTIONS[0];
 
@@ -519,13 +672,20 @@ export function GstAmendmentScreen() {
 
   // Transition from Landing -> Edit Section
   const handleSelectSection = (sectionId: string) => {
-    if (!gstin || !gstin.trim()) {
-      setErrors({ gstin: "GSTIN is required. Please enter your 15-character GSTIN" });
+    const clean = gstin.trim().toUpperCase();
+    if (!clean) {
+      setErrors({ gstin: "GSTIN or Business ID is required." });
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
       return;
     }
-    if (!GstValidators.isValidGstin(gstin)) {
-      setErrors({ gstin: "Enter a valid 15-character GSTIN (e.g. 29AAAAA0000A1Z5)" });
+
+    const isValidId =
+      GstValidators.isValidGstin(clean) ||
+      clean.startsWith("GST") ||
+      clean.length >= 10;
+
+    if (!isValidId) {
+      setErrors({ gstin: "Enter a valid 15-character GSTIN (e.g. 29AAAAA0000A1Z5) or GST ID" });
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
       return;
     }
@@ -664,16 +824,91 @@ export function GstAmendmentScreen() {
   };
 
   // Submit Amendment
-  const handleSubmitAmendment = () => {
+  const handleSubmitAmendment = async () => {
     if (!declared) {
       Alert.alert("Declaration Required", "Please tick the declaration checkbox to authorise TaxEdge to file your amendment.");
       return;
     }
 
+    if (!supportingDoc) {
+      Alert.alert("Supporting Proof Required", "Please attach a supporting proof document before submitting your amendment.");
+      return;
+    }
+
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const targetGstId =
+        gstin ||
+        (customer as any)?.gstId ||
+        gstDraft?.createdGstId ||
+        applications.find((a) => a.formData?.createdGstId || a.formData?.gstId || a.formData?.gstin)?.formData?.createdGstId ||
+        applications.find((a) => a.formData?.createdGstId || a.formData?.gstId || a.formData?.gstin)?.formData?.gstId ||
+        applications.find((a) => a.formData?.createdGstId || a.formData?.gstId || a.formData?.gstin)?.formData?.gstin ||
+        "GST29AAACU9876P1Z5";
+
+      switch (selectedSectionId) {
+        case "legal-name":
+          await gstAmendmentApi.submitLegalNameAmendment(
+            targetGstId,
+            newLegalBusinessName,
+            supportingDoc,
+          );
+          break;
+        case "principal-place":
+          await gstAmendmentApi.submitPrincipalPlaceAmendment(
+            targetGstId,
+            newPrincipalAddress,
+            newPrincipalCity,
+            newPrincipalState,
+            newPrincipalPincode,
+            supportingDoc,
+            newPrincipalDistrict,
+            newPrincipalNatureOfPremises,
+          );
+          break;
+        case "additional-place":
+          await gstAmendmentApi.submitAdditionalPlaceAmendment(
+            targetGstId,
+            newAdditionalAddress,
+            newAdditionalCity,
+            newAdditionalPincode,
+            newAdditionalNatureOfPremises,
+            supportingDoc,
+          );
+          break;
+        case "bank-accounts":
+          await gstAmendmentApi.submitBankAccountAmendment(
+            targetGstId,
+            newBankName,
+            newBankAccountNumber,
+            newIfscCode,
+            newAccountType,
+            supportingDoc,
+          );
+          break;
+        case "contact-details":
+          await gstAmendmentApi.submitContactAmendment(
+            targetGstId,
+            newContactMobile,
+            newContactEmail,
+            supportingDoc,
+          );
+          break;
+        case "authorised-signatories":
+          await gstAmendmentApi.submitSignatoryAmendment(
+            targetGstId,
+            newSignatoryName,
+            newSignatoryPan,
+            supportingDoc,
+            newSignatoryDob,
+            newSignatoryDesignation,
+            newSignatoryMobile,
+            newSignatoryEmail,
+          );
+          break;
+      }
+
       markSubmitted();
 
       const isCore = selectedSection.type === "core";
@@ -786,7 +1021,7 @@ export function GstAmendmentScreen() {
         `GST Amendment`,
         "GST",
         {
-          gstin,
+          gstin: targetGstId,
           arn: generatedArn,
           section: selectedSection.title,
           amendmentCategory: isCore ? "Core (officer approval)" : "Non-core (auto-approved)",
@@ -819,7 +1054,15 @@ export function GstAmendmentScreen() {
       });
 
       setCurrentStep("SUCCESS");
-    }, 600);
+    } catch (error: any) {
+      console.error("Amendment Submission Error:", error);
+      Alert.alert(
+        "Submission Failed",
+        error?.message || "Failed to submit amendment. Please check your network connection and try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   /* ------------------------------------------------------------- */
@@ -926,7 +1169,7 @@ export function GstAmendmentScreen() {
           </TouchableOpacity>
           <View style={styles.headerTitleWrap}>
             <Text style={styles.headerMainTitle}>Review Amendment</Text>
-            <Text style={styles.headerSubtitle}>Current vs requested</Text>
+            <Text style={styles.headerSubtitle}>Review requested details</Text>
           </View>
           <View style={styles.placeholderBox} />
         </View>
@@ -941,7 +1184,7 @@ export function GstAmendmentScreen() {
           <View style={styles.reviewMetaCard}>
             <View style={styles.reviewMetaRow}>
               <Text style={styles.reviewMetaKey}>GSTIN</Text>
-              <Text style={styles.reviewMetaVal}>{gstin || "â€”"}</Text>
+              <Text style={styles.reviewMetaVal}>{gstin || "-"}</Text>
             </View>
             <View style={styles.reviewMetaDivider} />
 
@@ -959,177 +1202,148 @@ export function GstAmendmentScreen() {
             </View>
           </View>
 
-          {/* Current vs Requested Comparison Cards */}
-          <View style={styles.comparisonRow}>
-            {/* CURRENT Card */}
-            <View style={[styles.compareCard, styles.currentCard]}>
-              <Text style={[styles.compareCardHeader, styles.currentCardHeader]}>CURRENT</Text>
-              {selectedSectionId === "legal-name" && (
-                <View>
-                  <Text style={styles.compareFieldLabel}>Legal Business Name</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.legalBusinessName}</Text>
-                </View>
-              )}
-              {selectedSectionId === "principal-place" && (
-                <View style={styles.gap8}>
-                  <View>
-                    <Text style={styles.compareFieldLabel}>Address</Text>
-                    <Text style={styles.compareFieldValue}>{registeredDetails.principalAddress}</Text>
-                  </View>
-                  <View>
-                    <Text style={styles.compareFieldLabel}>City</Text>
-                    <Text style={styles.compareFieldValue}>{registeredDetails.principalCity}</Text>
-                  </View>
-                  <View>
-                    <Text style={styles.compareFieldLabel}>District</Text>
-                    <Text style={styles.compareFieldValue}>{registeredDetails.principalDistrict}</Text>
-                  </View>
-                  <View>
-                    <Text style={styles.compareFieldLabel}>State</Text>
-                    <Text style={styles.compareFieldValue}>{registeredDetails.principalState}</Text>
-                  </View>
-                  <View>
-                    <Text style={styles.compareFieldLabel}>PIN Code</Text>
-                    <Text style={styles.compareFieldValue}>{registeredDetails.principalPincode}</Text>
-                  </View>
-                </View>
-              )}
-              {selectedSectionId === "additional-place" && (
-                <View style={styles.gap6}>
-                  <Text style={styles.compareFieldLabel}>Address</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.additionalAddress}</Text>
-                  <Text style={styles.compareFieldLabel}>City</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.additionalCity}</Text>
-                  <Text style={styles.compareFieldLabel}>PIN Code</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.additionalPincode}</Text>
-                  <Text style={styles.compareFieldLabel}>Nature of Premises</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.additionalNatureOfPremises}</Text>
-                </View>
-              )}
-              {selectedSectionId === "bank-accounts" && (
-                <View style={styles.gap6}>
-                  <Text style={styles.compareFieldLabel}>Bank Name</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.bankName}</Text>
-                  <Text style={styles.compareFieldLabel}>Account Number</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.bankAccountNumber}</Text>
-                  <Text style={styles.compareFieldLabel}>IFSC Code</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.ifscCode}</Text>
-                  <Text style={styles.compareFieldLabel}>Account Type</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.accountType}</Text>
-                </View>
-              )}
-              {selectedSectionId === "authorised-signatories" && (
-                <View style={styles.gap6}>
-                  <Text style={styles.compareFieldLabel}>Name</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.signatoryName}</Text>
-                  <Text style={styles.compareFieldLabel}>PAN</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.signatoryPan}</Text>
-                  <Text style={styles.compareFieldLabel}>Designation</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.signatoryDesignation}</Text>
-                  <Text style={styles.compareFieldLabel}>Mobile</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.signatoryMobile}</Text>
-                  <Text style={styles.compareFieldLabel}>Email</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.signatoryEmail}</Text>
-                </View>
-              )}
-              {selectedSectionId === "contact-details" && (
-                <View style={styles.gap6}>
-                  <Text style={styles.compareFieldLabel}>Mobile</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.contactMobile}</Text>
-                  <Text style={styles.compareFieldLabel}>Email</Text>
-                  <Text style={styles.compareFieldValue}>{registeredDetails.contactEmail}</Text>
-                </View>
-              )}
+          {/* Requested Details Card with Edit Option */}
+          <View style={styles.requestedDetailsCard}>
+            <View style={styles.requestedCardHeaderRow}>
+              <Text style={styles.requestedCardTitle}>REQUESTED DETAILS</Text>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setCurrentStep("EDIT")}
+                style={styles.editOptionBtn}
+              >
+                <Ionicons name="create-outline" size={15} color={BrandColors.PRIMARY_ORANGE} />
+                <Text style={styles.editOptionText}>Edit</Text>
+              </TouchableOpacity>
             </View>
+            <View style={styles.reviewMetaDivider} />
 
-            {/* REQUESTED Card */}
-            <View style={[styles.compareCard, styles.requestedCard]}>
-              <Text style={[styles.compareCardHeader, styles.requestedCardHeader]}>REQUESTED</Text>
-              {selectedSectionId === "legal-name" && (
-                <View>
-                  <Text style={styles.compareFieldLabel}>Legal Business Name</Text>
-                  <Text style={styles.compareFieldValue}>{newLegalBusinessName}</Text>
+            {selectedSectionId === "legal-name" && (
+              <View style={styles.reviewFieldRow}>
+                <Text style={styles.reviewFieldLabel}>Legal Business Name</Text>
+                <Text style={styles.reviewFieldValue}>{newLegalBusinessName || "-"}</Text>
+              </View>
+            )}
+
+            {selectedSectionId === "principal-place" && (
+              <View style={styles.gap8}>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>Business Address</Text>
+                  <Text style={styles.reviewFieldValue}>{newPrincipalAddress || "-"}</Text>
                 </View>
-              )}
-              {selectedSectionId === "principal-place" && (
-                <View style={styles.gap8}>
-                  <View>
-                    <Text style={styles.compareFieldLabel}>Business Address</Text>
-                    <Text style={styles.compareFieldValue}>{newPrincipalAddress}</Text>
-                  </View>
-                  <View>
-                    <Text style={styles.compareFieldLabel}>City</Text>
-                    <Text style={styles.compareFieldValue}>{newPrincipalCity}</Text>
-                  </View>
-                  <View>
-                    <Text style={styles.compareFieldLabel}>District</Text>
-                    <Text style={styles.compareFieldValue}>{newPrincipalDistrict}</Text>
-                  </View>
-                  <View>
-                    <Text style={styles.compareFieldLabel}>State / UT</Text>
-                    <Text style={styles.compareFieldValue}>{newPrincipalState}</Text>
-                  </View>
-                  <View>
-                    <Text style={styles.compareFieldLabel}>PIN Code</Text>
-                    <Text style={styles.compareFieldValue}>{newPrincipalPincode}</Text>
-                  </View>
-                  <View>
-                    <Text style={styles.compareFieldLabel}>Nature of Premises</Text>
-                    <Text style={styles.compareFieldValue}>{newPrincipalNatureOfPremises}</Text>
-                  </View>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>City</Text>
+                  <Text style={styles.reviewFieldValue}>{newPrincipalCity || "-"}</Text>
                 </View>
-              )}
-              {selectedSectionId === "additional-place" && (
-                <View style={styles.gap6}>
-                  <Text style={styles.compareFieldLabel}>Additional Place Address</Text>
-                  <Text style={styles.compareFieldValue}>{newAdditionalAddress}</Text>
-                  <Text style={styles.compareFieldLabel}>City</Text>
-                  <Text style={styles.compareFieldValue}>{newAdditionalCity}</Text>
-                  <Text style={styles.compareFieldLabel}>PIN Code</Text>
-                  <Text style={styles.compareFieldValue}>{newAdditionalPincode}</Text>
-                  <Text style={styles.compareFieldLabel}>Nature of Premises</Text>
-                  <Text style={styles.compareFieldValue}>{newAdditionalNatureOfPremises}</Text>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>District</Text>
+                  <Text style={styles.reviewFieldValue}>{newPrincipalDistrict || "-"}</Text>
                 </View>
-              )}
-              {selectedSectionId === "bank-accounts" && (
-                <View style={styles.gap6}>
-                  <Text style={styles.compareFieldLabel}>Bank Name</Text>
-                  <Text style={styles.compareFieldValue}>{newBankName}</Text>
-                  <Text style={styles.compareFieldLabel}>Account Number</Text>
-                  <Text style={styles.compareFieldValue}>{newBankAccountNumber}</Text>
-                  <Text style={styles.compareFieldLabel}>Confirm Account Number</Text>
-                  <Text style={styles.compareFieldValue}>{confirmBankAccountNumber}</Text>
-                  <Text style={styles.compareFieldLabel}>IFSC Code</Text>
-                  <Text style={styles.compareFieldValue}>{newIfscCode}</Text>
-                  <Text style={styles.compareFieldLabel}>Account Type</Text>
-                  <Text style={styles.compareFieldValue}>{newAccountType}</Text>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>State / UT</Text>
+                  <Text style={styles.reviewFieldValue}>{newPrincipalState || "-"}</Text>
                 </View>
-              )}
-              {selectedSectionId === "authorised-signatories" && (
-                <View style={styles.gap6}>
-                  <Text style={styles.compareFieldLabel}>Signatory Name</Text>
-                  <Text style={styles.compareFieldValue}>{newSignatoryName}</Text>
-                  <Text style={styles.compareFieldLabel}>Signatory PAN</Text>
-                  <Text style={styles.compareFieldValue}>{newSignatoryPan}</Text>
-                  <Text style={styles.compareFieldLabel}>Date of Birth</Text>
-                  <Text style={styles.compareFieldValue}>{newSignatoryDob}</Text>
-                  <Text style={styles.compareFieldLabel}>Designation</Text>
-                  <Text style={styles.compareFieldValue}>{newSignatoryDesignation}</Text>
-                  <Text style={styles.compareFieldLabel}>Signatory Mobile</Text>
-                  <Text style={styles.compareFieldValue}>{newSignatoryMobile}</Text>
-                  <Text style={styles.compareFieldLabel}>Signatory Email</Text>
-                  <Text style={styles.compareFieldValue}>{newSignatoryEmail}</Text>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>PIN Code</Text>
+                  <Text style={styles.reviewFieldValue}>{newPrincipalPincode || "-"}</Text>
                 </View>
-              )}
-              {selectedSectionId === "contact-details" && (
-                <View style={styles.gap6}>
-                  <Text style={styles.compareFieldLabel}>Mobile Number</Text>
-                  <Text style={styles.compareFieldValue}>{newContactMobile}</Text>
-                  <Text style={styles.compareFieldLabel}>Email Address</Text>
-                  <Text style={styles.compareFieldValue}>{newContactEmail}</Text>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>Nature of Premises</Text>
+                  <Text style={styles.reviewFieldValue}>{newPrincipalNatureOfPremises || "-"}</Text>
                 </View>
-              )}
-            </View>
+              </View>
+            )}
+
+            {selectedSectionId === "additional-place" && (
+              <View style={styles.gap8}>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>Additional Place Address</Text>
+                  <Text style={styles.reviewFieldValue}>{newAdditionalAddress || "-"}</Text>
+                </View>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>City</Text>
+                  <Text style={styles.reviewFieldValue}>{newAdditionalCity || "-"}</Text>
+                </View>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>PIN Code</Text>
+                  <Text style={styles.reviewFieldValue}>{newAdditionalPincode || "-"}</Text>
+                </View>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>Nature of Premises</Text>
+                  <Text style={styles.reviewFieldValue}>{newAdditionalNatureOfPremises || "-"}</Text>
+                </View>
+              </View>
+            )}
+
+            {selectedSectionId === "bank-accounts" && (
+              <View style={styles.gap8}>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>Bank Name</Text>
+                  <Text style={styles.reviewFieldValue}>{newBankName || "-"}</Text>
+                </View>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>Account Number</Text>
+                  <Text style={styles.reviewFieldValue}>{newBankAccountNumber || "-"}</Text>
+                </View>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>IFSC Code</Text>
+                  <Text style={styles.reviewFieldValue}>{newIfscCode || "-"}</Text>
+                </View>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>Account Type</Text>
+                  <Text style={styles.reviewFieldValue}>{newAccountType || "-"}</Text>
+                </View>
+              </View>
+            )}
+
+            {selectedSectionId === "authorised-signatories" && (
+              <View style={styles.gap8}>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>Signatory Name</Text>
+                  <Text style={styles.reviewFieldValue}>{newSignatoryName || "-"}</Text>
+                </View>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>Signatory PAN</Text>
+                  <Text style={styles.reviewFieldValue}>{newSignatoryPan || "-"}</Text>
+                </View>
+                {newSignatoryDob ? (
+                  <View style={styles.reviewFieldRow}>
+                    <Text style={styles.reviewFieldLabel}>Date of Birth</Text>
+                    <Text style={styles.reviewFieldValue}>{newSignatoryDob}</Text>
+                  </View>
+                ) : null}
+                {newSignatoryDesignation ? (
+                  <View style={styles.reviewFieldRow}>
+                    <Text style={styles.reviewFieldLabel}>Designation</Text>
+                    <Text style={styles.reviewFieldValue}>{newSignatoryDesignation}</Text>
+                  </View>
+                ) : null}
+                {newSignatoryMobile ? (
+                  <View style={styles.reviewFieldRow}>
+                    <Text style={styles.reviewFieldLabel}>Signatory Mobile</Text>
+                    <Text style={styles.reviewFieldValue}>{newSignatoryMobile}</Text>
+                  </View>
+                ) : null}
+                {newSignatoryEmail ? (
+                  <View style={styles.reviewFieldRow}>
+                    <Text style={styles.reviewFieldLabel}>Signatory Email</Text>
+                    <Text style={styles.reviewFieldValue}>{newSignatoryEmail}</Text>
+                  </View>
+                ) : null}
+              </View>
+            )}
+
+            {selectedSectionId === "contact-details" && (
+              <View style={styles.gap8}>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>Mobile Number</Text>
+                  <Text style={styles.reviewFieldValue}>{newContactMobile || "-"}</Text>
+                </View>
+                <View style={styles.reviewFieldRow}>
+                  <Text style={styles.reviewFieldLabel}>Email Address</Text>
+                  <Text style={styles.reviewFieldValue}>{newContactEmail || "-"}</Text>
+                </View>
+              </View>
+            )}
           </View>
 
           {/* Supporting Documents Card */}
@@ -1895,7 +2109,7 @@ export function GstAmendmentScreen() {
 
             <View style={styles.proofCard}>
               <Text style={styles.proofDescText}>
-                Attach the document that evidences this change (PDF, JPG, PNG â€” max 10 MB).
+                Attach the document that evidences this change (PDF, JPG, PNG - max 10 MB).
               </Text>
 
               <View style={styles.uploadActionsRow}>
@@ -1955,7 +2169,7 @@ export function GstAmendmentScreen() {
                 <View style={styles.acceptedProofList}>
                   {displayedProofs.map((proofText, idx) => (
                     <View key={idx} style={styles.acceptedProofItem}>
-                      <Text style={styles.acceptedProofBullet}>â€¢</Text>
+                      <View style={styles.acceptedProofDot} />
                       <Text style={styles.acceptedProofText}>{proofText}</Text>
                     </View>
                   ))}
@@ -2103,23 +2317,23 @@ export function GstAmendmentScreen() {
             <Ionicons name="information-circle" size={20} color={BrandColors.PRIMARY_BLUE} />
           </View>
           <Text style={styles.infoText}>
-            Amendments reuse your GST Registration fields, validation and upload flow â€” nothing new to learn.
+            Amendments reuse your GST Registration fields, validation and upload flow - nothing new to learn.
           </Text>
         </View>
 
         {/* GSTIN Field with character counter */}
         <View style={styles.gstinBlock}>
           <Text style={styles.gstinLabel}>
-            GSTIN <Text style={styles.star}>*</Text>
+            GSTIN / Business ID <Text style={styles.star}>*</Text>
           </Text>
           <TextInput
             style={[styles.gstinInput, errors.gstin && styles.gstinInputError]}
-            placeholder="Enter GSTIN"
+            placeholder="e.g. 29AAAAA0000A1Z5 or GST ID"
             placeholderTextColor="#94A3B8"
             value={gstin}
             onChangeText={handleGstinChange}
             autoCapitalize="characters"
-            maxLength={15}
+            maxLength={18}
           />
           <View style={styles.gstinCounterRow}>
             {errors.gstin ? (
@@ -2127,7 +2341,7 @@ export function GstAmendmentScreen() {
             ) : (
               <View />
             )}
-            <Text style={styles.charCountText}>{gstin.length} / 15 chars</Text>
+            <Text style={styles.charCountText}>{gstin.length} chars</Text>
           </View>
         </View>
 

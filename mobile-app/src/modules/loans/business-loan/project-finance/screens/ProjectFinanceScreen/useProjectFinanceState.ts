@@ -40,10 +40,7 @@ import {
   WorkingCapitalForm,
   SensitivityScenarioRow,
 } from "../../types/step4Types";
-import {
-  INITIAL_PROMOTERS,
-  INITIAL_REPAYMENT_SCHEDULE,
-} from "../../data/projectFinanceData";
+import { INITIAL_PROMOTERS } from "../../data/projectFinanceData";
 import {
   INITIAL_CAPACITY_PRODUCTION,
   INITIAL_MACHINERIES,

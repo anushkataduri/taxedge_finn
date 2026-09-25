@@ -1,14 +1,14 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { BrandColors } from "../../../../../shared/theme";
+import { BrandColors } from "../../../../../../shared/theme";
 import {
   LoanDetailsFormData,
   LoanBusinessFormData,
   LoanBankingFormData,
   LoanDocumentItem,
   CustomerProfileSummary,
-} from "../../../types/loans.types";
+} from "../../../../types/loans.types";
 import { styles } from "./ProjectFinanceReviewStep.styles";
 
 export interface ProjectFinanceReviewStepProps {

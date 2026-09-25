@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -23,27 +23,17 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   onSave,
   onClose,
 }) => {
-  const [name, setName] = useState("");
-  const [type, setType] = useState("Corporate");
-  const [expectedQuantity, setExpectedQuantity] = useState("");
-  const [contractPeriodYears, setContractPeriodYears] = useState("");
-  const [estimatedRevenue, setEstimatedRevenue] = useState("");
-
-  useEffect(() => {
-    if (initialData) {
-      setName(initialData.name);
-      setType(initialData.type);
-      setExpectedQuantity(initialData.expectedQuantity);
-      setContractPeriodYears(initialData.contractPeriodYears);
-      setEstimatedRevenue(initialData.estimatedRevenue);
-    } else {
-      setName("");
-      setType("Corporate");
-      setExpectedQuantity("");
-      setContractPeriodYears("");
-      setEstimatedRevenue("");
-    }
-  }, [initialData, visible]);
+  const [name, setName] = useState(initialData?.name ?? "");
+  const [type, setType] = useState(initialData?.type ?? "Corporate");
+  const [expectedQuantity, setExpectedQuantity] = useState(
+    initialData?.expectedQuantity ?? ""
+  );
+  const [contractPeriodYears, setContractPeriodYears] = useState(
+    initialData?.contractPeriodYears ?? ""
+  );
+  const [estimatedRevenue, setEstimatedRevenue] = useState(
+    initialData?.estimatedRevenue ?? ""
+  );
 
   const handleSave = () => {
     if (!name.trim()) return;

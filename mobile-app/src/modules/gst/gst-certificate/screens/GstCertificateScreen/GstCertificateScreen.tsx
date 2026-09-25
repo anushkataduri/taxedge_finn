@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StatusBar, Alert, Animated, Platform, BackHandler } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, Animated, Platform, BackHandler } from "react-native";
+import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -216,7 +217,7 @@ export function GstCertificateScreen() {
     ];
     return (
       <View style={st.root}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <FocusAwareStatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <View style={[st.topBar, { paddingTop: Math.max(insets.top, 12) + 4 }]}>
           <TouchableOpacity activeOpacity={0.7} onPress={() => router.replace("/(main)/applications")} style={st.backBtn}><Ionicons name="chevron-back" size={22} color="#0F172A" /></TouchableOpacity>
         </View>
@@ -270,7 +271,7 @@ export function GstCertificateScreen() {
 
   return (
     <View style={st.root}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <FocusAwareStatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <View style={[st.topBar, { paddingTop: Math.max(insets.top, 12) + 4 }]}>
         <TouchableOpacity activeOpacity={0.7} onPress={() => router.back()} style={st.backBtn}><Ionicons name="chevron-back" size={22} color="#0F172A" /></TouchableOpacity>
         <Text style={st.headerTitle}>GST Certificate</Text>

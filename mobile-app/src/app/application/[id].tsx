@@ -4,13 +4,13 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  StatusBar,
   ActivityIndicator,
   TextInput,
   KeyboardAvoidingView,
   Platform,
   Linking,
 } from "react-native";
+import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -139,7 +139,7 @@ export default function ApplicationDetailScreen() {
           },
         ]}
       >
-        <StatusBar barStyle="light-content" backgroundColor="#0A2346" />
+        <FocusAwareStatusBar barStyle="light-content" backgroundColor="#0A2346" />
         <ActivityIndicator size="large" color="#FF5722" />
         <Text style={{ color: "#FFF", marginTop: 12, fontSize: 14 }}>
           Loading application details...
@@ -156,7 +156,7 @@ export default function ApplicationDetailScreen() {
           { backgroundColor: "#0A2346", paddingTop: insets.top + 20 },
         ]}
       >
-        <StatusBar barStyle="light-content" backgroundColor="#0A2346" />
+        <FocusAwareStatusBar barStyle="light-content" backgroundColor="#0A2346" />
         <View style={styles.topNavRow}>
           <TouchableOpacity
             onPress={() => router.back()}
@@ -524,7 +524,7 @@ export default function ApplicationDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0A2346" />
+      <FocusAwareStatusBar barStyle="light-content" backgroundColor="#0A2346" />
 
       {/* ---------------- ROYAL NAVY HEADER ---------------- */}
       <View style={[styles.navyHeader, { paddingTop: insets.top + 8 }]}>

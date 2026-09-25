@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { CustomerProfileSummary } from "../../../types/loans.types";
+import { CustomerProfileSummary } from "../../../../types/loans.types";
 import { styles } from "./ProjectFinanceCustomerCard.styles";
 
 export interface ProjectFinanceCustomerCardProps {

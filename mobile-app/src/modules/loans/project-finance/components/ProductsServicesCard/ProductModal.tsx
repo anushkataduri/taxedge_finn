@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -28,39 +28,17 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   onSave,
   onClose,
 }) => {
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState(PRODUCT_CATEGORIES[0]);
-  const [unit, setUnit] = useState(PRODUCT_UNITS[0]);
-  const [installedCapacity, setInstalledCapacity] = useState("");
-  const [expectedProduction, setExpectedProduction] = useState("");
-  const [capacityUtilisation, setCapacityUtilisation] = useState("");
-  const [sellingPrice, setSellingPrice] = useState("");
-  const [domesticExport, setDomesticExport] = useState(DOMESTIC_EXPORT_OPTIONS[0]);
-  const [productMix, setProductMix] = useState("");
-
-  useEffect(() => {
-    if (initialData) {
-      setName(initialData.name);
-      setCategory(initialData.category);
-      setUnit(initialData.unit);
-      setInstalledCapacity(initialData.installedCapacity);
-      setExpectedProduction(initialData.expectedProduction);
-      setCapacityUtilisation(initialData.capacityUtilisation);
-      setSellingPrice(initialData.sellingPrice);
-      setDomesticExport(initialData.domesticExport);
-      setProductMix(initialData.productMix);
-    } else {
-      setName("");
-      setCategory(PRODUCT_CATEGORIES[0]);
-      setUnit(PRODUCT_UNITS[0]);
-      setInstalledCapacity("");
-      setExpectedProduction("");
-      setCapacityUtilisation("");
-      setSellingPrice("");
-      setDomesticExport(DOMESTIC_EXPORT_OPTIONS[0]);
-      setProductMix("");
-    }
-  }, [initialData, visible]);
+  const [name, setName] = useState(initialData?.name ?? "");
+  const category = initialData?.category ?? PRODUCT_CATEGORIES[0];
+  const unit = initialData?.unit ?? PRODUCT_UNITS[0];
+  const [installedCapacity, setInstalledCapacity] = useState(
+    initialData?.installedCapacity ?? ""
+  );
+  const expectedProduction = initialData?.expectedProduction ?? "";
+  const capacityUtilisation = initialData?.capacityUtilisation ?? "";
+  const [sellingPrice, setSellingPrice] = useState(initialData?.sellingPrice ?? "");
+  const domesticExport = initialData?.domesticExport ?? DOMESTIC_EXPORT_OPTIONS[0];
+  const [productMix, setProductMix] = useState(initialData?.productMix ?? "");
 
   const handleSave = () => {
     if (!name.trim()) return;

@@ -11,10 +11,10 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  StatusBar,
   Alert,
   Linking,
 } from "react-native";
+import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -296,7 +296,7 @@ export default function GstCancellationScreen() {
   /* ---------------- SCREEN 1: GST CANCELLATION FORM ---------------- */
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <FocusAwareStatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <View
         style={[styles.headerBar, { paddingTop: Math.max(insets.top, 12) + 6 }]}
       >

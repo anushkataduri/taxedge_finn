@@ -1,38 +1,77 @@
-import { Platform } from "react-native";
-import { apiClient } from "@/core/api/apiClient";
-import { SERVER_IP } from "@/core/api/apiClient"; // Assuming SERVER_IP is exported or hardcode it
+import { apiClient, SERVER_IP, SERVER_PORT } from "@/core/api/apiClient";
+import { tokenManager } from "@/core/authentication/tokenManager";
 
-const BASE_URL = `http://${SERVER_IP || "192.168.88.22"}:8086/gst/amendments`;
+const formatFile = (file: any) => {
+  if (!file) return undefined;
+  if (file.uri) {
+    return {
+      uri: file.uri,
+      name: file.name || "proof.jpg",
+      type: file.name?.toLowerCase().endsWith(".pdf")
+        ? "application/pdf"
+        : "image/jpeg",
+    } as any;
+  }
+  return file;
+};
+
+const mapNatureOfPremises = (nature?: string): string => {
+  const lower = (nature || "").toLowerCase();
+  if (lower.includes("lease")) return "LEASED";
+  if (lower.includes("rent")) return "RENTED";
+  if (lower.includes("consent")) return "CONSENT";
+  if (lower.includes("share")) return "SHARED";
+  if (lower.includes("own")) return "OWNED";
+  return "OTHERS";
+};
 
 export const gstAmendmentApi = {
   // Utility for XHR Upload
-  uploadAmendmentWithFile: (
+  uploadAmendmentWithFile: async (
     endpoint: string,
     formData: FormData,
     onSuccess: (data: any) => void,
     onError: (error: Error) => void,
   ) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${BASE_URL}/${endpoint}`);
+    try {
+      const baseUrl =
+        apiClient.getBaseUrl() || `http://${SERVER_IP}:${SERVER_PORT}`;
+      const url = `${baseUrl}/api/v1/gst/amendments/${endpoint}`;
+      console.log("Submitting amendment via XHR to:", url);
 
-    // Do NOT set Content-Type, XHR sets it automatically with boundary for FormData
+      const token = await tokenManager.getAccessToken();
 
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        onSuccess(xhr.responseText);
-      } else {
-        onError(new Error(`API Error: ${xhr.status} ${xhr.responseText}`));
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", url);
+
+      if (token) {
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
       }
-    };
 
-    xhr.onerror = () => {
-      onError(new Error("Network request failed during amendment upload."));
-    };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          onSuccess(xhr.responseText);
+        } else {
+          onError(new Error(`API Error: ${xhr.status} ${xhr.responseText}`));
+        }
+      };
 
-    xhr.send(formData);
+      xhr.onerror = () => {
+        onError(new Error("Network request failed during amendment upload."));
+      };
+
+      xhr.send(formData);
+    } catch (err: any) {
+      onError(err);
+    }
   },
 
+  // ====================================================
   // 1. Legal Name
+  // ====================================================
+  getExistingLegalName: (gstId: string) => {
+    return apiClient.get<any>(`/api/v1/gst/amendments/legal-name/${gstId}/existing`);
+  },
   submitLegalNameAmendment: (
     gstId: string,
     newLegalName: string,
@@ -41,7 +80,7 @@ export const gstAmendmentApi = {
     return new Promise((resolve, reject) => {
       const formData = new FormData();
       formData.append("newLegalName", newLegalName);
-      formData.append("file", file);
+      formData.append("file", formatFile(file));
       gstAmendmentApi.uploadAmendmentWithFile(
         `legal-name/${gstId}`,
         formData,
@@ -51,7 +90,12 @@ export const gstAmendmentApi = {
     });
   },
 
+  // ====================================================
   // 2. Principal Place
+  // ====================================================
+  getExistingPrincipalPlace: (gstId: string) => {
+    return apiClient.get<any>(`/api/v1/gst/amendments/principal-place/${gstId}/existing`);
+  },
   submitPrincipalPlaceAmendment: (
     gstId: string,
     address: string,
@@ -60,6 +104,7 @@ export const gstAmendmentApi = {
     pinCode: string,
     file: any,
     district?: string,
+    natureOfPremises?: string,
   ): Promise<any> => {
     return new Promise((resolve, reject) => {
       const formData = new FormData();
@@ -68,7 +113,8 @@ export const gstAmendmentApi = {
       formData.append("state", state);
       formData.append("pinCode", pinCode);
       if (district) formData.append("district", district);
-      formData.append("file", file);
+      formData.append("natureOfPremises", mapNatureOfPremises(natureOfPremises));
+      formData.append("file", formatFile(file));
       gstAmendmentApi.uploadAmendmentWithFile(
         `principal-place/${gstId}`,
         formData,
@@ -78,13 +124,18 @@ export const gstAmendmentApi = {
     });
   },
 
+  // ====================================================
   // 3. Additional Place
+  // ====================================================
+  getExistingAdditionalPlace: (gstId: string) => {
+    return apiClient.get<any[]>(`/api/v1/gst/amendments/additional-place/${gstId}/existing`);
+  },
   submitAdditionalPlaceAmendment: (
     gstId: string,
     address: string,
     city: string,
     pinCode: string,
-    natureOfBusiness: string,
+    natureOfPremises: string,
     file: any,
   ): Promise<any> => {
     return new Promise((resolve, reject) => {
@@ -92,17 +143,8 @@ export const gstAmendmentApi = {
       formData.append("address", address);
       formData.append("city", city);
       formData.append("pinCode", pinCode);
-      // Map UI string to backend Enum
-      let mappedNature = "SERVICE_PROVIDER";
-      const lower = natureOfBusiness.toLowerCase();
-      if (lower.includes("manufactur")) mappedNature = "MANUFACTURER";
-      else if (lower.includes("trade") || lower.includes("retail"))
-        mappedNature = "TRADER";
-      else if (lower.includes("ware")) mappedNature = "WARE_HOUSE_DEPOT";
-      else if (lower.includes("e-com")) mappedNature = "E_COMMERCE";
-
-      formData.append("natureOfBusiness", mappedNature);
-      formData.append("file", file);
+      formData.append("natureOfPremises", mapNatureOfPremises(natureOfPremises));
+      formData.append("file", formatFile(file));
       gstAmendmentApi.uploadAmendmentWithFile(
         `additional-place/${gstId}`,
         formData,
@@ -112,7 +154,12 @@ export const gstAmendmentApi = {
     });
   },
 
+  // ====================================================
   // 4. Bank Accounts
+  // ====================================================
+  getExistingBankAccount: (gstId: string) => {
+    return apiClient.get<any>(`/api/v1/gst/amendments/bank-account/${gstId}/existing`);
+  },
   submitBankAccountAmendment: (
     gstId: string,
     bankName: string,
@@ -128,10 +175,13 @@ export const gstAmendmentApi = {
       formData.append("ifscCode", ifscCode);
 
       let mappedType = "SAVINGS";
-      if (accountType.toLowerCase().includes("current")) mappedType = "CURRENT";
+      const rawType = (accountType || "").toLowerCase();
+      if (rawType.includes("current")) mappedType = "CURRENT";
+      if (rawType.includes("cash") || rawType.includes("credit"))
+        mappedType = "CASH_CREDIT_OD";
 
       formData.append("accountType", mappedType);
-      formData.append("file", file);
+      formData.append("file", formatFile(file));
       gstAmendmentApi.uploadAmendmentWithFile(
         `bank-account/${gstId}`,
         formData,
@@ -141,7 +191,12 @@ export const gstAmendmentApi = {
     });
   },
 
+  // ====================================================
   // 5. Contact Details
+  // ====================================================
+  getExistingContact: (gstId: string) => {
+    return apiClient.get<any>(`/api/v1/gst/amendments/contact/${gstId}/existing`);
+  },
   submitContactAmendment: (
     gstId: string,
     mobileNumber: string,
@@ -152,7 +207,7 @@ export const gstAmendmentApi = {
       const formData = new FormData();
       formData.append("mobileNumber", mobileNumber);
       formData.append("email", email);
-      formData.append("file", file);
+      formData.append("file", formatFile(file));
       gstAmendmentApi.uploadAmendmentWithFile(
         `contact/${gstId}`,
         formData,
@@ -162,7 +217,12 @@ export const gstAmendmentApi = {
     });
   },
 
+  // ====================================================
   // 6. Authorised Signatories
+  // ====================================================
+  getExistingSignatory: (gstId: string) => {
+    return apiClient.get<any>(`/api/v1/gst/amendments/signatory/${gstId}/existing`);
+  },
   submitSignatoryAmendment: (
     gstId: string,
     signatoryName: string,
@@ -178,9 +238,10 @@ export const gstAmendmentApi = {
       formData.append("signatoryName", signatoryName);
       formData.append("signatoryPan", signatoryPan);
 
-      // Parse DD-MM-YYYY to YYYY-MM-DD for ISO date (with zero padding)
+      // Parse DD-MM-YYYY or DD/MM/YYYY to YYYY-MM-DD for ISO date (with zero padding)
       if (signatoryDob) {
-        const parts = signatoryDob.split("-");
+        const separator = signatoryDob.includes("-") ? "-" : "/";
+        const parts = signatoryDob.split(separator);
         if (parts.length === 3) {
           const d = parts[0].padStart(2, "0");
           const m = parts[1].padStart(2, "0");
@@ -195,7 +256,7 @@ export const gstAmendmentApi = {
       if (signatoryMobile) formData.append("signatoryMobile", signatoryMobile);
       if (signatoryEmail) formData.append("signatoryEmail", signatoryEmail);
 
-      formData.append("file", file);
+      formData.append("file", formatFile(file));
       gstAmendmentApi.uploadAmendmentWithFile(
         `signatory/${gstId}`,
         formData,
