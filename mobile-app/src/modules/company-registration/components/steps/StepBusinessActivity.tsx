@@ -33,7 +33,7 @@ export const StepBusinessActivity: React.FC = () => {
           style={styles.input}
           value={company.nicCode}
           onChangeText={(val) => updateDetails({ nicCode: val })}
-          placeholder="e.g. 62011"
+          placeholder="Enter NIC code"
           keyboardType="numeric"
           placeholderTextColor="#94A3B8"
         />

@@ -174,9 +174,9 @@ export const PromoterDirectorCard: React.FC<PromoterDirectorCardProps> = ({
               <Text style={styles.label}>Nationality *</Text>
               <TextInput
                 style={styles.input}
-                value={formData.nationality || 'Indian'}
+                value={formData.nationality || ''}
                 onChangeText={(val) => updateField({ nationality: val })}
-                placeholder="Indian"
+                placeholder="Enter nationality"
                 placeholderTextColor="#94A3B8"
               />
             </View>
@@ -184,9 +184,9 @@ export const PromoterDirectorCard: React.FC<PromoterDirectorCardProps> = ({
               <Text style={styles.label}>Designation *</Text>
               <TextInput
                 style={styles.input}
-                value={formData.designation || 'Director'}
+                value={formData.designation || ''}
                 onChangeText={(val) => updateField({ designation: val })}
-                placeholder="Director"
+                placeholder="Enter designation"
                 placeholderTextColor="#94A3B8"
               />
             </View>
@@ -196,9 +196,9 @@ export const PromoterDirectorCard: React.FC<PromoterDirectorCardProps> = ({
             <Text style={styles.label}>Category *</Text>
             <TextInput
               style={styles.input}
-              value={formData.category || 'Promoter Director'}
+              value={formData.category || ''}
               onChangeText={(val) => updateField({ category: val })}
-              placeholder="Promoter Director"
+              placeholder="Enter category"
               placeholderTextColor="#94A3B8"
             />
           </View>
