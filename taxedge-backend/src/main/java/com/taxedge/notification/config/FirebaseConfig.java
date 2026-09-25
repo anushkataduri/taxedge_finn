@@ -18,7 +18,7 @@ public class FirebaseConfig {
         try {
             ClassPathResource resource = new ClassPathResource("serviceAccountKey.json");
             if (!resource.exists()) {
-                System.out.println("serviceAccountKey.json not found in classpath. Firebase notifications skipped in dev mode.");
+                System.out.println("⚠️ serviceAccountKey.json not found in classpath. Firebase notifications skipped in dev mode.");
                 return;
             }
             InputStream serviceAccount = resource.getInputStream();
@@ -29,10 +29,10 @@ public class FirebaseConfig {
 
             if (FirebaseApp.getApps().isEmpty()) {
                 FirebaseApp.initializeApp(options);
-                System.out.println("Firebase Admin SDK initialized successfully");
+                System.out.println("✅ Firebase Admin SDK initialized successfully");
             }
         } catch (Exception e) {
-            System.err.println("Failed to initialize Firebase Admin SDK: " + e.getMessage());
+            System.err.println("❌ Failed to initialize Firebase Admin SDK: " + e.getMessage());
         }
     }
 }

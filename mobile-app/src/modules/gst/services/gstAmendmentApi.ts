@@ -2,7 +2,7 @@ import { Platform } from "react-native";
 import { apiClient } from "@/core/api/apiClient";
 import { SERVER_IP } from "@/core/api/apiClient"; // Assuming SERVER_IP is exported or hardcode it
 
-const BASE_URL = `http://${SERVER_IP || "192.168.29.65"}:8086/gst/amendments`;
+const BASE_URL = `http://${SERVER_IP || "192.168.88.22"}:8086/gst/amendments`;
 
 export const gstAmendmentApi = {
   // Utility for XHR Upload

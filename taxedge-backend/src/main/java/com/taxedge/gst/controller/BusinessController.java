@@ -1,6 +1,5 @@
 package com.taxedge.gst.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,16 +17,19 @@ import com.taxedge.gst.service.BusinessService;
 @RequestMapping("/gst/business")
 public class BusinessController {
 
-	@Autowired
-    private  BusinessService businessService;
+    private final BusinessService businessService;
 
-	@GetMapping("/{gstId}")
-	public ResponseEntity<BusinessDto> getBusiness(@PathVariable String gstId) {
+    public BusinessController(BusinessService businessService) {
+        this.businessService = businessService;
+    }
 
-	    BusinessDto business = businessService.getBusinessId(gstId);
+    @GetMapping("/{businessId}")
+    public ResponseEntity<BusinessDto> getBusiness(@PathVariable String businessId) {
 
-	    return ResponseEntity.ok(business);
-	}
+        BusinessDto businessDto = businessService.getBusinessId(businessId);
+
+        return ResponseEntity.ok(businessDto);
+    }
 
     @PostMapping("/register")
     public ResponseEntity<String> registerBusiness(@RequestBody BusinessDto businessDto) {
@@ -37,13 +39,10 @@ public class BusinessController {
         return new ResponseEntity<>(result, HttpStatus.CREATED);
     }
 
-    @PutMapping("/update/{gstId}")
-    public ResponseEntity<String> updateBusiness(
-            @PathVariable String gstId,
-            @RequestBody BusinessDto businessDto) {
+    @PutMapping("/update/{businessId}")
+    public ResponseEntity<String> updateBusiness(@PathVariable String businessId,@RequestBody BusinessDto businessDto) {
 
-        String result =
-                businessService.updateBusiness(gstId, businessDto);
+        String result = businessService.updateBusiness(businessId, businessDto);
 
         return ResponseEntity.ok(result);
     }
