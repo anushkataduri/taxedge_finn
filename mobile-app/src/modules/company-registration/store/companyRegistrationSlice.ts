@@ -4,9 +4,14 @@ import type { CompanyType, CompanyDetails } from '../types/company.types';
 import type { DirectorInfo, OpcNomineeInfo, PartnerInfo } from '../types/director.types';
 import type { DocumentStatus, Application } from '../../../types/domain';
 import { useApplicationStore } from '../../../store/applicationStore';
+import { getSuffixForType } from '../validation/companySchema';
 
 interface CompanyRegistrationState {
   draft: CompanyRegistrationDraft;
+  fieldErrors: Record<string, string>;
+  setFieldErrors: (errors: Record<string, string>) => void;
+  clearFieldError: (key: string) => void;
+  clearAllFieldErrors: () => void;
   setCompanyType: (type: CompanyType) => void;
   updateCompanyDetails: (details: Partial<CompanyDetails>) => void;
   addDirector: (director: DirectorInfo) => void;
@@ -110,6 +115,15 @@ const initialDraft: CompanyRegistrationDraft = {
 
 export const useCompanyRegistrationStore = create<CompanyRegistrationState>((set) => ({
   draft: initialDraft,
+  fieldErrors: {},
+  setFieldErrors: (fieldErrors) => set({ fieldErrors }),
+  clearFieldError: (key) =>
+    set((state) => {
+      const next = { ...state.fieldErrors };
+      delete next[key];
+      return { fieldErrors: next };
+    }),
+  clearAllFieldErrors: () => set({ fieldErrors: {} }),
   setCompanyType: (type) =>
     set((state) => {
       const isOpc = type === 'One Person Company (OPC)';
@@ -117,27 +131,40 @@ export const useCompanyRegistrationStore = create<CompanyRegistrationState>((set
       if (isOpc && directors.length > 0) {
         directors = [{ ...directors[0], sharesPercentage: 100 }];
       }
+      const suffix = getSuffixForType(type);
+      const nextErrors = { ...state.fieldErrors };
+      delete nextErrors.companyType;
+      delete nextErrors.nameSuffix;
       return {
+        fieldErrors: nextErrors,
         draft: {
           ...state.draft,
-          company: { ...state.draft.company, companyType: type },
+          company: { ...state.draft.company, companyType: type, nameSuffix: suffix },
           directors,
         },
       };
     }),
   updateCompanyDetails: (details) =>
-    set((state) => ({
-      draft: {
-        ...state.draft,
-        company: { ...state.draft.company, ...details },
-      },
-    })),
+    set((state) => {
+      const nextErrors = { ...state.fieldErrors };
+      Object.keys(details).forEach((k) => delete nextErrors[k]);
+      return {
+        fieldErrors: nextErrors,
+        draft: {
+          ...state.draft,
+          company: { ...state.draft.company, ...details },
+        },
+      };
+    }),
   addDirector: (director) =>
     set((state) => {
       if (state.draft.company.companyType === 'One Person Company (OPC)') {
-        return state; // Prevent adding more than 1 director/promoter for OPC
+        return state;
       }
+      const nextErrors = { ...state.fieldErrors };
+      delete nextErrors.directorsCount;
       return {
+        fieldErrors: nextErrors,
         draft: {
           ...state.draft,
           directors: [...state.draft.directors, director],
@@ -145,12 +172,20 @@ export const useCompanyRegistrationStore = create<CompanyRegistrationState>((set
       };
     }),
   updateDirector: (id, updatedFields) =>
-    set((state) => ({
-      draft: {
-        ...state.draft,
-        directors: state.draft.directors.map((d) => (d.id === id ? { ...d, ...updatedFields } : d)),
-      },
-    })),
+    set((state) => {
+      const nextErrors = { ...state.fieldErrors };
+      Object.keys(updatedFields).forEach((k) => {
+        delete nextErrors[`dir_${id}_${k}`];
+        delete nextErrors[k];
+      });
+      return {
+        fieldErrors: nextErrors,
+        draft: {
+          ...state.draft,
+          directors: state.draft.directors.map((d) => (d.id === id ? { ...d, ...updatedFields } : d)),
+        },
+      };
+    }),
   removeDirector: (id) =>
     set((state) => ({
       draft: {
@@ -192,17 +227,18 @@ export const useCompanyRegistrationStore = create<CompanyRegistrationState>((set
       const updatedDocs = exists
         ? state.draft.documents.map((doc) => (doc.id === documentId ? { ...doc, status, fileUri, fileName } : doc))
         : [...state.draft.documents, { id: documentId, name: documentId, category: 'Conditional Doc', required: true, status, fileUri, fileName }];
+      const nextErrors = { ...state.fieldErrors };
+      delete nextErrors[documentId];
+      delete nextErrors.documentsChecklist;
       return {
+        fieldErrors: nextErrors,
         draft: {
           ...state.draft,
           documents: updatedDocs,
         },
       };
     }),
-  setStep: (currentStep) =>
-    set((state) => ({
-      draft: { ...state.draft, currentStep },
-    })),
+  setStep: (currentStep) => set((state) => ({ draft: { ...state.draft, currentStep } })),
   processPayment: (paymentMethod) =>
     set((state) => {
       const receipt: ApplicationReceipt = {
@@ -231,11 +267,7 @@ export const useCompanyRegistrationStore = create<CompanyRegistrationState>((set
           companyType: state.draft.company.companyType,
           proposedName: state.draft.company.proposedName1,
         },
-        documents: state.draft.documents.map(d => ({
-          name: d.name,
-          status: d.status as any,
-          fileUri: d.fileUri
-        })),
+        documents: state.draft.documents.map(d => ({ name: d.name, status: d.status as any, fileUri: d.fileUri })),
         timeline: state.draft.trackingStages?.map((stg) => ({
           title: stg.title,
           description: stg.description,
@@ -248,15 +280,11 @@ export const useCompanyRegistrationStore = create<CompanyRegistrationState>((set
       useApplicationStore.getState().addApplication(mappedApp);
 
       return {
-        draft: {
-          ...state.draft,
-          paymentStatus: 'Paid',
-          status: 'Submitted',
-          receipt,
-        },
+        draft: { ...state.draft, paymentStatus: 'Paid', status: 'Submitted', receipt },
       };
     }),
-  resetRegistration: () => set({ draft: initialDraft }),
+  resetRegistration: () => set({ draft: initialDraft, fieldErrors: {} }),
 }));
+
 
 

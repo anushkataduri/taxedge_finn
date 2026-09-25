@@ -77,102 +77,113 @@ export const CompanyRegistrationScreen: React.FC = () => {
     }
   };
 
+  const setFieldErrors = useCompanyRegistrationStore((state) => state.setFieldErrors);
+
   const handleNext = () => {
-    // Step 0: Company Type
+    // Step 0: Company Type Selection
     if (currentStep === 0) {
       if (!draft.company.companyType) {
-        Alert.alert('Validation Error', 'Please select a Company Type to proceed.');
+        setFieldErrors({ companyType: 'Please select a Company Type to proceed.' });
         return;
       }
     }
 
     // Step 1: Combined Details (Classification, Activity, Names)
     if (currentStep === 1) {
-      const { valid, errors } = companySchema.validateStep(1, draft.company);
-      if (!valid && errors.length > 0) {
-        Alert.alert('Validation Error', errors[0]);
+      const { valid, fieldErrors } = companySchema.validateStep(1, draft.company);
+      if (!valid) {
+        setFieldErrors(fieldErrors);
         return;
       }
     }
 
-    // Step 2: Registered Office
+    // Step 2: Registered Office Details
     if (currentStep === 2) {
-      const { valid, errors } = companySchema.validateStep(2, draft.company);
-      if (!valid && errors.length > 0) {
-        Alert.alert('Validation Error', errors[0]);
+      const { valid, fieldErrors } = companySchema.validateStep(2, draft.company);
+      if (!valid) {
+        setFieldErrors(fieldErrors);
         return;
       }
     }
 
     // Step 3: Promoter / Director Details
     if (currentStep === 3) {
-      if (draft.directors.length === 0) {
-        Alert.alert('Validation Error', 'At least one promoter/director is required.');
+      const isOpc = draft.company.companyType === 'One Person Company (OPC)';
+      const minRequired = isOpc ? 1 : 2;
+      if (draft.directors.length < minRequired) {
+        setFieldErrors({
+          directorsCount: `At least ${minRequired} promoter/director(s) required for ${draft.company.companyType || 'incorporation'}.`,
+        });
         return;
       }
 
-      for (let i = 0; i < draft.directors.length; i++) {
-        const { valid, errors } = directorSchema.validateDirector(draft.directors[i]);
-        if (!valid && errors.length > 0) {
-          Alert.alert(`Validation Error - Director ${i + 1}`, errors[0]);
-          return;
+      const combinedErrors: Record<string, string> = {};
+      let hasError = false;
+      draft.directors.forEach((dir, idx) => {
+        const { valid, fieldErrors } = directorSchema.validateDirector(dir, idx);
+        if (!valid) {
+          hasError = true;
+          Object.assign(combinedErrors, fieldErrors);
         }
+      });
+      if (hasError) {
+        setFieldErrors(combinedErrors);
+        return;
       }
     }
 
     // Step 4: Shareholding & Capital
     if (currentStep === 4) {
-      const { valid, errors } = companySchema.validateStep(4, draft.company);
-      if (!valid && errors.length > 0) {
-        Alert.alert('Validation Error', errors[0]);
-        return;
-      }
-      // Check if total shares equals the sum of directors' shares
+      const { valid, fieldErrors } = companySchema.validateStep(4, draft.company);
+      const combinedErrors: Record<string, string> = { ...fieldErrors };
       const totalSubscribed = draft.directors.reduce((sum, d) => sum + (Number(d.numberOfShares) || 0), 0);
-      if (totalSubscribed !== draft.company.numberOfShares) {
-        Alert.alert('Validation Error', 'Total subscribed shares by directors must equal the total number of shares of the company.');
+      const isOpc = draft.company.companyType === 'One Person Company (OPC)';
+      if (!isOpc && draft.company.numberOfShares > 0 && totalSubscribed !== draft.company.numberOfShares) {
+        combinedErrors.shareholdingTotal = 'Total subscribed shares by directors must equal the total number of shares of the company.';
+      }
+      if (!valid || Object.keys(combinedErrors).length > 0) {
+        setFieldErrors(combinedErrors);
         return;
       }
     }
 
-    // Validation for Step 5 (Documents & KYC Checklist)
+    // Step 5: Documents & KYC Checklist
     if (currentStep === 5) {
+      const docErrors: Record<string, string> = {};
       const requiredIds = ['doc-pan', 'doc-aadhaar', 'doc-address', 'doc-utility'];
-      const missingMandatory = requiredIds.some((id) => {
+      requiredIds.forEach((id) => {
         const doc = draft.documents.find((d) => d.id === id);
-        return !doc || doc.status !== 'Uploaded';
+        if (!doc || doc.status !== 'Uploaded') {
+          docErrors[id] = 'Mandatory document upload required.';
+        }
       });
-      if (missingMandatory) {
-        Alert.alert(
-          'Validation Error',
-          'Please upload all mandatory documents before proceeding.'
-        );
-        return;
-      }
-      
       const isNocRequired = draft.company.premisesOwnership === 'Rented' || draft.company.premisesOwnership === 'Leased';
       if (isNocRequired) {
         const nocDoc = draft.documents.find((d) => d.id === 'doc-noc');
         if (!nocDoc || nocDoc.status !== 'Uploaded') {
-          Alert.alert('Validation Error', 'Owner NOC is required for Rented/Leased premises.');
-          return;
+          docErrors['doc-noc'] = 'Owner NOC is required for Rented/Leased premises.';
         }
       }
+      if (Object.keys(docErrors).length > 0) {
+        setFieldErrors(docErrors);
+        return;
+      }
     }
 
-    // Clean stale data right before final review
+    // Step 6: Linked Registrations
     if (currentStep === 6) {
-      // e.g. clean NOC if ownership is owned
-      if (draft.company.premisesOwnership === 'Owned') {
-         draft.company.ownerNocName = '';
-         draft.company.ownerNocUri = '';
+      const { valid, fieldErrors } = companySchema.validateStep(6, draft.company, draft.linkedRegistrations);
+      if (!valid) {
+        setFieldErrors(fieldErrors);
+        return;
       }
-      // OPC data cleaning
-      if (draft.company.companyType === 'One Person Company (OPC)') {
-         // ensure only 1 director
+      if (draft.company.premisesOwnership === 'Owned') {
+        draft.company.ownerNocName = '';
+        draft.company.ownerNocUri = '';
       }
     }
 
+    setFieldErrors({});
     if (currentStep < totalSteps - 1) {
       setStep(currentStep + 1);
     }
