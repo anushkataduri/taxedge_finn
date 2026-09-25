@@ -5,12 +5,12 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
-  StatusBar,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -500,7 +500,7 @@ export const TdsRefundFormScreen: React.FC = () => {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <FocusAwareStatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Top Header Bar */}
       <View style={[styles.headerBar, { paddingTop: Math.max(insets.top, 12) + 6 }]}>

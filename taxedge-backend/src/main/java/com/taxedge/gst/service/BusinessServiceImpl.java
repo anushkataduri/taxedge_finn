@@ -18,17 +18,7 @@ public class BusinessServiceImpl implements BusinessService {
 
     @Autowired
     private ModelMapper modelMapper;
-//    @Override
-//    public List<Documents> getDocumentsByBusinessId(String businessId) {
-//
-//        businessRepository.findById(businessId)
-//                .orElseThrow(() ->
-//                        new ResourceNotFoundException(
-//                                "Business not found with businessId: " + businessId));
-//
-//        return documentsRepository.findByBusinessId(businessId);
-//    }
-    
+
     @Override
     public String registerBusiness(BusinessDto businessDto) {
 
@@ -36,7 +26,7 @@ public class BusinessServiceImpl implements BusinessService {
 
         String businessId = RandomNumberGenerator.generateGstId();
 
-        business.setGstId(businessId);
+        business.setBusinessId(businessId);
 
         businessRepository.save(business);
 
@@ -44,16 +34,16 @@ public class BusinessServiceImpl implements BusinessService {
     }
 
     @Override
-    public String updateBusiness(String gstId, BusinessDto businessDto) {
+    public String updateBusiness(String businessId, BusinessDto businessDto) {
 
-        Business business = businessRepository.findById(gstId)
+        Business business = businessRepository.findById(businessId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Business details not found with businessId: " + gstId));
+                                "Business details not found with businessId: " + businessId));
 
         modelMapper.map(businessDto, business);
 
-      //  business.setGstId(gstId);
+        business.setBusinessId(businessId);
 
         businessRepository.save(business);
 

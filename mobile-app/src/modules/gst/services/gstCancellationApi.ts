@@ -1,4 +1,4 @@
-import { apiClient, SERVER_IP, SERVER_PORT } from "../../../core/api/apiClient";
+import { apiClient } from "../../../core/api/apiClient";
 
 const MONTHS = [
   "Jan",
@@ -58,8 +58,12 @@ export const gstCancellationApi = {
       } as any);
     }
 
-    const baseUrl =
-      apiClient.getBaseUrl() || `http://${SERVER_IP}:${SERVER_PORT}`;
+    const baseUrl = apiClient.getBaseUrl();
+    if (!baseUrl) {
+      throw new Error(
+        "Backend URL is not configured. Set the API URL before submitting GST cancellation data.",
+      );
+    }
     const url = `${baseUrl}/gst/cancellation`;
 
     return new Promise<string>((resolve, reject) => {

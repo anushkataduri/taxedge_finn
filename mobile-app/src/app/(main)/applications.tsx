@@ -4,10 +4,10 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  StatusBar,
   RefreshControl,
   ActivityIndicator,
 } from "react-native";
+import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -281,7 +281,7 @@ export default function ApplicationsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? colors.background : "#F8FAFC" }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#0A2346" />
+      <FocusAwareStatusBar barStyle="light-content" backgroundColor="#0A2346" />
 
       {/* ---------------- ROYAL NAVY HEADER ---------------- */}
       <View style={[styles.navyHeader, { paddingTop: insets.top + 12 }]}>

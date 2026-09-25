@@ -5,17 +5,10 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.taxedge.security.jwt.dto.TokenValidationResponse;
-import io.jsonwebtoken.Claims;
-import jakarta.transaction.Transactional;
-import lombok.extern.slf4j.Slf4j;
 
 import com.taxedge.customer.entity.Customer;
 import com.taxedge.security.jwt.dto.RefreshTokenRequest;
@@ -24,7 +17,6 @@ import com.taxedge.security.jwt.entity.RefreshToken;
 import com.taxedge.security.jwt.service.JwtService;
 import com.taxedge.security.jwt.service.RefreshTokenService;
 
-@Slf4j
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -35,8 +27,6 @@ public class AuthController {
     @Autowired
     private JwtService jwtService;
 
-    
-    @Transactional
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest request) {
         if (request.getRefreshToken() == null || request.getRefreshToken().isBlank()) {
@@ -69,49 +59,6 @@ public class AuthController {
                 .build();
 
         return ResponseEntity.ok(response);
-    }
-
-    
-    @GetMapping("/validate")
-    public ResponseEntity<TokenValidationResponse> validateToken(
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(TokenValidationResponse.builder()
-                            .valid(false)
-                            .reason("Missing or malformed Authorization header")
-                            .build());
-        }
-
-        String token = authHeader.substring(7).trim();
-
-        if (token.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(TokenValidationResponse.builder()
-                            .valid(false)
-                            .reason("Token is empty")
-                            .build());
-        }
-
-        // isTokenValid() uses the HMAC secret to verify signature AND checks expiry
-        boolean isValid = jwtService.isTokenValid(token);
-
-        if (!isValid) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(TokenValidationResponse.builder()
-                            .valid(false)
-                            .reason("Token signature is invalid or token has expired")
-                            .build());
-        }
-
-        // Extract claims only after signature + expiry are confirmed valid
-        Claims claims = jwtService.extractClaims(token);
-        return ResponseEntity.ok(TokenValidationResponse.builder()
-                .valid(true)
-                .custId(claims.getSubject())
-                .expiresAt(claims.getExpiration().getTime())
-                .build());
     }
 
     @PostMapping("/revoke")
