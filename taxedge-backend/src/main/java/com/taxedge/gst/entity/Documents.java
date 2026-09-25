@@ -28,8 +28,8 @@ public class Documents {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "gst_id", nullable = false, length = 15)
-    private String gstId;
+    @Column(name = "business_id", nullable = false, length = 9)
+    private String businessId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "document_type", nullable = false, length = 50)
@@ -45,6 +45,6 @@ public class Documents {
     @Column(name = "file_type", length = 100)
     private String fileType;
 
-    @Column(name = "image_data", columnDefinition = "LONGTEXT")
+    @Column(name = "image_data", columnDefinition = "TEXT")
     private String imageData;
 }

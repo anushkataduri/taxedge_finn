@@ -122,7 +122,7 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
               setUrl(txt);
               setTestResult(null);
             }}
-            placeholder="http://192.168.88.25:8086"
+            placeholder="http://192.168.88.22:8086"
             placeholderTextColor="#94A3B8"
             autoCapitalize="none"
             autoCorrect={false}
