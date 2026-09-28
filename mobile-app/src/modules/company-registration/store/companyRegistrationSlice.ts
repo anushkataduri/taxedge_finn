@@ -27,7 +27,10 @@ interface CompanyRegistrationState {
   resetRegistration: () => void;
 }
 
-const initialDraft: CompanyRegistrationDraft = {
+const removeErrorKeys = (errors: Record<string, string>, keysToRemove: string[]): Record<string, string> =>
+  Object.fromEntries(Object.entries(errors).filter(([key]) => !keysToRemove.includes(key)));
+
+const createInitialDraft = (): CompanyRegistrationDraft => ({
   id: '',
   company: {
     companyType: '' as CompanyType,
@@ -111,60 +114,78 @@ const initialDraft: CompanyRegistrationDraft = {
   paymentStatus: 'Pending',
   status: 'Draft',
   createdAt: '',
-};
+});
+
+const createReceipt = (draft: CompanyRegistrationDraft, paymentMethod: string): ApplicationReceipt => ({
+  applicationId: draft.id,
+  companyName: draft.company.proposedName1,
+  companyType: draft.company.companyType,
+  appliedDate: new Date().toISOString().split('T')[0],
+  totalAmount: draft.feeBreakdown.totalAmount,
+  paymentStatus: 'Paid',
+  paymentMethod,
+  transactionId: `TXN-${Math.floor(10000000 + Math.random() * 90000000)}`,
+});
+
+const createApplicationObject = (draft: CompanyRegistrationDraft): Application => ({
+  id: draft.id,
+  serviceId: 'company-registration',
+  serviceName: 'Company Registration',
+  category: 'BUSINESS',
+  status: 'Under Verification',
+  progress: 100,
+  assignedExecutive: 'TaxEdge Compliance Team',
+  paymentAmount: draft.feeBreakdown.totalAmount,
+  paymentStatus: 'Paid',
+  createdAt: new Date().toISOString().split('T')[0],
+  formData: {
+    companyType: draft.company.companyType,
+    proposedName: draft.company.proposedName1,
+  },
+  documents: draft.documents.map((d) => ({ name: d.name, status: d.status, fileUri: d.fileUri })),
+  timeline: (draft.trackingStages || []).map((stg) => ({
+    title: stg.title,
+    description: stg.description,
+    status: stg.status,
+    date: stg.updatedAt || 'Today',
+  })),
+  chatHistory: [],
+});
 
 export const useCompanyRegistrationStore = create<CompanyRegistrationState>((set) => ({
-  draft: initialDraft,
+  draft: createInitialDraft(),
   fieldErrors: {},
   setFieldErrors: (fieldErrors) => set({ fieldErrors }),
-  clearFieldError: (key) =>
-    set((state) => {
-      const next = { ...state.fieldErrors };
-      delete next[key];
-      return { fieldErrors: next };
-    }),
+  clearFieldError: (key) => set((state) => ({ fieldErrors: removeErrorKeys(state.fieldErrors, [key]) })),
   clearAllFieldErrors: () => set({ fieldErrors: {} }),
   setCompanyType: (type) =>
     set((state) => {
       const isOpc = type === 'One Person Company (OPC)';
-      let directors = state.draft.directors;
-      if (isOpc && directors.length > 0) {
-        directors = [{ ...directors[0], sharesPercentage: 100 }];
-      }
-      const suffix = getSuffixForType(type);
-      const nextErrors = { ...state.fieldErrors };
-      delete nextErrors.companyType;
-      delete nextErrors.nameSuffix;
+      const directors = isOpc && state.draft.directors.length > 0
+        ? [{ ...state.draft.directors[0], sharesPercentage: 100 }]
+        : state.draft.directors;
       return {
-        fieldErrors: nextErrors,
+        fieldErrors: removeErrorKeys(state.fieldErrors, ['companyType', 'nameSuffix']),
         draft: {
           ...state.draft,
-          company: { ...state.draft.company, companyType: type, nameSuffix: suffix },
+          company: { ...state.draft.company, companyType: type, nameSuffix: getSuffixForType(type) },
           directors,
         },
       };
     }),
   updateCompanyDetails: (details) =>
-    set((state) => {
-      const nextErrors = { ...state.fieldErrors };
-      Object.keys(details).forEach((k) => delete nextErrors[k]);
-      return {
-        fieldErrors: nextErrors,
-        draft: {
-          ...state.draft,
-          company: { ...state.draft.company, ...details },
-        },
-      };
-    }),
+    set((state) => ({
+      fieldErrors: removeErrorKeys(state.fieldErrors, Object.keys(details)),
+      draft: {
+        ...state.draft,
+        company: { ...state.draft.company, ...details },
+      },
+    })),
   addDirector: (director) =>
     set((state) => {
-      if (state.draft.company.companyType === 'One Person Company (OPC)') {
-        return state;
-      }
-      const nextErrors = { ...state.fieldErrors };
-      delete nextErrors.directorsCount;
+      if (state.draft.company.companyType === 'One Person Company (OPC)') return state;
       return {
-        fieldErrors: nextErrors,
+        fieldErrors: removeErrorKeys(state.fieldErrors, ['directorsCount']),
         draft: {
           ...state.draft,
           directors: [...state.draft.directors, director],
@@ -172,20 +193,16 @@ export const useCompanyRegistrationStore = create<CompanyRegistrationState>((set
       };
     }),
   updateDirector: (id, updatedFields) =>
-    set((state) => {
-      const nextErrors = { ...state.fieldErrors };
-      Object.keys(updatedFields).forEach((k) => {
-        delete nextErrors[`dir_${id}_${k}`];
-        delete nextErrors[k];
-      });
-      return {
-        fieldErrors: nextErrors,
-        draft: {
-          ...state.draft,
-          directors: state.draft.directors.map((d) => (d.id === id ? { ...d, ...updatedFields } : d)),
-        },
-      };
-    }),
+    set((state) => ({
+      fieldErrors: removeErrorKeys(
+        state.fieldErrors,
+        Object.keys(updatedFields).flatMap((k) => [`dir_${id}_${k}`, k])
+      ),
+      draft: {
+        ...state.draft,
+        directors: state.draft.directors.map((d) => (d.id === id ? { ...d, ...updatedFields } : d)),
+      },
+    })),
   removeDirector: (id) =>
     set((state) => ({
       draft: {
@@ -227,64 +244,20 @@ export const useCompanyRegistrationStore = create<CompanyRegistrationState>((set
       const updatedDocs = exists
         ? state.draft.documents.map((doc) => (doc.id === documentId ? { ...doc, status, fileUri, fileName } : doc))
         : [...state.draft.documents, { id: documentId, name: documentId, category: 'Conditional Doc', required: true, status, fileUri, fileName }];
-      const nextErrors = { ...state.fieldErrors };
-      delete nextErrors[documentId];
-      delete nextErrors.documentsChecklist;
       return {
-        fieldErrors: nextErrors,
-        draft: {
-          ...state.draft,
-          documents: updatedDocs,
-        },
+        fieldErrors: removeErrorKeys(state.fieldErrors, [documentId, 'documentsChecklist']),
+        draft: { ...state.draft, documents: updatedDocs },
       };
     }),
   setStep: (currentStep) => set((state) => ({ draft: { ...state.draft, currentStep } })),
   processPayment: (paymentMethod) =>
     set((state) => {
-      const receipt: ApplicationReceipt = {
-        applicationId: state.draft.id,
-        companyName: state.draft.company.proposedName1,
-        companyType: state.draft.company.companyType,
-        appliedDate: new Date().toISOString().split("T")[0],
-        totalAmount: state.draft.feeBreakdown.totalAmount,
-        paymentStatus: 'Paid',
-        paymentMethod,
-        transactionId: `TXN-${Math.floor(10000000 + Math.random() * 90000000)}`,
-      };
-
-      const mappedApp: Application = {
-        id: state.draft.id,
-        serviceId: 'company-registration',
-        serviceName: 'Company Registration',
-        category: 'BUSINESS',
-        status: 'Under Verification',
-        progress: 100,
-        assignedExecutive: 'TaxEdge Compliance Team',
-        paymentAmount: state.draft.feeBreakdown.totalAmount,
-        paymentStatus: 'Paid',
-        createdAt: new Date().toISOString().split("T")[0],
-        formData: {
-          companyType: state.draft.company.companyType,
-          proposedName: state.draft.company.proposedName1,
-        },
-        documents: state.draft.documents.map(d => ({ name: d.name, status: d.status as any, fileUri: d.fileUri })),
-        timeline: state.draft.trackingStages?.map((stg) => ({
-          title: stg.title,
-          description: stg.description,
-          status: stg.status as "completed" | "current" | "pending",
-          date: stg.updatedAt || 'Today',
-        })) || [],
-        chatHistory: [],
-      };
-
-      useApplicationStore.getState().addApplication(mappedApp);
-
+      const receipt = createReceipt(state.draft, paymentMethod);
+      const app = createApplicationObject(state.draft);
+      useApplicationStore.getState().addApplication(app);
       return {
         draft: { ...state.draft, paymentStatus: 'Paid', status: 'Submitted', receipt },
       };
     }),
-  resetRegistration: () => set({ draft: initialDraft, fieldErrors: {} }),
+  resetRegistration: () => set({ draft: createInitialDraft(), fieldErrors: {} }),
 }));
-
-
-
