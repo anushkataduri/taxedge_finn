@@ -133,7 +133,7 @@ const readFileAsBase64 = async (uri?: string): Promise<string | null> => {
     if (base64 && base64.trim().length > 0) {
       return base64.trim();
     }
-  } catch (directErr) {
+  } catch {
     // 5. Fallback: Copy content:// or special URI to temporary cache file then read
     try {
       const ext = cleanUri.split(".").pop()?.split("?")[0] || "bin";
