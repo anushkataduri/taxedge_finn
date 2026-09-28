@@ -38,7 +38,6 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
 
   const tdsDraft = useApplicationStore((state) => state.tdsDraft);
   const saveTdsDraft = useApplicationStore((state) => state.saveTdsDraft);
-  const clearTdsDraft = useApplicationStore((state) => state.clearTdsDraft);
 
   // Initialize checklist items from draft store or fallback default constants
   const [documents, setDocuments] = useState<TdsDocumentItem[]>(() => {
@@ -83,7 +82,6 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
   // Universal Draft Guard Hook for page exit
   const {
     showDraftModal,
-    markSubmitted,
     handleSaveAndExit: openDraftModal,
     handleDiscardAndExit: discardDraft,
     handleCancel: cancelExit,

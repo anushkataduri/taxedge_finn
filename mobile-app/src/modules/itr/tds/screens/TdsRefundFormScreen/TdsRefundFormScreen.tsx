@@ -24,7 +24,6 @@ import type { Customer } from "@/shared/types/domain";
 import {
   TdsCustomerIncomeFormData,
   BankAccountType,
-  TaxRegimeType,
   PersonalDetails,
 } from "../../types/customerIncome.types";
 import {
@@ -43,6 +42,7 @@ import {
 } from "../../services/tdsDraftService";
 import { tdsApiService } from "../../services/tdsApiService";
 import { TdsRefundPersonalInfoCard } from "../../components/personal/TdsRefundPersonalInfoCard";
+import { TdsConditionalIncomeSection } from "../../components/form/TdsConditionalIncomeSection";
 import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
 import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 import { styles } from "./TdsRefundFormScreen.styles";
@@ -843,34 +843,12 @@ export const TdsRefundFormScreen: React.FC = () => {
           </View>
 
           {/* Progressive Disclosure 1: Rental Income */}
-          <View style={styles.toggleSection}>
-            <View style={styles.toggleHeader}>
-              <View style={styles.toggleTextGroup}>
-                <Text style={styles.toggleQuestion}>Rental Income</Text>
-                <Text style={styles.toggleSubtitle}>House property rent</Text>
-              </View>
-              <View style={styles.toggleChips}>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => updateIncome("hasRentalIncome", true)}
-                  style={[styles.toggleChip, formData.income.hasRentalIncome ? styles.toggleChipActive : null]}
-                >
-                  <Text style={[styles.toggleChipText, formData.income.hasRentalIncome ? styles.toggleChipTextActive : null]}>
-                    Yes
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => updateIncome("hasRentalIncome", false)}
-                  style={[styles.toggleChip, !formData.income.hasRentalIncome ? styles.toggleChipActive : null]}
-                >
-                  <Text style={[styles.toggleChipText, !formData.income.hasRentalIncome ? styles.toggleChipTextActive : null]}>
-                    No
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
+          <TdsConditionalIncomeSection
+            title="Rental Income"
+            subtitle="House property rent"
+            enabled={formData.income.hasRentalIncome}
+            onToggle={(enabled) => updateIncome("hasRentalIncome", enabled)}
+          >
             {formData.income.hasRentalIncome && (
               <View style={styles.conditionalFields}>
                 <View style={styles.fieldGroup}>
@@ -897,36 +875,15 @@ export const TdsRefundFormScreen: React.FC = () => {
                 </View>
               </View>
             )}
-          </View>
+          </TdsConditionalIncomeSection>
 
           {/* Progressive Disclosure 2: Capital Gains */}
-          <View style={styles.toggleSection}>
-            <View style={styles.toggleHeader}>
-              <View style={styles.toggleTextGroup}>
-                <Text style={styles.toggleQuestion}>Capital Gains</Text>
-                <Text style={styles.toggleSubtitle}>Stocks / MF / Property</Text>
-              </View>
-              <View style={styles.toggleChips}>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => updateIncome("hasCapitalGains", true)}
-                  style={[styles.toggleChip, formData.income.hasCapitalGains ? styles.toggleChipActive : null]}
-                >
-                  <Text style={[styles.toggleChipText, formData.income.hasCapitalGains ? styles.toggleChipTextActive : null]}>
-                    Yes
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => updateIncome("hasCapitalGains", false)}
-                  style={[styles.toggleChip, !formData.income.hasCapitalGains ? styles.toggleChipActive : null]}
-                >
-                  <Text style={[styles.toggleChipText, !formData.income.hasCapitalGains ? styles.toggleChipTextActive : null]}>
-                    No
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+          <TdsConditionalIncomeSection
+            title="Capital Gains"
+            subtitle="Stocks / MF / Property"
+            enabled={formData.income.hasCapitalGains}
+            onToggle={(enabled) => updateIncome("hasCapitalGains", enabled)}
+          >
 
             {formData.income.hasCapitalGains && (
               <View style={styles.conditionalFields}>
@@ -956,36 +913,15 @@ export const TdsRefundFormScreen: React.FC = () => {
                 </View>
               </View>
             )}
-          </View>
+          </TdsConditionalIncomeSection>
 
           {/* Progressive Disclosure 3: Business Income */}
-          <View style={styles.toggleSection}>
-            <View style={styles.toggleHeader}>
-              <View style={styles.toggleTextGroup}>
-                <Text style={styles.toggleQuestion}>Business / Profession</Text>
-                <Text style={styles.toggleSubtitle}>Freelance or business income</Text>
-              </View>
-              <View style={styles.toggleChips}>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => updateIncome("hasBusinessIncome", true)}
-                  style={[styles.toggleChip, formData.income.hasBusinessIncome ? styles.toggleChipActive : null]}
-                >
-                  <Text style={[styles.toggleChipText, formData.income.hasBusinessIncome ? styles.toggleChipTextActive : null]}>
-                    Yes
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => updateIncome("hasBusinessIncome", false)}
-                  style={[styles.toggleChip, !formData.income.hasBusinessIncome ? styles.toggleChipActive : null]}
-                >
-                  <Text style={[styles.toggleChipText, !formData.income.hasBusinessIncome ? styles.toggleChipTextActive : null]}>
-                    No
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+          <TdsConditionalIncomeSection
+            title="Business / Profession"
+            subtitle="Freelance or business income"
+            enabled={formData.income.hasBusinessIncome}
+            onToggle={(enabled) => updateIncome("hasBusinessIncome", enabled)}
+          >
 
             {formData.income.hasBusinessIncome && (
               <View style={styles.conditionalFields}>
@@ -1015,36 +951,15 @@ export const TdsRefundFormScreen: React.FC = () => {
                 </View>
               </View>
             )}
-          </View>
+          </TdsConditionalIncomeSection>
 
           {/* Progressive Disclosure 4: Home Loan */}
-          <View style={styles.toggleSection}>
-            <View style={styles.toggleHeader}>
-              <View style={styles.toggleTextGroup}>
-                <Text style={styles.toggleQuestion}>Home Loan Interest</Text>
-                <Text style={styles.toggleSubtitle}>Self-occupied house property</Text>
-              </View>
-              <View style={styles.toggleChips}>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => updateIncome("hasHomeLoan", true)}
-                  style={[styles.toggleChip, formData.income.hasHomeLoan ? styles.toggleChipActive : null]}
-                >
-                  <Text style={[styles.toggleChipText, formData.income.hasHomeLoan ? styles.toggleChipTextActive : null]}>
-                    Yes
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => updateIncome("hasHomeLoan", false)}
-                  style={[styles.toggleChip, !formData.income.hasHomeLoan ? styles.toggleChipActive : null]}
-                >
-                  <Text style={[styles.toggleChipText, !formData.income.hasHomeLoan ? styles.toggleChipTextActive : null]}>
-                    No
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+          <TdsConditionalIncomeSection
+            title="Home Loan Interest"
+            subtitle="Self-occupied house property"
+            enabled={formData.income.hasHomeLoan}
+            onToggle={(enabled) => updateIncome("hasHomeLoan", enabled)}
+          >
 
             {formData.income.hasHomeLoan && (
               <View style={styles.conditionalFields}>
@@ -1061,36 +976,15 @@ export const TdsRefundFormScreen: React.FC = () => {
                 </View>
               </View>
             )}
-          </View>
+          </TdsConditionalIncomeSection>
 
           {/* Progressive Disclosure 5: Deductions (80C, 80D) */}
-          <View style={styles.toggleSection}>
-            <View style={styles.toggleHeader}>
-              <View style={styles.toggleTextGroup}>
-                <Text style={styles.toggleQuestion}>Tax Deductions</Text>
-                <Text style={styles.toggleSubtitle}>Section 80C, 80D, 80G</Text>
-              </View>
-              <View style={styles.toggleChips}>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => updateIncome("hasDeductions", true)}
-                  style={[styles.toggleChip, formData.income.hasDeductions ? styles.toggleChipActive : null]}
-                >
-                  <Text style={[styles.toggleChipText, formData.income.hasDeductions ? styles.toggleChipTextActive : null]}>
-                    Yes
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => updateIncome("hasDeductions", false)}
-                  style={[styles.toggleChip, !formData.income.hasDeductions ? styles.toggleChipActive : null]}
-                >
-                  <Text style={[styles.toggleChipText, !formData.income.hasDeductions ? styles.toggleChipTextActive : null]}>
-                    No
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+          <TdsConditionalIncomeSection
+            title="Tax Deductions"
+            subtitle="Section 80C, 80D, 80G"
+            enabled={formData.income.hasDeductions}
+            onToggle={(enabled) => updateIncome("hasDeductions", enabled)}
+          >
 
             {formData.income.hasDeductions && (
               <View style={styles.conditionalFields}>
@@ -1120,7 +1014,7 @@ export const TdsRefundFormScreen: React.FC = () => {
                 </View>
               </View>
             )}
-          </View>
+          </TdsConditionalIncomeSection>
         </View>
 
         {/* ========================================================

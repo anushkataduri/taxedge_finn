@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   ActivityIndicator,
   Alert,
 } from "react-native";
@@ -17,14 +16,11 @@ import { useApplicationStore } from "@/store/applicationStore";
 import { TdsCustomerIncomeFormData } from "../../types/customerIncome.types";
 import { TdsChecklistItem } from "../../types/checklist.types";
 import { TaxCalculationBreakdown } from "../../types/estimate.types";
-import { TdsReconciliationSummary } from "../../types/reconciliation.types";
 import { formatCurrency } from "../../utils/tdsValidation";
 import { tdsDraftService, INITIAL_TDS_FORM_DATA } from "../../services/tdsDraftService";
 import { tdsCalculationService } from "../../services/tdsCalculationService";
-import { tdsReconciliationService } from "../../services/tdsReconciliationService";
 import { tdsApiService } from "../../services/tdsApiService";
 import { TaxCalculationBreakdownCard } from "../../components/estimate/TaxCalculationBreakdownCard";
-import { TdsReconciliationCard } from "../../components/estimate/TdsReconciliationCard";
 import { styles } from "./TdsRefundEstimateScreen.styles";
 
 export const TdsRefundEstimateScreen: React.FC = () => {
@@ -34,7 +30,6 @@ export const TdsRefundEstimateScreen: React.FC = () => {
   const [formData, setFormData] = useState<TdsCustomerIncomeFormData>(INITIAL_TDS_FORM_DATA);
   const [documents, setDocuments] = useState<TdsChecklistItem[]>([]);
   const [calculation, setCalculation] = useState<TaxCalculationBreakdown | null>(null);
-  const [reconciliation, setReconciliation] = useState<TdsReconciliationSummary | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -71,8 +66,6 @@ export const TdsRefundEstimateScreen: React.FC = () => {
         const calcResult = tdsCalculationService.calculate(finalForm);
         setCalculation(calcResult);
 
-        const reconResult = tdsReconciliationService.reconcile(finalForm, finalDocs);
-        setReconciliation(reconResult);
       }
     })();
     return () => {
