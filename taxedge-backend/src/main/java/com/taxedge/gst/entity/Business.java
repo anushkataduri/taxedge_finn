@@ -23,9 +23,10 @@ import lombok.Data;
 @Data
 public class Business {
 
-    @Id
-    @Column(name = "business_id", nullable = false, unique = true, length = 9)
-    private String businessId;
+	@Id
+	@Column(name = "gst_id", nullable = false, unique = true, length = 15)
+	private String gstId;
+	
 
     @Column(name = "legal_name", nullable = false, length = 100)
     private String legalName;

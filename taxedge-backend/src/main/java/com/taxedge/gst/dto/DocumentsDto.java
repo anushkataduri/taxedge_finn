@@ -10,7 +10,7 @@ public class DocumentsDto {
 
     private Long id;
 
-    private String businessId;
+    private String gstId;
 
     private DocumentType documentType;
 
