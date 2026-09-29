@@ -14,7 +14,7 @@ import lombok.Data;
 @Data
 public class BusinessDto {
 
-    private String businessId;
+	//private String gstId;
 
     private String legalName;
 

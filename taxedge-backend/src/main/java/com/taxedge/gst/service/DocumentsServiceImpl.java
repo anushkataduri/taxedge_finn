@@ -2,10 +2,14 @@ package com.taxedge.gst.service;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.List;
 
+import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.taxedge.gst.dto.DocumentsDto;
 import com.taxedge.gst.entity.Documents;
 import com.taxedge.gst.enums.AddressProofType;
 import com.taxedge.gst.enums.DocumentType;
@@ -14,30 +18,45 @@ import com.taxedge.gst.repository.BusinessRepository;
 import com.taxedge.gst.repository.DocumentsRepository;
 
 @Service
+@RequiredArgsConstructor
 public class DocumentsServiceImpl implements DocumentsService {
 
     private final DocumentsRepository documentsRepository;
-
     private final BusinessRepository businessRepository;
-
-    public DocumentsServiceImpl(DocumentsRepository documentsRepository,BusinessRepository businessRepository) {
-        this.documentsRepository = documentsRepository;
-        this.businessRepository = businessRepository;
-    }
-
+    private final ModelMapper modelMapper;
+    
     @Override
-    public String uploadFile(String businessId,String documentType,String addressProofType,MultipartFile file) throws IOException {
+    public String uploadFile(
+            String gstId,
+            String documentType,
+            String addressProofType,
+            MultipartFile file) throws IOException {
 
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Please select a file");
         }
 
-        businessRepository.findById(businessId)
+        businessRepository.findById(gstId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Business not found with businessId: " + businessId));
+                                "Business not found with gstId: " + gstId));
+
+        long documentCount = documentsRepository.countByGstId(gstId);
+
+        if (documentCount >= 6) {
+            throw new IllegalArgumentException(
+                    "Maximum 6 documents allowed for one GST ID");
+        }
 
         DocumentType type = DocumentType.valueOf(documentType);
+
+        boolean alreadyExists =
+                documentsRepository.existsByGstIdAndDocumentType(gstId,type);
+
+        if (alreadyExists) {
+            throw new IllegalArgumentException(
+                    type + " document already uploaded for this GST ID");
+        }
 
         AddressProofType proofType = null;
 
@@ -60,11 +79,12 @@ public class DocumentsServiceImpl implements DocumentsService {
 
         byte[] fileBytes = file.getBytes();
 
-        String base64Data = Base64.getEncoder().encodeToString(fileBytes);
+        String base64Data =
+                Base64.getEncoder().encodeToString(fileBytes);
 
         Documents document = new Documents();
 
-        document.setBusinessId(businessId);
+        document.setGstId(gstId);
         document.setDocumentType(type);
         document.setAddressProofType(proofType);
         document.setFileName(file.getOriginalFilename());
@@ -77,18 +97,32 @@ public class DocumentsServiceImpl implements DocumentsService {
     }
 
     @Override
-    public String updateFile(Long id,String documentType,String addressProofType,MultipartFile file) throws IOException {
+    public String updateFile(
+            String gstId,
+            Long id,
+            String addressProofType,
+            MultipartFile file) throws IOException {
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Please select a file");
+        }
+
+        businessRepository.findById(gstId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Business not found with gstId: " + gstId));
 
         Documents document = documentsRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Document not found with id: " + id));
 
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("Please select a file");
+        if (!document.getGstId().equals(gstId)) {
+            throw new ResourceNotFoundException(
+                    "Document does not belong to gstId: " + gstId);
         }
 
-        DocumentType type = DocumentType.valueOf(documentType);
+        DocumentType type = document.getDocumentType();
 
         AddressProofType proofType = null;
 
@@ -111,9 +145,9 @@ public class DocumentsServiceImpl implements DocumentsService {
 
         byte[] fileBytes = file.getBytes();
 
-        String base64Data = Base64.getEncoder().encodeToString(fileBytes);
+        String base64Data =
+                Base64.getEncoder().encodeToString(fileBytes);
 
-        document.setDocumentType(type);
         document.setAddressProofType(proofType);
         document.setFileName(file.getOriginalFilename());
         document.setFileType(file.getContentType());
@@ -125,15 +159,52 @@ public class DocumentsServiceImpl implements DocumentsService {
     }
 
     @Override
-    public String deleteFile(Long id) {
+    public String deleteFile(String gstId,Long id) {
+
+        businessRepository.findById(gstId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Business not found with gstId: " + gstId));
 
         Documents document = documentsRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Document not found with id: " + id));
 
+        if (!document.getGstId().equals(gstId)) {
+            throw new ResourceNotFoundException(
+                    "Document does not belong to gstId: " + gstId);
+        }
+
         documentsRepository.delete(document);
 
         return "Document deleted successfully";
+    }
+
+//    @Override
+//    public List<DocumentsDto> getDocumentsByGstId(String gstId) {
+//
+//        businessRepository.findById(gstId)
+//                .orElseThrow(() ->
+//                        new ResourceNotFoundException(
+//                                "Business not found with gstId: " + gstId));
+//
+//        return documentsRepository.findByGstId(gstId);
+//    }
+    
+    @Override
+    public List<DocumentsDto> getDocumentsByGstId(String gstId) {
+
+        businessRepository.findById(gstId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Business not found with gstId: " + gstId));
+
+        List<Documents> documents =
+                documentsRepository.findByGstId(gstId);
+
+        return documents.stream()
+                .map(document -> modelMapper.map(document, DocumentsDto.class))
+                .toList();
     }
 }
