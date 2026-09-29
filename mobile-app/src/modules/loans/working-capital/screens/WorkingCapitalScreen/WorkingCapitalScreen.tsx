@@ -24,6 +24,7 @@ import {
   LoanBankingFormData,
   LoanDocumentItem,
   LoanApplicationDraft,
+  LoanEmploymentType,
 } from "../../../types/loans.types";
 import {
   validateLoanDetails,
@@ -42,6 +43,7 @@ import {
 import { styles } from "./WorkingCapitalScreen.styles";
 
 const STEPS = ["Financials", "Business & Banking", "Documents", "Review"];
+const DRAFT_STORAGE_KEY = "@taxedge_working_capital_draft_v1";
 
 export const WorkingCapitalScreen: React.FC = () => {
   const router = useRouter();
@@ -64,7 +66,7 @@ export const WorkingCapitalScreen: React.FC = () => {
     hasExistingLoans: false,
     existingEmi: "",
     monthlyIncomeOrTurnover: "",
-    employmentType: "Cash Credit (CC) Facility" as any,
+    employmentType: "Cash Credit (CC) Facility" as LoanEmploymentType,
   });
 
   // Step 2: Business details
@@ -97,7 +99,7 @@ export const WorkingCapitalScreen: React.FC = () => {
   useEffect(() => {
     const loadDraft = async () => {
       try {
-        const raw = await AsyncStorage.getItem("@taxedge_working_capital_draft_v1");
+        const raw = await AsyncStorage.getItem(DRAFT_STORAGE_KEY);
         if (raw) {
           const draft = JSON.parse(raw);
           if (draft.loanDetails) setLoanDetails(draft.loanDetails);
@@ -109,7 +111,7 @@ export const WorkingCapitalScreen: React.FC = () => {
           }
         }
       } catch {
-        // Ignore
+        // Ignore storage errors
       }
     };
     loadDraft();
@@ -145,25 +147,21 @@ export const WorkingCapitalScreen: React.FC = () => {
           documents,
           savedAt: new Date().toISOString(),
         };
-        await AsyncStorage.setItem(
-          "@taxedge_working_capital_draft_v1",
-          JSON.stringify(draft)
-        );
+        await AsyncStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
       } catch {
         // Ignore storage errors
       }
     },
     onDiscardDraft: async () => {
       try {
-        await AsyncStorage.removeItem("@taxedge_working_capital_draft_v1");
+        await AsyncStorage.removeItem(DRAFT_STORAGE_KEY);
       } catch {
         // Ignore storage errors
       }
     },
   });
 
-  const handleDetailsChange = (field: keyof LoanDetailsFormData, value: any) => {
-    setLoanDetails((prev) => ({ ...prev, [field]: value }));
+  const clearFieldError = (field: string) => {
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -173,32 +171,28 @@ export const WorkingCapitalScreen: React.FC = () => {
     }
   };
 
-  const handleBusinessChange = (
-    field: keyof LoanBusinessFormData,
-    value: any
+  const handleDetailsChange = <K extends keyof LoanDetailsFormData>(
+    field: K,
+    value: LoanDetailsFormData[K]
+  ) => {
+    setLoanDetails((prev) => ({ ...prev, [field]: value }));
+    clearFieldError(field as string);
+  };
+
+  const handleBusinessChange = <K extends keyof LoanBusinessFormData>(
+    field: K,
+    value: LoanBusinessFormData[K]
   ) => {
     setBusinessDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field as string);
   };
 
-  const handleBankingChange = (
-    field: keyof LoanBankingFormData,
-    value: string
+  const handleBankingChange = <K extends keyof LoanBankingFormData>(
+    field: K,
+    value: LoanBankingFormData[K]
   ) => {
     setBankingDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field as string);
   };
 
   const handleDocumentUploaded = (
@@ -252,14 +246,16 @@ export const WorkingCapitalScreen: React.FC = () => {
     return true;
   };
 
+  const scrollToTop = () => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
   const handleNext = () => {
-    if (!validateCurrentStep()) {
-      return;
-    }
+    if (!validateCurrentStep()) return;
 
     if (currentStepIndex < STEPS.length - 1) {
       setCurrentStepIndex((prev) => prev + 1);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      scrollToTop();
     } else {
       handleSubmitApplication();
     }
@@ -268,10 +264,15 @@ export const WorkingCapitalScreen: React.FC = () => {
   const handleBack = () => {
     if (currentStepIndex > 0) {
       setCurrentStepIndex((prev) => prev - 1);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      scrollToTop();
     } else {
       openDraftModal();
     }
+  };
+
+  const handleGoToStep = (stepIdx: number) => {
+    setCurrentStepIndex(stepIdx);
+    scrollToTop();
   };
 
   const handleSubmitApplication = async () => {
@@ -298,9 +299,9 @@ export const WorkingCapitalScreen: React.FC = () => {
       const response = await loansApi.applyLoan(draft);
       const appId = response.applicationId || `WC-2026-${Math.floor(10000 + Math.random() * 90000)}`;
 
-      // Save application into store so it appears in My Applications / Application Overview
       const appStore = useApplicationStore.getState();
       const amountVal = Number(loanDetails.requiredAmount) || 5000000;
+
       appStore.createApplication(
         "working-capital",
         "Working Capital",
@@ -330,13 +331,9 @@ export const WorkingCapitalScreen: React.FC = () => {
         true
       );
 
-      // Remove Working Capital draft from storage
-      await AsyncStorage.removeItem("@taxedge_working_capital_draft_v1");
-
-      // Mark submitted so draft guard beforeRemove listener does not intercept navigation
+      await AsyncStorage.removeItem(DRAFT_STORAGE_KEY);
       markSubmitted();
 
-      // Navigate directly to Loan Application Status screen
       router.replace(
         `/service/loan-status?id=${appId}&loanType=Working+Capital` as any
       );
@@ -365,7 +362,7 @@ export const WorkingCapitalScreen: React.FC = () => {
               onChange={handleBusinessChange}
               errors={errors}
             />
-            <View style={{ height: 16 }} />
+            <View style={styles.stepSpacer} />
             <WorkingCapitalBankingStep
               data={bankingDetails}
               onChange={handleBankingChange}
@@ -392,10 +389,7 @@ export const WorkingCapitalScreen: React.FC = () => {
             profile={customer || undefined}
             isConsentChecked={isConsentChecked}
             onConsentToggle={setIsConsentChecked}
-            onGoToStep={(stepIdx) => {
-              setCurrentStepIndex(stepIdx);
-              scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-            }}
+            onGoToStep={handleGoToStep}
           />
         );
     }
@@ -418,10 +412,10 @@ export const WorkingCapitalScreen: React.FC = () => {
           </Text>
         </View>
 
-        <View style={{ width: 36 }} />
+        <View style={styles.headerRightSpacer} />
       </View>
 
-      {/* Step Progress Bar (Home Loan Style) */}
+      {/* Step Progress Bar */}
       <WorkingCapitalStepIndicator
         steps={STEPS}
         currentStepIndex={currentStepIndex}
@@ -493,3 +487,4 @@ export const WorkingCapitalScreen: React.FC = () => {
 };
 
 export default WorkingCapitalScreen;
+

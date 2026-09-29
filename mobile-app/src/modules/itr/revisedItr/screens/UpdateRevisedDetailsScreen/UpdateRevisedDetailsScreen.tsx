@@ -102,7 +102,6 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
   const handleContinue = () => {
     if (!validate()) return;
 
-    // Navigate to Screen 4: Upload Supporting Documents
     router.push({
       pathname: "/service/revised-itr-documents" as any,
       params: {
@@ -113,6 +112,13 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
       },
     });
   };
+
+  const isIncomeSectionVisible = reason === "missed_income" || reason === "other";
+  const isDeductionSectionVisible = reason === "wrong_deduction" || reason === "other";
+  const isBankSectionVisible = reason === "incorrect_bank" || reason === "other";
+  const isTaxableIncomeVisible = reason !== "incorrect_bank";
+
+  const getOrigRupee = (val?: string): string => (val ? `₹${val}` : "");
 
   return (
     <View style={[styles.container, getContainerInsetsStyle(insets.top)]}>
@@ -147,7 +153,7 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
         ) : null}
 
         {/* 1. Missed Income Fields */}
-        {(reason === "missed_income" || reason === "other") && (
+        {isIncomeSectionVisible && (
           <View>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Income Correction</Text>
@@ -156,7 +162,7 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
             <RevisedFormField
               label="Salary / Business income"
               value={form.salaryBusinessIncome}
-              originalValue={`₹${originalValues.salaryBusinessIncome}`}
+              originalValue={getOrigRupee(originalValues.salaryBusinessIncome)}
               changeValue={getChange(originalValues.salaryBusinessIncome, form.salaryBusinessIncome)}
               onChangeText={(val) => handleChange("salaryBusinessIncome", val)}
               isMandatory
@@ -168,7 +174,7 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
             <RevisedFormField
               label="Other income"
               value={form.otherIncome}
-              originalValue={`₹${originalValues.otherIncome}`}
+              originalValue={getOrigRupee(originalValues.otherIncome)}
               changeValue={getChange(originalValues.otherIncome, form.otherIncome)}
               onChangeText={(val) => handleChange("otherIncome", val)}
               placeholder="Enter revised income"
@@ -179,7 +185,7 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
         )}
 
         {/* 2. Wrong Deduction Fields */}
-        {(reason === "wrong_deduction" || reason === "other") && (
+        {isDeductionSectionVisible && (
           <View>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Deduction Correction</Text>
@@ -188,7 +194,7 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
             <RevisedFormField
               label="80C deduction"
               value={form.sec80c}
-              originalValue={`₹${originalValues.sec80c}`}
+              originalValue={getOrigRupee(originalValues.sec80c)}
               changeValue={getChange(originalValues.sec80c, form.sec80c)}
               onChangeText={(val) => handleChange("sec80c", val)}
               placeholder="Enter amount"
@@ -198,7 +204,7 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
             <RevisedFormField
               label="80D deduction"
               value={form.sec80d}
-              originalValue={`₹${originalValues.sec80d}`}
+              originalValue={getOrigRupee(originalValues.sec80d)}
               changeValue={getChange(originalValues.sec80d, form.sec80d)}
               onChangeText={(val) => handleChange("sec80d", val)}
               placeholder="Enter amount"
@@ -208,7 +214,7 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
             <RevisedFormField
               label="Home loan interest"
               value={form.homeLoanInterest}
-              originalValue={`₹${originalValues.homeLoanInterest}`}
+              originalValue={getOrigRupee(originalValues.homeLoanInterest)}
               changeValue={getChange(originalValues.homeLoanInterest, form.homeLoanInterest)}
               onChangeText={(val) => handleChange("homeLoanInterest", val)}
               placeholder="Enter amount"
@@ -218,7 +224,7 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
         )}
 
         {/* 3. Incorrect Bank Fields */}
-        {(reason === "incorrect_bank" || reason === "other") && (
+        {isBankSectionVisible && (
           <View>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Bank Details Correction</Text>
@@ -249,12 +255,12 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
         )}
 
         {/* 4. Taxable Income (for income, deduction, or other revisions) */}
-        {reason !== "incorrect_bank" && (
+        {isTaxableIncomeVisible && (
           <View>
             <RevisedFormField
               label="Taxable income"
               value={form.taxableIncome}
-              originalValue={`₹${originalValues.taxableIncome}`}
+              originalValue={getOrigRupee(originalValues.taxableIncome)}
               changeValue={getChange(originalValues.taxableIncome, form.taxableIncome)}
               onChangeText={(val) => handleChange("taxableIncome", val)}
               isMandatory
@@ -286,3 +292,4 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
 };
 
 export default UpdateRevisedDetailsScreen;
+

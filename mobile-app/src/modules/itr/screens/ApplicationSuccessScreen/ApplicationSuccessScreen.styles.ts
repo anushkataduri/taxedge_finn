@@ -131,10 +131,16 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     gap: Spacing.sm,
   },
+  secondaryButtonWithMargin: {
+    marginTop: Spacing.xs,
+  },
   secondaryButtonText: {
     color: BrandColors.PRIMARY_ORANGE,
     fontSize: Typography.fontSize.md,
     fontWeight: Typography.fontWeight.bold,
+  },
+  secondaryButtonDarkText: {
+    color: "#0B1F3A",
   },
 });
 

@@ -27,6 +27,44 @@ import { useApplicationStore } from "@/store/applicationStore";
 import { DEFAULT_REVISED_FORM_FIELDS } from "../../mock/revisedItrData";
 import { RevisedFormFields } from "../../types/revisedItr.types";
 
+const REVISION_REASON_MAP: Record<string, string> = {
+  missed_income: "Missed Income",
+  wrong_deduction: "Wrong Deduction",
+  incorrect_bank: "Incorrect Bank Details",
+  other: "Other Correction",
+};
+
+const getReasonLabel = (id?: string): string =>
+  (id && REVISION_REASON_MAP[id]) || "Missed Income";
+
+const maskPan = (pan?: string): string => {
+  if (!pan || !pan.trim()) return "—";
+  const clean = pan.trim().toUpperCase();
+  if (clean.length === 10) {
+    return `XXXXX${clean.slice(5)}`;
+  }
+  return clean;
+};
+
+const formatCustomerAddress = (cust?: any): string => {
+  if (!cust) return "—";
+  if (cust.address && cust.address.trim()) return cust.address.trim();
+  const city = cust.city?.trim() || "";
+  const state = cust.state?.trim() || "";
+  if (city && state) return `${city}, ${state}`;
+  if (city) return city;
+  if (state) return state;
+  return "—";
+};
+
+const formatRupeeDisplay = (val?: string): string => {
+  if (!val || !val.trim()) return "—";
+  const cleaned = val.replace(/[^\d.-]/g, "");
+  const num = parseFloat(cleaned);
+  if (isNaN(num)) return val;
+  return `₹${num.toLocaleString("en-IN")}`;
+};
+
 export const ReviewRevisedComputationScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -40,9 +78,9 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
   }>();
 
   const assessmentYear = params.assessmentYear || "AY 2025–26";
-  const ackNo = params.acknowledgementNumber || "284419250714208";
-  const uploadedDocs = params.uploadedDocsCount || "2";
-  const totalDocs = params.totalDocsCount || "6";
+  const ackNo = params.acknowledgementNumber || "—";
+  const uploadedDocs = params.uploadedDocsCount || "0";
+  const totalDocs = params.totalDocsCount || "0";
 
   const customerFromAuth = useAuthStore((s) => s.customer);
   const profileFromCust = useCustomerStore((s) => s.profile);
@@ -54,30 +92,6 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
       formDetails = JSON.parse(params.revisedDetails);
     } catch {}
   }
-
-  const maskPan = (pan?: string): string => {
-    if (!pan || !pan.trim()) return "XXXXX1234F";
-    const clean = pan.trim().toUpperCase();
-    if (clean.length === 10) {
-      return `XXXXX${clean.slice(5)}`;
-    }
-    return clean;
-  };
-
-  const getReasonLabel = (id?: string): string => {
-    switch (id) {
-      case "missed_income":
-        return "Missed Income";
-      case "wrong_deduction":
-        return "Wrong Deduction";
-      case "incorrect_bank":
-        return "Incorrect Bank Details";
-      case "other":
-        return "Other Correction";
-      default:
-        return "Missed Income";
-    }
-  };
 
   const handleEditOriginal = () => {
     router.push({
@@ -129,11 +143,10 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
         "Bank Statements",
         "Investment Proofs",
       ],
-      999, // service fee
+      999,
       "Pending"
     );
 
-    // Navigate to Application Received / Success screen with Revised ITR details
     router.push({
       pathname: "/service/itr-success" as any,
       params: {
@@ -146,6 +159,65 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
       },
     });
   };
+
+  const renderInfoRow = (label: string, value: string) => (
+    <View key={label} style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoVal}>{value}</Text>
+    </View>
+  );
+
+  const originalReturnRows = [
+    { label: "Ack Number", value: ackNo },
+    { label: "Assessment Year", value: assessmentYear },
+    { label: "ITR Form", value: "ITR-1" },
+    {
+      label: "Gross Total Income",
+      value: formDetails.salaryBusinessIncome
+        ? formatRupeeDisplay(formDetails.salaryBusinessIncome)
+        : "—",
+    },
+  ];
+
+  const personalInfoRows = [
+    { label: "Full Name", value: customer?.name || "Customer" },
+    { label: "PAN", value: maskPan(customer?.pan) },
+    { label: "Date of Birth", value: customer?.dob || "—" },
+    {
+      label: "Mobile",
+      value: (customer as any)?.mobile || (customer as any)?.mobileNumber || "—",
+    },
+    { label: "Email", value: customer?.email || "—" },
+    { label: "Address", value: formatCustomerAddress(customer) },
+  ];
+
+  const isBankReason = params.revisionReason === "incorrect_bank";
+  const changesRows = [
+    { label: "Revision Reason", value: getReasonLabel(params.revisionReason) },
+    ...(isBankReason
+      ? [
+          { label: "Revised Bank", value: formDetails.bankAccount || "—" },
+          { label: "Revised IFSC", value: formDetails.ifsc || "—" },
+        ]
+      : [
+          {
+            label: "Revised Salary / Business",
+            value: formatRupeeDisplay(formDetails.salaryBusinessIncome),
+          },
+          {
+            label: "Revised Taxable Income",
+            value: formatRupeeDisplay(formDetails.taxableIncome),
+          },
+        ]),
+  ];
+
+  const documentRows = [
+    {
+      label: "Uploaded Count",
+      value: `${uploadedDocs} of ${totalDocs} documents`,
+    },
+    { label: "Verification Status", value: "Ready for CA Review" },
+  ];
 
   return (
     <View style={[styles.container, getContainerInsetsStyle(insets.top)]}>
@@ -183,22 +255,7 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
           <View style={styles.infoList}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Ack Number</Text>
-              <Text style={styles.infoVal}>{ackNo}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Assessment Year</Text>
-              <Text style={styles.infoVal}>{assessmentYear}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>ITR Form</Text>
-              <Text style={styles.infoVal}>ITR-1</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Gross Total Income</Text>
-              <Text style={styles.infoVal}>₹8,12,400</Text>
-            </View>
+            {originalReturnRows.map((row) => renderInfoRow(row.label, row.value))}
           </View>
         </View>
 
@@ -215,32 +272,7 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
           <View style={styles.infoList}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Full Name</Text>
-              <Text style={styles.infoVal}>{customer?.name || "Customer"}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>PAN</Text>
-              <Text style={styles.infoVal}>{maskPan(customer?.pan)}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Date of Birth</Text>
-              <Text style={styles.infoVal}>{customer?.dob || "15/08/1990"}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Mobile</Text>
-              <Text style={styles.infoVal}>{(customer as any)?.mobile || "+91 98765 43210"}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Email</Text>
-              <Text style={styles.infoVal}>{customer?.email || "customer@example.com"}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Address</Text>
-              <Text style={styles.infoVal}>
-                {customer?.address || (customer?.city ? `${customer.city}, ${customer.state || ""}` : "Bengaluru, Karnataka")}
-              </Text>
-            </View>
+            {personalInfoRows.map((row) => renderInfoRow(row.label, row.value))}
           </View>
         </View>
 
@@ -257,33 +289,7 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
           <View style={styles.infoList}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Revision Reason</Text>
-              <Text style={styles.infoVal}>{getReasonLabel(params.revisionReason)}</Text>
-            </View>
-            {params.revisionReason === "incorrect_bank" ? (
-              <>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Revised Bank</Text>
-                  <Text style={styles.infoVal}>{formDetails.bankAccount}</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Revised IFSC</Text>
-                  <Text style={styles.infoVal}>{formDetails.ifsc}</Text>
-                </View>
-              </>
-            ) : (
-              <>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Revised Salary / Business</Text>
-                  <Text style={styles.infoVal}>₹{formDetails.salaryBusinessIncome}</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Revised Taxable Income</Text>
-                  <Text style={styles.infoVal}>₹{formDetails.taxableIncome}</Text>
-                </View>
-              </>
-            )}
+            {changesRows.map((row) => renderInfoRow(row.label, row.value))}
           </View>
         </View>
 
@@ -300,14 +306,7 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
           <View style={styles.infoList}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Uploaded Count</Text>
-              <Text style={styles.infoVal}>{uploadedDocs} of {totalDocs} documents</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Verification Status</Text>
-              <Text style={styles.infoVal}>Ready for CA Review</Text>
-            </View>
+            {documentRows.map((row) => renderInfoRow(row.label, row.value))}
           </View>
         </View>
 
@@ -338,3 +337,4 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
 };
 
 export default ReviewRevisedComputationScreen;
+
