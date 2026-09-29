@@ -4,9 +4,9 @@ import com.taxedge.gst.dto.BusinessDto;
 
 public interface BusinessService {
 
-    String registerBusiness(BusinessDto businessDto);
+	String registerBusiness(BusinessDto businessDto);
 
-    String updateBusiness(String businessId, BusinessDto businessDto);
+	String updateBusiness(String gstId, BusinessDto businessDto);
 
-    BusinessDto getBusinessId(String businessId);
+	BusinessDto getBusinessId(String gstId);
 }
