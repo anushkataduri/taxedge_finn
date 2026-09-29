@@ -1,4 +1,7 @@
 import { apiClient } from "../../../core/api/apiClient";
+import { getActiveBaseUrl } from "../../../core/api/apiConfig";
+import { tokenManager } from "../../../core/authentication/tokenManager";
+import { tokenRefreshManager } from "../../../core/authentication/tokenRefreshManager";
 
 const MONTHS = [
   "Jan",
@@ -87,17 +90,29 @@ export const gstComplianceApi = {
       } as any);
     }
 
-    const baseUrl = apiClient.getBaseUrl();
+    const baseUrl = apiClient.getBaseUrl() || (await getActiveBaseUrl());
     if (!baseUrl) {
       throw new Error(
         "Backend URL is not configured. Set the API URL before submitting GST compliance data.",
       );
     }
-    const url = `${baseUrl}/gst/compliance/create`;
+    const url = `${baseUrl.replace(/\/$/, "")}/api/v1/gst/compliance/create`;
+
+    let token = await tokenManager.getAccessToken();
+    if (!token || !(await tokenManager.hasValidToken())) {
+      const refreshed = await tokenRefreshManager.attemptRefresh();
+      if (refreshed) {
+        token = await tokenManager.getAccessToken();
+      }
+    }
 
     return new Promise<string>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", url);
+
+      if (token) {
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      }
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {

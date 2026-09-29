@@ -133,6 +133,9 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 64,
   },
+  emptyIcon: {
+    marginBottom: Spacing.sm + 4,
+  },
   emptyText: {
     fontSize: Typography.fontSize.lg,
     fontWeight: Typography.fontWeight.bold,

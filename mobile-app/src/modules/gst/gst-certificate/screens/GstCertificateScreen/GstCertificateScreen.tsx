@@ -94,7 +94,7 @@ function ActionButton({ icon, text, onPress, outline, variant, onPressIn, onPres
   if (isPrimary) {
     return (
       <TouchableOpacity style={st.orangeCta} activeOpacity={0.9} onPressIn={onPressIn} onPressOut={onPressOut} onPress={onPress}>
-        <Ionicons name={icon} size={20} color="#FFF" style={{ marginRight: 8 }} />
+        <Ionicons name={icon} size={20} color="#FFF" style={st.iconMarginRight8} />
         <Text style={st.orangeCtaText}>{text}</Text>
       </TouchableOpacity>
     );
@@ -102,14 +102,14 @@ function ActionButton({ icon, text, onPress, outline, variant, onPressIn, onPres
   if (isText) {
     return (
       <TouchableOpacity style={st.textOnlyBtn} activeOpacity={0.8} onPress={onPress}>
-        <Ionicons name={icon} size={16} color="#64748B" style={{ marginRight: 6 }} />
+        <Ionicons name={icon} size={16} color="#64748B" style={st.iconMarginRight6} />
         <Text style={st.textOnlyBtnText}>{text}</Text>
       </TouchableOpacity>
     );
   }
   return (
     <TouchableOpacity style={st.blueOutlineBtn} activeOpacity={0.8} onPress={onPress}>
-      <Ionicons name={icon} size={18} color="#1E5EFF" style={{ marginRight: 8 }} />
+      <Ionicons name={icon} size={18} color="#1E5EFF" style={st.iconMarginRight8} />
       <Text style={st.blueOutlineBtnText}>{text}</Text>
     </TouchableOpacity>
   );
@@ -310,7 +310,7 @@ export function GstCertificateScreen() {
   );
 
   const renderCertificateActions = () => (
-    <Animated.View style={{ transform: [{ scale: btnScale }], width: "100%", marginTop: 18, gap: 10 }}>
+    <Animated.View style={[{ transform: [{ scale: btnScale }] }, st.btnScaleAnimWrap]}>
       {renderActionButton("cloud-download-outline", "Download Certificate", handleDownload, "primary", pressIn, pressOut)}
       {renderActionButton("share-social-outline", "Share Certificate", handleShare, "outline")}
       {renderActionButton("briefcase-outline", "Track in My Applications", handleApplications, "outline")}
@@ -353,7 +353,7 @@ export function GstCertificateScreen() {
             <View style={[st.confettiDot, { top: 12, left: 30, backgroundColor: "#FF7A00" }]} /><View style={[st.confettiDot, { top: 22, right: 34, backgroundColor: "#1E5EFF" }]} />
             <View style={[st.confettiDot, { bottom: 40, left: 16, backgroundColor: "#1E5EFF" }]} /><View style={[st.confettiDot, { bottom: 35, right: 20, backgroundColor: "#FF7A00" }]} />
           </Animated.View>
-          <Text style={st.readyTitle}>Certificate <Text style={{ color: "#1E5EFF" }}>Ready!</Text></Text>
+          <Text style={st.readyTitle}>Certificate <Text style={st.highlightBlueText}>Ready!</Text></Text>
           <Text style={st.readySub}>Your GST Registration Certificate (Form REG-06) for <Text style={st.blueBold}>{gstin}</Text> is ready.</Text>
           <View style={st.detailsCard}>
             {detailRows.map((item, idx) => (
@@ -424,16 +424,16 @@ export function GstCertificateScreen() {
           {error ? <Text style={st.errorText}>{error}</Text> : null}
         </SectionCard>
         <View style={st.infoCard}>
-          <Ionicons name="information-circle" size={20} color="#1E5EFF" style={{ marginRight: 10 }} />
+          <Ionicons name="information-circle" size={20} color="#1E5EFF" style={st.iconMarginRight10} />
           <Text style={st.infoText}>Your certificate will be generated using your GST registration details and saved as a PDF on your device.</Text>
         </View>
-        <Animated.View style={{ transform: [{ scale: btnScale }], marginTop: 6 }}>
+        <Animated.View style={[{ transform: [{ scale: btnScale }] }, st.btnScaleSmallMargin]}>
           <TouchableOpacity style={[st.orangeCta, isProcessing && st.orangeCtaDisabled]} activeOpacity={0.9} onPressIn={pressIn} onPressOut={pressOut} onPress={handleAction} disabled={isProcessing}>
             <Text style={st.orangeCtaText}>{getButtonText()}</Text>
             <View style={st.ctaArrowCircle}><Ionicons name={isProcessing ? "sync-outline" : "arrow-forward"} size={16} color="#FF7A00" /></View>
           </TouchableOpacity>
         </Animated.View>
-        <View style={st.footerRowCenter}><Ionicons name="shield-checkmark-outline" size={14} color="#64748B" style={{ marginRight: 6 }} /><Text style={st.verifiedText}>Secure • Reliable • TaxEdge Verified</Text></View>
+        <View style={st.footerRowCenter}><Ionicons name="shield-checkmark-outline" size={14} color="#64748B" style={st.iconMarginRight6} /><Text style={st.verifiedText}>Secure • Reliable • TaxEdge Verified</Text></View>
       </ScrollView>
       <GstSelectModal visible={showTypeModal} title="Select Request Type" options={CERTIFICATE_REQUEST_TYPES} selectedValue={requestType} onSelect={(v) => { setRequestType(v); setError(""); }} onClose={() => setShowTypeModal(false)} />
       <UniversalDraftModal visible={showDraftModal} title="Save Progress?" message="You have unsaved changes in your GST certificate request. Save your progress so you can resume anytime without re-entering details." saveButtonText="Save as Draft & Exit" discardButtonText="Discard & Exit" cancelButtonText="Keep Editing" onSaveAndExit={handleSaveAndExit} onDiscardAndExit={handleDiscardAndExit} onCancel={handleCancel} />

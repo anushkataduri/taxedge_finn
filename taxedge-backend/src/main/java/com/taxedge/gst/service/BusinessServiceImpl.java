@@ -1,7 +1,7 @@
 package com.taxedge.gst.service;
 
-import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.taxedge.gst.dto.BusinessDto;
@@ -11,11 +11,13 @@ import com.taxedge.gst.helper.RandomNumberGenerator;
 import com.taxedge.gst.repository.BusinessRepository;
 
 @Service
-@RequiredArgsConstructor
 public class BusinessServiceImpl implements BusinessService {
 
-    private final BusinessRepository businessRepository;
-    private final ModelMapper modelMapper;
+    @Autowired
+    private BusinessRepository businessRepository;
+
+    @Autowired
+    private ModelMapper modelMapper;
 //    @Override
 //    public List<Documents> getDocumentsByBusinessId(String businessId) {
 //

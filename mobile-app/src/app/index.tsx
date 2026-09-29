@@ -6,6 +6,7 @@ import { LandingScreen } from "../components/landing/LandingScreen";
 import { biometricService } from "../modules/authentication/services/biometricService";
 import { passcodeService } from "../modules/authentication/services/passcodeService";
 import { authStorage } from "../modules/authentication/services/authStorage";
+import { styles } from "../styles/app/index.styles";
 
 export default function Index() {
   const router = useRouter();
@@ -115,7 +116,7 @@ export default function Index() {
 
   if (isInitializing) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#0A2346", justifyContent: "center", alignItems: "center" }}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FF5722" />
       </View>
     );

@@ -52,6 +52,6 @@ public class TaxNoticeAssistance {
     @Column(name = "file_type", length = 100)
     private String fileType;
 
-    @Column(name = "notice_document", columnDefinition = "LONGTEXT")
+    @Column(name = "notice_document", columnDefinition = "TEXT")
     private String noticeDocument;
 }

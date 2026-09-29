@@ -5,21 +5,9 @@ import lombok.Data;
 @Data
 public class RevisedItrDetailsDto {
 
-	private String revisedItrId;
+    private Double salaryBusinessIncome;
 
-	private String salaryBusinessIncome;
+    private Double otherIncome;
 
-	private String otherIncome;
-
-	private String deduction80C;
-
-	private String deduction80D;
-
-	private String homeLoanInterest;
-
-	private String taxableIncome;
-
-	private String bankAccountForRefund;
-
-	private String ifscCode;
+    private Double taxableIncome;
 }

@@ -160,7 +160,7 @@ export default function ServicesScreen() {
               name="search-outline"
               size={48}
               color={colors.textSecondary}
-              style={{ marginBottom: 12 }}
+              style={styles.emptyIcon}
             />
             <Text style={[styles.emptyText, { color: colors.text }]}>
               No services found

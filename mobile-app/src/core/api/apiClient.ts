@@ -82,6 +82,14 @@ export class ApiClient {
 
   async loadCustomBaseUrl(): Promise<string> {
     try {
+      const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+      if (envUrl) {
+        this.setBaseUrl(envUrl);
+        this.baseUrlLoaded = true;
+        await AsyncStorage.setItem(STORAGE_KEY_SERVER_URL, this.baseUrl);
+        return this.baseUrl;
+      }
+
       const saved = await AsyncStorage.getItem(STORAGE_KEY_SERVER_URL);
       if (saved && saved.trim()) {
         let clean = saved.trim();

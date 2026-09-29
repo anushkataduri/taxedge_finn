@@ -3,7 +3,7 @@ import { useState, type PropsWithChildren } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 
-import { ThemedText } from "../themed-text";
+import { ThemedText } from "../themed-text/themed-text";
 import { ThemedView } from "../themed-view";
 import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../hooks/use-theme";
@@ -35,7 +35,7 @@ export function Collapsible({ children, title }: CollapsibleProps) {
             size={14}
             weight="bold"
             tintColor={theme.text}
-            style={{ transform: [{ rotate: isOpen ? "-90deg" : "90deg" }] }}
+            style={isOpen ? styles.iconOpen : styles.iconClosed}
           />
         </ThemedView>
 
@@ -67,6 +67,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
+  },
+  iconOpen: {
+    transform: [{ rotate: "-90deg" }],
+  },
+  iconClosed: {
+    transform: [{ rotate: "90deg" }],
   },
   content: {
     marginTop: Spacing.three,

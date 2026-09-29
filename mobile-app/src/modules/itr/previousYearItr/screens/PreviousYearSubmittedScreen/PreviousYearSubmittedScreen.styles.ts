@@ -4,7 +4,7 @@
  * Uses shared design tokens from src/shared/theme.ts.
  */
 
-import { StyleSheet, Platform, ViewStyle } from "react-native";
+import { StyleSheet, Platform } from "react-native";
 import {
   BrandColors,
   BorderRadius,
@@ -126,14 +126,3 @@ export const styles = StyleSheet.create({
   },
 });
 
-export const getContainerInsetsStyle = (topInset: number): ViewStyle => ({
-  paddingTop: topInset,
-});
-
-export const getScrollContentInsetsStyle = (bottomInset: number): ViewStyle => ({
-  paddingBottom: bottomInset + 90,
-});
-
-export const getBottomBarInsetsStyle = (bottomInset: number): ViewStyle => ({
-  paddingBottom: Math.max(bottomInset, 12),
-});

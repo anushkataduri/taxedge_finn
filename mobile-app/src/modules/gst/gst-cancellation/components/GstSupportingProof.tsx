@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Alert, Modal, Image, SafeAreaView } from "react-native";
+import { View, Text, TouchableOpacity, Alert, Modal, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import * as Sharing from "expo-sharing";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -51,7 +52,7 @@ export function GstSupportingProof({ supportingDoc, setSupportingDoc, handleBrow
           </View>
           {supportingDoc && (
             <View style={styles.docPreviewRow}>
-              <View style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
+              <View style={styles.previewRowLeft}>
                 <View style={styles.docPreviewIcon}>
                   <Ionicons name="document-text" size={20} color={BrandColors.PRIMARY_BLUE} />
                 </View>
@@ -60,7 +61,7 @@ export function GstSupportingProof({ supportingDoc, setSupportingDoc, handleBrow
                   <Text style={styles.docPreviewSize}>{supportingDoc.size}</Text>
                 </View>
               </View>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+              <View style={styles.previewRowRight}>
                 <TouchableOpacity
                   onPress={async () => {
                     if (isImage) {
@@ -79,7 +80,7 @@ export function GstSupportingProof({ supportingDoc, setSupportingDoc, handleBrow
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={{ fontSize: 13, fontWeight: "700", color: BrandColors.PRIMARY_BLUE }}>Review</Text>
+                  <Text style={styles.reviewBtnText}>Review</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.docDeleteBtn}
@@ -93,15 +94,13 @@ export function GstSupportingProof({ supportingDoc, setSupportingDoc, handleBrow
           )}
         </View>
 
-        
-    
       <Modal visible={previewVisible} transparent={true} animationType="fade" onRequestClose={() => setPreviewVisible(false)}>
-        <SafeAreaView style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)' }}>
-          <TouchableOpacity style={{ padding: 16, alignSelf: 'flex-end', zIndex: 10 }} onPress={() => setPreviewVisible(false)}>
+        <SafeAreaView style={styles.previewModalOverlay}>
+          <TouchableOpacity style={styles.previewModalCloseBtn} onPress={() => setPreviewVisible(false)}>
             <Ionicons name="close-circle" size={36} color="#FFFFFF" />
           </TouchableOpacity>
           {isImage && supportingDoc?.uri ? (
-            <Image source={{ uri: supportingDoc.uri }} style={{ flex: 1, resizeMode: 'contain' }} />
+            <Image source={{ uri: supportingDoc.uri }} style={styles.previewImage} />
           ) : null}
         </SafeAreaView>
       </Modal>

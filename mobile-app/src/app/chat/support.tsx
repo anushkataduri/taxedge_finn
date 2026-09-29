@@ -73,7 +73,7 @@ export default function SupportChatScreen() {
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
     >
       {/* Header */}
-      <View style={{ backgroundColor: colors.primaryDark, paddingTop: insets.top }}>
+      <View style={[styles.headerWrap, { backgroundColor: colors.primaryDark, paddingTop: insets.top }]}>
         <FocusAwareStatusBar barStyle="light-content" />
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
@@ -221,6 +221,7 @@ export default function SupportChatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  headerWrap: { width: "100%" },
   header: {
     height: 56,
     flexDirection: "row",

@@ -21,37 +21,37 @@ public class TaxNoticeDocument {
     @JoinColumn(name = "notice_id", nullable = false)
     private TaxNoticeAssistance taxNoticeAssistance;
 
-    @Column(name = "tax_notice", columnDefinition = "LONGTEXT")
+    @Column(name = "tax_notice", columnDefinition = "TEXT")
     private String taxNotice;
 
-    @Column(name = "previous_itr", columnDefinition = "LONGTEXT")
+    @Column(name = "previous_itr", columnDefinition = "TEXT")
     private String previousItr;
 
-    @Column(name = "itr_acknowledgement", columnDefinition = "LONGTEXT")
+    @Column(name = "itr_acknowledgement", columnDefinition = "TEXT")
     private String itrAcknowledgement;
 
-    @Column(name = "form_16_16a", columnDefinition = "LONGTEXT")
+    @Column(name = "form_16_16a", columnDefinition = "TEXT")
     private String form1616a;
 
-    @Column(name = "ais_ay", columnDefinition = "LONGTEXT")
+    @Column(name = "ais_ay", columnDefinition = "TEXT")
     private String aisAy;
 
-    @Column(name = "tis", columnDefinition = "LONGTEXT")
+    @Column(name = "tis", columnDefinition = "TEXT")
     private String tis;
 
-    @Column(name = "bank_statement", columnDefinition = "LONGTEXT")
+    @Column(name = "bank_statement", columnDefinition = "TEXT")
     private String bankStatement;
 
-    @Column(name = "supporting_income_documents", columnDefinition = "LONGTEXT")
+    @Column(name = "supporting_income_documents", columnDefinition = "TEXT")
     private String supportingIncomeDocuments;
 
-    @Column(name = "supporting_expense_documents", columnDefinition = "LONGTEXT")
+    @Column(name = "supporting_expense_documents", columnDefinition = "TEXT")
     private String supportingExpenseDocuments;
 
-    @Column(name = "previous_tax_responses", columnDefinition = "LONGTEXT")
+    @Column(name = "previous_tax_responses", columnDefinition = "TEXT")
     private String previousTaxResponses;
 
-    @Column(name = "other_notice_specific_documents", columnDefinition = "LONGTEXT")
+    @Column(name = "other_notice_specific_documents", columnDefinition = "TEXT")
     private String otherNoticeSpecificDocuments;
 
     @Column(name = "message")

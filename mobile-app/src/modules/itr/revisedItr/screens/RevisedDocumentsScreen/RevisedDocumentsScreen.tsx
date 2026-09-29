@@ -24,19 +24,6 @@ import {
   getProgressFillWidthStyle,
 } from "./RevisedDocumentsScreen.styles";
 
-const isDocRequired = (docId: string, reason?: string): boolean => {
-  if (docId === "doc-1" || docId === "doc-2") return true;
-  if (reason === "missed_income" && (docId === "doc-3" || docId === "doc-4")) return true;
-  if (reason === "wrong_deduction" && docId === "doc-6") return true;
-  if (reason === "incorrect_bank" && docId === "doc-5") return true;
-  return false;
-};
-
-const formatSizeInMb = (sizeInBytes?: number): string => {
-  if (!sizeInBytes || sizeInBytes <= 0) return "";
-  return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
-};
-
 export const RevisedDocumentsScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -60,6 +47,14 @@ export const RevisedDocumentsScreen: React.FC = () => {
     )
   );
 
+  const isDocRequired = (docId: string, reason?: string): boolean => {
+    if (docId === "doc-1" || docId === "doc-2") return true;
+    if (reason === "missed_income" && (docId === "doc-3" || docId === "doc-4")) return true;
+    if (reason === "wrong_deduction" && docId === "doc-6") return true;
+    if (reason === "incorrect_bank" && docId === "doc-5") return true;
+    return false;
+  };
+
   const uploadedCount = documents.filter(
     (d) => d.status === "uploaded" || !!d.fileUri
   ).length;
@@ -76,9 +71,11 @@ export const RevisedDocumentsScreen: React.FC = () => {
       return;
     }
 
-    const formattedSize = formatSizeInMb(size);
-    const docId = selectedDocForUpload.id;
+    const sizeInMb = size
+      ? `${(size / (1024 * 1024)).toFixed(1)} MB`
+      : "2.1 MB";
 
+    const docId = selectedDocForUpload.id;
     setDocuments((prev) =>
       prev.map((d) =>
         d.id === docId
@@ -87,7 +84,7 @@ export const RevisedDocumentsScreen: React.FC = () => {
               status: "uploaded",
               fileUri: uri,
               fileName: name,
-              fileSize: formattedSize,
+              fileSize: sizeInMb,
             }
           : d
       )
@@ -175,6 +172,7 @@ export const RevisedDocumentsScreen: React.FC = () => {
   };
 
   const handleContinue = () => {
+    // Navigate to Screen 5: Review Revised Computation
     router.push({
       pathname: "/service/revised-itr-review" as any,
       params: {
@@ -203,9 +201,7 @@ export const RevisedDocumentsScreen: React.FC = () => {
               <Text style={styles.fileNameText} numberOfLines={1}>
                 {item.fileName || item.title}
               </Text>
-              {item.fileSize ? (
-                <Text style={styles.fileSizeText}>{item.fileSize}</Text>
-              ) : null}
+              <Text style={styles.fileSizeText}>{item.fileSize || "2.1 MB"}</Text>
             </View>
             <View style={styles.actionsRow}>
               <TouchableOpacity
@@ -347,4 +343,3 @@ export const RevisedDocumentsScreen: React.FC = () => {
 };
 
 export default RevisedDocumentsScreen;
-

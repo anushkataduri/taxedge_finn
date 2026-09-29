@@ -2,23 +2,23 @@ package com.taxedge.itr.service;
 
 import java.util.Optional;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.taxedge.itr.Exception.ResourceNotFoundException;
 import com.taxedge.itr.dto.TdsDocumentsDto;
-import com.taxedge.itr.entity.RefundBankAccount;
 import com.taxedge.itr.entity.TdsDocuments;
-import com.taxedge.itr.repository.RefundBankAccountRepository;
 import com.taxedge.itr.repository.TdsDocumentsRepository;
 
 @Service
-@RequiredArgsConstructor
 public class TdsDocumentsServiceImpl implements TdsDocumentsService {
 
-    private final TdsDocumentsRepository repository;
-    private final RefundBankAccountRepository bankAccountRepository;
+    @Autowired
+    private TdsDocumentsRepository repository;
+
+    @Autowired
+    private com.taxedge.itr.repository.RefundBankAccountRepository bankAccountRepository;
 
     @Override
     @Transactional

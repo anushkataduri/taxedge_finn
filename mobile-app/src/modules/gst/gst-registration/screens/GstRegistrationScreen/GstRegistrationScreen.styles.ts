@@ -40,7 +40,10 @@ export const styles = StyleSheet.create({
     fontSize: Typography.fontSize.xl,
     fontWeight: Typography.fontWeight.bold,
     color: BrandColors.TEXT_PRIMARY,
-    fontFamily: Platform.select({ ios: "System", android: "sans-serif-medium" }),
+    fontFamily: Platform.select({
+      ios: "System",
+      android: "sans-serif-medium",
+    }),
   },
   placeholderBox: {
     width: 38,
@@ -73,6 +76,12 @@ export const styles = StyleSheet.create({
     fontSize: Typography.fontSize.md,
     fontWeight: Typography.fontWeight.bold,
     color: BrandColors.WHITE,
-    fontFamily: Platform.select({ ios: "System", android: "sans-serif-medium" }),
+    fontFamily: Platform.select({
+      ios: "System",
+      android: "sans-serif-medium",
+    }),
+  },
+  scrollPaddingBottom: {
+    paddingBottom: 24,
   },
 });

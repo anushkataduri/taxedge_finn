@@ -22,17 +22,6 @@ export interface WorkingCapitalReviewStepProps {
   onGoToStep: (stepIndex: number) => void;
 }
 
-const formatCurrency = (val?: string | number): string => {
-  const num = Number(val);
-  if (!val || isNaN(num)) return "₹0";
-  return `₹${num.toLocaleString("en-IN")}`;
-};
-
-const maskAcc = (acc?: string): string => {
-  if (!acc || acc.length < 5) return acc || "—";
-  return `XXXXXX${acc.slice(-4)}`;
-};
-
 export const WorkingCapitalReviewStep: React.FC<WorkingCapitalReviewStepProps> = ({
   loanDetails,
   businessDetails,
@@ -43,52 +32,18 @@ export const WorkingCapitalReviewStep: React.FC<WorkingCapitalReviewStepProps> =
   onConsentToggle,
   onGoToStep,
 }) => {
+  const formatCurrency = (val?: string | number) => {
+    const num = Number(val);
+    if (!val || isNaN(num)) return "₹0";
+    return "₹" + num.toLocaleString("en-IN");
+  };
+
+  const maskAcc = (acc?: string) => {
+    if (!acc || acc.length < 5) return acc || "—";
+    return `XXXXXX${acc.slice(-4)}`;
+  };
+
   const uploadedDocs = documents.filter((d) => Boolean(d.fileUri));
-
-  const renderCardHeader = (
-    title: string,
-    stepIndex?: number,
-    rightElement?: React.ReactNode
-  ) => (
-    <View style={styles.cardHeader}>
-      <Text style={styles.cardTitle}>{title}</Text>
-      {stepIndex !== undefined ? (
-        <TouchableOpacity
-          style={styles.editAction}
-          onPress={() => onGoToStep(stepIndex)}
-        >
-          <Ionicons
-            name="create-outline"
-            size={14}
-            color={BrandColors.PRIMARY_BLUE}
-          />
-          <Text style={styles.editText}>Edit</Text>
-        </TouchableOpacity>
-      ) : (
-        rightElement
-      )}
-    </View>
-  );
-
-  const renderRow = (
-    label: string,
-    value?: string | number,
-    isHighlight: boolean = false
-  ) => (
-    <View style={styles.row}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={isHighlight ? styles.highlightValue : styles.value}>
-        {value || "—"}
-      </Text>
-    </View>
-  );
-
-  const renderDocBadge = (doc: LoanDocumentItem) => (
-    <View key={doc.id} style={styles.docBadge}>
-      <Ionicons name="document-text" size={12} color="#15803D" />
-      <Text style={styles.docBadgeText}>{doc.name}</Text>
-    </View>
-  );
 
   return (
     <View style={styles.container}>
@@ -99,65 +54,171 @@ export const WorkingCapitalReviewStep: React.FC<WorkingCapitalReviewStepProps> =
 
       {/* Promoter Identity Card */}
       <View style={styles.summaryCard}>
-        {renderCardHeader(
-          "Promoter Information",
-          undefined,
-          <View style={styles.verifiedBadge}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Promoter Information</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <Ionicons name="checkmark-circle" size={14} color="#16A34A" />
-            <Text style={styles.verifiedText}>Verified Profile</Text>
+            <Text style={{ fontSize: 11, fontWeight: "600", color: "#16A34A" }}>
+              Verified Profile
+            </Text>
           </View>
-        )}
-        {renderRow("Applicant Name", profile?.name || "Client Name")}
-        {renderRow("Mobile", profile?.mobile)}
-        {renderRow("PAN", profile?.pan)}
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Applicant Name</Text>
+          <Text style={styles.value}>{profile?.name || "Client Name"}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Mobile</Text>
+          <Text style={styles.value}>{profile?.mobile || "—"}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>PAN</Text>
+          <Text style={styles.value}>{profile?.pan || "—"}</Text>
+        </View>
       </View>
 
       {/* Facility Card */}
       <View style={styles.summaryCard}>
-        {renderCardHeader("Credit Facility Terms", 0)}
-        {renderRow("Requested Limit", formatCurrency(loanDetails.requiredAmount), true)}
-        {renderRow("Facility Type", loanDetails.purpose)}
-        {renderRow(
-          "Sanction Period",
-          loanDetails.preferredTenureMonths
-            ? `${loanDetails.preferredTenureMonths} Months`
-            : undefined
-        )}
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Credit Facility Terms</Text>
+          <TouchableOpacity
+            style={styles.editAction}
+            onPress={() => onGoToStep(0)}
+          >
+            <Ionicons
+              name="create-outline"
+              size={14}
+              color={BrandColors.PRIMARY_BLUE}
+            />
+            <Text style={styles.editText}>Edit</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Requested Limit</Text>
+          <Text style={styles.highlightValue}>
+            {formatCurrency(loanDetails.requiredAmount)}
+          </Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Facility Type</Text>
+          <Text style={styles.value}>{loanDetails.purpose || "—"}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Sanction Period</Text>
+          <Text style={styles.value}>
+            {loanDetails.preferredTenureMonths} Months
+          </Text>
+        </View>
       </View>
 
       {/* Enterprise Details Card */}
       <View style={styles.summaryCard}>
-        {renderCardHeader("Enterprise Profile", 1)}
-        {renderRow("Enterprise Name", businessDetails.businessName)}
-        {businessDetails.gstin ? renderRow("GSTIN", businessDetails.gstin) : null}
-        {businessDetails.udyamRegistration
-          ? renderRow("Udyam Reg.", businessDetails.udyamRegistration)
-          : null}
-        {renderRow(
-          "Vintage",
-          businessDetails.businessVintageYears
-            ? `${businessDetails.businessVintageYears} Years`
-            : undefined
-        )}
-        {renderRow("Turnover", formatCurrency(businessDetails.annualTurnover))}
-        {renderRow("Net Profit", formatCurrency(businessDetails.netProfit))}
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Enterprise Profile</Text>
+          <TouchableOpacity
+            style={styles.editAction}
+            onPress={() => onGoToStep(1)}
+          >
+            <Ionicons
+              name="create-outline"
+              size={14}
+              color={BrandColors.PRIMARY_BLUE}
+            />
+            <Text style={styles.editText}>Edit</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Enterprise Name</Text>
+          <Text style={styles.value}>{businessDetails.businessName}</Text>
+        </View>
+        {businessDetails.gstin ? (
+          <View style={styles.row}>
+            <Text style={styles.label}>GSTIN</Text>
+            <Text style={styles.value}>{businessDetails.gstin}</Text>
+          </View>
+        ) : null}
+        {businessDetails.udyamRegistration ? (
+          <View style={styles.row}>
+            <Text style={styles.label}>Udyam Reg.</Text>
+            <Text style={styles.value}>{businessDetails.udyamRegistration}</Text>
+          </View>
+        ) : null}
+        <View style={styles.row}>
+          <Text style={styles.label}>Vintage</Text>
+          <Text style={styles.value}>{businessDetails.businessVintageYears} Years</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Turnover</Text>
+          <Text style={styles.value}>{formatCurrency(businessDetails.annualTurnover)}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Net Profit</Text>
+          <Text style={styles.value}>{formatCurrency(businessDetails.netProfit)}</Text>
+        </View>
       </View>
 
       {/* Current Account Card */}
       <View style={styles.summaryCard}>
-        {renderCardHeader("Disbursement Current Account", 1)}
-        {renderRow("Bank", bankingDetails.primaryBankName)}
-        {renderRow("Account Number", maskAcc(bankingDetails.accountNumber))}
-        {renderRow("IFSC Code", bankingDetails.ifscCode)}
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Disbursement Current Account</Text>
+          <TouchableOpacity
+            style={styles.editAction}
+            onPress={() => onGoToStep(1)}
+          >
+            <Ionicons
+              name="create-outline"
+              size={14}
+              color={BrandColors.PRIMARY_BLUE}
+            />
+            <Text style={styles.editText}>Edit</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Bank</Text>
+          <Text style={styles.value}>
+            {bankingDetails.primaryBankName || "—"}
+          </Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Account Number</Text>
+          <Text style={styles.value}>{maskAcc(bankingDetails.accountNumber)}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>IFSC Code</Text>
+          <Text style={styles.value}>{bankingDetails.ifscCode || "—"}</Text>
+        </View>
       </View>
 
       {/* Uploaded Documents Card */}
       <View style={styles.summaryCard}>
-        {renderCardHeader("Uploaded Records", 2)}
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Uploaded Records</Text>
+          <TouchableOpacity
+            style={styles.editAction}
+            onPress={() => onGoToStep(2)}
+          >
+            <Ionicons
+              name="create-outline"
+              size={14}
+              color={BrandColors.PRIMARY_BLUE}
+            />
+            <Text style={styles.editText}>Manage</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.docsGrid}>
-          {uploadedDocs.map(renderDocBadge)}
+          {uploadedDocs.map((doc) => (
+            <View key={doc.id} style={styles.docBadge}>
+              <Ionicons name="document-text" size={12} color="#15803D" />
+              <Text style={styles.docBadgeText}>{doc.name}</Text>
+            </View>
+          ))}
           {uploadedDocs.length === 0 && (
-            <Text style={styles.emptyDocsText}>
+            <Text style={[styles.label, { fontStyle: "italic" }]}>
               No documents uploaded yet.
             </Text>
           )}
@@ -191,4 +252,3 @@ export const WorkingCapitalReviewStep: React.FC<WorkingCapitalReviewStepProps> =
 };
 
 export default WorkingCapitalReviewStep;
-

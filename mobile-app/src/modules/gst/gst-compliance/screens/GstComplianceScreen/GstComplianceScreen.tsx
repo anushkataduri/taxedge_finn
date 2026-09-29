@@ -21,6 +21,10 @@ import { ComplianceHeader } from "@/modules/gst/gst-compliance/components/Compli
 import { BottomSheetSelector, SelectorOption } from "@/modules/gst/gst-compliance/components/BottomSheetSelector/BottomSheetSelector";
 import { RequestTypeSection } from "@/modules/gst/gst-compliance/components/RequestTypeSection/RequestTypeSection";
 import { FloatingLabelInput } from "@/modules/gst/gst-compliance/components/FloatingLabelInput/FloatingLabelInput";
+import {
+  ComplianceConfirmModal,
+  ComplianceResumeModal,
+} from "@/modules/gst/gst-compliance/components/ComplianceModals/ComplianceModals";
 import { useComplianceForm } from "@/modules/gst/hooks/useComplianceForm";
 import {
   styles,
@@ -367,161 +371,22 @@ export function GstComplianceScreen() {
       />
 
       {/* Confirmation Modal */}
-      <Modal
+      <ComplianceConfirmModal
         visible={showConfirmModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowConfirmModal(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View
-            style={[
-              styles.dialogCard,
-              {
-                backgroundColor: isDark ? "#1E293B" : "#FFFFFF",
-                borderColor: isDark ? "#334155" : "#E2E8F0",
-              },
-            ]}
-          >
-            <View style={styles.dialogIconWrap}>
-              <Ionicons
-                name="shield-checkmark-outline"
-                size={32}
-                color={BrandColors.PRIMARY_ORANGE}
-              />
-            </View>
-
-            <Text
-              style={[
-                styles.dialogTitle,
-                { color: isDark ? "#F8FAFC" : "#0F172A" },
-              ]}
-            >
-              Submit GST Compliance Request?
-            </Text>
-
-            <Text
-              style={[
-                styles.dialogMessage,
-                { color: isDark ? "#94A3B8" : "#64748B" },
-              ]}
-            >
-              Are you sure you want to submit this {formData.requestType} request for GSTIN {formData.gstin}? Our CA team will immediately begin processing.
-            </Text>
-
-            <View style={styles.dialogActionsRow}>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => setShowConfirmModal(false)}
-                style={[
-                  styles.dialogCancelBtn,
-                  {
-                    backgroundColor: isDark ? "#334155" : "#F1F5F9",
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.dialogCancelText,
-                    { color: isDark ? "#E2E8F0" : "#475569" },
-                  ]}
-                >
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handleConfirmSubmit}
-                style={styles.dialogConfirmBtn}
-              >
-                <Text style={styles.dialogConfirmText}>Submit</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        isDark={isDark}
+        requestType={formData.requestType}
+        gstin={formData.gstin}
+        onCancel={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirmSubmit}
+      />
 
       {/* Resume Draft Modal */}
-      <Modal
+      <ComplianceResumeModal
         visible={showResumeModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => discardDraft()}
-      >
-        <View style={styles.modalBackdrop}>
-          <View
-            style={[
-              styles.dialogCard,
-              {
-                backgroundColor: isDark ? "#1E293B" : "#FFFFFF",
-                borderColor: isDark ? "#334155" : "#E2E8F0",
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.dialogIconWrap,
-                { backgroundColor: isDark ? "#0F172A" : "#EAF1FE" },
-              ]}
-            >
-              <Ionicons
-                name="time-outline"
-                size={30}
-                color={BrandColors.PRIMARY_BLUE_ACCENT}
-              />
-            </View>
-
-            <Text
-              style={[
-                styles.dialogTitle,
-                { color: isDark ? "#F8FAFC" : "#0F172A" },
-              ]}
-            >
-              Resume Draft Request?
-            </Text>
-
-            <Text
-              style={[
-                styles.dialogMessage,
-                { color: isDark ? "#94A3B8" : "#64748B" },
-              ]}
-            >
-              You have an unsaved GST Compliance request in progress. Would you like to resume where you left off?
-            </Text>
-
-            <View style={styles.dialogActionsRow}>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={discardDraft}
-                style={[
-                  styles.dialogCancelBtn,
-                  {
-                    backgroundColor: isDark ? "#334155" : "#F1F5F9",
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.dialogCancelText,
-                    { color: isDark ? "#E2E8F0" : "#475569" },
-                  ]}
-                >
-                  Start Fresh
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={resumeDraft}
-                style={styles.dialogResumeBtn}
-              >
-                <Text style={styles.dialogConfirmText}>Resume</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        isDark={isDark}
+        onDiscard={discardDraft}
+        onResume={resumeDraft}
+      />
     </View>
   );
 }

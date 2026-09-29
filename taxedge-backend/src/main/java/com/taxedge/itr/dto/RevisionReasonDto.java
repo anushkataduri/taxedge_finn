@@ -7,9 +7,7 @@ import lombok.Data;
 @Data
 public class RevisionReasonDto {
 
-	private String revisedItrId;
+    private RevisionReason reason;
 
-	private RevisionReason reason;
-
-	private String otherReason;
+    private String otherReason;
 }

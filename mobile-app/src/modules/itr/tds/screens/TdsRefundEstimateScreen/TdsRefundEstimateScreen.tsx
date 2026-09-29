@@ -17,7 +17,7 @@ import { TdsCustomerIncomeFormData } from "../../types/customerIncome.types";
 import { TdsChecklistItem } from "../../types/checklist.types";
 import { TaxCalculationBreakdown } from "../../types/estimate.types";
 import { formatCurrency } from "../../utils/tdsValidation";
-import { tdsDraftService, INITIAL_TDS_FORM_DATA, getTdsCustId } from "../../services/tdsDraftService";
+import { tdsDraftService, INITIAL_TDS_FORM_DATA } from "../../services/tdsDraftService";
 import { tdsCalculationService } from "../../services/tdsCalculationService";
 import { tdsApiService } from "../../services/tdsApiService";
 import { TaxCalculationBreakdownCard } from "../../components/estimate/TaxCalculationBreakdownCard";
@@ -39,15 +39,15 @@ export const TdsRefundEstimateScreen: React.FC = () => {
       const savedDocs = await tdsDraftService.getDocumentsDraft();
       const existingAppId = await tdsDraftService.getApplicationId();
 
-      const custId = getTdsCustId(savedForm.personal?.mobileNumber);
+      const custId = savedForm.personal?.mobileNumber
+        ? savedForm.personal.mobileNumber.replace(/\D/g, "")
+        : "CUST-DEFAULT";
 
       let finalForm = savedForm;
       let finalDocs = savedDocs || [];
 
       try {
-        const backendApp = custId
-          ? await tdsApiService.fetchFullTdsApplication(custId, existingAppId || undefined)
-          : null;
+        const backendApp = await tdsApiService.fetchFullTdsApplication(custId, existingAppId || undefined);
         if (backendApp) {
           if (backendApp.bank) finalForm.bank = { ...finalForm.bank, ...backendApp.bank };
           if (backendApp.income) finalForm.income = { ...finalForm.income, ...backendApp.income };

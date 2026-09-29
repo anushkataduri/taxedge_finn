@@ -1,6 +1,6 @@
 package com.taxedge.customer.controller;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,10 +22,10 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/customer")
-@RequiredArgsConstructor
 public class CustomerController {
 	
-	private final CustomerService customerService;
+	@Autowired
+	private CustomerService customerService;
 
     @PostMapping("/register")
     public ResponseEntity<CustomerJwt> registerCustomer(@RequestBody CustomerDto customerDto) {
