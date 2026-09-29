@@ -219,6 +219,7 @@ export const styles = StyleSheet.create({
   calendarModalContent: {
     width: "100%",
     maxWidth: 360,
+    backgroundColor: BrandColors.WHITE,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     ...Platform.select({
@@ -288,14 +289,14 @@ export const styles = StyleSheet.create({
   },
   weekdaysRow: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   weekdayText: {
+    width: "14.28%",
     fontSize: Typography.fontSize.sm + 1,
     fontWeight: Typography.fontWeight.semiBold,
     color: BrandColors.TEXT_SECONDARY,
-    width: 38,
     textAlign: "center",
   },
   daysGrid: {
@@ -669,5 +670,56 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: Typography.fontWeight.semiBold,
     color: BrandColors.PRIMARY_ORANGE,
+  },
+  accountTypeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  accountTypeBadgeLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  accountTypeBadgeLabel: {
+    fontSize: 11,
+    color: "#64748B",
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  accountTypeBadgeValue: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: BrandColors.PRIMARY_BLUE_DARK,
+  },
+  accountTypeBadgeRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  accountTypeBadgeChangeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: BrandColors.PRIMARY_ORANGE,
+  },
+  termsErrorText: {
+    marginBottom: 8,
+    paddingHorizontal: 2,
+  },
+  inputBoxError: {
+    borderColor: "#EF4444",
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1.5,
+  },
+  inputBoxDefault: {
+    borderColor: BrandColors.BORDER,
+    borderWidth: 1,
   },
 });

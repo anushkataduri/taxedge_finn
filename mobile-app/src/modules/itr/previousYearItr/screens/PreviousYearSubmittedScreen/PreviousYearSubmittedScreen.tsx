@@ -14,12 +14,12 @@ import { PreviousYearStepperTimeline } from "../../components/submission/Previou
 import { PreviousYearStatusInfoCard } from "../../components/submission/PreviousYearStatusInfoCard";
 import { WhatHappensNextInfoCard } from "../../components/submission/WhatHappensNextInfoCard";
 import { PreviousYearSubmissionDetails } from "../../types/submission.types";
+import { styles } from "./PreviousYearSubmittedScreen.styles";
 import {
-  styles,
   getContainerInsetsStyle,
   getScrollContentInsetsStyle,
   getBottomBarInsetsStyle,
-} from "./PreviousYearSubmittedScreen.styles";
+} from "@/shared/utils/screenInsets";
 
 export const PreviousYearSubmittedScreen: React.FC = () => {
   const router = useRouter();

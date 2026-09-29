@@ -219,5 +219,11 @@ export const st = StyleSheet.create({
   footerRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
   footerSafeText: { fontSize: 12, color: "#1E5EFF", fontWeight: "600" },
   footerGovText: { fontSize: 11, color: "#94A3B8" },
+  iconMarginRight8: { marginRight: 8 },
+  iconMarginRight6: { marginRight: 6 },
+  iconMarginRight10: { marginRight: 10 },
+  highlightBlueText: { color: "#1E5EFF" },
+  btnScaleAnimWrap: { width: "100%", marginTop: 18, gap: 10 },
+  btnScaleSmallMargin: { marginTop: 6 },
 });
 export default st;

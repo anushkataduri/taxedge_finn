@@ -2,8 +2,7 @@ package com.taxedge.security.jwt.controller;
 
 import java.util.Optional;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.taxedge.security.jwt.dto.TokenValidationResponse;
 import io.jsonwebtoken.Claims;
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 import com.taxedge.customer.entity.Customer;
 import com.taxedge.security.jwt.dto.RefreshTokenRequest;
@@ -26,13 +27,16 @@ import com.taxedge.security.jwt.service.RefreshTokenService;
 @Slf4j
 @RestController
 @RequestMapping("/auth")
-@RequiredArgsConstructor
 public class AuthController {
 
-    private final RefreshTokenService refreshTokenService;
-    private final JwtService jwtService;
+    @Autowired
+    private RefreshTokenService refreshTokenService;
+
+    @Autowired
+    private JwtService jwtService;
 
     
+    @Transactional
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest request) {
         if (request.getRefreshToken() == null || request.getRefreshToken().isBlank()) {

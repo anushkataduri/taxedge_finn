@@ -10,7 +10,7 @@ public interface TaxNoticeAssistanceService {
 
 	String createTaxNotice(TaxNoticeAssistanceDto dto, MultipartFile file) throws IOException;
 
-	TaxNoticeAssistanceDto getTaxNotice(String noticeId);
-
 	String updateTaxNotice(String noticeId, TaxNoticeAssistanceDto dto, MultipartFile file) throws IOException;
+
+	TaxNoticeAssistanceDto getTaxNotice(String noticeId);
 }

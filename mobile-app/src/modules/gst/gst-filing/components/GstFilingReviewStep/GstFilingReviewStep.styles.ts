@@ -390,4 +390,10 @@ export const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
   },
+  alertIconTopMargin: {
+    marginTop: 2,
+  },
+  flex1Col: {
+    flex: 1,
+  },
 });

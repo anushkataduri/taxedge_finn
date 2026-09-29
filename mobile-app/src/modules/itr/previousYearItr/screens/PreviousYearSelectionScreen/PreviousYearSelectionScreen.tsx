@@ -11,12 +11,12 @@ import { AssessmentYearSelector } from "../../components/AssessmentYearSelector"
 import { ContinueButton } from "../../components/ContinueButton";
 import { ASSESSMENT_YEARS } from "../../mock/assessmentYearsData";
 import { useApplicationStore } from "@/store/applicationStore";
+import { styles } from "./PreviousYearSelectionScreen.styles";
 import {
-  styles,
   getContainerInsetsStyle,
   getScrollContentInsetsStyle,
   getBottomBarInsetsStyle,
-} from "./PreviousYearSelectionScreen.styles";
+} from "@/shared/utils/screenInsets";
 
 export const PreviousYearSelectionScreen: React.FC = () => {
   const router = useRouter();

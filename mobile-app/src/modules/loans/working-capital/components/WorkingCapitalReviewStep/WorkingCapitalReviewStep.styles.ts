@@ -121,20 +121,4 @@ export const styles = StyleSheet.create({
     color: "#475569",
     lineHeight: 18,
   },
-  verifiedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  verifiedText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#16A34A",
-  },
-  emptyDocsText: {
-    fontSize: Typography.fontSize.sm,
-    color: "#64748B",
-    fontStyle: "italic",
-  },
 });
-

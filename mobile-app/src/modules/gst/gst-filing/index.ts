@@ -5,3 +5,5 @@ export * from "./components/GstFilingReviewStep/GstFilingReviewStep";
 export * from "./components/payment/GstPaymentMethodStep/GstPaymentMethodStep";
 export * from "./components/payment/GstPaymentSuccessStep/GstPaymentSuccessStep";
 export * from "./components/payment/GstPaymentReceiptStep/GstPaymentReceiptStep";
+export * from "./hooks/useGstFiling";
+export * from "./config/gstPricingConfig";

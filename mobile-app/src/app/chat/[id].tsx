@@ -42,7 +42,7 @@ export default function ChatScreen() {
   if (!app) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <SafeAreaView style={{ backgroundColor: colors.primaryDark }}>
+        <SafeAreaView style={[styles.headerWrap, { backgroundColor: colors.primaryDark }]}>
           <View style={styles.header}>
             <TouchableOpacity
               onPress={() => router.back()}
@@ -54,7 +54,7 @@ export default function ChatScreen() {
           </View>
         </SafeAreaView>
         <View style={styles.emptyContainer}>
-          <Text style={{ color: colors.text }}>Application not found</Text>
+          <Text style={[styles.emptyText, { color: colors.text }]}>Application not found</Text>
         </View>
       </View>
     );
@@ -73,7 +73,7 @@ export default function ChatScreen() {
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
     >
       {/* Header bar */}
-      <View style={{ backgroundColor: colors.primaryDark, paddingTop: insets.top }}>
+      <View style={[styles.headerWrap, { backgroundColor: colors.primaryDark, paddingTop: insets.top }]}>
         <FocusAwareStatusBar barStyle="light-content" />
         <View style={styles.header}>
           <TouchableOpacity
@@ -215,6 +215,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerWrap: {
+    width: "100%",
+  },
   header: {
     height: 56,
     flexDirection: "row",
@@ -320,5 +323,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 14,
   },
 });

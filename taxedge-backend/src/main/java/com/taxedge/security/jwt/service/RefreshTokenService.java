@@ -9,22 +9,24 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.taxedge.customer.entity.Customer;
 import com.taxedge.security.jwt.entity.RefreshToken;
 import com.taxedge.security.jwt.repository.RefreshTokenRepository;
 
-import org.springframework.transaction.annotation.Transactional;
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
+
+ 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class RefreshTokenService {
 
-    private final RefreshTokenRepository refreshTokenRepository;
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -37,29 +39,26 @@ public class RefreshTokenService {
         String rawToken = generateRawToken();
         String tokenHash = hashToken(rawToken);
 
-        Optional<RefreshToken> latestActiveOpt =
-                refreshTokenRepository.findFirstByCustomerAndRevokedFalseOrderByCreatedAtDesc(customer);
+        List<RefreshToken> activeTokens =
+                refreshTokenRepository.findAllByCustomerAndRevokedFalse(customer);
 
         RefreshToken tokenEntity;
 
-        if (latestActiveOpt.isPresent()) {
+        if (!activeTokens.isEmpty()) {
             // Reuse the latest active row — update its hash and reset the window
-            tokenEntity = latestActiveOpt.get();
+            tokenEntity = activeTokens.get(0);
             tokenEntity.setTokenHash(tokenHash);
             tokenEntity.setCreatedAt(LocalDateTime.now());
             tokenEntity.setExpiresAt(LocalDateTime.now().plusDays(REFRESH_TOKEN_EXPIRY_DAYS));
             tokenEntity.setRevoked(false);
 
-        
-            List<RefreshToken> duplicates =
-                    refreshTokenRepository.findAllByCustomerAndRevokedFalseAndIdNot(
-                            customer, tokenEntity.getId());
-            if (!duplicates.isEmpty()) {
-                log.warn("[RefreshToken] Found {} duplicate active token(s) for customer [{}] — revoking extras",
-                        duplicates.size(), customer.getCustId());
-                for (RefreshToken dup : duplicates) {
-                    dup.setRevoked(true);
-                    refreshTokenRepository.save(dup);
+            // Revoke any duplicate active rows (defensive clean-up)
+            if (activeTokens.size() > 1) {
+                log.warn("[RefreshToken] Found {} duplicate active tokens for customer [{}] — revoking extras",
+                        activeTokens.size() - 1, customer.getCustId());
+                for (int i = 1; i < activeTokens.size(); i++) {
+                    activeTokens.get(i).setRevoked(true);
+                    refreshTokenRepository.save(activeTokens.get(i));
                 }
             }
         } else {
@@ -96,7 +95,7 @@ public class RefreshTokenService {
     }
 
     
-    @Transactional(readOnly = true)
+    @Transactional
     public Optional<RefreshToken> validateRefreshToken(String rawRefreshToken) {
         String tokenHash = hashToken(rawRefreshToken);
 
@@ -138,7 +137,7 @@ public class RefreshTokenService {
         );
     }
 
-
+    // ── Private helpers ──────────────────────────────────────────────────────
 
     
     private String generateRawToken() {

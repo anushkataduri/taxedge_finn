@@ -3,7 +3,7 @@ import { View, Text, FlatList } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "../hooks/use-theme";
 import { useNotificationStore } from "../store/notificationStore";
-import { AppHeader } from "../components/AppHeader";
+import { AppHeader } from "@/components";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles, getThemedStyles } from "../styles/app/notifications.styles";

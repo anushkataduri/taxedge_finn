@@ -2,16 +2,21 @@ import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTheme } from "../../hooks/use-theme";
-import { Spacing } from "../../shared/theme";
 import { getServiceById } from "../../data/services";
 import { useApplicationStore } from "../../store/applicationStore";
 import { useNotificationStore } from "../../store/notificationStore";
-import { AppHeader } from "../../components/AppHeader";
-import { DynamicForm } from "../../components/DynamicForm";
-import { PrimaryButton } from "../../components/PrimaryButton";
+import { AppHeader, DynamicForm, PrimaryButton } from "@/components";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { styles } from "../../styles/app/service/[id].styles";
+import {
+  styles,
+  getWizardTopStyle,
+  getScrollContentStyle,
+  getThemedCardStyle,
+  getTabItemThemedStyle,
+  getTabTextThemedStyle,
+  getBottomBarThemedStyle,
+} from "../../styles/app/service/[id].styles";
 import type { ApplicationFormData, NotificationType } from "../../types/domain";
 
 type ServiceTab = "Overview" | "Documents" | "Benefits";
@@ -96,7 +101,7 @@ export default function ServiceDetailScreen() {
   if (showForm) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={{ backgroundColor: colors.primaryDark, paddingTop: insets.top }}>
+        <View style={getWizardTopStyle(colors, insets.top)}>
           <View style={styles.formWizardHeader}>
             <TouchableOpacity onPress={() => setShowForm(false)} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
@@ -110,8 +115,8 @@ export default function ServiceDetailScreen() {
           <View style={[styles.progressBarFill, { backgroundColor: colors.primary }]} />
         </View>
 
-        <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]} keyboardShouldPersistTaps="handled">
-          <View style={[styles.card, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+        <ScrollView contentContainerStyle={[styles.scrollContent, getScrollContentStyle(insets.bottom + 40)]} keyboardShouldPersistTaps="handled">
+          <View style={[styles.card, getThemedCardStyle(colors)]}>
             <Text style={[styles.formSectionTitle, { color: colors.primary }]}>Applicant Information</Text>
             <Text style={[styles.formSectionSub, { color: colors.textSecondary }]}>Provide identity details matching official documents.</Text>
             
@@ -131,9 +136,9 @@ export default function ServiceDetailScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <AppHeader title={service.name} showBack />
 
-      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, getScrollContentStyle(insets.bottom + 90)]} showsVerticalScrollIndicator={false}>
         {/* Service Header Info Block */}
-        <View style={[styles.detailHero, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+        <View style={[styles.detailHero, getThemedCardStyle(colors)]}>
           <View style={styles.heroRow}>
             <View style={[styles.iconBg, { backgroundColor: colors.orangeLight }]}>
               <Ionicons name={service.icon} size={28} color={colors.orange} />
@@ -155,17 +160,9 @@ export default function ServiceDetailScreen() {
                 key={tab}
                 activeOpacity={0.8}
                 onPress={() => setActiveTab(tab)}
-                style={[styles.tabItem, isSelected && { borderBottomColor: colors.primary }]}
+                style={[styles.tabItem, getTabItemThemedStyle(isSelected, colors)]}
               >
-                <Text
-                  style={[
-                    styles.tabText,
-                    {
-                      color: isSelected ? colors.primary : colors.textSecondary,
-                      fontWeight: isSelected ? "700" : "500",
-                    },
-                  ]}
-                >
+                <Text style={[styles.tabText, getTabTextThemedStyle(isSelected, colors)]}>
                   {tab}
                 </Text>
               </TouchableOpacity>
@@ -175,7 +172,7 @@ export default function ServiceDetailScreen() {
 
         {/* Tab Content Cards */}
         {activeTab === "Overview" && (
-          <View style={[styles.card, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+          <View style={[styles.card, getThemedCardStyle(colors)]}>
             <Text style={[styles.cardSectionTitle, { color: colors.text }]}>Service Overview</Text>
             <Text style={[styles.overviewContentText, { color: colors.textSecondary }]}>
               TaxEdge Fin Solutions provides professional compliance assistance for {service.name}. Our experienced executives handle drafting, compiling, verifying, and submitting files directly to government portal nodes, ensuring 100% accuracy and complete protection against late penalties.
@@ -184,7 +181,7 @@ export default function ServiceDetailScreen() {
         )}
 
         {activeTab === "Documents" && (
-          <View style={[styles.card, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+          <View style={[styles.card, getThemedCardStyle(colors)]}>
             <Text style={[styles.cardSectionTitle, { color: colors.text }]}>Required Documents</Text>
             <Text style={[styles.cardSectionSub, { color: colors.textSecondary }]}>
               You will need to scan and upload these files after form submission:
@@ -201,7 +198,7 @@ export default function ServiceDetailScreen() {
         )}
 
         {activeTab === "Benefits" && (
-          <View style={[styles.card, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+          <View style={[styles.card, getThemedCardStyle(colors)]}>
             <Text style={[styles.cardSectionTitle, { color: colors.text }]}>Benefits & Advantages</Text>
             <Text style={[styles.cardSectionSub, { color: colors.textSecondary }]}>
               Why choose TaxEdge Fin Solutions:
@@ -219,7 +216,7 @@ export default function ServiceDetailScreen() {
       </ScrollView>
 
       {/* Start Application Sticky Bottom Button */}
-      <View style={[styles.bottomButtonContainer, { backgroundColor: colors.backgroundElement, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, Spacing.md) }]}>
+      <View style={[styles.bottomButtonContainer, getBottomBarThemedStyle(colors, insets.bottom)]}>
         <PrimaryButton
           title="Start Application"
           onPress={() => setShowForm(true)}
@@ -229,4 +226,3 @@ export default function ServiceDetailScreen() {
     </View>
   );
 }
-

@@ -2,7 +2,7 @@ package com.taxedge.gst.controller;
 
 import java.io.IOException;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +21,13 @@ import com.taxedge.gst.service.GstCancellationService;
 
 @RestController
 @RequestMapping("/api/v1/gst/cancellation")
-@RequiredArgsConstructor
 public class GstCancellationController {
 
-    private final ObjectMapper objectMapper;
-    private final GstCancellationService cancellationService;
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private GstCancellationService cancellationService;
 
     @PostMapping(
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

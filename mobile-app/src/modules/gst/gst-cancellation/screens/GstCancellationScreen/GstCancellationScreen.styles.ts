@@ -314,4 +314,43 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#475569',
   },
+  successScrollContent: {
+    paddingBottom: 24,
+  },
+  rowGap12: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 8,
+  },
+  flex1: {
+    flex: 1,
+  },
+  previewRowLeft: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  previewRowRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  reviewBtnText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: BrandColors.PRIMARY_BLUE,
+  },
+  previewModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.9)",
+  },
+  previewModalCloseBtn: {
+    padding: 16,
+    alignSelf: "flex-end",
+    zIndex: 10,
+  },
+  previewImage: {
+    flex: 1,
+    resizeMode: "contain",
+  },
 });

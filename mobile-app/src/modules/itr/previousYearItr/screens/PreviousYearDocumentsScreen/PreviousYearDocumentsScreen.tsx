@@ -4,6 +4,7 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  
   Alert,
 } from "react-native";
 import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
@@ -16,12 +17,12 @@ import { PREVIOUS_YEAR_DOCUMENTS } from "../../mock/documentsData";
 import { UploadProgressHeader } from "../../components/documents/UploadProgressHeader";
 import { PreviousYearDocCard } from "../../components/documents/PreviousYearDocCard";
 import { KeepDocumentsReadyCard } from "../../components/documents/KeepDocumentsReadyCard";
+import { styles } from "./PreviousYearDocumentsScreen.styles";
 import {
-  styles,
   getContainerInsetsStyle,
   getScrollContentInsetsStyle,
   getBottomBarInsetsStyle,
-} from "./PreviousYearDocumentsScreen.styles";
+} from "@/shared/utils/screenInsets";
 
 export const PreviousYearDocumentsScreen: React.FC = () => {
   const router = useRouter();
