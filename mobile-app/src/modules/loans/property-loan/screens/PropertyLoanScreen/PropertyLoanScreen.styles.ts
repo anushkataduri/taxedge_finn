@@ -1,56 +1,18 @@
 import { StyleSheet } from "react-native";
-import { BrandColors } from "../../../../../shared/theme";
+import { BrandColors, Typography } from "../../../../../shared/theme";
+
+export const getSafeAreaDynamic = (insetsTop: number) => ({
+  paddingTop: insetsTop,
+});
+
+export const getBottomBarDynamic = (insetsBottom: number) => ({
+  paddingBottom: Math.max(insetsBottom, 12),
+});
 
 export const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: BrandColors.WHITE,
-  },
-  headerBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: BrandColors.WHITE,
-  },
-  circularBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerCenterContent: {
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-    paddingHorizontal: 12,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#0F2052",
-    textAlign: "center",
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#EA580C",
-    marginTop: 2,
-    textAlign: "center",
-  },
-  progressBarTrack: {
-    width: "100%",
-    height: 4,
-    backgroundColor: "#E2E8F0",
-  },
-  progressBarFill: {
-    height: "100%",
-    backgroundColor: "#EA580C",
   },
   scrollView: {
     flex: 1,
@@ -73,40 +35,45 @@ export const styles = StyleSheet.create({
   },
   prevBtn: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 10,
+    paddingVertical: 12,
+    borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: "#0F2052",
+    borderColor: "#0F172A",
     backgroundColor: BrandColors.WHITE,
     alignItems: "center",
     justifyContent: "center",
   },
   prevBtnText: {
-    fontSize: 15,
+    fontSize: Typography.fontSize.sm,
     fontWeight: "700",
-    color: "#0F2052",
+    color: "#0F172A",
   },
   continueBtn: {
     width: "100%",
+    flexDirection: "row",
     paddingVertical: 14,
-    borderRadius: 10,
-    backgroundColor: "#EA580C",
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    backgroundColor: BrandColors.PRIMARY_ORANGE,
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
   },
   continueBtnFlex: {
     flex: 1,
+    flexDirection: "row",
     paddingVertical: 14,
-    borderRadius: 10,
-    backgroundColor: "#EA580C",
+    borderRadius: 8,
+    backgroundColor: BrandColors.PRIMARY_ORANGE,
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
   },
   continueBtnDisabled: {
-    backgroundColor: "#FDBA74",
+    backgroundColor: "#94A3B8",
   },
   continueBtnText: {
-    fontSize: 15,
+    fontSize: Typography.fontSize.sm,
     fontWeight: "700",
     color: BrandColors.WHITE,
   },

@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { styles } from "./ProjectFinanceProgressBar.styles";
+import { styles, getProgressBarFillWidth } from "./ProjectFinanceProgressBar.styles";
 
 interface ProjectFinanceProgressBarProps {
   currentStep: number;
@@ -22,7 +22,7 @@ export const ProjectFinanceProgressBar: React.FC<ProjectFinanceProgressBarProps>
         Step {currentStep} of {totalSteps} - {title}
       </Text>
       <View style={styles.track}>
-        <View style={[styles.fill, { width: `${progressPercent}%` }]} />
+        <View style={[styles.fill, getProgressBarFillWidth(progressPercent)]} />
       </View>
     </View>
   );

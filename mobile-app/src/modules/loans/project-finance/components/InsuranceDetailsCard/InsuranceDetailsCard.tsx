@@ -1,17 +1,10 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Modal,
-  FlatList,
-  Pressable,
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { InsuranceDetailsForm } from "../../types/projectFinance.types";
 import { INSURANCE_TYPES } from "../../data/step6Data";
 import { ProjectFinanceDatePicker } from "../ProjectFinanceDatePicker/ProjectFinanceDatePicker";
+import { OptionPickerModal } from "../OptionPickerModal";
 import { styles } from "./InsuranceDetailsCard.styles";
 
 interface InsuranceDetailsCardProps {
@@ -97,62 +90,17 @@ export const InsuranceDetailsCard: React.FC<InsuranceDetailsCardProps> = ({
         </View>
       )}
 
-      {/* Modal */}
-      <Modal
+      {/* Reusable Option Picker Modal */}
+      <OptionPickerModal
         visible={modalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <Pressable
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(15, 23, 42, 0.5)",
-            justifyContent: "flex-end",
-          }}
-          onPress={() => setModalVisible(false)}
-        >
-          <Pressable
-            style={{
-              backgroundColor: "#FFFFFF",
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
-              maxHeight: "60%",
-              padding: 16,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "700",
-                color: "#0F172A",
-                marginBottom: 12,
-              }}
-            >
-              Select Insurance Type
-            </Text>
-            <FlatList
-              data={INSURANCE_TYPES}
-              keyExtractor={(item) => item}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={{
-                    paddingVertical: 12,
-                    borderBottomWidth: 1,
-                    borderBottomColor: "#F1F5F9",
-                  }}
-                  onPress={() => {
-                    onChange("typeOfInsurance", item);
-                    setModalVisible(false);
-                  }}
-                >
-                  <Text style={{ fontSize: 14, color: "#1E293B" }}>{item}</Text>
-                </TouchableOpacity>
-              )}
-            />
-          </Pressable>
-        </Pressable>
-      </Modal>
+        title="Select Insurance Type"
+        options={INSURANCE_TYPES as unknown as string[]}
+        onSelect={(item) => {
+          onChange("typeOfInsurance", item);
+          setModalVisible(false);
+        }}
+        onClose={() => setModalVisible(false)}
+      />
     </View>
   );
 };

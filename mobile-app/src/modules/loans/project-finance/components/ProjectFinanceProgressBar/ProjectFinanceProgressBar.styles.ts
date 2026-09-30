@@ -1,15 +1,16 @@
 import { StyleSheet } from "react-native";
+import { BrandColors, Typography } from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 10,
-    backgroundColor: "#F3F6FA",
+    backgroundColor: "#F8FAFC",
     alignItems: "center",
   },
   stepText: {
-    fontSize: 14,
+    fontSize: Typography.fontSize.sm,
     fontWeight: "700",
     color: "#0F172A",
     textAlign: "center",
@@ -17,14 +18,18 @@ export const styles = StyleSheet.create({
   },
   track: {
     width: "100%",
-    height: 5,
+    height: 4,
     backgroundColor: "#E2E8F0",
-    borderRadius: 3,
+    borderRadius: 2,
     overflow: "hidden",
   },
   fill: {
     height: "100%",
-    backgroundColor: "#FF6500",
-    borderRadius: 3,
+    backgroundColor: BrandColors.PRIMARY_ORANGE || "#EA580C",
+    borderRadius: 2,
   },
+});
+
+export const getProgressBarFillWidth = (percent: number) => ({
+  width: `${percent}%` as any,
 });

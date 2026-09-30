@@ -88,15 +88,26 @@ export const validateStep1 = (state: Step1ValidationState): string | null => {
   if (!promoters || promoters.length === 0) {
     return "Please add at least one Promoter / Key Sponsor.";
   }
-  for (let i = 0; i < promoters.length; i++) {
-    const p = promoters[i];
-    const prefix = promoters.length > 1 ? `Promoter ${i + 1}: ` : "";
-    if (!p.name?.trim()) {
-      return `${prefix}Please enter Full Name.`;
-    }
-    if (p.sharePercentage === undefined || p.sharePercentage === null || isNaN(p.sharePercentage) || p.sharePercentage <= 0) {
-      return `${prefix}Please enter Shareholding (%).`;
-    }
+  const promoterError = promoters
+    .map((p, i) => {
+      const prefix = promoters.length > 1 ? `Promoter ${i + 1}: ` : "";
+      if (!p.name?.trim()) {
+        return `${prefix}Please enter Full Name.`;
+      }
+      if (
+        p.sharePercentage === undefined ||
+        p.sharePercentage === null ||
+        isNaN(p.sharePercentage) ||
+        p.sharePercentage <= 0
+      ) {
+        return `${prefix}Please enter Shareholding (%).`;
+      }
+      return null;
+    })
+    .find(Boolean);
+
+  if (promoterError) {
+    return promoterError;
   }
 
   // 4. Project Classification
@@ -174,15 +185,21 @@ export const validateStep2 = (state: Step2ValidationState): string | null => {
   if (!parcels || parcels.length === 0) {
     return "Please add at least one Land Parcel.";
   }
-  for (let i = 0; i < parcels.length; i++) {
-    const p = parcels[i];
-    const prefix = parcels.length > 1 ? `Land Parcel ${i + 1}: ` : "";
-    if (!p.surveyPlotNumber?.trim()) {
-      return `${prefix}Please enter Survey / Plot Number.`;
-    }
-    if (!p.areaAcres?.trim()) {
-      return `${prefix}Please enter Area (Acres).`;
-    }
+  const parcelError = parcels
+    .map((p, i) => {
+      const prefix = parcels.length > 1 ? `Land Parcel ${i + 1}: ` : "";
+      if (!p.surveyPlotNumber?.trim()) {
+        return `${prefix}Please enter Survey / Plot Number.`;
+      }
+      if (!p.areaAcres?.trim()) {
+        return `${prefix}Please enter Area (Acres).`;
+      }
+      return null;
+    })
+    .find(Boolean);
+
+  if (parcelError) {
+    return parcelError;
   }
 
   // 4. Right of Way
@@ -226,30 +243,42 @@ export const validateStep2 = (state: Step2ValidationState): string | null => {
   if (!machineries || machineries.length === 0) {
     return "Please add at least one Plant & Machinery item.";
   }
-  for (let i = 0; i < machineries.length; i++) {
-    const m = machineries[i];
-    const prefix = machineries.length > 1 ? `Machinery ${i + 1}: ` : "";
-    if (!m.machineryName?.trim()) {
-      return `${prefix}Please enter Machinery / Equipment Name.`;
-    }
-    if (!m.totalCost?.trim() && !m.unitCost?.trim()) {
-      return `${prefix}Please enter Estimated Cost.`;
-    }
+  const machineryError = machineries
+    .map((m, i) => {
+      const prefix = machineries.length > 1 ? `Machinery ${i + 1}: ` : "";
+      if (!m.machineryName?.trim()) {
+        return `${prefix}Please enter Machinery / Equipment Name.`;
+      }
+      if (!m.totalCost?.trim() && !m.unitCost?.trim()) {
+        return `${prefix}Please enter Estimated Cost.`;
+      }
+      return null;
+    })
+    .find(Boolean);
+
+  if (machineryError) {
+    return machineryError;
   }
 
   // 9. Raw Material Inputs
   if (!rawMaterials || rawMaterials.length === 0) {
     return "Please add at least one Raw Material item.";
   }
-  for (let i = 0; i < rawMaterials.length; i++) {
-    const r = rawMaterials[i];
-    const prefix = rawMaterials.length > 1 ? `Raw Material ${i + 1}: ` : "";
-    if (!r.mainRawMaterial?.trim()) {
-      return `${prefix}Please enter Raw Material Name.`;
-    }
-    if (!r.annualRequirement?.trim()) {
-      return `${prefix}Please enter Annual Requirement.`;
-    }
+  const rawMaterialError = rawMaterials
+    .map((r, i) => {
+      const prefix = rawMaterials.length > 1 ? `Raw Material ${i + 1}: ` : "";
+      if (!r.mainRawMaterial?.trim()) {
+        return `${prefix}Please enter Raw Material Name.`;
+      }
+      if (!r.annualRequirement?.trim()) {
+        return `${prefix}Please enter Annual Requirement.`;
+      }
+      return null;
+    })
+    .find(Boolean);
+
+  if (rawMaterialError) {
+    return rawMaterialError;
   }
 
   // 10. EPC / Execution
@@ -261,15 +290,21 @@ export const validateStep2 = (state: Step2ValidationState): string | null => {
   if (!milestones || milestones.length === 0) {
     return "Please add at least one Implementation Milestone.";
   }
-  for (let i = 0; i < milestones.length; i++) {
-    const ms = milestones[i];
-    const prefix = milestones.length > 1 ? `Milestone ${i + 1}: ` : "";
-    if (!ms.milestone?.trim()) {
-      return `${prefix}Please enter Milestone Name.`;
-    }
-    if (!ms.plannedDate?.trim()) {
-      return `${prefix}Please select Target / Planned Completion Date.`;
-    }
+  const milestoneError = milestones
+    .map((ms, i) => {
+      const prefix = milestones.length > 1 ? `Milestone ${i + 1}: ` : "";
+      if (!ms.milestone?.trim()) {
+        return `${prefix}Please enter Milestone Name.`;
+      }
+      if (!ms.plannedDate?.trim()) {
+        return `${prefix}Please select Target / Planned Completion Date.`;
+      }
+      return null;
+    })
+    .find(Boolean);
+
+  if (milestoneError) {
+    return milestoneError;
   }
 
   // 12. Manpower

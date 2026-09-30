@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { styles } from "./ProjectFinanceHeader.styles";
+import { styles, getProgressFillWidth } from "./ProjectFinanceHeader.styles";
 
 interface ProjectFinanceHeaderProps {
   onBack: () => void;
@@ -49,7 +49,7 @@ export const ProjectFinanceHeader: React.FC<ProjectFinanceHeaderProps> = ({
 
       {/* Progress Track & Orange Fill */}
       <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+        <View style={[styles.progressFill, getProgressFillWidth(progressPercent)]} />
       </View>
     </View>
   );

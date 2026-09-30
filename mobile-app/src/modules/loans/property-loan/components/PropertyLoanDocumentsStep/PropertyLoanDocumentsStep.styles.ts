@@ -1,28 +1,40 @@
 import { StyleSheet } from "react-native";
 import { BrandColors, Typography } from "../../../../../shared/theme";
 
+export const getProgressFillDynamic = (progressPercent: number) => ({
+  height: "100%" as const,
+  width: `${progressPercent}%` as const,
+  backgroundColor: progressPercent === 100 ? "#16A34A" : BrandColors.PRIMARY_ORANGE,
+  borderRadius: 3,
+});
+
+export const getDocIconBoxDynamic = (iconBg?: string) => ({
+  backgroundColor: iconBg || "#F1F5F9",
+});
+
 export const styles = StyleSheet.create({
   container: {
-    paddingBottom: 24,
+    paddingBottom: 20,
   },
   sectionTitle: {
-    fontSize: Typography.fontSize.lg,
+    fontSize: Typography.fontSize.base,
     fontWeight: "700",
     color: "#0F172A",
     marginBottom: 4,
   },
   sectionSubtitle: {
-    fontSize: Typography.fontSize.sm,
+    fontSize: Typography.fontSize.xs,
     color: "#64748B",
-    marginBottom: 16,
+    marginBottom: 14,
+    lineHeight: 18,
   },
   progressContainer: {
     backgroundColor: BrandColors.WHITE,
     borderRadius: 10,
-    padding: 14,
+    padding: 12,
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   progressHeader: {
     flexDirection: "row",
@@ -31,14 +43,14 @@ export const styles = StyleSheet.create({
     marginBottom: 8,
   },
   progressTitle: {
-    fontSize: Typography.fontSize.sm,
+    fontSize: Typography.fontSize.xs,
     fontWeight: "600",
     color: "#1E293B",
   },
   progressCount: {
-    fontSize: Typography.fontSize.sm,
+    fontSize: Typography.fontSize.xs,
     fontWeight: "700",
-    color: BrandColors.PRIMARY_BLUE,
+    color: BrandColors.PRIMARY_ORANGE,
   },
   progressBarTrack: {
     height: 6,
@@ -47,24 +59,24 @@ export const styles = StyleSheet.create({
     overflow: "hidden",
   },
   categoryContainer: {
-    marginBottom: 18,
+    marginBottom: 14,
   },
   categoryHeader: {
-    fontSize: Typography.fontSize.sm,
+    fontSize: 11,
     fontWeight: "700",
     color: "#475569",
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 8,
+    marginBottom: 6,
     marginLeft: 2,
   },
   docCard: {
     backgroundColor: BrandColors.WHITE,
     borderRadius: 10,
-    padding: 14,
+    padding: 12,
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    marginBottom: 10,
+    marginBottom: 8,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -80,8 +92,8 @@ export const styles = StyleSheet.create({
     marginRight: 8,
   },
   iconBox: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -102,12 +114,12 @@ export const styles = StyleSheet.create({
     color: "#0F172A",
   },
   starText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
     color: "#EF4444",
   },
   docSubtitle: {
-    fontSize: Typography.fontSize.xs,
+    fontSize: 11,
     color: "#64748B",
     marginTop: 2,
   },
@@ -135,18 +147,18 @@ export const styles = StyleSheet.create({
   viewButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#FEF0E6",
     borderWidth: 1,
-    borderColor: "#3B82F6",
+    borderColor: BrandColors.PRIMARY_ORANGE,
     paddingHorizontal: 8,
-    paddingVertical: 6,
+    paddingVertical: 5,
     borderRadius: 6,
     gap: 3,
   },
   viewButtonText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#2563EB",
+    color: BrandColors.PRIMARY_ORANGE,
   },
   deleteButton: {
     flexDirection: "row",
@@ -155,7 +167,7 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EF4444",
     paddingHorizontal: 8,
-    paddingVertical: 6,
+    paddingVertical: 5,
     borderRadius: 6,
     gap: 3,
   },
@@ -170,8 +182,8 @@ export const styles = StyleSheet.create({
     backgroundColor: "#FFF7ED",
     borderWidth: 1,
     borderColor: BrandColors.PRIMARY_ORANGE,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 6,
     gap: 4,
   },
@@ -182,21 +194,28 @@ export const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: "rgba(15, 23, 42, 0.4)",
     justifyContent: "flex-end",
   },
   sheetContent: {
     backgroundColor: BrandColors.WHITE,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 36,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    padding: 16,
+    paddingBottom: 28,
+  },
+  sheetContentPreview: {
+    backgroundColor: BrandColors.WHITE,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    padding: 16,
+    paddingBottom: 24,
   },
   sheetHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 14,
   },
   sheetTitle: {
     fontSize: Typography.fontSize.base,
@@ -206,7 +225,7 @@ export const styles = StyleSheet.create({
   sheetOption: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#F1F5F9",
     gap: 12,
@@ -218,23 +237,55 @@ export const styles = StyleSheet.create({
   },
   previewCard: {
     backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    padding: 14,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: 16,
+    marginVertical: 12,
   },
   previewFileName: {
-    fontSize: 14,
+    fontSize: Typography.fontSize.sm,
     fontWeight: "700",
-    color: "#0F2052",
-    marginTop: 8,
+    color: "#0F172A",
+    marginTop: 6,
   },
   previewFileSize: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#64748B",
     marginTop: 2,
+  },
+  previewMetaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginVertical: 6,
+  },
+  previewMetaLabel: {
+    fontSize: 12,
+    color: "#64748B",
+  },
+  previewMetaValue: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  previewMetaTimestamp: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#16A34A",
+  },
+  previewCloseBtn: {
+    backgroundColor: BrandColors.PRIMARY_ORANGE,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 14,
+  },
+  previewCloseBtnText: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: "700",
+    color: BrandColors.WHITE,
   },
 });

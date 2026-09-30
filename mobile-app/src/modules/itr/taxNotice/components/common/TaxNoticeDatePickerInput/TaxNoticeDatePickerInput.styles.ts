@@ -1,62 +1,76 @@
-import { StyleSheet, ViewStyle, TextStyle } from "react-native";
-import { BrandColors, BorderRadius, BorderWidth, Typography } from "@/shared/theme";
+import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-  container: {
-    marginBottom: 14,
+  inputGroup: {
+    marginBottom: 20,
   },
-  label: {
-    fontSize: Typography.fontSize.sm + 1,
-    fontWeight: Typography.fontWeight.bold,
-    color: "#0B1F3A",
-    marginBottom: 6,
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1E293B",
+    marginBottom: 8,
   },
   requiredStar: {
-    color: "#DC2626",
+    color: "#EF4444",
   },
   inputBox: {
-    height: 48,
-    backgroundColor: BrandColors.WHITE,
-    borderRadius: BorderRadius.md,
-    borderWidth: BorderWidth.thin,
-    borderColor: "#E2E8F0",
-    paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    height: 48,
   },
   inputBoxError: {
-    borderColor: "#DC2626",
+    borderColor: "#EF4444",
+    backgroundColor: "#FEF2F2",
   },
-  valueText: {
-    fontSize: Typography.fontSize.base,
+  inputValue: {
+    flex: 1,
+    fontSize: 15,
     color: "#0B1F3A",
-    fontWeight: Typography.fontWeight.semiBold,
   },
-  placeholderText: {
-    color: "#94A3B8",
-    fontWeight: Typography.fontWeight.regular,
-  },
-  errorText: {
-    fontSize: Typography.fontSize.xs + 1.5,
-    color: "#DC2626",
-    marginTop: 4,
-    fontWeight: Typography.fontWeight.medium,
+  calendarIconRight: {
+    marginLeft: 10,
   },
   helperText: {
-    fontSize: Typography.fontSize.xs + 1,
-    color: BrandColors.TEXT_SECONDARY,
-    marginTop: 4,
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 6,
   },
-});
-
-export const getWebInputStyle = (): any => ({
-  flex: 1,
-  background: "transparent",
-  border: "none",
-  outline: "none",
-  color: "#0B1F3A",
-  fontSize: "15px",
-  fontWeight: "600",
-  fontFamily: "inherit",
+  errorText: {
+    fontSize: 12,
+    color: "#EF4444",
+    marginTop: 6,
+  },
+  iosPickerOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(15, 23, 42, 0.4)",
+  },
+  iosPickerContainer: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 20,
+  },
+  iosPickerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+  },
+  iosPickerCancel: {
+    fontSize: 16,
+    color: "#64748B",
+  },
+  iosPickerConfirm: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#EA580C",
+  },
 });
