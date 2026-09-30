@@ -10,7 +10,11 @@ import {
   pickLoanImageFromGallery,
   pickLoanImageFromCamera,
 } from "../../../services/documentUploadHelper";
-import { styles } from "./ProjectFinanceDocumentsStep.styles";
+import {
+  styles,
+  getProgressFillStyle,
+  getIconBoxStyle,
+} from "./ProjectFinanceDocumentsStep.styles";
 
 export interface ProjectFinanceDocumentsStepProps {
   documents: LoanDocumentItem[];
@@ -97,15 +101,7 @@ export const ProjectFinanceDocumentsStep: React.FC<ProjectFinanceDocumentsStepPr
           </Text>
         </View>
         <View style={styles.progressBarTrack}>
-          <View
-            style={{
-              height: "100%",
-              width: `${progressPercent}%`,
-              backgroundColor:
-                progressPercent === 100 ? "#16A34A" : BrandColors.PRIMARY_BLUE,
-              borderRadius: 3,
-            }}
-          />
+          <View style={getProgressFillStyle(progressPercent)} />
         </View>
       </View>
 
@@ -132,13 +128,13 @@ export const ProjectFinanceDocumentsStep: React.FC<ProjectFinanceDocumentsStepPr
                     <View
                       style={[
                         styles.iconBox,
-                        { backgroundColor: doc.iconBg || "#F1F5F9" },
+                        getIconBoxStyle(doc.iconBg),
                       ]}
                     >
                       <Ionicons
                         name={(doc.iconName as any) || "document-text"}
                         size={20}
-                        color={doc.iconColor || BrandColors.PRIMARY_BLUE}
+                        color={doc.iconColor || BrandColors.PRIMARY_ORANGE || "#EA580C"}
                       />
                     </View>
 
@@ -196,7 +192,7 @@ export const ProjectFinanceDocumentsStep: React.FC<ProjectFinanceDocumentsStepPr
                       <Ionicons
                         name="cloud-upload-outline"
                         size={14}
-                        color={BrandColors.PRIMARY_BLUE}
+                        color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
                       />
                       <Text style={styles.uploadButtonText}>Upload</Text>
                     </TouchableOpacity>
@@ -235,7 +231,7 @@ export const ProjectFinanceDocumentsStep: React.FC<ProjectFinanceDocumentsStepPr
               <Ionicons
                 name="camera-outline"
                 size={22}
-                color={BrandColors.PRIMARY_BLUE}
+                color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
               />
               <Text style={styles.sheetOptionText}>Take Photo with Camera</Text>
             </TouchableOpacity>
@@ -247,7 +243,7 @@ export const ProjectFinanceDocumentsStep: React.FC<ProjectFinanceDocumentsStepPr
               <Ionicons
                 name="images-outline"
                 size={22}
-                color={BrandColors.PRIMARY_BLUE}
+                color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
               />
               <Text style={styles.sheetOptionText}>Choose from Gallery</Text>
             </TouchableOpacity>
@@ -259,7 +255,7 @@ export const ProjectFinanceDocumentsStep: React.FC<ProjectFinanceDocumentsStepPr
               <Ionicons
                 name="document-attach-outline"
                 size={22}
-                color={BrandColors.PRIMARY_BLUE}
+                color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
               />
               <Text style={styles.sheetOptionText}>Attach DPR / Statutory Clearance PDF</Text>
             </TouchableOpacity>

@@ -9,8 +9,8 @@ import {
 
 export const INITIAL_TAX_NOTICE_FORM_DATA: TaxNoticeFormData = {
   pan: "",
-  assessmentYear: "AY 2025–26",
-  noticeType: "Section 143(1)(a) - Proposed Adjustment",
+  assessmentYear: "",
+  noticeType: "",
   noticeDate: "",
   noticeNumber: "",
   responseDueDate: "",

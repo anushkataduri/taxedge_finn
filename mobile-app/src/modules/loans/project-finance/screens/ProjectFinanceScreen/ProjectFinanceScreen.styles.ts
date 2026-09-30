@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { BrandColors } from "../../../../../shared/theme";
+import { BrandColors, Typography } from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   safeArea: {
@@ -8,47 +8,54 @@ export const styles = StyleSheet.create({
   },
   mainContainer: {
     flex: 1,
-    backgroundColor: "#F3F6FA",
+    backgroundColor: "#F8FAFC",
   },
   scrollView: {
     flex: 1,
+    backgroundColor: "#F8FAFC",
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 110,
+    paddingBottom: 40,
   },
-
   bottomBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
     borderTopColor: "#E2E8F0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 10,
   },
   continueButton: {
+    width: "100%",
     flexDirection: "row",
-    height: 50,
-    backgroundColor: "#FF6500",
-    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    backgroundColor: BrandColors.PRIMARY_ORANGE || "#EA580C",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
   },
   continueButtonDisabled: {
-    backgroundColor: "#CBD5E1",
+    backgroundColor: "#94A3B8",
   },
   continueButtonText: {
-    fontSize: 15,
+    fontSize: Typography.fontSize.sm,
     fontWeight: "700",
-    color: BrandColors.WHITE,
+    color: "#FFFFFF",
   },
+  loadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+});
+
+export const getSafeAreaTop = (topInset: number) => ({
+  paddingTop: topInset,
+});
+
+export const getBottomBarPadding = (bottomInset: number) => ({
+  paddingBottom: Math.max(bottomInset, 12),
 });

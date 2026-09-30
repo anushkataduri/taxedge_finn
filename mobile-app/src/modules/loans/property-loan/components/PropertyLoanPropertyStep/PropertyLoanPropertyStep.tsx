@@ -4,17 +4,20 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Modal,
-  FlatList,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
 import { LoanPropertyFormData } from "../../../types/loans.types";
 import { styles } from "./PropertyLoanPropertyStep.styles";
+import {
+  PropertyLocationCard,
+  PropertyDropdownKey,
+} from "./PropertyLocationCard";
+import { PropertyLoanDropdownModal } from "../PropertyLoanDropdownModal";
 
 export interface PropertyLoanPropertyStepProps {
   data: LoanPropertyFormData;
-  onChange: (field: keyof LoanPropertyFormData, value: any) => void;
+  onChange: (field: keyof LoanPropertyFormData, value: string) => void;
   errors?: Record<string, string>;
 }
 
@@ -78,22 +81,12 @@ const APPROVING_AUTHORITIES = [
   "Unapproved / Others",
 ];
 
-type DropdownKey =
-  | "state"
-  | "propertyType"
-  | "propertySubType"
-  | "constructionStatus"
-  | "currentUsage"
-  | "areaType"
-  | "propertyAge"
-  | "approvingAuthority";
-
 export const PropertyLoanPropertyStep: React.FC<PropertyLoanPropertyStepProps> = ({
   data,
   onChange,
   errors = {},
 }) => {
-  const [activePicker, setActivePicker] = useState<DropdownKey | null>(null);
+  const [activePicker, setActivePicker] = useState<PropertyDropdownKey | null>(null);
 
   const getPickerOptions = (): string[] => {
     switch (activePicker) {
@@ -125,7 +118,7 @@ export const PropertyLoanPropertyStep: React.FC<PropertyLoanPropertyStepProps> =
       case "propertyType":
         return "Select Property Type";
       case "propertySubType":
-        return "Select Property Sub-type";
+        return "Select Property Sub-Type";
       case "constructionStatus":
         return "Select Construction Status";
       case "currentUsage":
@@ -148,168 +141,21 @@ export const PropertyLoanPropertyStep: React.FC<PropertyLoanPropertyStepProps> =
     setActivePicker(null);
   };
 
-  const handleFetchPincodeDetails = () => {
-    if (data.pincode && data.pincode.length === 6) {
-      // Mock fetch details for Telangana/Hyderabad or default
-      if (data.pincode.startsWith("50")) {
-        onChange("city", "Hyderabad");
-        onChange("district", "Hyderabad");
-        onChange("state", "Telangana");
-      } else if (data.pincode.startsWith("52")) {
-        onChange("city", "Vijayawada");
-        onChange("district", "Krishna");
-        onChange("state", "Andhra Pradesh");
-      } else {
-        onChange("city", "Bangalore");
-        onChange("district", "Bangalore Urban");
-        onChange("state", "Karnataka");
-      }
-    }
-  };
-
   return (
     <View style={styles.container}>
       {/* 1. Property Location */}
+      <PropertyLocationCard
+        data={data}
+        onChange={onChange}
+        onOpenPicker={(key) => setActivePicker(key)}
+        errors={errors}
+      />
+
+      {/* 2. Property Type & Usage */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Property Location</Text>
+        <Text style={styles.sectionTitle}>Property Type & Usage</Text>
         <Text style={styles.sectionSubtitle}>
-          Tell us where the property is located.
-        </Text>
-
-        {/* PIN Code with Fetch Details */}
-        <View style={styles.fieldGroup}>
-          <View style={styles.labelRow}>
-            <Text style={styles.label}>
-              PIN Code <Text style={styles.requiredStar}>*</Text>
-            </Text>
-            <TouchableOpacity onPress={handleFetchPincodeDetails} activeOpacity={0.7}>
-              <Text style={styles.fetchDetailsText}>Fetch Details</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.inputWithIcon}>
-            <View style={styles.iconBoxLeft}>
-              <Ionicons name="location-outline" size={18} color="#64748B" />
-            </View>
-            <TextInput
-              style={styles.inputFlex}
-              placeholder="Enter PIN code"
-              placeholderTextColor="#94A3B8"
-              keyboardType="number-pad"
-              maxLength={6}
-              value={data.pincode}
-              onChangeText={(text) => onChange("pincode", text.replace(/\D/g, ""))}
-            />
-          </View>
-        </View>
-
-        {/* City */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            City <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <View style={styles.inputWithIcon}>
-            <View style={styles.iconBoxLeft}>
-              <Ionicons name="business-outline" size={18} color="#64748B" />
-            </View>
-            <TextInput
-              style={styles.inputFlex}
-              placeholder="Enter city"
-              placeholderTextColor="#94A3B8"
-              value={data.city}
-              onChangeText={(text) => onChange("city", text)}
-            />
-          </View>
-        </View>
-
-        {/* District */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            District <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <View style={styles.inputWithIcon}>
-            <View style={styles.iconBoxLeft}>
-              <Ionicons name="business-outline" size={18} color="#64748B" />
-            </View>
-            <TextInput
-              style={styles.inputFlex}
-              placeholder="Enter district"
-              placeholderTextColor="#94A3B8"
-              value={data.district}
-              onChangeText={(text) => onChange("district", text)}
-            />
-          </View>
-        </View>
-
-        {/* State Dropdown */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            State <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <TouchableOpacity
-            style={styles.dropdownBoxWithIcon}
-            onPress={() => setActivePicker("state")}
-            activeOpacity={0.7}
-          >
-            <View style={styles.iconBoxLeft}>
-              <Ionicons name="map-outline" size={18} color="#64748B" />
-            </View>
-            <View style={styles.dropdownTextContent}>
-              <Text
-                style={
-                  data.state ? styles.dropdownText : styles.dropdownPlaceholder
-                }
-              >
-                {data.state || "Select state"}
-              </Text>
-              <Ionicons name="chevron-down" size={18} color="#64748B" />
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Property Address */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Property Address <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <View style={styles.inputWithIcon}>
-            <View style={styles.iconBoxLeft}>
-              <Ionicons name="home-outline" size={18} color="#64748B" />
-            </View>
-            <TextInput
-              style={[styles.inputFlex, styles.multilineInput]}
-              placeholder="Enter complete property address"
-              placeholderTextColor="#94A3B8"
-              multiline
-              numberOfLines={3}
-              value={data.propertyAddress}
-              onChangeText={(text) => onChange("propertyAddress", text)}
-            />
-          </View>
-        </View>
-
-        {/* Landmark (Optional) */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Landmark (Optional)</Text>
-          <View style={styles.inputWithIcon}>
-            <View style={styles.iconBoxLeft}>
-              <Ionicons name="location-outline" size={18} color="#64748B" />
-            </View>
-            <TextInput
-              style={styles.inputFlex}
-              placeholder="Enter landmark"
-              placeholderTextColor="#94A3B8"
-              value={data.landmark}
-              onChangeText={(text) => onChange("landmark", text)}
-            />
-          </View>
-        </View>
-      </View>
-
-      {/* 2. Property Information */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Property Information</Text>
-        <Text style={styles.sectionSubtitle}>
-          Tell us more about the property.
+          Specify the characteristics of the property.
         </Text>
 
         {/* Property Type Dropdown */}
@@ -318,54 +164,68 @@ export const PropertyLoanPropertyStep: React.FC<PropertyLoanPropertyStepProps> =
             Property Type <Text style={styles.requiredStar}>*</Text>
           </Text>
           <TouchableOpacity
-            style={styles.dropdownBoxWithIcon}
+            style={[
+              styles.dropdownSelector,
+              Boolean(data.propertyType) && styles.dropdownSelectorActive,
+              errors.propertyType ? styles.inputError : null,
+            ]}
             onPress={() => setActivePicker("propertyType")}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
-            <View style={styles.iconBoxLeft}>
-              <Ionicons name="home-outline" size={18} color="#64748B" />
-            </View>
-            <View style={styles.dropdownTextContent}>
-              <Text
-                style={
-                  data.propertyType
-                    ? styles.dropdownText
-                    : styles.dropdownPlaceholder
-                }
-              >
-                {data.propertyType || "Select property type"}
-              </Text>
-              <Ionicons name="chevron-down" size={18} color="#64748B" />
-            </View>
+            <Text
+              style={
+                data.propertyType
+                  ? styles.dropdownText
+                  : styles.dropdownPlaceholder
+              }
+            >
+              {data.propertyType || "Select property type..."}
+            </Text>
+            <Ionicons
+              name="chevron-down"
+              size={18}
+              color={data.propertyType ? BrandColors.PRIMARY_ORANGE : "#64748B"}
+            />
           </TouchableOpacity>
+          {errors.propertyType ? (
+            <Text style={styles.errorText}>{errors.propertyType}</Text>
+          ) : null}
         </View>
 
-        {/* Property Sub-type Dropdown */}
+        {/* Property Sub-Type Dropdown */}
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>
-            Property Sub-type <Text style={styles.requiredStar}>*</Text>
+            Property Sub-Type <Text style={styles.requiredStar}>*</Text>
           </Text>
           <TouchableOpacity
-            style={styles.dropdownBoxWithIcon}
+            style={[
+              styles.dropdownSelector,
+              Boolean(data.propertySubType) && styles.dropdownSelectorActive,
+              errors.propertySubType ? styles.inputError : null,
+            ]}
             onPress={() => setActivePicker("propertySubType")}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
-            <View style={styles.iconBoxLeft}>
-              <Ionicons name="grid-outline" size={18} color="#64748B" />
-            </View>
-            <View style={styles.dropdownTextContent}>
-              <Text
-                style={
-                  data.propertySubType
-                    ? styles.dropdownText
-                    : styles.dropdownPlaceholder
-                }
-              >
-                {data.propertySubType || "Select property sub-type"}
-              </Text>
-              <Ionicons name="chevron-down" size={18} color="#64748B" />
-            </View>
+            <Text
+              style={
+                data.propertySubType
+                  ? styles.dropdownText
+                  : styles.dropdownPlaceholder
+              }
+            >
+              {data.propertySubType || "Select property sub-type..."}
+            </Text>
+            <Ionicons
+              name="chevron-down"
+              size={18}
+              color={
+                data.propertySubType ? BrandColors.PRIMARY_ORANGE : "#64748B"
+              }
+            />
           </TouchableOpacity>
+          {errors.propertySubType ? (
+            <Text style={styles.errorText}>{errors.propertySubType}</Text>
+          ) : null}
         </View>
 
         {/* Construction Status Dropdown */}
@@ -374,26 +234,36 @@ export const PropertyLoanPropertyStep: React.FC<PropertyLoanPropertyStepProps> =
             Construction Status <Text style={styles.requiredStar}>*</Text>
           </Text>
           <TouchableOpacity
-            style={styles.dropdownBoxWithIcon}
+            style={[
+              styles.dropdownSelector,
+              Boolean(data.constructionStatus) && styles.dropdownSelectorActive,
+              errors.constructionStatus ? styles.inputError : null,
+            ]}
             onPress={() => setActivePicker("constructionStatus")}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
-            <View style={styles.iconBoxLeft}>
-              <Ionicons name="construct-outline" size={18} color="#64748B" />
-            </View>
-            <View style={styles.dropdownTextContent}>
-              <Text
-                style={
-                  data.constructionStatus
-                    ? styles.dropdownText
-                    : styles.dropdownPlaceholder
-                }
-              >
-                {data.constructionStatus || "Select construction status"}
-              </Text>
-              <Ionicons name="chevron-down" size={18} color="#64748B" />
-            </View>
+            <Text
+              style={
+                data.constructionStatus
+                  ? styles.dropdownText
+                  : styles.dropdownPlaceholder
+              }
+            >
+              {data.constructionStatus || "Select construction status..."}
+            </Text>
+            <Ionicons
+              name="chevron-down"
+              size={18}
+              color={
+                data.constructionStatus
+                  ? BrandColors.PRIMARY_ORANGE
+                  : "#64748B"
+              }
+            />
           </TouchableOpacity>
+          {errors.constructionStatus ? (
+            <Text style={styles.errorText}>{errors.constructionStatus}</Text>
+          ) : null}
         </View>
 
         {/* Current Usage Dropdown */}
@@ -402,26 +272,34 @@ export const PropertyLoanPropertyStep: React.FC<PropertyLoanPropertyStepProps> =
             Current Usage <Text style={styles.requiredStar}>*</Text>
           </Text>
           <TouchableOpacity
-            style={styles.dropdownBoxWithIcon}
+            style={[
+              styles.dropdownSelector,
+              Boolean(data.currentUsage) && styles.dropdownSelectorActive,
+              errors.currentUsage ? styles.inputError : null,
+            ]}
             onPress={() => setActivePicker("currentUsage")}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
-            <View style={styles.iconBoxLeft}>
-              <Ionicons name="cog-outline" size={18} color="#64748B" />
-            </View>
-            <View style={styles.dropdownTextContent}>
-              <Text
-                style={
-                  data.currentUsage
-                    ? styles.dropdownText
-                    : styles.dropdownPlaceholder
-                }
-              >
-                {data.currentUsage || "Select current usage"}
-              </Text>
-              <Ionicons name="chevron-down" size={18} color="#64748B" />
-            </View>
+            <Text
+              style={
+                data.currentUsage
+                  ? styles.dropdownText
+                  : styles.dropdownPlaceholder
+              }
+            >
+              {data.currentUsage || "Select current usage..."}
+            </Text>
+            <Ionicons
+              name="chevron-down"
+              size={18}
+              color={
+                data.currentUsage ? BrandColors.PRIMARY_ORANGE : "#64748B"
+              }
+            />
           </TouchableOpacity>
+          {errors.currentUsage ? (
+            <Text style={styles.errorText}>{errors.currentUsage}</Text>
+          ) : null}
         </View>
 
         {/* Area Type Dropdown */}
@@ -430,26 +308,32 @@ export const PropertyLoanPropertyStep: React.FC<PropertyLoanPropertyStepProps> =
             Area Type <Text style={styles.requiredStar}>*</Text>
           </Text>
           <TouchableOpacity
-            style={styles.dropdownBoxWithIcon}
+            style={[
+              styles.dropdownSelector,
+              Boolean(data.areaType) && styles.dropdownSelectorActive,
+              errors.areaType ? styles.inputError : null,
+            ]}
             onPress={() => setActivePicker("areaType")}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
-            <View style={styles.iconBoxLeft}>
-              <Ionicons name="square-outline" size={18} color="#64748B" />
-            </View>
-            <View style={styles.dropdownTextContent}>
-              <Text
-                style={
-                  data.areaType
-                    ? styles.dropdownText
-                    : styles.dropdownPlaceholder
-                }
-              >
-                {data.areaType || "Select area type"}
-              </Text>
-              <Ionicons name="chevron-down" size={18} color="#64748B" />
-            </View>
+            <Text
+              style={
+                data.areaType
+                  ? styles.dropdownText
+                  : styles.dropdownPlaceholder
+              }
+            >
+              {data.areaType || "Select area type..."}
+            </Text>
+            <Ionicons
+              name="chevron-down"
+              size={18}
+              color={data.areaType ? BrandColors.PRIMARY_ORANGE : "#64748B"}
+            />
           </TouchableOpacity>
+          {errors.areaType ? (
+            <Text style={styles.errorText}>{errors.areaType}</Text>
+          ) : null}
         </View>
 
         {/* Area Input with sq. ft. suffix */}
@@ -457,7 +341,12 @@ export const PropertyLoanPropertyStep: React.FC<PropertyLoanPropertyStepProps> =
           <Text style={styles.label}>
             Area <Text style={styles.requiredStar}>*</Text>
           </Text>
-          <View style={styles.inputWithIcon}>
+          <View
+            style={[
+              styles.inputWithIcon,
+              errors.area ? styles.inputError : null,
+            ]}
+          >
             <View style={styles.iconBoxLeft}>
               <Ionicons name="resize-outline" size={18} color="#64748B" />
             </View>
@@ -473,6 +362,9 @@ export const PropertyLoanPropertyStep: React.FC<PropertyLoanPropertyStepProps> =
               <Text style={styles.suffixText}>sq. ft.</Text>
             </View>
           </View>
+          {errors.area ? (
+            <Text style={styles.errorText}>{errors.area}</Text>
+          ) : null}
         </View>
 
         {/* Property Age Dropdown */}
@@ -481,26 +373,34 @@ export const PropertyLoanPropertyStep: React.FC<PropertyLoanPropertyStepProps> =
             Property Age <Text style={styles.requiredStar}>*</Text>
           </Text>
           <TouchableOpacity
-            style={styles.dropdownBoxWithIcon}
+            style={[
+              styles.dropdownSelector,
+              Boolean(data.propertyAge) && styles.dropdownSelectorActive,
+              errors.propertyAge ? styles.inputError : null,
+            ]}
             onPress={() => setActivePicker("propertyAge")}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
-            <View style={styles.iconBoxLeft}>
-              <Ionicons name="calendar-outline" size={18} color="#64748B" />
-            </View>
-            <View style={styles.dropdownTextContent}>
-              <Text
-                style={
-                  data.propertyAge
-                    ? styles.dropdownText
-                    : styles.dropdownPlaceholder
-                }
-              >
-                {data.propertyAge || "Select property age"}
-              </Text>
-              <Ionicons name="chevron-down" size={18} color="#64748B" />
-            </View>
+            <Text
+              style={
+                data.propertyAge
+                  ? styles.dropdownText
+                  : styles.dropdownPlaceholder
+              }
+            >
+              {data.propertyAge || "Select property age..."}
+            </Text>
+            <Ionicons
+              name="chevron-down"
+              size={18}
+              color={
+                data.propertyAge ? BrandColors.PRIMARY_ORANGE : "#64748B"
+              }
+            />
           </TouchableOpacity>
+          {errors.propertyAge ? (
+            <Text style={styles.errorText}>{errors.propertyAge}</Text>
+          ) : null}
         </View>
 
         {/* Approving Authority Dropdown */}
@@ -509,26 +409,36 @@ export const PropertyLoanPropertyStep: React.FC<PropertyLoanPropertyStepProps> =
             Approving Authority <Text style={styles.requiredStar}>*</Text>
           </Text>
           <TouchableOpacity
-            style={styles.dropdownBoxWithIcon}
+            style={[
+              styles.dropdownSelector,
+              Boolean(data.approvingAuthority) && styles.dropdownSelectorActive,
+              errors.approvingAuthority ? styles.inputError : null,
+            ]}
             onPress={() => setActivePicker("approvingAuthority")}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
-            <View style={styles.iconBoxLeft}>
-              <Ionicons name="school-outline" size={18} color="#64748B" />
-            </View>
-            <View style={styles.dropdownTextContent}>
-              <Text
-                style={
-                  data.approvingAuthority
-                    ? styles.dropdownText
-                    : styles.dropdownPlaceholder
-                }
-              >
-                {data.approvingAuthority || "Select approving authority"}
-              </Text>
-              <Ionicons name="chevron-down" size={18} color="#64748B" />
-            </View>
+            <Text
+              style={
+                data.approvingAuthority
+                  ? styles.dropdownText
+                  : styles.dropdownPlaceholder
+              }
+            >
+              {data.approvingAuthority || "Select approving authority..."}
+            </Text>
+            <Ionicons
+              name="chevron-down"
+              size={18}
+              color={
+                data.approvingAuthority
+                  ? BrandColors.PRIMARY_ORANGE
+                  : "#64748B"
+              }
+            />
           </TouchableOpacity>
+          {errors.approvingAuthority ? (
+            <Text style={styles.errorText}>{errors.approvingAuthority}</Text>
+          ) : null}
         </View>
       </View>
 
@@ -544,11 +454,14 @@ export const PropertyLoanPropertyStep: React.FC<PropertyLoanPropertyStepProps> =
           <Text style={styles.label}>
             Estimated Market Value <Text style={styles.requiredStar}>*</Text>
           </Text>
-          <View style={styles.inputWithIcon}>
+          <View
+            style={[
+              styles.inputWithIcon,
+              errors.estimatedMarketValue ? styles.inputError : null,
+            ]}
+          >
             <View style={styles.iconBoxLeft}>
-              <Text
-                style={{ fontSize: 16, fontWeight: "700", color: "#0F2052" }}
-              >
+              <Text style={styles.currencySymbolText}>
                 ₹
               </Text>
             </View>
@@ -563,6 +476,9 @@ export const PropertyLoanPropertyStep: React.FC<PropertyLoanPropertyStepProps> =
               }
             />
           </View>
+          {errors.estimatedMarketValue ? (
+            <Text style={styles.errorText}>{errors.estimatedMarketValue}</Text>
+          ) : null}
           <View style={styles.helperTextRow}>
             <Ionicons
               name="information-circle-outline"
@@ -577,56 +493,14 @@ export const PropertyLoanPropertyStep: React.FC<PropertyLoanPropertyStepProps> =
       </View>
 
       {/* Modal Selection */}
-      <Modal
+      <PropertyLoanDropdownModal
         visible={activePicker !== null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setActivePicker(null)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setActivePicker(null)}
-        >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{getPickerTitle()}</Text>
-              <TouchableOpacity onPress={() => setActivePicker(null)}>
-                <Ionicons name="close" size={24} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={getPickerOptions()}
-              keyExtractor={(item) => item}
-              renderItem={({ item }) => {
-                const isSelected = activePicker ? data[activePicker] === item : false;
-                return (
-                  <TouchableOpacity
-                    style={styles.modalItem}
-                    onPress={() => handleSelectOption(item)}
-                  >
-                    <Text
-                      style={[
-                        styles.modalItemText,
-                        isSelected ? styles.modalItemTextSelected : null,
-                      ]}
-                    >
-                      {item}
-                    </Text>
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={20}
-                        color={BrandColors.PRIMARY_ORANGE}
-                      />
-                    )}
-                  </TouchableOpacity>
-                );
-              }}
-            />
-          </View>
-        </TouchableOpacity>
-      </Modal>
+        title={getPickerTitle()}
+        options={getPickerOptions()}
+        selectedValue={activePicker ? data[activePicker] : undefined}
+        onSelect={handleSelectOption}
+        onClose={() => setActivePicker(null)}
+      />
     </View>
   );
 };

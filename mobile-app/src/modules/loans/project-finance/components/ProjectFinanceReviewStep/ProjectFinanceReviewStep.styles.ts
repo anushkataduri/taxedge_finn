@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { BrandColors, Typography } from "../../../../../shared/theme";
+import { BrandColors, Typography, BorderRadius } from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   container: {
@@ -18,11 +18,16 @@ export const styles = StyleSheet.create({
   },
   summaryCard: {
     backgroundColor: BrandColors.WHITE,
-    borderRadius: 12,
+    borderRadius: BorderRadius.md || 12,
     padding: 16,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     marginBottom: 14,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
   },
   cardHeader: {
     flexDirection: "row",
@@ -36,7 +41,7 @@ export const styles = StyleSheet.create({
   cardTitle: {
     fontSize: Typography.fontSize.base,
     fontWeight: "700",
-    color: "#1E293B",
+    color: "#0F172A",
   },
   editAction: {
     flexDirection: "row",
@@ -45,8 +50,8 @@ export const styles = StyleSheet.create({
   },
   editText: {
     fontSize: Typography.fontSize.xs,
-    fontWeight: "600",
-    color: BrandColors.PRIMARY_BLUE,
+    fontWeight: "700",
+    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
   },
   row: {
     flexDirection: "row",
@@ -54,20 +59,20 @@ export const styles = StyleSheet.create({
     marginBottom: 8,
   },
   label: {
-    fontSize: Typography.fontSize.sm,
+    fontSize: Typography.fontSize.xs,
     color: "#64748B",
   },
   value: {
-    fontSize: Typography.fontSize.sm,
+    fontSize: Typography.fontSize.xs,
     fontWeight: "600",
     color: "#0F172A",
     textAlign: "right",
     flexShrink: 1,
   },
   highlightValue: {
-    fontSize: Typography.fontSize.base,
+    fontSize: Typography.fontSize.sm,
     fontWeight: "700",
-    color: BrandColors.PRIMARY_BLUE,
+    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
   },
   docsGrid: {
     flexDirection: "row",
@@ -107,18 +112,33 @@ export const styles = StyleSheet.create({
     height: 20,
     borderRadius: 4,
     borderWidth: 2,
-    borderColor: BrandColors.PRIMARY_BLUE,
+    borderColor: BrandColors.PRIMARY_ORANGE || "#EA580C",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
   },
   checkboxActive: {
-    backgroundColor: BrandColors.PRIMARY_BLUE,
+    backgroundColor: BrandColors.PRIMARY_ORANGE || "#EA580C",
   },
   consentText: {
     flex: 1,
     fontSize: Typography.fontSize.xs,
     color: "#475569",
     lineHeight: 18,
+  },
+  verifiedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  verifiedText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#16A34A",
+  },
+  emptyLabel: {
+    fontSize: Typography.fontSize.xs,
+    color: "#64748B",
+    fontStyle: "italic",
   },
 });

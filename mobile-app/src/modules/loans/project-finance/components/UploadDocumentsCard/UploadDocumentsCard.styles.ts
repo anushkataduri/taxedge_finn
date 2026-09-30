@@ -157,13 +157,13 @@ export const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#BFDBFE",
-    backgroundColor: "#EFF6FF",
+    borderColor: "#FDBA74",
+    backgroundColor: "#FEF0E6",
   },
   viewButtonText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#2563EB",
+    color: "#EA580C",
   },
   deleteButton: {
     width: 34,
@@ -274,7 +274,7 @@ export const styles = StyleSheet.create({
     backgroundColor: "#FAFAFA",
   },
   modalCloseActionBtn: {
-    backgroundColor: "#0B1B36",
+    backgroundColor: "#EA580C",
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",

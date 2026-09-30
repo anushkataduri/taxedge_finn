@@ -4,9 +4,9 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  StatusBar,
   Alert,
 } from "react-native";
-import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -63,6 +63,7 @@ export const NoticeSummaryScreen: React.FC = () => {
   const calculateDaysLeft = (dueStr: string): number => {
     try {
       const due = parseStringToDate(dueStr);
+      if (!due) return 0;
       const diff = Math.ceil((due.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
       return diff > 0 ? diff : 0;
     } catch {
@@ -102,7 +103,7 @@ export const NoticeSummaryScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, getContainerInsetsStyle(insets.top)]}>
-      <FocusAwareStatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Screen Header */}
       <TaxNoticeHeader

@@ -1,78 +1,87 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { BrandColors } from "../../../../../shared/theme";
-import { styles } from "./ProjectFinanceStepIndicator.styles";
+import {
+  styles,
+  getProgressBarFillDynamic,
+} from "./ProjectFinanceStepIndicator.styles";
 
 export interface ProjectFinanceStepIndicatorProps {
-  steps: string[];
   currentStepIndex: number;
+  totalSteps?: number;
+  stepTitle?: string;
+  steps?: string[];
+  onBack?: () => void;
+  onSettings?: () => void;
   onStepPress?: (index: number) => void;
 }
 
-export const ProjectFinanceStepIndicator: React.FC<ProjectFinanceStepIndicatorProps> = ({
-  steps,
+export const ProjectFinanceStepIndicator: React.FC<
+  ProjectFinanceStepIndicatorProps
+> = ({
   currentStepIndex,
-  onStepPress,
+  totalSteps = 7,
+  stepTitle,
+  steps,
+  onBack,
+  onSettings,
 }) => {
+  const finalTotalSteps = steps ? steps.length : totalSteps;
+  const displayStepNumber = currentStepIndex + 1;
+  const currentTitle =
+    stepTitle || (steps && steps[currentStepIndex]) || `Step ${displayStepNumber}`;
+
+  const progressPercent = Math.min(
+    100,
+    Math.max(0, (displayStepNumber / finalTotalSteps) * 100)
+  );
+
   return (
     <View style={styles.container}>
-      <View style={styles.stepsRow}>
-        {steps.map((title, index) => {
-          const isCompleted = index < currentStepIndex;
-          const isActive = index === currentStepIndex;
+      {/* Top Bar */}
+      <View style={styles.topRow}>
+        {onBack ? (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={onBack}
+            style={styles.circleBtn}
+            accessibilityLabel="Back"
+          >
+            <Ionicons name="chevron-back" size={20} color="#0B1F3A" />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.rightSpacer} />
+        )}
 
-          return (
-            <TouchableOpacity
-              key={title}
-              activeOpacity={0.7}
-              disabled={!onStepPress || index > currentStepIndex}
-              onPress={() => onStepPress && onStepPress(index)}
-              style={styles.stepItem}
-            >
-              {index < steps.length - 1 && (
-                <View
-                  style={[
-                    styles.stepLine,
-                    isCompleted && styles.stepLineCompleted,
-                  ]}
-                />
-              )}
+        <View style={styles.titleCenter}>
+          <Text style={styles.mainTitle}>Project Finance</Text>
+          <Text style={styles.subTitle}>
+            Step {displayStepNumber} of {finalTotalSteps} • {currentTitle}
+          </Text>
+        </View>
 
-              <View
-                style={[
-                  styles.stepCircle,
-                  isActive && styles.stepCircleActive,
-                  isCompleted && styles.stepCircleCompleted,
-                ]}
-              >
-                {isCompleted ? (
-                  <Ionicons
-                    name="checkmark"
-                    size={14}
-                    color={BrandColors.WHITE}
-                  />
-                ) : (
-                  <Text
-                    style={[
-                      styles.stepNumber,
-                      isActive && styles.stepNumberActive,
-                    ]}
-                  >
-                    {index + 1}
-                  </Text>
-                )}
-              </View>
+        {onSettings ? (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={onSettings}
+            style={styles.circleBtn}
+            accessibilityLabel="Settings"
+          >
+            <Ionicons name="settings-outline" size={18} color="#64748B" />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.rightSpacer} />
+        )}
+      </View>
 
-              <Text
-                numberOfLines={1}
-                style={[styles.stepTitle, isActive && styles.stepTitleActive]}
-              >
-                {title}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+      {/* Orange Progress Bar */}
+      <View style={styles.progressBarTrack}>
+        <View
+          style={[
+            styles.progressBarFill,
+            getProgressBarFillDynamic(progressPercent),
+          ]}
+        />
       </View>
     </View>
   );

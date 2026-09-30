@@ -271,6 +271,12 @@ export const ProjectFinanceStepRenderer: React.FC<
           onToggleAgreeAccuracy={() => state.setAgreeAccuracy((p) => !p)}
           agreeVerification={state.agreeVerification}
           onToggleAgreeVerification={() => state.setAgreeVerification((p) => !p)}
+          applicantName={state.applicantDetails.applicantName}
+          projectName={state.projectClassification.projectName}
+          projectSector={state.projectClassification.projectSector}
+          totalCost={state.projectCost.totalProjectCost}
+          loanRequired={state.loanRequirement.loanRequired}
+          tenureYears={state.repaymentDetails.repaymentPeriodYears}
         />
       );
 

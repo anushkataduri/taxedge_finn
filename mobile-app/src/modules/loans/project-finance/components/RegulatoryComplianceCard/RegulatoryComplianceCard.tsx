@@ -1,16 +1,9 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Modal,
-  FlatList,
-  Pressable,
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { RegulatoryComplianceForm } from "../../types/projectFinance.types";
 import { BUSINESS_REGISTRATION_TYPES } from "../../data/step6Data";
+import { OptionPickerModal } from "../OptionPickerModal";
 import { styles } from "./RegulatoryComplianceCard.styles";
 
 interface RegulatoryComplianceCardProps {
@@ -174,62 +167,17 @@ export const RegulatoryComplianceCard: React.FC<RegulatoryComplianceCardProps> =
         </View>
       )}
 
-      {/* Modal */}
-      <Modal
+      {/* Reusable Option Picker Modal */}
+      <OptionPickerModal
         visible={modalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <Pressable
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(15, 23, 42, 0.5)",
-            justifyContent: "flex-end",
-          }}
-          onPress={() => setModalVisible(false)}
-        >
-          <Pressable
-            style={{
-              backgroundColor: "#FFFFFF",
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
-              maxHeight: "60%",
-              padding: 16,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "700",
-                color: "#0F172A",
-                marginBottom: 12,
-              }}
-            >
-              Select Registration Type
-            </Text>
-            <FlatList
-              data={BUSINESS_REGISTRATION_TYPES}
-              keyExtractor={(item) => item}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={{
-                    paddingVertical: 12,
-                    borderBottomWidth: 1,
-                    borderBottomColor: "#F1F5F9",
-                  }}
-                  onPress={() => {
-                    onChange("businessRegistrationType", item);
-                    setModalVisible(false);
-                  }}
-                >
-                  <Text style={{ fontSize: 14, color: "#1E293B" }}>{item}</Text>
-                </TouchableOpacity>
-              )}
-            />
-          </Pressable>
-        </Pressable>
-      </Modal>
+        title="Select Registration Type"
+        options={BUSINESS_REGISTRATION_TYPES as unknown as string[]}
+        onSelect={(item) => {
+          onChange("businessRegistrationType", item);
+          setModalVisible(false);
+        }}
+        onClose={() => setModalVisible(false)}
+      />
     </View>
   );
 };

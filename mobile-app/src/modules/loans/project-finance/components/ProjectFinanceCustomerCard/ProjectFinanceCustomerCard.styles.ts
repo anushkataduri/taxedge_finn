@@ -29,7 +29,7 @@ export const styles = StyleSheet.create({
   cardTitle: {
     fontSize: Typography.fontSize.base,
     fontWeight: "700",
-    color: BrandColors.PRIMARY_BLUE,
+    color: "#0F172A",
   },
   verifiedBadge: {
     flexDirection: "row",
@@ -51,7 +51,7 @@ export const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 12,
     borderLeftWidth: 3,
-    borderLeftColor: BrandColors.PRIMARY_BLUE,
+    borderLeftColor: BrandColors.PRIMARY_ORANGE || "#EA580C",
   },
   infoBannerText: {
     fontSize: Typography.fontSize.xs,

@@ -5,9 +5,10 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  StatusBar,
   Alert,
+  ActivityIndicator,
 } from "react-native";
-import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -25,6 +26,7 @@ import { useApplicationStore } from "@/store/applicationStore";
 import { useAuthStore } from "@/modules/authentication/store/authStore";
 import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
+import { taxNoticeApi } from "../../../services/taxNoticeApi";
 import {
   styles,
   getContainerInsetsStyle,
@@ -56,26 +58,30 @@ export const UploadNoticeScreen: React.FC = () => {
       return {
         ...INITIAL_TAX_NOTICE_FORM_DATA,
         ...taxNoticeDraft.formData,
-        pan: taxNoticeDraft.formData.pan || profilePan,
+        pan: taxNoticeDraft.formData.pan || "",
       } as TaxNoticeFormData;
     }
     return {
       ...INITIAL_TAX_NOTICE_FORM_DATA,
-      pan: profilePan,
+      pan: "",
     };
   });
 
   const [showAyDropdown, setShowAyDropdown] = useState(false);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const ayOptions = [
-    "AY 2026–27",
-    "AY 2025–26",
-    "AY 2024–25",
-    "AY 2023–24",
-    "AY 2022–23",
+    "AY 2027-28",
+    "AY 2026-27",
+    "AY 2025-26",
+    "AY 2024-25",
+    "AY 2023-24",
+    "AY 2022-23",
+    "Other"
   ];
+  const [showOtherAyInput, setShowOtherAyInput] = useState(false);
 
   // Universal Draft Guard Hook for intercepting back navigation
   const {
@@ -183,42 +189,59 @@ export const UploadNoticeScreen: React.FC = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
-  const handleStep1Continue = () => {
+  const handleStep1Continue = async () => {
     if (!validateStep1()) return;
-    // Persist draft for step transition
-    saveTaxNoticeDraft({
-      formData,
-      step: "UPLOAD",
-      updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    });
-    setCurrentStep(2);
-  };
 
-  const handleStep2Continue = () => {
-    if (!validateStep2()) return;
-
-    saveTaxNoticeDraft({
-      formData,
-      step: "UPLOAD",
-      updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    });
-
-    // Navigate to Screen 3: Staff Review & Notice Summary
-    router.push({
-      pathname: "/service/tax-notice-summary" as any,
-      params: {
+    try {
+      setIsSubmitting(true);
+      
+      let noticeId = taxNoticeDraft?.formData?.noticeId;
+      const payload = {
         pan: formData.pan,
-        noticeNumber: formData.noticeNumber,
-        noticeDate: formData.noticeDate,
-        responseDueDate: formData.responseDueDate,
-        noticeType: formData.noticeType,
         assessmentYear: formData.assessmentYear,
+        noticeType: formData.noticeType,
+        noticeDate: formData.noticeDate,
+        noticeNumber: formData.noticeNumber,
+        responseDueDate: formData.responseDueDate,
         customerExplanation: formData.customerExplanation,
-        noticeFileName: formData.noticeFileName,
-      },
-    });
+        noticeFileUri: "",
+        noticeFileName: "",
+        noticeFileType: "application/pdf"
+      };
+
+      if (noticeId) {
+        await taxNoticeApi.updateTaxNotice(noticeId, payload);
+      } else {
+        noticeId = await taxNoticeApi.registerTaxNotice(payload);
+      }
+
+      saveTaxNoticeDraft({
+        formData,
+        step: "DOCUMENTS",
+        updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      });
+
+      router.push({
+        pathname: "/service/tax-notice-documents" as any,
+        params: {
+          noticeId,
+          pan: formData.pan,
+          noticeNumber: formData.noticeNumber,
+          noticeDate: formData.noticeDate,
+          responseDueDate: formData.responseDueDate,
+          noticeType: formData.noticeType,
+          assessmentYear: formData.assessmentYear,
+        },
+      });
+    } catch (err: any) {
+      console.error("API Error: ", err);
+      Alert.alert("Registration Failed", err.message || "Could not register tax notice.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  
 
   const handleHeaderBack = () => {
     if (currentStep === 2) {
@@ -230,20 +253,12 @@ export const UploadNoticeScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, getContainerInsetsStyle(insets.top)]}>
-      <FocusAwareStatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Screen Header with Draft Action */}
-      <TaxNoticeHeader
-        subtitle={currentStep === 1 ? "Notice Details" : "Upload Tax Notice"}
+            <TaxNoticeHeader
+        subtitle="Notice Details"
         onBack={handleHeaderBack}
-        onSaveDraft={() => {
-          saveTaxNoticeDraft({
-            formData,
-            step: currentStep === 1 ? "DETAILS" : "UPLOAD",
-            updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          });
-          Alert.alert("Draft Saved", "Your notice details have been saved as a draft.");
-        }}
       />
 
       {/* Main Form Content */}
@@ -255,26 +270,11 @@ export const UploadNoticeScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Step Progress Track */}
-        <View style={styles.stepIndicatorContainer}>
-          <View
-            style={[
-              styles.stepIndicatorBar,
-              currentStep >= 1 ? styles.stepIndicatorActive : null,
-            ]}
-          />
-          <View
-            style={[
-              styles.stepIndicatorBar,
-              currentStep >= 2 ? styles.stepIndicatorActive : null,
-            ]}
-          />
-        </View>
+        
 
-        {currentStep === 1 ? (
-          /* ================= STEP 1: NOTICE DETAILS ================= */
+                  {/* ================= STEP 1: NOTICE DETAILS ================= */}
           <View>
-            <Text style={styles.stepLabel}>Step 1 of 2: Notice Details</Text>
+            
             <View style={styles.titleSection}>
               <Text style={styles.pageTitle}>Enter Notice Information</Text>
               <Text style={styles.pageSubtitle}>
@@ -304,47 +304,71 @@ export const UploadNoticeScreen: React.FC = () => {
               <Text style={styles.inputLabel}>
                 Assessment Year (AY) <Text style={styles.requiredStar}>*</Text>
               </Text>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => setShowAyDropdown(!showAyDropdown)}
-                style={styles.dropdownSelector}
-              >
-                <Text style={styles.dropdownValue}>{formData.assessmentYear}</Text>
-                <Ionicons
-                  name={showAyDropdown ? "chevron-up" : "chevron-down"}
-                  size={18}
-                  color="#64748B"
-                />
-              </TouchableOpacity>
-
-              {showAyDropdown && (
-                <View style={styles.dropdownMenu}>
-                  {ayOptions.map((opt) => (
-                    <TouchableOpacity
-                      key={opt}
-                      activeOpacity={0.7}
-                      onPress={() => {
-                        handleFieldChange("assessmentYear", opt);
-                        setShowAyDropdown(false);
-                      }}
-                      style={styles.dropdownItem}
-                    >
-                      <Text
-                        style={[
-                          styles.dropdownItemText,
-                          formData.assessmentYear === opt
-                            ? styles.dropdownItemActive
-                            : null,
-                        ]}
-                      >
-                        {opt}
-                      </Text>
-                      {formData.assessmentYear === opt && (
-                        <Ionicons name="checkmark" size={16} color="#F97316" />
-                      )}
-                    </TouchableOpacity>
-                  ))}
+              {showOtherAyInput ? (
+                <View style={[styles.textInput, { flexDirection: "row", alignItems: "center", paddingRight: 8 }, errors.assessmentYear ? styles.inputError : null]}>
+                  <TextInput
+                    style={{ flex: 1, color: "#0F172A", fontSize: 16, height: 48 }}
+                    placeholder="E.g., AY 2028-29"
+                    placeholderTextColor="#94A3B8"
+                    value={formData.assessmentYear}
+                    onChangeText={(text) => handleFieldChange("assessmentYear", text)}
+                    autoFocus
+                  />
+                  <TouchableOpacity onPress={() => { setShowOtherAyInput(false); handleFieldChange("assessmentYear", ""); }}>
+                    <Ionicons name="close-circle" size={20} color="#94A3B8" />
+                  </TouchableOpacity>
                 </View>
+              ) : (
+                <>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => setShowAyDropdown(!showAyDropdown)}
+                    style={[styles.dropdownSelector, errors.assessmentYear ? styles.inputError : null]}
+                  >
+                    <Text style={[styles.dropdownValue, !formData.assessmentYear && { color: "#94A3B8" }]}>{formData.assessmentYear || "Select Assessment Year"}</Text>
+                    <Ionicons
+                      name={showAyDropdown ? "chevron-up" : "chevron-down"}
+                      size={18}
+                      color="#64748B"
+                    />
+                  </TouchableOpacity>
+
+                  {showAyDropdown && (
+                    <View style={styles.dropdownMenu}>
+                      {ayOptions.map((opt) => (
+                        <TouchableOpacity
+                          key={opt}
+                          activeOpacity={0.7}
+                          onPress={() => {
+                            if (opt === "Other") { 
+                              setShowOtherAyInput(true); 
+                              handleFieldChange("assessmentYear", ""); 
+                            } else { 
+                              setShowOtherAyInput(false); 
+                              handleFieldChange("assessmentYear", opt); 
+                            }
+                            setShowAyDropdown(false);
+                          }}
+                          style={styles.dropdownItem}
+                        >
+                          <Text
+                            style={[
+                              styles.dropdownItemText,
+                              formData.assessmentYear === opt
+                                ? styles.dropdownItemActive
+                                : null,
+                            ]}
+                          >
+                            {opt}
+                          </Text>
+                          {formData.assessmentYear === opt && (
+                            <Ionicons name="checkmark" size={16} color="#F97316" />
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </>
               )}
             </View>
 
@@ -485,7 +509,7 @@ export const UploadNoticeScreen: React.FC = () => {
               ) : null}
             </View>
 
-            {/* Blue Guidance Card */}
+                        {/* Blue Guidance Card */}
             <View style={styles.infoCard}>
               <View style={styles.infoIconCircle}>
                 <Ionicons name="information" size={18} color="#FFFFFF" />
@@ -495,124 +519,22 @@ export const UploadNoticeScreen: React.FC = () => {
               </Text>
             </View>
           </View>
-        ) : (
-          /* ================= STEP 2: UPLOAD NOTICE ================= */
-          <View>
-            <Text style={styles.stepLabel}>Step 2 of 2: Upload Notice</Text>
-            <View style={styles.titleSection}>
-              <Text style={styles.pageTitle}>Upload your Income Tax notice</Text>
-              <Text style={styles.pageSubtitle}>
-                Upload the official notice PDF or clear photograph. Our team will cross-verify the document details with your information.
-              </Text>
-            </View>
-
-            {/* Upload Card with 3-Option Modal (Drive, Gallery, Camera) */}
-            <NoticeUploadCard
-              fileName={formData.noticeFileName}
-              fileSize={formData.noticeFileSize}
-              onUploadSuccess={handleUploadSuccess}
-              error={errors.file}
-            />
-            {errors.file ? <Text style={styles.errorText}>{errors.file}</Text> : null}
-
-            {/* Notice Summary Details Box */}
-            <View
-              style={{
-                backgroundColor: "#FFFFFF",
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: "#E2E8F0",
-                padding: 16,
-                marginTop: 16,
-                marginBottom: 16,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "700",
-                  color: "#0B1F3A",
-                  marginBottom: 10,
-                }}
-              >
-                Entered Notice Information
-              </Text>
-              <View style={{ gap: 8 }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <Text style={{ fontSize: 13, color: "#64748B" }}>PAN:</Text>
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: "#0B1F3A" }}>
-                    {formData.pan || "Not entered"}
-                  </Text>
-                </View>
-                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <Text style={{ fontSize: 13, color: "#64748B" }}>Assessment Year:</Text>
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: "#0B1F3A" }}>
-                    {formData.assessmentYear}
-                  </Text>
-                </View>
-                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <Text style={{ fontSize: 13, color: "#64748B" }}>Notice Type:</Text>
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: "#0B1F3A" }} numberOfLines={1}>
-                    {formData.noticeType}
-                  </Text>
-                </View>
-                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <Text style={{ fontSize: 13, color: "#64748B" }}>Notice Date:</Text>
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: "#0B1F3A" }}>
-                    {formData.noticeDate || "Not selected"}
-                  </Text>
-                </View>
-                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <Text style={{ fontSize: 13, color: "#64748B" }}>Response Due Date:</Text>
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: "#EA580C" }}>
-                    {formData.responseDueDate || "Not selected"}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Info Card */}
-            <View style={styles.infoCard}>
-              <View style={styles.infoIconCircle}>
-                <Ionicons name="shield-checkmark" size={18} color="#FFFFFF" />
-              </View>
-              <Text style={styles.infoText}>
-                Your notice is kept strictly confidential and processed by certified tax experts under end-to-end encryption.
-              </Text>
-            </View>
-          </View>
-        )}
       </ScrollView>
 
       {/* Sticky Bottom Action Bar */}
       <View style={[styles.bottomBar, getBottomBarInsetsStyle(insets.bottom)]}>
-        {currentStep === 1 ? (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={handleStep1Continue}
-            style={styles.continueButton}
-          >
-            <Text style={styles.continueButtonText}>Continue to Upload Notice</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.buttonsRow}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setCurrentStep(1)}
-              style={styles.backStepButton}
-            >
-              <Text style={styles.backStepButtonText}>Edit Details</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleStep2Continue}
-              style={styles.primaryStepButton}
-            >
-              <Text style={styles.primaryStepButtonText}>Continue to Staff Review</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={handleStep1Continue}
+          style={[styles.continueButton, isSubmitting && { opacity: 0.7 }]}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <Text style={styles.continueButtonText}>Continue to Supporting Documents</Text>
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Universal Draft Confirmation Modal */}
