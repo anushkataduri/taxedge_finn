@@ -26,7 +26,7 @@ const mapNatureOfPremises = (nature?: string): string => {
 };
 
 export const gstAmendmentApi = {
-  // Utility for XHR Upload with automatic fallback for dev/403/401 responses
+  // Utility for XHR Upload
   uploadAmendmentWithFile: async (
     endpoint: string,
     formData: FormData,
@@ -51,28 +51,18 @@ export const gstAmendmentApi = {
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           onSuccess(xhr.responseText);
-        } else if (xhr.status === 403 || xhr.status === 401 || xhr.status === 404 || xhr.status >= 500) {
-          console.warn(`[gstAmendmentApi] HTTP ${xhr.status} for ${endpoint}. Resolving fallback success.`);
-          onSuccess(JSON.stringify({ status: "SUCCESS", message: "Amendment request processed" }));
         } else {
           onError(new Error(`API Error: ${xhr.status} ${xhr.responseText}`));
         }
       };
 
-      xhr.ontimeout = () => {
-        console.warn(`[gstAmendmentApi] Timeout for ${endpoint}. Resolving fallback success.`);
-        onSuccess(JSON.stringify({ status: "SUCCESS", message: "Amendment request processed" }));
-      };
-
       xhr.onerror = () => {
-        console.warn(`[gstAmendmentApi] Network error for ${endpoint}. Resolving fallback success.`);
-        onSuccess(JSON.stringify({ status: "SUCCESS", message: "Amendment request processed" }));
+        onError(new Error("Network request failed during amendment upload."));
       };
 
       xhr.send(formData);
     } catch (err: any) {
-      console.warn(`[gstAmendmentApi] Exception during upload for ${endpoint}. Resolving fallback success.`, err);
-      onSuccess(JSON.stringify({ status: "SUCCESS", message: "Amendment request processed" }));
+      onError(err);
     }
   },
 
@@ -248,6 +238,7 @@ export const gstAmendmentApi = {
       formData.append("signatoryName", signatoryName);
       formData.append("signatoryPan", signatoryPan);
 
+      // Parse DD-MM-YYYY or DD/MM/YYYY to YYYY-MM-DD for ISO date (with zero padding)
       if (signatoryDob) {
         const separator = signatoryDob.includes("-") ? "-" : "/";
         const parts = signatoryDob.split(separator);

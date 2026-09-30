@@ -1,25 +1,16 @@
 /**
  * Component: GstReviewStep
- * Migrated from internal StyleSheet to external styles module.
- * Uses shared design tokens from src/shared/theme.ts.
+ * Refactored: Extracted repetitive rows to ReviewRow and reused DocumentPreviewModal.
  */
 
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  Image,
-} from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
 import { GstBusinessFormData } from "../GstBusinessStep/GstBusinessStep";
 import { DocumentItem } from "../GstUnifiedDocumentStep/GstUnifiedDocumentStep";
-import {
-  styles,
-  getDocProgressFillStyle,
-} from "./GstReviewStep.styles";
+import { styles, getDocProgressFillStyle } from "./GstReviewStep.styles";
+import { DocumentPreviewModal } from "../GstUnifiedDocumentStep/GstDocumentModals";
 
 interface GstReviewStepProps {
   businessData: GstBusinessFormData;
@@ -28,6 +19,26 @@ interface GstReviewStepProps {
   declared: boolean;
   onToggleDeclaration: () => void;
 }
+
+const ReviewRow = ({
+  label,
+  value,
+  multiline = false,
+}: {
+  label: string;
+  value: string;
+  multiline?: boolean;
+}) => (
+  <View style={styles.row}>
+    <Text style={styles.label}>{label}</Text>
+    <Text
+      style={[styles.value, multiline && styles.valueMultiline]}
+      numberOfLines={multiline ? undefined : 1}
+    >
+      {value || "-"}
+    </Text>
+  </View>
+);
 
 export const GstReviewStep: React.FC<GstReviewStepProps> = ({
   businessData,
@@ -38,9 +49,8 @@ export const GstReviewStep: React.FC<GstReviewStepProps> = ({
 }) => {
   const [previewDoc, setPreviewDoc] = useState<DocumentItem | null>(null);
   const uploadedDocs = documents.filter((d) => Boolean(d.fileUri));
-  const uploadedCount = uploadedDocs.length;
-  const totalCount = documents.length;
-  const progressPercent = totalCount > 0 ? (uploadedCount / totalCount) * 100 : 0;
+  const progressPercent =
+    documents.length > 0 ? (uploadedDocs.length / documents.length) * 100 : 0;
 
   return (
     <View style={styles.container}>
@@ -53,55 +63,41 @@ export const GstReviewStep: React.FC<GstReviewStepProps> = ({
           </TouchableOpacity>
         </View>
         <View style={styles.divider} />
-        
-        <View style={styles.row}>
-          <Text style={styles.label}>Legal Name</Text>
-          <Text style={styles.value}>{businessData.legalName || "-"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Trade Name</Text>
-          <Text style={styles.value}>{businessData.businessName || "-"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Constitution</Text>
-          <Text style={styles.value}>{businessData.businessType || "-"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Nature of Business</Text>
-          <Text style={styles.value}>{businessData.natureOfBusiness || "-"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Date of Commencement</Text>
-          <Text style={styles.value}>{businessData.businessStartDate || "-"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Reason for Reg.</Text>
-          <Text style={styles.value}>{businessData.reasonForRegistration || "-"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Composition Scheme</Text>
-          <Text style={styles.value}>{businessData.compositionScheme || "-"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Place of Business</Text>
-          <Text style={styles.value}>{businessData.placeOfBusiness || "-"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Address</Text>
-          <Text style={[styles.value, styles.valueMultiline]} numberOfLines={2}>
-            {businessData.businessAddress || "-"}
-          </Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Location</Text>
-          <Text style={[styles.value, styles.valueMultiline]}>
-            {businessData.city ? `${businessData.city}, ` : ""}{businessData.district ? `${businessData.district}, ` : ""}{businessData.state || ""} - {businessData.pinCode || ""}
-          </Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>HSN / SAC Code</Text>
-          <Text style={styles.value}>{businessData.hsnCode || "-"}</Text>
-        </View>
+
+        <ReviewRow label="Legal Name" value={businessData.legalName} />
+        <ReviewRow label="Trade Name" value={businessData.businessName} />
+        <ReviewRow label="Constitution" value={businessData.businessType} />
+        <ReviewRow
+          label="Nature of Business"
+          value={businessData.natureOfBusiness}
+        />
+        <ReviewRow
+          label="Date of Commencement"
+          value={businessData.businessStartDate}
+        />
+        <ReviewRow
+          label="Reason for Reg."
+          value={businessData.reasonForRegistration}
+        />
+        <ReviewRow
+          label="Composition Scheme"
+          value={businessData.compositionScheme}
+        />
+        <ReviewRow
+          label="Place of Business"
+          value={businessData.placeOfBusiness}
+        />
+        <ReviewRow
+          label="Address"
+          value={businessData.businessAddress}
+          multiline
+        />
+        <ReviewRow
+          label="Location"
+          value={`${businessData.city ? businessData.city + ", " : ""}${businessData.district ? businessData.district + ", " : ""}${businessData.state || ""} - ${businessData.pinCode || ""}`}
+          multiline
+        />
+        <ReviewRow label="HSN / SAC Code" value={businessData.hsnCode} />
       </View>
 
       {/* 2. Bank Details Card */}
@@ -113,32 +109,25 @@ export const GstReviewStep: React.FC<GstReviewStepProps> = ({
           </TouchableOpacity>
         </View>
         <View style={styles.divider} />
-        
-        <View style={styles.row}>
-          <Text style={styles.label}>Account Holder</Text>
-          <Text style={styles.value}>{businessData.accountHolderName || "-"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Account Number</Text>
-          <Text style={styles.value}>{businessData.bankAccountNumber || "-"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>IFSC Code</Text>
-          <Text style={styles.value}>{businessData.ifscCode || "-"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Bank & Branch</Text>
-          <Text style={[styles.value, styles.valueMultiline]}>
-            {businessData.bankName || "-"} ({businessData.branchName || "-"})
-          </Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Account Type</Text>
-          <Text style={styles.value}>{businessData.accountType || "-"}</Text>
-        </View>
+
+        <ReviewRow
+          label="Account Holder"
+          value={businessData.accountHolderName}
+        />
+        <ReviewRow
+          label="Account Number"
+          value={businessData.bankAccountNumber}
+        />
+        <ReviewRow label="IFSC Code" value={businessData.ifscCode} />
+        <ReviewRow
+          label="Bank & Branch"
+          value={`${businessData.bankName || "-"} (${businessData.branchName || "-"})`}
+          multiline
+        />
+        <ReviewRow label="Account Type" value={businessData.accountType} />
       </View>
 
-      {/* 2.5 Authorised Signatory Card */}
+      {/* 3. Authorised Signatory Card */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Authorised Signatory</Text>
@@ -147,48 +136,41 @@ export const GstReviewStep: React.FC<GstReviewStepProps> = ({
           </TouchableOpacity>
         </View>
         <View style={styles.divider} />
-        
-        <View style={styles.row}>
-          <Text style={styles.label}>Name</Text>
-          <Text style={styles.value}>{businessData.signatoryName || "-"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>PAN</Text>
-          <Text style={styles.value}>{businessData.signatoryPan || "-"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>DOB</Text>
-          <Text style={styles.value}>{businessData.signatoryDob || "-"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Designation</Text>
-          <Text style={styles.value}>{businessData.signatoryDesignation || "-"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Contact</Text>
-          <Text style={[styles.value, styles.valueMultiline]}>
-            {businessData.signatoryMobile ? `+91 ${businessData.signatoryMobile}` : "-"}
-            {"\n"}
-            {businessData.signatoryEmail || "-"}
-          </Text>
-        </View>
+
+        <ReviewRow label="Name" value={businessData.signatoryName} />
+        <ReviewRow label="PAN" value={businessData.signatoryPan} />
+        <ReviewRow label="DOB" value={businessData.signatoryDob} />
+        <ReviewRow
+          label="Designation"
+          value={businessData.signatoryDesignation}
+        />
+        <ReviewRow
+          label="Contact"
+          value={`${businessData.signatoryMobile ? `+91 ${businessData.signatoryMobile}` : "-"}\n${businessData.signatoryEmail || "-"}`}
+          multiline
+        />
       </View>
 
-      {/* 3. Documents Summary Card with Progress Bar */}
+      {/* 4. Documents Summary Card */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Uploaded Documents</Text>
           <TouchableOpacity onPress={() => onEditStep(1)} activeOpacity={0.7}>
             <Text style={styles.docCountText}>
-              {uploadedCount}/{totalCount} Uploaded
+              {uploadedDocs.length}/{documents.length} Uploaded
             </Text>
           </TouchableOpacity>
         </View>
         <View style={styles.docProgressBar}>
-          <View style={[styles.docProgressFill, getDocProgressFillStyle(progressPercent)]} />
+          <View
+            style={[
+              styles.docProgressFill,
+              getDocProgressFillStyle(progressPercent),
+            ]}
+          />
         </View>
 
-        {uploadedDocs.length > 0 ? (
+        {uploadedDocs.length > 0 && (
           <View style={styles.uploadedDocList}>
             {uploadedDocs.map((doc) => (
               <TouchableOpacity
@@ -203,21 +185,25 @@ export const GstReviewStep: React.FC<GstReviewStepProps> = ({
                     {doc.name}
                   </Text>
                   {doc.id === "address-proof" && (
-                     <Text style={styles.uploadedDocSubtitle}>
-                       {doc.subtitle}
-                     </Text>
+                    <Text style={styles.uploadedDocSubtitle}>
+                      {doc.subtitle}
+                    </Text>
                   )}
                 </View>
                 <View style={styles.eyeIconBox}>
-                  <Ionicons name="eye-outline" size={18} color={BrandColors.PRIMARY_BLUE} />
+                  <Ionicons
+                    name="eye-outline"
+                    size={18}
+                    color={BrandColors.PRIMARY_BLUE}
+                  />
                 </View>
               </TouchableOpacity>
             ))}
           </View>
-        ) : null}
+        )}
       </View>
 
-      {/* 4. Declaration Checkbox Card */}
+      {/* 5. Declaration Checkbox Card */}
       <TouchableOpacity
         style={styles.declarationCard}
         activeOpacity={0.8}
@@ -227,63 +213,22 @@ export const GstReviewStep: React.FC<GstReviewStepProps> = ({
           {declared && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
         </View>
         <Text style={styles.declarationText}>
-          I hereby declare that the information provided is true and accurate to the best of my knowledge. I authorise TaxEdge Fin Solutions to file this application on my behalf.
+          I hereby declare that the information provided is true and accurate to
+          the best of my knowledge. I authorise TaxEdge Fin Solutions to file
+          this application on my behalf.
         </Text>
       </TouchableOpacity>
 
       {/* Full-Screen Document Preview Modal */}
-      <Modal
-        visible={Boolean(previewDoc)}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setPreviewDoc(null)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <View style={styles.modalHeaderInfo}>
-                <Text style={styles.modalDocTitle} numberOfLines={1}>
-                  {previewDoc?.name}
-                </Text>
-                <Text style={styles.modalDocSubtitle}>
-                  Uploaded document verification
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => setPreviewDoc(null)}
-                style={styles.modalCloseBtn}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="close" size={22} color="#1E293B" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalImageContainer}>
-              {previewDoc?.fileUri ? (
-                <Image
-                  source={{ uri: previewDoc.fileUri }}
-                  style={styles.modalImage}
-                  resizeMode="contain"
-                />
-              ) : (
-                <View style={styles.modalPlaceholder}>
-                  <Ionicons name="document-text-outline" size={60} color="#94A3B8" />
-                  <Text style={styles.modalPlaceholderText}>Preview not available</Text>
-                </View>
-              )}
-            </View>
-
-            <TouchableOpacity
-              style={styles.modalFooterBtn}
-              activeOpacity={0.8}
-              onPress={() => setPreviewDoc(null)}
-            >
-              <Text style={styles.modalFooterBtnText}>Close Preview</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <DocumentPreviewModal
+        previewDoc={previewDoc}
+        onClose={() => setPreviewDoc(null)}
+        onReplace={() => {
+          setPreviewDoc(null);
+          onEditStep(1);
+        }}
+        isUploading={false}
+      />
     </View>
   );
 };
-

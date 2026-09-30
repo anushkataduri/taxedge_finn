@@ -79,7 +79,13 @@ public class TaxNoticeAssistanceController {
 			@RequestPart(value = "otherNoticeSpecificDocuments", required = false) MultipartFile otherNoticeSpecificDocuments)
 			throws IOException {
 
-		String result = taxNoticeDocumentService.registerDocuments(noticeId, data, taxNotice, previousItr,
+		TaxNoticeDocumentDto dto = new TaxNoticeDocumentDto();
+
+		if (data != null && !data.isEmpty()) {
+			dto = objectMapper.readValue(data, TaxNoticeDocumentDto.class);
+		}
+
+		String result = taxNoticeDocumentService.registerDocuments(noticeId, dto, taxNotice, previousItr,
 				itrAcknowledgement, form1616a, aisAy, tis, bankStatement, supportingIncomeDocuments,
 				supportingExpenseDocuments, previousTaxResponses, otherNoticeSpecificDocuments);
 
@@ -96,7 +102,6 @@ public class TaxNoticeAssistanceController {
 
 	@PutMapping("/{documentId}/documents/update")
 	public ResponseEntity<String> updateDocuments(@PathVariable String documentId,
-			
 			@RequestPart(value = "data", required = false) String data,
 			@RequestPart(value = "taxNotice", required = false) MultipartFile taxNotice,
 			@RequestPart(value = "previousItr", required = false) MultipartFile previousItr,
@@ -111,7 +116,13 @@ public class TaxNoticeAssistanceController {
 			@RequestPart(value = "otherNoticeSpecificDocuments", required = false) MultipartFile otherNoticeSpecificDocuments)
 			throws IOException {
 
-		String result = taxNoticeDocumentService.updateDocuments(documentId, data, taxNotice, previousItr,
+		TaxNoticeDocumentDto dto = new TaxNoticeDocumentDto();
+
+		if (data != null && !data.isEmpty()) {
+			dto = objectMapper.readValue(data, TaxNoticeDocumentDto.class);
+		}
+
+		String result = taxNoticeDocumentService.updateDocuments(documentId, dto, taxNotice, previousItr,
 				itrAcknowledgement, form1616a, aisAy, tis, bankStatement, supportingIncomeDocuments,
 				supportingExpenseDocuments, previousTaxResponses, otherNoticeSpecificDocuments);
 

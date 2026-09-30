@@ -174,3 +174,38 @@ export const styles = StyleSheet.create({
     marginTop: Spacing.md,
   },
 });
+
+/** Dynamic styles for wizard header */
+export const getWizardTopStyle = (colors: any, topInset: number) => ({
+  backgroundColor: colors.primaryDark as string,
+  paddingTop: topInset,
+});
+
+/** Dynamic styles for scroll content */
+export const getScrollContentStyle = (bottomPadding: number) => ({
+  paddingBottom: bottomPadding,
+});
+
+/** Dynamic styles for cards */
+export const getThemedCardStyle = (colors: any) => ({
+  backgroundColor: colors.backgroundElement as string,
+  borderColor: colors.border as string,
+});
+
+/** Dynamic styles for tabs */
+export const getTabItemThemedStyle = (isSelected: boolean, colors: any) => ({
+  borderBottomColor: isSelected ? (colors.primary as string) : "transparent",
+});
+
+export const getTabTextThemedStyle = (isSelected: boolean, colors: any) => ({
+  color: isSelected ? (colors.primary as string) : (colors.textSecondary as string),
+  fontWeight: (isSelected ? "700" : "500") as "700" | "500",
+});
+
+/** Dynamic styles for bottom action bar */
+export const getBottomBarThemedStyle = (colors: any, bottomInset: number) => ({
+  backgroundColor: colors.backgroundElement as string,
+  borderTopColor: colors.border as string,
+  paddingBottom: Math.max(bottomInset, Spacing.md),
+});
+

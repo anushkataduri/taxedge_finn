@@ -3,7 +3,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ThemeProvider } from "../design-system/theme";
-import { AnimatedSplashOverlay } from "../components/animated-icon";
+import { AnimatedSplashOverlay } from "@/components";
 import { CompleteProfileModal } from "../shared/components/CompleteProfileModal";
 import { ErrorBoundary } from "../core/error-handling/ErrorBoundary";
 import { RootStatusBar } from "../shared/components/FocusAwareStatusBar";

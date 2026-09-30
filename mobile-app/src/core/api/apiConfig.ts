@@ -1,7 +1,8 @@
 import Constants from "expo-constants";
 import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export const SERVER_IP = "127.0.0.1";
+export const SERVER_IP = "192.168.88.8";
 export const SERVER_PORT = 8086;
 export const STORAGE_KEY_SERVER_URL = "@taxedge_server_url";
 
@@ -30,5 +31,25 @@ export function getDefaultBaseUrl(): string {
     }
   } catch {}
 
-  return "";
+  return `http://${SERVER_IP}:${SERVER_PORT}`;
+}
+
+export async function getActiveBaseUrl(): Promise<string> {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+  if (envUrl) {
+    return envUrl.replace(/\/$/, "");
+  }
+
+  try {
+    const saved = await AsyncStorage.getItem(STORAGE_KEY_SERVER_URL);
+    if (saved && saved.trim()) {
+      let clean = saved.trim().replace(/\/$/, "");
+      if (clean.includes(":8081")) {
+        clean = clean.replace(":8081", `:${SERVER_PORT}`);
+      }
+      return clean;
+    }
+  } catch {}
+
+  return getDefaultBaseUrl().replace(/\/$/, "");
 }

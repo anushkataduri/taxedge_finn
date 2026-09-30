@@ -302,4 +302,27 @@ export const styles = StyleSheet.create({
     fontSize: Typography.fontSize.xs,
     fontWeight: Typography.fontWeight.extraBold,
   },
+  fetchingContainer: {
+    paddingVertical: 24,
+    alignItems: "center",
+  },
+  fetchingText: {
+    marginTop: 12,
+    fontSize: 13,
+  },
+  profileScrollContent: {
+    paddingBottom: 0, // placeholder — actual value injected via SCREEN_BOTTOM_PADDING
+  },
 });
+
+/** paddingBottom for the profile ScrollView. Pass SCREEN_BOTTOM_PADDING at call-site. */
+export const getProfileScrollStyle = (bottomPadding: number) => ({
+  paddingBottom: bottomPadding,
+});
+
+/** Dynamic border and text colour for the KYC status pill. */
+export const getKycPillStyle = (kycVerified: boolean, colors: any) => ({
+  borderColor: kycVerified ? "#7BE0A8" : (colors.orange as string),
+  color:       kycVerified ? "#7BE0A8" : (colors.orange as string),
+});
+

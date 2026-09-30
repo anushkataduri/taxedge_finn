@@ -5,7 +5,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,11 +19,12 @@ import com.taxedge.gst.repository.AdditionalPlaceAmendmentRepository;
 import com.taxedge.gst.repository.BusinessRepository;
 
 @Service
-@RequiredArgsConstructor
 public class AdditionalPlaceAmendmentServiceImpl implements AdditionalPlaceAmendmentService {
 
-    private final BusinessRepository businessRepository;
-    private final AdditionalPlaceAmendmentRepository additionalPlaceRepository;
+    @Autowired
+    private BusinessRepository businessRepository;
+    @Autowired
+    private AdditionalPlaceAmendmentRepository additionalPlaceRepository;
 
     private Business resolveBusiness(String gstId) {
         return businessRepository.findById(gstId)

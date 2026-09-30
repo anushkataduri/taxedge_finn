@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { useTheme } from "../../hooks/use-theme";
-import { FloatingTabBar } from "../../components/FloatingTabBar";
+import { FloatingTabBar } from "@/components";
 
 /**
  * The default tab bar is replaced by <FloatingTabBar> through the `tabBar`

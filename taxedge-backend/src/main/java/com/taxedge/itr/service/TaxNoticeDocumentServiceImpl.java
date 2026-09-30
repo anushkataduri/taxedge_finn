@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taxedge.itr.Exception.ResourceNotFoundException;
 import com.taxedge.itr.dto.TaxNoticeDocumentDto;
 import com.taxedge.itr.entity.TaxNoticeAssistance;
@@ -18,29 +17,23 @@ import com.taxedge.itr.helper.RandomNumberGenerator;
 import com.taxedge.itr.repository.TaxNoticeAssistanceRepository;
 import com.taxedge.itr.repository.TaxNoticeDocumentRepository;
 
-import lombok.RequiredArgsConstructor;
-
-@RequiredArgsConstructor
 @Service
 public class TaxNoticeDocumentServiceImpl implements TaxNoticeDocumentService {
 
-	
-	private final TaxNoticeDocumentRepository taxNoticeDocumentRepository;
+	@Autowired
+	private TaxNoticeDocumentRepository taxNoticeDocumentRepository;
 
-	
-	private final TaxNoticeAssistanceRepository taxNoticeAssistanceRepository;
+	@Autowired
+	private TaxNoticeAssistanceRepository taxNoticeAssistanceRepository;
 
 	@Autowired
 	@Qualifier("itrModelMapper")
 	private ModelMapper modelMapper;
 
-	@Autowired
-	private ObjectMapper objectMapper;
-
 	@Override
-	public String registerDocuments(String noticeId, String data, MultipartFile taxNotice, MultipartFile previousItr,
-			MultipartFile itrAcknowledgement, MultipartFile form1616a, MultipartFile aisAy, MultipartFile tis,
-			MultipartFile bankStatement, MultipartFile supportingIncomeDocuments,
+	public String registerDocuments(String noticeId, TaxNoticeDocumentDto dto, MultipartFile taxNotice,
+			MultipartFile previousItr, MultipartFile itrAcknowledgement, MultipartFile form1616a, MultipartFile aisAy,
+			MultipartFile tis, MultipartFile bankStatement, MultipartFile supportingIncomeDocuments,
 			MultipartFile supportingExpenseDocuments, MultipartFile previousTaxResponses,
 			MultipartFile otherNoticeSpecificDocuments) throws IOException {
 
@@ -58,14 +51,7 @@ public class TaxNoticeDocumentServiceImpl implements TaxNoticeDocumentService {
 
 		document.setTaxNoticeAssistance(taxNoticeAssistance);
 
-		TaxNoticeDocumentDto dto = null;
-
-		if (data != null && !data.isEmpty()) {
-			dto = objectMapper.readValue(data, TaxNoticeDocumentDto.class);
-		}
-
-		if (dto != null && dto.getMessage() != null && !dto.getMessage().isEmpty()) {
-
+		if (dto.getMessage() != null && !dto.getMessage().isEmpty()) {
 			document.setMessage(dto.getMessage());
 		}
 
@@ -98,22 +84,18 @@ public class TaxNoticeDocumentServiceImpl implements TaxNoticeDocumentService {
 		}
 
 		if (supportingIncomeDocuments != null && !supportingIncomeDocuments.isEmpty()) {
-
 			document.setSupportingIncomeDocuments(convertFile(supportingIncomeDocuments));
 		}
 
 		if (supportingExpenseDocuments != null && !supportingExpenseDocuments.isEmpty()) {
-
 			document.setSupportingExpenseDocuments(convertFile(supportingExpenseDocuments));
 		}
 
 		if (previousTaxResponses != null && !previousTaxResponses.isEmpty()) {
-
 			document.setPreviousTaxResponses(convertFile(previousTaxResponses));
 		}
 
 		if (otherNoticeSpecificDocuments != null && !otherNoticeSpecificDocuments.isEmpty()) {
-
 			document.setOtherNoticeSpecificDocuments(convertFile(otherNoticeSpecificDocuments));
 		}
 
@@ -123,23 +105,16 @@ public class TaxNoticeDocumentServiceImpl implements TaxNoticeDocumentService {
 	}
 
 	@Override
-	public String updateDocuments(String documentId, String data, MultipartFile taxNotice, MultipartFile previousItr,
-			MultipartFile itrAcknowledgement, MultipartFile form1616a, MultipartFile aisAy, MultipartFile tis,
-			MultipartFile bankStatement, MultipartFile supportingIncomeDocuments,
+	public String updateDocuments(String documentId, TaxNoticeDocumentDto dto, MultipartFile taxNotice,
+			MultipartFile previousItr, MultipartFile itrAcknowledgement, MultipartFile form1616a, MultipartFile aisAy,
+			MultipartFile tis, MultipartFile bankStatement, MultipartFile supportingIncomeDocuments,
 			MultipartFile supportingExpenseDocuments, MultipartFile previousTaxResponses,
 			MultipartFile otherNoticeSpecificDocuments) throws IOException {
 
 		TaxNoticeDocument document = taxNoticeDocumentRepository.findById(documentId)
 				.orElseThrow(() -> new ResourceNotFoundException("Documents not found with ID: " + documentId));
 
-		TaxNoticeDocumentDto dto = null;
-
-		if (data != null && !data.isEmpty()) {
-			dto = objectMapper.readValue(data, TaxNoticeDocumentDto.class);
-		}
-
-		if (dto != null && dto.getMessage() != null && !dto.getMessage().isEmpty()) {
-
+		if (dto.getMessage() != null && !dto.getMessage().isEmpty()) {
 			document.setMessage(dto.getMessage());
 		}
 
@@ -172,22 +147,18 @@ public class TaxNoticeDocumentServiceImpl implements TaxNoticeDocumentService {
 		}
 
 		if (supportingIncomeDocuments != null && !supportingIncomeDocuments.isEmpty()) {
-
 			document.setSupportingIncomeDocuments(convertFile(supportingIncomeDocuments));
 		}
 
 		if (supportingExpenseDocuments != null && !supportingExpenseDocuments.isEmpty()) {
-
 			document.setSupportingExpenseDocuments(convertFile(supportingExpenseDocuments));
 		}
 
 		if (previousTaxResponses != null && !previousTaxResponses.isEmpty()) {
-
 			document.setPreviousTaxResponses(convertFile(previousTaxResponses));
 		}
 
 		if (otherNoticeSpecificDocuments != null && !otherNoticeSpecificDocuments.isEmpty()) {
-
 			document.setOtherNoticeSpecificDocuments(convertFile(otherNoticeSpecificDocuments));
 		}
 

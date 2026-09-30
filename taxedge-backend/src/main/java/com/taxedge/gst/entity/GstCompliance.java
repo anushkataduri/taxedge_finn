@@ -52,6 +52,6 @@ public class GstCompliance {
     @Column(name = "notice_file", columnDefinition = "LONGTEXT")
     private String noticeFile;
 
-    @Column(name = "message", columnDefinition = "LONGTEXT")
+    @Column(name = "message", columnDefinition = "TEXT")
     private String message;
 }

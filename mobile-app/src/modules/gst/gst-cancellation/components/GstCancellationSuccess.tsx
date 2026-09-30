@@ -43,8 +43,8 @@ export function GstCancellationSuccess({
         backgroundColor={BrandColors.PRIMARY_BLUE}
       />
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.successScrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.successHero, { paddingTop: insets.top + 32 }]}>

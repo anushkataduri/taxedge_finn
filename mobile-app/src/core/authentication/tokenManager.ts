@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { secureStorage } from "../storage/secureStorage";
 import {
-  getDefaultBaseUrl,
+  getActiveBaseUrl,
   SERVER_PORT,
   STORAGE_KEY_SERVER_URL,
 } from "../api/apiConfig";
@@ -191,11 +191,7 @@ class TokenManager {
     if (!token) return null;
 
     try {
-      const savedBaseUrl = await AsyncStorage.getItem(STORAGE_KEY_SERVER_URL);
-      const baseUrl = (savedBaseUrl?.trim() || getDefaultBaseUrl()).replace(/\/$/, "");
-      const normalizedBaseUrl = baseUrl.includes(":8081")
-        ? baseUrl.replace(":8081", `:${SERVER_PORT}`)
-        : baseUrl;
+      const normalizedBaseUrl = await getActiveBaseUrl();
       const response = await fetch(`${normalizedBaseUrl}/auth/validate`, {
         headers: {
           Accept: "application/json",

@@ -15,12 +15,12 @@ import { ServiceFeeCard } from "../../components/charges/ServiceFeeCard";
 import { ChargesEstimateWarningBanner } from "../../components/charges/ChargesEstimateWarningBanner";
 import { DEFAULT_PREVIOUS_YEAR_CHARGES } from "../../mock/chargesData";
 import { useApplicationStore } from "@/store/applicationStore";
+import { styles } from "./PreviousYearChargesScreen.styles";
 import {
-  styles,
   getContainerInsetsStyle,
   getScrollContentInsetsStyle,
   getBottomBarInsetsStyle,
-} from "./PreviousYearChargesScreen.styles";
+} from "@/shared/utils/screenInsets";
 
 export const PreviousYearChargesScreen: React.FC = () => {
   const router = useRouter();

@@ -2,8 +2,7 @@ package com.taxedge.customer.service;
 
 import java.time.LocalDateTime;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -11,41 +10,61 @@ import com.taxedge.customer.dto.CustomerDto;
 import com.taxedge.customer.dto.LoginRequest;
 import com.taxedge.customer.dto.UpdatePasswordDto;
 import com.taxedge.customer.entity.Customer;
-import com.taxedge.customer.exception.CustomerNotFoundException;
 import com.taxedge.customer.exception.DuplicateResourceException;
 import com.taxedge.customer.exception.InvalidCredentialsException;
 import com.taxedge.customer.helper.CustomerHelper;
-import com.taxedge.customer.mapper.CustomerMapper;
 import com.taxedge.customer.repository.CustomerRepository;
-import com.taxedge.notification.service.FcmNotificationService;
+import com.taxedge.notification.service.FcmNotificationServiceImpl;
 import com.taxedge.security.jwt.CustomerJwt;
 import com.taxedge.security.jwt.service.JwtService;
 import com.taxedge.security.jwt.service.RefreshTokenService;
 
 import jakarta.transaction.Transactional;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class CustomerServiceImpl implements CustomerService {
 
-    private final CustomerMapper customerMapper;
-	private final FcmNotificationService fcmNotificationService;
-    private final CustomerRepository customerRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
-    private final RefreshTokenService refreshTokenService;
+	@Autowired
+	private FcmNotificationServiceImpl fcmNotificationService;
+	
+    @Autowired
+    private CustomerRepository customerRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private RefreshTokenService refreshTokenService;
 
     @Override
-    @Transactional
     public CustomerJwt registerCustomer(CustomerDto customerDto) {
 
         validateUniqueFields(customerDto);
 
-        Customer customer = customerMapper.toEntity(customerDto);
-        customer.setCustId(CustomerHelper.generateCustomerId());
-        customer.setPassword(passwordEncoder.encode(customerDto.getPassword()));
-        customer.setCreatedAt(LocalDateTime.now());
+        Customer customer = Customer.builder()
+                .custId(CustomerHelper.generateCustomerId())
+                .name(customerDto.getName())
+                .email(customerDto.getEmail())
+                .mobileNumber(customerDto.getMobileNumber())
+                .aadhaar(customerDto.getAadhaar())
+                .pan(customerDto.getPan())
+                .dob(customerDto.getDob())
+                .gender(customerDto.getGender())
+                .fatherSpouseName(customerDto.getFatherSpouseName())
+                .customerType(customerDto.getCustomerType())
+                .addressLine1(customerDto.getAddressLine1())
+                .addressLine2(customerDto.getAddressLine2())
+                .city(customerDto.getCity())
+                .pincode(customerDto.getPincode())
+                .state(customerDto.getState())
+                .address(customerDto.getAddress())
+                .password(passwordEncoder.encode(customerDto.getPassword()))
+                .pushToken(customerDto.getPushToken())
+                .createdAt(LocalDateTime.now())
+                .build();
 
         Customer savedCustomer = customerRepository.save(customer);
         
@@ -76,19 +95,11 @@ public class CustomerServiceImpl implements CustomerService {
   
     private void validateUniqueFields(CustomerDto dto) {
 
-        if (isPresent(dto.getMobileNumber()) && customerRepository.existsByMobileNumber(dto.getMobileNumber().trim())) {
-            throw new DuplicateResourceException("mobileNumber", "Mobile number already registered");
-        }
-
-        if (isPresent(dto.getEmail()) && customerRepository.existsByEmail(dto.getEmail().trim())) {
-            throw new DuplicateResourceException("email", "Email already registered");
-        }
-
-        if (isPresent(dto.getAadhaar()) && customerRepository.existsByAadhaar(dto.getAadhaar().trim())) {
+        if (isPresent(dto.getAadhaar()) && customerRepository.existsByAadhaar(dto.getAadhaar())) {
             throw new DuplicateResourceException("aadhaar", "Aadhaar already registered");
         }
 
-        if (isPresent(dto.getPan()) && customerRepository.existsByPan(dto.getPan().trim())) {
+        if (isPresent(dto.getPan()) && customerRepository.existsByPan(dto.getPan())) {
             throw new DuplicateResourceException("pan", "PAN already registered");
         }
     }
@@ -115,7 +126,10 @@ public class CustomerServiceImpl implements CustomerService {
 
         String refreshToken = refreshTokenService.createRefreshToken(customer);
 
-        log.info("🔑 [LOGIN SUCCESS] Access token for user ({} / {}): {}", customer.getCustId(), customer.getMobileNumber(), accessToken);
+        System.out.println("\n=========================================================================");
+        System.out.println("🔑 [LOGIN SUCCESS] ACCESS TOKEN FOR EXISTING USER (" + customer.getCustId() + " / " + customer.getMobileNumber() + "):");
+        System.out.println(accessToken);
+        System.out.println("=========================================================================\n");
 
         return new CustomerJwt(
                 accessToken,
@@ -130,11 +144,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     @Transactional
     public String updatePassword(UpdatePasswordDto updatePasswordDto) {
-        String mobileNumber = updatePasswordDto.getMobileNumber() != null 
-                ? updatePasswordDto.getMobileNumber().trim() 
-                : "";
-
-        Customer customer = customerRepository.findByMobileNumber(mobileNumber)
+        Customer customer = customerRepository.findByMobileNumber(updatePasswordDto.getMobileNumber())
                 .orElseThrow(() -> new InvalidCredentialsException("Customer not found"));
 
         customer.setPassword(passwordEncoder.encode(updatePasswordDto.getPassword()));
@@ -145,7 +155,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public boolean existsByMobileNumber(String mobileNumber) {
-        return mobileNumber != null && customerRepository.existsByMobileNumber(mobileNumber.trim());
+        return mobileNumber != null && customerRepository.findByMobileNumber(mobileNumber.trim()).isPresent();
     }
 
 
@@ -160,10 +170,30 @@ public class CustomerServiceImpl implements CustomerService {
 		}
 
 		if (customer == null) {
-			throw new CustomerNotFoundException("Customer not found with id or mobile: " + custId);
+			throw new RuntimeException("Customer not found with id or mobile: " + custId);
 		}
 
-		return customerMapper.toDto(customer);
+		CustomerDto customerDto = CustomerDto.builder()
+				.custId(customer.getCustId())
+				.name(customer.getName())
+				.email(customer.getEmail())
+				.mobileNumber(customer.getMobileNumber())
+				.dob(customer.getDob())
+				.gender(customer.getGender())
+				.fatherSpouseName(customer.getFatherSpouseName())
+				.customerType(customer.getCustomerType())
+				.addressLine1(customer.getAddressLine1())
+				.addressLine2(customer.getAddressLine2())
+				.city(customer.getCity())
+				.pincode(customer.getPincode())
+				.state(customer.getState())
+				.address(customer.getAddress())
+				.pan(customer.getPan())
+				.aadhaar(customer.getAadhaar())
+				.createdAt(customer.getCreatedAt())
+				.build();
+
+		return customerDto;
 	}
 
 
@@ -179,13 +209,24 @@ public class CustomerServiceImpl implements CustomerService {
 		}
 
 		if (customer == null) {
-			String identifier = (dto.getCustId() != null && !dto.getCustId().isBlank())
-					? dto.getCustId()
-					: dto.getMobileNumber();
-			throw new CustomerNotFoundException("Customer not found with id or mobile: " + identifier);
+			throw new RuntimeException("Customer not found with id: " + dto.getCustId());
 		}
 
-		customerMapper.updateCustomerFromDto(dto, customer);
+		if (dto.getName() != null) customer.setName(dto.getName());
+		if (dto.getEmail() != null) customer.setEmail(dto.getEmail());
+		if (dto.getMobileNumber() != null) customer.setMobileNumber(dto.getMobileNumber());
+		if (dto.getAadhaar() != null) customer.setAadhaar(dto.getAadhaar());
+		if (dto.getPan() != null) customer.setPan(dto.getPan());
+		if (dto.getDob() != null) customer.setDob(dto.getDob());
+		if (dto.getGender() != null) customer.setGender(dto.getGender());
+		if (dto.getFatherSpouseName() != null) customer.setFatherSpouseName(dto.getFatherSpouseName());
+		if (dto.getCustomerType() != null) customer.setCustomerType(dto.getCustomerType());
+		if (dto.getAddressLine1() != null) customer.setAddressLine1(dto.getAddressLine1());
+		if (dto.getAddressLine2() != null) customer.setAddressLine2(dto.getAddressLine2());
+		if (dto.getCity() != null) customer.setCity(dto.getCity());
+		if (dto.getPincode() != null) customer.setPincode(dto.getPincode());
+		if (dto.getState() != null) customer.setState(dto.getState());
+		if (dto.getAddress() != null) customer.setAddress(dto.getAddress());
 
 		customerRepository.save(customer);
 		return "Updated Successfully";

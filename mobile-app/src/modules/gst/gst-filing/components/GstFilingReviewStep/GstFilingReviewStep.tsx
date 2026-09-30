@@ -269,8 +269,8 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
         {missingDocsCount > 0 ? (
           <View style={styles.missingDocsRow}>
             <View style={styles.missingAlertBox}>
-              <Ionicons name="warning-outline" size={24} color="#E11D48" style={{ marginTop: 2 }} />
-              <View style={{ flex: 1 }}>
+              <Ionicons name="warning-outline" size={24} color="#E11D48" style={styles.alertIconTopMargin} />
+              <View style={styles.flex1Col}>
                 <Text style={styles.missingAlertTitle}>
                   {missingDocsCount} {missingDocsCount === 1 ? "Document" : "Documents"} Missing
                 </Text>
@@ -293,7 +293,7 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
         ) : (
           <View style={styles.allDocsUploadedBox}>
             <Ionicons name="checkmark-circle" size={22} color="#059669" />
-            <View style={{ flex: 1 }}>
+            <View style={styles.flex1Col}>
               <Text style={styles.allDocsUploadedTitle}>
                 All Required Documents Uploaded
               </Text>

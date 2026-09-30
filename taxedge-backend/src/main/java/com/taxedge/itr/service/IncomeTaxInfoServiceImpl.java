@@ -1,6 +1,7 @@
 package com.taxedge.itr.service;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -8,14 +9,15 @@ import com.taxedge.itr.Exception.ResourceNotFoundException;
 import com.taxedge.itr.dto.IncomeTaxInfoDto;
 import com.taxedge.itr.entity.IncomeTaxInfo;
 import com.taxedge.itr.repository.IncomeTaxInfoRepository;
-import com.taxedge.itr.repository.RefundBankAccountRepository;
 
 @Service
-@RequiredArgsConstructor
 public class IncomeTaxInfoServiceImpl implements IncomeTaxInfoService {
 
-    private final IncomeTaxInfoRepository repository;
-    private final RefundBankAccountRepository bankAccountRepository;
+    @Autowired
+    private IncomeTaxInfoRepository repository;
+
+    @Autowired
+    private com.taxedge.itr.repository.RefundBankAccountRepository bankAccountRepository;
 
     @Override
     @Transactional

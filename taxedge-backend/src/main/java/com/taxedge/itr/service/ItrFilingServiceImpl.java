@@ -5,78 +5,62 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import com.taxedge.customer.entity.Customer;
-import com.taxedge.customer.repository.CustomerRepository;
 import com.taxedge.itr.Exception.ResourceNotFoundException;
 import com.taxedge.itr.dto.ItrFilingPostDto;
 import com.taxedge.itr.entity.ItrFiling;
 import com.taxedge.itr.helper.RandomNumberGenerator;
 import com.taxedge.itr.repository.ItrFilingRepository;
+import com.taxedge.itr.service.ItrFilingService;
 
-import lombok.RequiredArgsConstructor;
-
-@RequiredArgsConstructor
 @Service
 public class ItrFilingServiceImpl implements ItrFilingService {
 
-	
-	private final ItrFilingRepository itrFilingRepository;
+    @Autowired
+    private ItrFilingRepository itrFilingRepository;
 
-	
-	private final CustomerRepository customerRepository;
+    @Autowired
+    @Qualifier("itrModelMapper")
+    private ModelMapper modelMapper;
 
-	@Autowired
-	@Qualifier("itrModelMapper")
-	private ModelMapper modelMapper;
+    @Override
+    public String createItrFiling(ItrFilingPostDto dto) {
 
-	@Override
-	public String createItrFiling(ItrFilingPostDto dto) {
+        ItrFiling itrFiling = modelMapper.map(dto, ItrFiling.class);
 
-		Customer customer = customerRepository.findById(dto.getCustomerId())
-				.orElseThrow(() -> new ResourceNotFoundException("Customer not found with ID: " + dto.getCustomerId()));
+        String itrId = RandomNumberGenerator.generateItrId();
 
-		ItrFiling itrFiling = modelMapper.map(dto, ItrFiling.class);
+        itrFiling.setItrId(itrId);
 
-		itrFiling.setCustomer(customer);
+        itrFilingRepository.save(itrFiling);
 
-		String itrId = RandomNumberGenerator.generateItrId();
+        return "ITR Filing details registered successfully. ITR ID: " + itrId;
+    }
 
-		itrFiling.setItrId(itrId);
+    @Override
+    public String updateItrFiling(
+            String itrId,
+            ItrFilingPostDto dto) {
 
-		itrFilingRepository.save(itrFiling);
+        ItrFiling itrFiling = itrFilingRepository.findById(itrId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "ITR Filing details not found with ITR ID: " + itrId));
 
-		return "ITR Filing details registered successfully. ITR ID: " + itrId;
-	}
+        modelMapper.map(dto, itrFiling);
 
-	@Override
-	public String updateItrFiling(String itrId, ItrFilingPostDto dto) {
+        itrFilingRepository.save(itrFiling);
 
-		ItrFiling itrFiling = itrFilingRepository.findById(itrId)
-				.orElseThrow(() -> new ResourceNotFoundException("ITR Filing details not found with ITR ID: " + itrId));
+        return "ITR Filing details updated successfully";
+    }
 
-		modelMapper.map(dto, itrFiling);
+    @Override
+    public ItrFiling getItrFiling(String itrId) {
 
-		if (dto.getCustomerId() != null && !dto.getCustomerId().isBlank()) {
+        ItrFiling itrFiling = itrFilingRepository.findById(itrId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "ITR Filing details not found with ITR ID: " + itrId));
 
-			Customer customer = customerRepository.findById(dto.getCustomerId()).orElseThrow(
-					() -> new ResourceNotFoundException("Customer not found with ID: " + dto.getCustomerId()));
-
-			itrFiling.setCustomer(customer);
-		}
-
-		itrFiling.setItrId(itrId);
-
-		itrFilingRepository.save(itrFiling);
-
-		return "ITR Filing details updated successfully";
-	}
-
-	@Override
-	public ItrFiling getItrFiling(String itrId) {
-
-		ItrFiling itrFiling = itrFilingRepository.findById(itrId)
-				.orElseThrow(() -> new ResourceNotFoundException("ITR Filing details not found with ITR ID: " + itrId));
-
-		return itrFiling;
-	}
+        return itrFiling;
+    }
 }

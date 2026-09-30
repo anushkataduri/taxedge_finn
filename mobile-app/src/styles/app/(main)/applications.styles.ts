@@ -63,4 +63,130 @@ export const styles = StyleSheet.create({
   errorText: { fontSize: 13, fontWeight: "400", textAlign: "center", marginTop: 6, lineHeight: 18 },
   retryButton: { marginTop: 16, backgroundColor: "#0A2346", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   retryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+  gstinBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: "#BFDBFE",
+    backgroundColor: "#EFF6FF",
+  },
+  gstinBadgeDark: {
+    backgroundColor: "#1E293B",
+  },
+  gstinBadgeText: {
+    fontSize: 10.5,
+    fontWeight: "600",
+    color: "#083B75",
+  },
+  gstinBadgeTextDark: {
+    color: "#93C5FD",
+  },
+  coreBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2.5,
+    borderRadius: 4,
+    borderWidth: 0.5,
+  },
+  coreBadgeCore: {
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+  },
+  coreBadgeCoreDark: {
+    backgroundColor: "rgba(234, 88, 12, 0.18)",
+    borderColor: "rgba(234, 88, 12, 0.4)",
+  },
+  coreBadgeNonCore: {
+    backgroundColor: "#EFF6FF",
+    borderColor: "#BFDBFE",
+  },
+  coreBadgeNonCoreDark: {
+    backgroundColor: "rgba(2, 132, 199, 0.18)",
+    borderColor: "rgba(2, 132, 199, 0.4)",
+  },
+  coreBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+  },
+  coreBadgeTextCore: {
+    color: "#EA580C",
+  },
+  coreBadgeTextCoreDark: {
+    color: "#FB923C",
+  },
+  coreBadgeTextNonCore: {
+    color: "#0284C7",
+  },
+  coreBadgeTextNonCoreDark: {
+    color: "#38BDF8",
+  },
+  emptyIcon: {
+    marginBottom: 12,
+  },
+  docIconWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  docIconTag: {
+    position: "absolute",
+    bottom: 4.5,
+    fontWeight: "900",
+    letterSpacing: -0.2,
+  },
 });
+
+/**
+ * Dynamic colour for the numeric value inside an OverviewCard column.
+ * Extracted from inline style expressions in the original applications.tsx.
+ */
+export const getOverviewValColor = (
+  isSelected: boolean,
+  isDark: boolean,
+  item: { color: string; isAll?: boolean },
+) => ({
+  color: isSelected
+    ? isDark
+      ? "#FF7A00"
+      : item.isAll
+        ? "#083B75"
+        : item.color
+    : isDark
+      ? item.isAll
+        ? "#FFFFFF"
+        : item.color
+      : item.color,
+});
+
+/**
+ * Dynamic style for the sub-label text inside an OverviewCard column.
+ */
+export const getOverviewSubStyle = (
+  isSelected: boolean,
+  isDark: boolean,
+  colors: any,
+) => ({
+  color: isDark
+    ? isSelected
+      ? "#FFFFFF"
+      : colors.textSecondary
+    : isSelected
+      ? "#0A2346"
+      : "#64748B",
+  fontWeight: (isSelected ? "700" : "500") as "700" | "500",
+});
+
+/**
+ * Dynamic style for the label text inside a CategoryTabsRow tab.
+ */
+export const getCategoryTabLabelStyle = (isActive: boolean) => ({
+  color:      isActive ? "#FF5722" : "#0A2346",
+  fontWeight: (isActive ? "700" : "600") as "700" | "600",
+});
+
