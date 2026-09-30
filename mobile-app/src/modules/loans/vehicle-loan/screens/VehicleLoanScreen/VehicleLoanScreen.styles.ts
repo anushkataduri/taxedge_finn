@@ -41,3 +41,14 @@ export const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
 });
+
+export const getSafeAreaStyle = (topInset: number) => [
+  styles.safeArea,
+  { paddingTop: topInset },
+];
+
+export const getBottomBarStyle = (bottomInset: number) => [
+  styles.bottomBar,
+  { paddingBottom: Math.max(bottomInset, 12) },
+];
+

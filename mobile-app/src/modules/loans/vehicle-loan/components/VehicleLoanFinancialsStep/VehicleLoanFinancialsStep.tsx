@@ -1,89 +1,24 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Modal,
-  ScrollView,
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
 import { VehicleLoanDetailsFormData } from "../../types/vehicleLoan.types";
 import { styles } from "./VehicleLoanFinancialsStep.styles";
+import {
+  VEHICLE_PURPOSES,
+  TENURE_OPTIONS,
+  TENURE_QUICK_PRESETS,
+  VEHICLE_MODELS,
+  AMOUNT_PRESETS,
+  VEHICLE_CONDITIONS,
+} from "./vehicleLoanFinancials.constants";
+import { VehicleLoanSelectionModal, OptionRow } from "./components/VehicleLoanSelectionModal";
 
 export interface VehicleLoanFinancialsStepProps {
   data: VehicleLoanDetailsFormData;
   onChange: (field: keyof VehicleLoanDetailsFormData, value: any) => void;
   errors?: Record<string, string>;
 }
-
-const VEHICLE_PURPOSES = [
-  "New Car (Passenger)",
-  "Pre-Owned / Used Car",
-  "Electric Vehicle (EV - 2W / 4W)",
-  "Two-Wheeler / Superbike",
-  "Commercial Vehicle / Truck",
-  "Fleet Purchase",
-  "Balance Transfer & Top-Up",
-  "Others",
-];
-
-const TENURE_OPTIONS = [
-  { label: "3 M (3 Months)", value: "3" },
-  { label: "6 M (6 Months)", value: "6" },
-  { label: "9 M (9 Months)", value: "9" },
-  { label: "12 M (1 Yr)", value: "12" },
-  { label: "18 M (1.5 Yrs)", value: "18" },
-  { label: "24 M (2 Yrs)", value: "24" },
-  { label: "36 M (3 Yrs)", value: "36" },
-  { label: "48 M (4 Yrs)", value: "48" },
-  { label: "60 M (5 Yrs)", value: "60" },
-  { label: "72 M (6 Yrs)", value: "72" },
-  { label: "84 M (7 Yrs)", value: "84" },
-  { label: "Other / Custom Tenure", value: "Other" },
-];
-
-const VEHICLE_MODELS = [
-  "Maruti Suzuki Swift",
-  "Maruti Suzuki Baleno",
-  "Maruti Suzuki Brezza",
-  "Maruti Suzuki Ertiga",
-  "Hyundai Creta",
-  "Hyundai Venue",
-  "Hyundai i20",
-  "Hyundai Verna",
-  "Tata Nexon",
-  "Tata Punch",
-  "Tata Harrier / Safari",
-  "Tata Nexon EV",
-  "Mahindra Thar",
-  "Mahindra Scorpio-N",
-  "Mahindra XUV700",
-  "Kia Seltos",
-  "Kia Sonet",
-  "Toyota Innova Crysta / Hycross",
-  "Toyota Fortuner",
-  "Honda City / Elevate",
-  "Electric: MG ZS EV / Ola S1 / Ather 450X",
-  "Two-Wheeler: Honda Activa / TVS Jupiter",
-  "Two-Wheeler: Royal Enfield / Bajaj Pulsar",
-  "Commercial: Tata Ace / Mahindra Bolero Pik-Up",
-  "Other (Specify Custom Vehicle Model)",
-];
-
-const AMOUNT_PRESETS = [
-  { label: "₹3 Lakhs", value: "300000" },
-  { label: "₹5 Lakhs", value: "500000" },
-  { label: "₹8 Lakhs", value: "800000" },
-  { label: "₹12 Lakhs", value: "1200000" },
-  { label: "₹20 Lakhs", value: "2000000" },
-];
-
-const VEHICLE_CONDITIONS: ("New Vehicle" | "Pre-Owned / Used Vehicle")[] = [
-  "New Vehicle",
-  "Pre-Owned / Used Vehicle",
-];
 
 export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps> = ({
   data,
@@ -93,10 +28,12 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
   const [isPurposeModalOpen, setIsPurposeModalOpen] = useState(false);
   const [isTenureModalOpen, setIsTenureModalOpen] = useState(false);
   const [isModelModalOpen, setIsModelModalOpen] = useState(false);
+
   const [isCustomTenure, setIsCustomTenure] = useState(() => {
     if (!data.preferredTenureMonths) return false;
     return !TENURE_OPTIONS.some((t) => t.value === data.preferredTenureMonths && t.value !== "Other");
   });
+
   const [isCustomModel, setIsCustomModel] = useState(() => {
     if (!data.vehicleMakeModel) return false;
     return !VEHICLE_MODELS.some((m) => m === data.vehicleMakeModel && !m.startsWith("Other"));
@@ -108,10 +45,7 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
   const handleSelectPurpose = (item: string) => {
     onChange("purpose", item);
     setIsPurposeModalOpen(false);
-    if (item !== "Others") {
-      onChange("customPurpose", "");
-    }
-    // Auto-sync condition if explicitly choosing Pre-Owned / Used Car
+    if (item !== "Others") onChange("customPurpose", "");
     if (item === "Pre-Owned / Used Car" && !data.vehicleCondition) {
       onChange("vehicleCondition", "Pre-Owned / Used Vehicle");
     } else if (item === "New Car (Passenger)" && !data.vehicleCondition) {
@@ -154,22 +88,14 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
       <View style={styles.card}>
         <View style={styles.cardHeaderRow}>
           <View style={styles.cardHeaderLeft}>
-            <Ionicons
-              name="cash-outline"
-              size={20}
-              color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
-            />
+            <Ionicons name="cash-outline" size={20} color={BrandColors.PRIMARY_ORANGE || "#EA580C"} />
             <Text style={styles.cardTitle}>Required Vehicle Loan Amount</Text>
           </View>
         </View>
-        <Text style={styles.cardDescription}>
-          Enter your required loan amount or select one of the quick presets below.
-        </Text>
+        <Text style={styles.cardDescription}>Enter your required loan amount or select one of the quick presets below.</Text>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Amount (₹) <Text style={styles.requiredStar}>*</Text>
-          </Text>
+          <Text style={styles.label}>Amount (₹) <Text style={styles.requiredStar}>*</Text></Text>
           <TextInput
             style={[styles.input, errors.requiredAmount && styles.inputError]}
             placeholder="Enter required loan amount (₹)"
@@ -178,14 +104,11 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
             value={data.requiredAmount}
             onChangeText={(text) => onChange("requiredAmount", text)}
           />
-          {errors.requiredAmount && (
-            <Text style={styles.errorText}>{errors.requiredAmount}</Text>
-          )}
+          {errors.requiredAmount && <Text style={styles.errorText}>{errors.requiredAmount}</Text>}
 
           <View style={styles.chipRow}>
             {AMOUNT_PRESETS.map((item) => {
-              const isSelected =
-                Boolean(data.requiredAmount) && data.requiredAmount === item.value;
+              const isSelected = Boolean(data.requiredAmount) && data.requiredAmount === item.value;
               return (
                 <TouchableOpacity
                   key={item.value}
@@ -193,14 +116,7 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
                   onPress={() => onChange("requiredAmount", item.value)}
                   style={[styles.chip, isSelected && styles.chipActive]}
                 >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      isSelected && styles.chipTextActive,
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
+                  <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>{item.label}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -212,170 +128,82 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
       <View style={styles.card}>
         <View style={styles.cardHeaderRow}>
           <View style={styles.cardHeaderLeft}>
-            <Ionicons
-              name="car-outline"
-              size={20}
-              color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
-            />
+            <Ionicons name="car-outline" size={20} color={BrandColors.PRIMARY_ORANGE || "#EA580C"} />
             <Text style={styles.cardTitle}>Vehicle Category & Usage</Text>
           </View>
         </View>
-        <Text style={styles.cardDescription}>
-          Select your automobile category. Select "Others" if your specific requirement is not listed.
-        </Text>
+        <Text style={styles.cardDescription}>Select your automobile category. Select "Others" if your specific requirement is not listed.</Text>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Select Category / Purpose <Text style={styles.requiredStar}>*</Text>
-          </Text>
+          <Text style={styles.label}>Select Category / Purpose <Text style={styles.requiredStar}>*</Text></Text>
           <TouchableOpacity
-            style={[
-              styles.dropdownSelector,
-              Boolean(data.purpose) && styles.dropdownSelectorActive,
-              errors.purpose && styles.inputError,
-            ]}
+            style={[styles.dropdownSelector, Boolean(data.purpose) && styles.dropdownSelectorActive, errors.purpose && styles.inputError]}
             onPress={() => setIsPurposeModalOpen(true)}
             activeOpacity={0.8}
           >
-            <Text
-              style={
-                data.purpose ? styles.dropdownText : styles.dropdownPlaceholder
-              }
-            >
+            <Text style={data.purpose ? styles.dropdownText : styles.dropdownPlaceholder}>
               {data.purpose || "Select Vehicle Category / Purpose..."}
             </Text>
-            <Ionicons
-              name="chevron-down"
-              size={18}
-              color={
-                data.purpose
-                  ? BrandColors.PRIMARY_ORANGE || "#EA580C"
-                  : "#64748B"
-              }
-            />
+            <Ionicons name="chevron-down" size={18} color={data.purpose ? BrandColors.PRIMARY_ORANGE || "#EA580C" : "#64748B"} />
           </TouchableOpacity>
-          {errors.purpose && (
-            <Text style={styles.errorText}>{errors.purpose}</Text>
-          )}
+          {errors.purpose && <Text style={styles.errorText}>{errors.purpose}</Text>}
 
-          {/* Conditional input if Others is selected */}
           {isOthersSelected && (
             <View style={styles.customInputContainer}>
-              <Text style={styles.label}>
-                Specify Custom Vehicle Purpose <Text style={styles.requiredStar}>*</Text>
-              </Text>
+              <Text style={styles.label}>Specify Custom Vehicle Purpose <Text style={styles.requiredStar}>*</Text></Text>
               <TextInput
-                style={[
-                  styles.input,
-                  errors.customPurpose && styles.inputError,
-                ]}
+                style={[styles.input, errors.customPurpose && styles.inputError]}
                 placeholder="Enter custom vehicle purpose"
                 placeholderTextColor="#94A3B8"
                 value={data.customPurpose || ""}
                 onChangeText={(text) => onChange("customPurpose", text)}
               />
-              {errors.customPurpose && (
-                <Text style={styles.errorText}>{errors.customPurpose}</Text>
-              )}
+              {errors.customPurpose && <Text style={styles.errorText}>{errors.customPurpose}</Text>}
             </View>
           )}
         </View>
       </View>
 
-      {/* 3. Repayment Tenure Card with Dropdown & Extended Options */}
+      {/* 3. Repayment Tenure Card */}
       <View style={styles.card}>
         <View style={styles.cardHeaderRow}>
           <View style={styles.cardHeaderLeft}>
-            <Ionicons
-              name="time-outline"
-              size={20}
-              color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
-            />
+            <Ionicons name="time-outline" size={20} color={BrandColors.PRIMARY_ORANGE || "#EA580C"} />
             <Text style={styles.cardTitle}>Repayment Tenure</Text>
           </View>
         </View>
-        <Text style={styles.cardDescription}>
-          Select your intended loan tenure. Choose from short-term (below 1 year) to long-term (up to 7 years) or specify custom months.
-        </Text>
+        <Text style={styles.cardDescription}>Select your intended loan tenure. Choose from short-term (below 1 year) to long-term (up to 7 years) or specify custom months.</Text>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Select Tenure <Text style={styles.requiredStar}>*</Text>
-          </Text>
+          <Text style={styles.label}>Select Tenure <Text style={styles.requiredStar}>*</Text></Text>
           <TouchableOpacity
-            style={[
-              styles.dropdownSelector,
-              Boolean(data.preferredTenureMonths) && styles.dropdownSelectorActive,
-              errors.preferredTenureMonths && styles.inputError,
-            ]}
+            style={[styles.dropdownSelector, Boolean(data.preferredTenureMonths) && styles.dropdownSelectorActive, errors.preferredTenureMonths && styles.inputError]}
             onPress={() => setIsTenureModalOpen(true)}
             activeOpacity={0.8}
           >
-            <Text
-              style={
-                data.preferredTenureMonths
-                  ? styles.dropdownText
-                  : styles.dropdownPlaceholder
-              }
-            >
+            <Text style={data.preferredTenureMonths ? styles.dropdownText : styles.dropdownPlaceholder}>
               {getTenureLabel(data.preferredTenureMonths)}
             </Text>
-            <Ionicons
-              name="chevron-down"
-              size={18}
-              color={
-                data.preferredTenureMonths
-                  ? BrandColors.PRIMARY_ORANGE || "#EA580C"
-                  : "#64748B"
-              }
-            />
+            <Ionicons name="chevron-down" size={18} color={data.preferredTenureMonths ? BrandColors.PRIMARY_ORANGE || "#EA580C" : "#64748B"} />
           </TouchableOpacity>
-          {errors.preferredTenureMonths && (
-            <Text style={styles.errorText}>{errors.preferredTenureMonths}</Text>
-          )}
+          {errors.preferredTenureMonths && <Text style={styles.errorText}>{errors.preferredTenureMonths}</Text>}
 
-          {/* Quick preset chips */}
-          <View style={[styles.chipRow, { marginTop: 10 }]}>
-            {[
-              { label: "6 M", value: "6" },
-              { label: "1 Yr", value: "12" },
-              { label: "2 Yrs", value: "24" },
-              { label: "3 Yrs", value: "36" },
-              { label: "5 Yrs", value: "60" },
-              { label: "7 Yrs", value: "84" },
-            ].map((item) => {
+          <View style={styles.chipRow}>
+            {TENURE_QUICK_PRESETS.map((item) => {
               const isSelected = data.preferredTenureMonths === item.value;
               return (
-                <TouchableOpacity
-                  key={item.value}
-                  activeOpacity={0.7}
-                  onPress={() => handleSelectTenure(item.value)}
-                  style={[styles.chip, isSelected && styles.chipActive]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      isSelected && styles.chipTextActive,
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
+                <TouchableOpacity key={item.value} activeOpacity={0.7} onPress={() => handleSelectTenure(item.value)} style={[styles.chip, isSelected && styles.chipActive]}>
+                  <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>{item.label}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          {/* Custom Tenure Months input if Other selected */}
           {isCustomTenure && (
             <View style={styles.customInputContainer}>
-              <Text style={styles.label}>
-                Specify Custom Tenure (in Months) <Text style={styles.requiredStar}>*</Text>
-              </Text>
+              <Text style={styles.label}>Specify Custom Tenure (in Months) <Text style={styles.requiredStar}>*</Text></Text>
               <TextInput
-                style={[
-                  styles.input,
-                  errors.preferredTenureMonths && styles.inputError,
-                ]}
+                style={[styles.input, errors.preferredTenureMonths && styles.inputError]}
                 placeholder="Enter tenure in months (e.g. 15)"
                 placeholderTextColor="#94A3B8"
                 keyboardType="numeric"
@@ -391,101 +219,46 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
       <View style={styles.card}>
         <View style={styles.cardHeaderRow}>
           <View style={styles.cardHeaderLeft}>
-            <Ionicons
-              name="speedometer-outline"
-              size={20}
-              color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
-            />
+            <Ionicons name="speedometer-outline" size={20} color={BrandColors.PRIMARY_ORANGE || "#EA580C"} />
             <Text style={styles.cardTitle}>Vehicle Details & Valuation</Text>
           </View>
         </View>
-        <Text style={styles.cardDescription}>
-          Vehicle condition, model selection, estimated on-road price, and margin contribution.
-        </Text>
+        <Text style={styles.cardDescription}>Vehicle condition, model selection, estimated on-road price, and margin contribution.</Text>
 
-        {/* Vehicle Condition */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Vehicle Condition <Text style={styles.requiredStar}>*</Text>
-          </Text>
+          <Text style={styles.label}>Vehicle Condition <Text style={styles.requiredStar}>*</Text></Text>
           <View style={styles.conditionRow}>
             {VEHICLE_CONDITIONS.map((cond) => {
               const isSelected = data.vehicleCondition === cond;
               return (
-                <TouchableOpacity
-                  key={cond}
-                  activeOpacity={0.7}
-                  onPress={() => onChange("vehicleCondition", cond)}
-                  style={[
-                    styles.conditionPill,
-                    isSelected && styles.conditionPillActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.conditionPillText,
-                      isSelected && styles.conditionPillTextActive,
-                    ]}
-                  >
-                    {cond}
-                  </Text>
+                <TouchableOpacity key={cond} activeOpacity={0.7} onPress={() => onChange("vehicleCondition", cond)} style={[styles.conditionPill, isSelected && styles.conditionPillActive]}>
+                  <Text style={[styles.conditionPillText, isSelected && styles.conditionPillTextActive]}>{cond}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
-          {errors.vehicleCondition && (
-            <Text style={styles.errorText}>{errors.vehicleCondition}</Text>
-          )}
+          {errors.vehicleCondition && <Text style={styles.errorText}>{errors.vehicleCondition}</Text>}
         </View>
 
-        {/* Make & Model Dropdown with Custom option */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Vehicle Make & Model <Text style={styles.requiredStar}>*</Text>
-          </Text>
+          <Text style={styles.label}>Vehicle Make & Model <Text style={styles.requiredStar}>*</Text></Text>
           <TouchableOpacity
-            style={[
-              styles.dropdownSelector,
-              Boolean(data.vehicleMakeModel) && styles.dropdownSelectorActive,
-              errors.vehicleMakeModel && styles.inputError,
-            ]}
+            style={[styles.dropdownSelector, Boolean(data.vehicleMakeModel) && styles.dropdownSelectorActive, errors.vehicleMakeModel && styles.inputError]}
             onPress={() => setIsModelModalOpen(true)}
             activeOpacity={0.8}
           >
-            <Text
-              style={
-                data.vehicleMakeModel
-                  ? styles.dropdownText
-                  : styles.dropdownPlaceholder
-              }
-            >
+            <Text style={data.vehicleMakeModel ? styles.dropdownText : styles.dropdownPlaceholder}>
               {data.vehicleMakeModel || "Select Vehicle Make & Model..."}
             </Text>
-            <Ionicons
-              name="chevron-down"
-              size={18}
-              color={
-                data.vehicleMakeModel
-                  ? BrandColors.PRIMARY_ORANGE || "#EA580C"
-                  : "#64748B"
-              }
-            />
+            <Ionicons name="chevron-down" size={18} color={data.vehicleMakeModel ? BrandColors.PRIMARY_ORANGE || "#EA580C" : "#64748B"} />
           </TouchableOpacity>
-          {errors.vehicleMakeModel && (
-            <Text style={styles.errorText}>{errors.vehicleMakeModel}</Text>
-          )}
+          {errors.vehicleMakeModel && <Text style={styles.errorText}>{errors.vehicleMakeModel}</Text>}
 
-          {/* Conditional input if Other Model is chosen */}
           {isCustomModel && (
             <View style={styles.customInputContainer}>
-              <Text style={styles.label}>
-                Specify Custom Make & Model <Text style={styles.requiredStar}>*</Text>
-              </Text>
+              <Text style={styles.label}>Specify Custom Make & Model <Text style={styles.requiredStar}>*</Text></Text>
               <TextInput
-                style={[
-                  styles.input,
-                  errors.vehicleMakeModel && styles.inputError,
-                ]}
+                style={[styles.input, errors.vehicleMakeModel && styles.inputError]}
                 placeholder="Enter custom make & model (e.g. Skoda Kushaq Style)"
                 placeholderTextColor="#94A3B8"
                 value={data.vehicleMakeModel || ""}
@@ -495,11 +268,8 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
           )}
         </View>
 
-        {/* Estimated On-Road Price */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Estimated On-Road Price / Valuation (₹) <Text style={styles.requiredStar}>*</Text>
-          </Text>
+          <Text style={styles.label}>Estimated On-Road Price / Valuation (₹) <Text style={styles.requiredStar}>*</Text></Text>
           <TextInput
             style={[styles.input, errors.onRoadPrice && styles.inputError]}
             placeholder="Enter total on-road price / valuation (₹)"
@@ -508,12 +278,9 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
             value={data.onRoadPrice || ""}
             onChangeText={(text) => onChange("onRoadPrice", text)}
           />
-          {errors.onRoadPrice && (
-            <Text style={styles.errorText}>{errors.onRoadPrice}</Text>
-          )}
+          {errors.onRoadPrice && <Text style={styles.errorText}>{errors.onRoadPrice}</Text>}
         </View>
 
-        {/* Expected Down Payment */}
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Expected Down Payment / Margin Money (₹)</Text>
           <TextInput
@@ -526,7 +293,6 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
           />
         </View>
 
-        {/* If Used / Pre-Owned: Reg Number & Manufacturing Year */}
         {isUsedVehicle && (
           <>
             <View style={styles.fieldGroup}>
@@ -537,12 +303,9 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
                 placeholderTextColor="#94A3B8"
                 autoCapitalize="characters"
                 value={data.registrationNumber || ""}
-                onChangeText={(text) =>
-                  onChange("registrationNumber", text.toUpperCase())
-                }
+                onChangeText={(text) => onChange("registrationNumber", text.toUpperCase())}
               />
             </View>
-
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Manufacturing / Registration Year</Text>
               <TextInput
@@ -559,245 +322,33 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
         )}
       </View>
 
-      {/* Dropdown Modal for Purpose */}
-      <Modal
-        visible={isPurposeModalOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setIsPurposeModalOpen(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setIsPurposeModalOpen(false)}
-        >
-          <View
-            style={styles.modalContent}
-            onStartShouldSetResponder={() => true}
-          >
-            <View style={styles.modalHeaderRow}>
-              <Text style={styles.modalTitle}>Select Vehicle Category / Purpose</Text>
-              <TouchableOpacity onPress={() => setIsPurposeModalOpen(false)}>
-                <Ionicons name="close-circle" size={24} color="#94A3B8" />
-              </TouchableOpacity>
-            </View>
+      {/* Purpose Modal */}
+      <VehicleLoanSelectionModal visible={isPurposeModalOpen} title="Select Vehicle Category / Purpose" onClose={() => setIsPurposeModalOpen(false)}>
+        {VEHICLE_PURPOSES.map((purpose) => (
+          <OptionRow key={purpose} label={purpose} isSelected={data.purpose === purpose} onSelect={() => handleSelectPurpose(purpose)} />
+        ))}
+      </VehicleLoanSelectionModal>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {VEHICLE_PURPOSES.map((purpose) => {
-                const isSelected = data.purpose === purpose;
-                return (
-                  <TouchableOpacity
-                    key={purpose}
-                    style={[
-                      styles.optionItem,
-                      isSelected && styles.optionItemActive,
-                    ]}
-                    onPress={() => handleSelectPurpose(purpose)}
-                  >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        isSelected && styles.optionTextActive,
-                      ]}
-                    >
-                      {purpose}
-                    </Text>
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark"
-                        size={18}
-                        color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
-                      />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      {/* Tenure Modal */}
+      <VehicleLoanSelectionModal visible={isTenureModalOpen} title="Select Repayment Tenure" onClose={() => setIsTenureModalOpen(false)}>
+        <Text style={styles.modalSectionHeader}>Below 1 Year (Short Term)</Text>
+        {TENURE_OPTIONS.filter((t) => ["3", "6", "9"].includes(t.value)).map((item) => (
+          <OptionRow key={item.value} label={item.label} isSelected={data.preferredTenureMonths === item.value} onSelect={() => handleSelectTenure(item.value)} />
+        ))}
+        <Text style={styles.modalSectionHeaderSpaced}>1 Year & Above</Text>
+        {TENURE_OPTIONS.filter((t) => !["3", "6", "9"].includes(t.value)).map((item) => {
+          const isSelected = item.value === "Other" ? isCustomTenure : data.preferredTenureMonths === item.value;
+          return <OptionRow key={item.value} label={item.label} isSelected={isSelected} onSelect={() => handleSelectTenure(item.value)} />;
+        })}
+      </VehicleLoanSelectionModal>
 
-      {/* Dropdown Modal for Repayment Tenure */}
-      <Modal
-        visible={isTenureModalOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setIsTenureModalOpen(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setIsTenureModalOpen(false)}
-        >
-          <View
-            style={styles.modalContent}
-            onStartShouldSetResponder={() => true}
-          >
-            <View style={styles.modalHeaderRow}>
-              <Text style={styles.modalTitle}>Select Repayment Tenure</Text>
-              <TouchableOpacity onPress={() => setIsTenureModalOpen(false)}>
-                <Ionicons name="close-circle" size={24} color="#94A3B8" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Below 1 Year Header */}
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: "700",
-                  color: "#64748B",
-                  marginTop: 8,
-                  marginBottom: 4,
-                  textTransform: "uppercase",
-                }}
-              >
-                Below 1 Year (Short Term)
-              </Text>
-              {TENURE_OPTIONS.filter((t) => ["3", "6", "9"].includes(t.value)).map(
-                (item) => {
-                  const isSelected = data.preferredTenureMonths === item.value;
-                  return (
-                    <TouchableOpacity
-                      key={item.value}
-                      style={[
-                        styles.optionItem,
-                        isSelected && styles.optionItemActive,
-                      ]}
-                      onPress={() => handleSelectTenure(item.value)}
-                    >
-                      <Text
-                        style={[
-                          styles.optionText,
-                          isSelected && styles.optionTextActive,
-                        ]}
-                      >
-                        {item.label}
-                      </Text>
-                      {isSelected && (
-                        <Ionicons
-                          name="checkmark"
-                          size={18}
-                          color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
-                        />
-                      )}
-                    </TouchableOpacity>
-                  );
-                }
-              )}
-
-              {/* 1 Year and Above Header */}
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: "700",
-                  color: "#64748B",
-                  marginTop: 14,
-                  marginBottom: 4,
-                  textTransform: "uppercase",
-                }}
-              >
-                1 Year & Above
-              </Text>
-              {TENURE_OPTIONS.filter(
-                (t) => !["3", "6", "9"].includes(t.value)
-              ).map((item) => {
-                const isSelected =
-                  item.value === "Other"
-                    ? isCustomTenure
-                    : data.preferredTenureMonths === item.value;
-                return (
-                  <TouchableOpacity
-                    key={item.value}
-                    style={[
-                      styles.optionItem,
-                      isSelected && styles.optionItemActive,
-                    ]}
-                    onPress={() => handleSelectTenure(item.value)}
-                  >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        isSelected && styles.optionTextActive,
-                      ]}
-                    >
-                      {item.label}
-                    </Text>
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark"
-                        size={18}
-                        color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
-                      />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Dropdown Modal for Vehicle Make & Model */}
-      <Modal
-        visible={isModelModalOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setIsModelModalOpen(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setIsModelModalOpen(false)}
-        >
-          <View
-            style={styles.modalContent}
-            onStartShouldSetResponder={() => true}
-          >
-            <View style={styles.modalHeaderRow}>
-              <Text style={styles.modalTitle}>Select Vehicle Make & Model</Text>
-              <TouchableOpacity onPress={() => setIsModelModalOpen(false)}>
-                <Ionicons name="close-circle" size={24} color="#94A3B8" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {VEHICLE_MODELS.map((model) => {
-                const isSelected =
-                  model.startsWith("Other")
-                    ? isCustomModel
-                    : data.vehicleMakeModel === model;
-                return (
-                  <TouchableOpacity
-                    key={model}
-                    style={[
-                      styles.optionItem,
-                      isSelected && styles.optionItemActive,
-                    ]}
-                    onPress={() => handleSelectModel(model)}
-                  >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        isSelected && styles.optionTextActive,
-                      ]}
-                    >
-                      {model}
-                    </Text>
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark"
-                        size={18}
-                        color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
-                      />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      {/* Make & Model Modal */}
+      <VehicleLoanSelectionModal visible={isModelModalOpen} title="Select Vehicle Make & Model" onClose={() => setIsModelModalOpen(false)}>
+        {VEHICLE_MODELS.map((model) => {
+          const isSelected = model.startsWith("Other") ? isCustomModel : data.vehicleMakeModel === model;
+          return <OptionRow key={model} label={model} isSelected={isSelected} onSelect={() => handleSelectModel(model)} />;
+        })}
+      </VehicleLoanSelectionModal>
     </View>
   );
 };

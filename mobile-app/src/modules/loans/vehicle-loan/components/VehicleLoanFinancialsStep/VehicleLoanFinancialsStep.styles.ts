@@ -237,4 +237,21 @@ export const styles = StyleSheet.create({
     color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
     fontWeight: Typography.fontWeight.bold,
   },
+  modalSectionHeader: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#64748B",
+    marginTop: 8,
+    marginBottom: 4,
+    textTransform: "uppercase",
+  },
+  modalSectionHeaderSpaced: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#64748B",
+    marginTop: 14,
+    marginBottom: 4,
+    textTransform: "uppercase",
+  },
 });
+
