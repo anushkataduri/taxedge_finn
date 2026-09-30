@@ -458,9 +458,6 @@ export function AuthenticationScreen() {
               <Text style={[reauthStyles.welcomeTitle, { color: colors.text }]}>
                 Welcome Back 👋
               </Text>
-              <Text style={[reauthStyles.welcomeSub, { color: colors.textSecondary }]}>
-                {mobileNumber || "Authenticate to continue"}
-              </Text>
             </View>
 
             {/* Error Banner */}

@@ -4,16 +4,25 @@ import { useAuthStore } from "@/modules/authentication/store/authStore";
 import { authStorage } from "@/modules/authentication/services/authStorage";
 import { addDraftToIndex, removeDraftFromIndex } from "@/shared/hooks/useServiceDraft";
 
-function getCleanMobile(): string {
+function getAuthMobile(): string {
   const state = useAuthStore.getState();
-  const rawMobile =
+  return String(
     state.customer?.mobile ||
     state.authenticatedUser?.mobileNumber ||
     (state.authenticatedUser as any)?.mobile ||
     authStorage.getSession().activeMobile ||
     state.mobileNumber ||
-    "user";
-  return String(rawMobile).replace(/\D/g, "") || "user";
+    ""
+  );
+}
+
+function getCleanMobile(): string {
+  return getAuthMobile().replace(/\D/g, "") || "user";
+}
+
+export function getTdsCustId(fallbackMobile?: string): string {
+  const rawMobile = getAuthMobile() || fallbackMobile || "";
+  return rawMobile.replace(/\D/g, "").slice(-10);
 }
 
 const getStorageKeyForm = () => `@taxedge_draft_${getCleanMobile()}_tds-refund`;

@@ -664,10 +664,29 @@ export const getServiceLabelThemedStyle = (isDark: boolean, colors: any) => ({
   color: isDark ? colors.text : "#0A2540",
 });
 
-export const getDraftCardThemedStyle = (isDark: boolean, colors: any, accentColor: string, lightBg: string, lightBorder: string) => ({
+export const getDraftCardThemedStyle = (
+  isDark: boolean,
+  colors: any,
+  accentColor: string,
+  lightBg: string,
+  lightBorder: string,
+) => ({
   backgroundColor: isDark ? colors.backgroundElement : lightBg,
   borderColor: accentColor,
   shadowColor: accentColor,
   borderTopColor: isDark ? colors.border : lightBorder,
 });
+
+/** Dynamic style for the heroHeader — depends on theme and safe-area inset. */
+export const getHeroHeaderStyle = (colors: any, topInset: number) => ({
+  backgroundColor: colors.primaryDark as string,
+  paddingTop: topInset,
+});
+
+/** Dynamic style for card/stat containers that follow theme background. */
+export const getThemedCardStyle = (colors: any) => ({
+  backgroundColor: colors.backgroundElement as string,
+  borderColor: colors.border as string,
+});
+
 

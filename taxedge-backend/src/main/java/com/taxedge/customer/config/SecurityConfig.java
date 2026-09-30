@@ -32,6 +32,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/customer",
                     "/customer/**",
+                    "/gst/**",
                     "/otp/**",
                     "/auth/**",
                     "/v3/api-docs",

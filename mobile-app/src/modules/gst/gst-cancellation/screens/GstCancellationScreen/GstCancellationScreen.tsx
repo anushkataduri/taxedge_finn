@@ -167,7 +167,7 @@ export default function GstCancellationScreen() {
   );
 
   const choice = (key: "isVoluntaryUnderOneYear" | "areAllReturnsFiled") => (
-    <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
+    <View style={styles.rowGap12}>
       {renderChoiceButton(key, true)}
       {renderChoiceButton(key, false)}
     </View>
@@ -211,7 +211,7 @@ export default function GstCancellationScreen() {
         <View style={[styles.checkbox, form.isFinalReturnDeclared && styles.checkboxActive]}>
           {form.isFinalReturnDeclared && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
         </View>
-        <View style={{ flex: 1 }}>
+        <View style={styles.flex1}>
           <Text style={styles.declarationLabel}>Final Return Declaration (GSTR-10) <Text style={styles.star}>*</Text></Text>
           <Text style={styles.declarationSubText}>I confirm all outward tax dues are settled and will file final return GSTR-10 within 3 months of cancellation order.</Text>
         </View>

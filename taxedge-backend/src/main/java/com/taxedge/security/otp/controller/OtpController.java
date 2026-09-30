@@ -1,5 +1,7 @@
 package com.taxedge.security.otp.controller;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,20 +34,21 @@ public class OtpController {
 
     @PostMapping("/verify")
     public ResponseEntity<?> verifyOtp(@RequestBody Otp otp) {
-        boolean isValid = otpService.verifyOtp(otp);
-
-        if (isValid) {
-            boolean isExisting = customerRepository.findByMobileNumber(otp.getMobileNumber()).isPresent();
-            return ResponseEntity.ok(java.util.Map.of(
-                "success", true,
-                "isExistingUser", isExisting,
-                "message", "OTP verified successfully"
-            ));
-        } else {
-            return ResponseEntity.status(400).body(java.util.Map.of(
+        if (!otpService.verifyOtp(otp)) {
+            return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
                 "message", "Invalid OTP"
             ));
         }
+
+        boolean isExisting = customerRepository.findByMobileNumber(otp.getMobileNumber()).isPresent();
+
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "isExistingUser", isExisting,
+            "customerExists", isExisting,
+            "hasPasscode", isExisting,
+            "message", "OTP verified successfully"
+        ));
     }
 }

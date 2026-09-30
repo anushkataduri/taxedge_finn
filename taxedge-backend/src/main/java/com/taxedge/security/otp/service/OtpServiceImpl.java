@@ -23,9 +23,18 @@ public class OtpServiceImpl implements OtpService {
     public String generateOtp(Otp otp) {
         int code = 100000 + secureRandom.nextInt(900000);
         String otpCode = String.valueOf(code);
-        otp.setOtpCode(otpCode);
 
-        otpRepository.save(otp);
+        Otp otpEntity = otpRepository.findTopByMobileNumberOrderByIdDesc(otp.getMobileNumber());
+        if (otpEntity != null) {
+            otpEntity.setOtpCode(otpCode);
+        } else {
+            otpEntity = Otp.builder()
+                    .mobileNumber(otp.getMobileNumber())
+                    .otpCode(otpCode)
+                    .build();
+        }
+
+        otpRepository.save(otpEntity);
 
         System.out.println("OTP for " + otp.getMobileNumber() + " is: " + otpCode);
 
@@ -35,19 +44,15 @@ public class OtpServiceImpl implements OtpService {
     @Override
     public boolean verifyOtp(Otp otp) {
         if (otp.getMobileNumber() == null || otp.getOtpCode() == null) {
-            throw new IllegalArgumentException("Mobile number and OTP code must be provided");
+            return false;
         }
 
         Otp savedOtp = otpRepository.findTopByMobileNumberOrderByIdDesc(otp.getMobileNumber());
 
         if (savedOtp == null) {
-            throw new RuntimeException("OTP not found");
+            return false;
         }
 
-        if (!savedOtp.getOtpCode().equals(otp.getOtpCode())) {
-            throw new RuntimeException("Invalid OTP");
-        }
-
-        return true;
+        return otp.getOtpCode().equals(savedOtp.getOtpCode());
     }
 }

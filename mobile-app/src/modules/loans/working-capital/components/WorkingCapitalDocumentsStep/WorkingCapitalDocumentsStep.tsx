@@ -11,7 +11,6 @@ import {
 import { DocumentPreviewModal } from "@/modules/itr/itr-filing/components/DocumentPreviewModal/DocumentPreviewModal";
 import { TdsDocumentCard } from "@/modules/itr/tds/components/upload/TdsDocumentCard/TdsDocumentCard";
 import { TdsChecklistItem } from "@/modules/itr/tds/types/checklist.types";
-import { ItrDocumentItem } from "@/modules/itr/itr-filing/types/itrFiling.types";
 import { styles } from "./WorkingCapitalDocumentsStep.styles";
 
 export interface WorkingCapitalDocumentsStepProps {
@@ -31,32 +30,6 @@ const CATEGORIES: LoanDocumentCategory[] = [
   "Collateral & Others",
 ];
 
-const mapLoanDocToTdsChecklist = (doc: LoanDocumentItem): TdsChecklistItem => {
-  const isUploaded = Boolean(doc.fileUri);
-  return {
-    id: doc.id,
-    title: doc.name,
-    subtitle: doc.subtitle,
-    isMandatory: doc.required,
-    status: isUploaded ? "uploaded" : "not_uploaded",
-    fileName: doc.fileName || (isUploaded ? doc.name : undefined),
-    fileSize: doc.fileSize,
-    fileUri: doc.fileUri,
-  };
-};
-
-const mapLoanDocToItrDoc = (doc: LoanDocumentItem): ItrDocumentItem => ({
-  id: doc.id,
-  name: doc.name,
-  subtitle: doc.subtitle || "",
-  tier: doc.required ? "REQUIRED" : "RECOMMENDED",
-  required: doc.required,
-  docGroup: "common",
-  fileUri: doc.fileUri,
-  fileName: doc.fileName || (doc.fileUri ? doc.name : undefined),
-  fileSize: doc.fileSize,
-});
-
 export const WorkingCapitalDocumentsStep: React.FC<WorkingCapitalDocumentsStepProps> = ({
   documents,
   onDocumentUploaded,
@@ -68,71 +41,50 @@ export const WorkingCapitalDocumentsStep: React.FC<WorkingCapitalDocumentsStepPr
     setActiveUploadDoc(doc);
   };
 
-  const handleCloseUploadModal = () => {
-    setActiveUploadDoc(null);
-  };
-
   const handleFilePicked = (file: UploadedFileInfo) => {
     if (!activeUploadDoc) return;
     onDocumentUploaded(activeUploadDoc.id, file.uri, file.name, file.size);
-    handleCloseUploadModal();
+    setActiveUploadDoc(null);
   };
-
-  const handleDeleteDocument = (docId: string) => {
-    onDocumentUploaded(docId, "", "", "");
-  };
-
-  const handleOpenPreview = (doc: LoanDocumentItem) => {
-    setPreviewDoc(doc);
-  };
-
-  const handleClosePreview = () => {
-    setPreviewDoc(null);
-  };
-
-  const handleChangeFromPreview = (itrDoc: ItrDocumentItem) => {
-    const docToUpload = documents.find((d) => d.id === itrDoc.id) || previewDoc;
-    handleClosePreview();
-    if (docToUpload) {
-      handleUploadClick(docToUpload);
-    }
-  };
-
-  const getCategoryDocs = (category: LoanDocumentCategory): LoanDocumentItem[] =>
-    documents.filter((d) => d.category === category);
-
-  const renderDocumentCard = (doc: LoanDocumentItem) => {
-    const tdsItem = mapLoanDocToTdsChecklist(doc);
-    return (
-      <TdsDocumentCard
-        key={doc.id}
-        item={tdsItem}
-        onUploadPress={() => handleUploadClick(doc)}
-        onChange={() => handleUploadClick(doc)}
-        onDelete={() => handleDeleteDocument(doc.id)}
-        onView={() => handleOpenPreview(doc)}
-      />
-    );
-  };
-
-  const renderCategorySection = (category: LoanDocumentCategory) => {
-    const categoryDocs = getCategoryDocs(category);
-    if (categoryDocs.length === 0) return null;
-
-    return (
-      <View key={category} style={styles.categoryContainer}>
-        <Text style={styles.categoryHeader}>{category}</Text>
-        {categoryDocs.map(renderDocumentCard)}
-      </View>
-    );
-  };
-
-  const previewItrDoc = previewDoc ? mapLoanDocToItrDoc(previewDoc) : null;
 
   return (
     <View style={styles.container}>
       {/* Categorized Document List */}
-      {CATEGORIES.map(renderCategorySection)}
+      {CATEGORIES.map((category) => {
+        const categoryDocs = documents.filter((d) => d.category === category);
+        if (categoryDocs.length === 0) return null;
+
+        return (
+          <View key={category} style={styles.categoryContainer}>
+            <Text style={styles.categoryHeader}>{category}</Text>
+            {categoryDocs.map((doc) => {
+              const isUploaded = Boolean(doc.fileUri);
+
+              const tdsItem: TdsChecklistItem = {
+                id: doc.id,
+                title: doc.name,
+                subtitle: doc.subtitle,
+                isMandatory: doc.required,
+                status: isUploaded ? "uploaded" : "not_uploaded",
+                fileName: doc.fileName || (isUploaded ? `${doc.name}.pdf` : undefined),
+                fileSize: doc.fileSize || (isUploaded ? "< 2 MB" : undefined),
+                fileUri: doc.fileUri,
+              };
+
+              return (
+                <TdsDocumentCard
+                  key={doc.id}
+                  item={tdsItem}
+                  onUploadPress={() => handleUploadClick(doc)}
+                  onChange={() => handleUploadClick(doc)}
+                  onDelete={() => onDocumentUploaded(doc.id, "", "", "")}
+                  onView={() => setPreviewDoc(doc)}
+                />
+              );
+            })}
+          </View>
+        );
+      })}
 
       {/* Upload Modal */}
       {activeUploadDoc && (
@@ -140,7 +92,7 @@ export const WorkingCapitalDocumentsStep: React.FC<WorkingCapitalDocumentsStepPr
           visible={Boolean(activeUploadDoc)}
           docTitle={activeUploadDoc.name}
           onFilePicked={handleFilePicked}
-          onClose={handleCloseUploadModal}
+          onClose={() => setActiveUploadDoc(null)}
         />
       )}
 
@@ -148,9 +100,12 @@ export const WorkingCapitalDocumentsStep: React.FC<WorkingCapitalDocumentsStepPr
       {previewDoc && (
         <DocumentPreviewModal
           visible={Boolean(previewDoc)}
-          document={previewItrDoc}
-          onClose={handleClosePreview}
-          onChangeFile={handleChangeFromPreview}
+          document={previewDoc as any}
+          onClose={() => setPreviewDoc(null)}
+          onChangeFile={(doc) => {
+            setPreviewDoc(null);
+            setActiveUploadDoc(doc as any);
+          }}
         />
       )}
     </View>
@@ -158,6 +113,5 @@ export const WorkingCapitalDocumentsStep: React.FC<WorkingCapitalDocumentsStepPr
 };
 
 export default WorkingCapitalDocumentsStep;
-
 
 

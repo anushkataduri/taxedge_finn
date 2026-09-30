@@ -13,12 +13,12 @@ import { StatusBadge } from "../../components/StatusBadge";
 import { ReusableStepCard } from "../../components/ReusableStepCard";
 import { WorkflowInfoCard } from "../../components/WorkflowInfoCard";
 import { PrimaryButton } from "../../components/PrimaryButton";
+import { styles } from "./PreviousYearReuseExplanationScreen.styles";
 import {
-  styles,
   getContainerInsetsStyle,
   getScrollContentInsetsStyle,
   getBottomBarInsetsStyle,
-} from "./PreviousYearReuseExplanationScreen.styles";
+} from "@/shared/utils/screenInsets";
 
 export const PreviousYearReuseExplanationScreen: React.FC = () => {
   const router = useRouter();

@@ -56,7 +56,7 @@ export const ApplicationSuccessScreen: React.FC<ApplicationSuccessScreenProps> =
   const uploadedCount = params.uploadedDocsCount || "0";
   const totalCount = params.totalDocsCount || "0";
   const docsUploaded = `${uploadedCount} of ${totalCount} received`;
-  const refundBank = params.refundBank || "";
+  const refundBank = params.refundBank || "Verified Primary Bank";
   const taxRegime = params.regime || "New Tax Regime";
 
   const summaryData: ApplicationSummaryData = {
@@ -170,16 +170,16 @@ export const ApplicationSuccessScreen: React.FC<ApplicationSuccessScreenProps> =
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleGoHome}
-          style={[styles.secondaryButton, styles.secondaryButtonWithMargin]}
+          style={[styles.secondaryButton, { marginTop: 8 }]}
         >
           <Ionicons name="home-outline" size={18} color="#0B1F3A" />
-          <Text style={[styles.secondaryButtonText, styles.secondaryButtonDarkText]}>Go Home</Text>
+          <Text style={[styles.secondaryButtonText, { color: "#0B1F3A" }]}>Go Home</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleDownload}
-          style={[styles.secondaryButton, styles.secondaryButtonWithMargin]}
+          style={[styles.secondaryButton, { marginTop: 8 }]}
         >
           <Ionicons name="download-outline" size={18} color="#F97316" />
           <Text style={styles.secondaryButtonText}>Download TaxEdge Application Receipt</Text>
