@@ -8,6 +8,8 @@ import {
   LoanDocumentItem,
   CustomerProfileSummary,
 } from "../../../types/loans.types";
+import { BrandColors } from "../../../../../shared/theme";
+import { formatTenureEquivalent } from "../BusinessLoanFinancialsStep/BusinessLoanFinancialsStep";
 import { styles } from "./BusinessLoanReviewStep.styles";
 
 export interface BusinessLoanReviewStepProps {
@@ -21,44 +23,36 @@ export interface BusinessLoanReviewStepProps {
   onGoToStep: (stepIndex: number) => void;
 }
 
-const REVIEW_DOCUMENTS_LIST = [
-  "PAN Card",
-  "Aadhaar Card",
-  "KYC of Directors / Partners",
-  "Business Address Proof",
-  "Current Account Bank Statements",
-  "GST Certificate (REG-06)",
-  "GST Returns (12 Months)",
-  "Business ITR (Last 2-3 Years)",
-  "Audited Balance Sheet",
-  "Profit & Loss Statement",
-  "Cash Flow Statement",
-  "Udyam Registration Certificate",
-  "Business Registration Proof",
-  "Existing Loan Statement",
-  "Existing Loan Sanction Letters",
-  "Business Expansion Document",
-];
-
 export const BusinessLoanReviewStep: React.FC<BusinessLoanReviewStepProps> = ({
   loanDetails,
   businessDetails,
   bankingDetails,
+  documents,
   profile,
   isConsentChecked,
   onConsentToggle,
   onGoToStep,
 }) => {
   const formatCurrency = (val?: string | number) => {
+    if (!val) return "—";
     const num = Number(val);
-    if (!val || isNaN(num)) return "₹10,00,000";
+    if (isNaN(num)) return String(val);
     return "₹" + num.toLocaleString("en-IN");
   };
 
   const maskAcc = (acc?: string) => {
-    if (!acc || acc.length < 4) return "XXXXXX9876";
+    if (!acc) return "—";
+    if (acc.length <= 4) return acc;
     return `XXXXXX${acc.slice(-4)}`;
   };
+
+  const maskAadhaar = (aadhaar?: string) => {
+    if (!aadhaar) return "—";
+    if (aadhaar.length <= 4) return aadhaar;
+    return `XXXX-XXXX-${aadhaar.slice(-4)}`;
+  };
+
+  const uploadedDocs = documents.filter((d) => Boolean(d.fileUri && d.fileUri.trim() !== ""));
 
   return (
     <View style={styles.container}>
@@ -72,36 +66,38 @@ export const BusinessLoanReviewStep: React.FC<BusinessLoanReviewStepProps> = ({
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
-            <View style={[styles.iconBox, { backgroundColor: "#E0F2FE" }]}>
+            <View style={[styles.iconBox, styles.iconBoxBlue]}>
               <Ionicons name="person" size={16} color="#2563EB" />
             </View>
             <Text style={styles.cardTitle}>Applicant Information</Text>
           </View>
-          <View style={styles.verifiedBadge}>
-            <Ionicons name="checkmark-circle" size={14} color="#166534" />
-            <Text style={styles.verifiedText}>Verified Profile</Text>
-          </View>
+          {profile?.name ? (
+            <View style={styles.verifiedBadge}>
+              <Ionicons name="checkmark-circle" size={14} color="#166534" />
+              <Text style={styles.verifiedText}>Verified Profile</Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.row}>
           <Text style={styles.label}>Name</Text>
-          <Text style={styles.value}>{profile?.name || "Vani"}</Text>
+          <Text style={styles.value}>{profile?.name || "—"}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Mobile</Text>
-          <Text style={styles.value}>{profile?.mobile || "9121442578"}</Text>
+          <Text style={styles.value}>{profile?.mobile || "—"}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Email</Text>
-          <Text style={styles.value}>{profile?.email || "vani@gmail.com"}</Text>
+          <Text style={styles.value}>{profile?.email || "—"}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>PAN Number</Text>
-          <Text style={styles.value}>{profile?.pan || "ANJPU4967E"}</Text>
+          <Text style={styles.value}>{profile?.pan || "—"}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Aadhaar</Text>
-          <Text style={styles.value}>XXXX-XXXX-6987</Text>
+          <Text style={styles.value}>{maskAadhaar(profile?.aadhaar)}</Text>
         </View>
       </View>
 
@@ -109,8 +105,8 @@ export const BusinessLoanReviewStep: React.FC<BusinessLoanReviewStepProps> = ({
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
-            <View style={[styles.iconBox, { backgroundColor: "#FFF7ED" }]}>
-              <Ionicons name="cash" size={16} color="#EA580C" />
+            <View style={[styles.iconBox, styles.iconBoxOrange]}>
+              <Ionicons name="cash" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
             </View>
             <Text style={styles.cardTitle}>Loan Requirement</Text>
           </View>
@@ -130,11 +126,15 @@ export const BusinessLoanReviewStep: React.FC<BusinessLoanReviewStepProps> = ({
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Purpose</Text>
-          <Text style={styles.value}>{loanDetails.purpose || "Business Expansion"}</Text>
+          <Text style={styles.value}>{loanDetails.purpose || "—"}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Preferred Tenure</Text>
-          <Text style={styles.value}>{loanDetails.preferredTenureMonths || "36"} Months</Text>
+          <Text style={styles.value}>
+            {loanDetails.preferredTenureMonths
+              ? formatTenureEquivalent(loanDetails.preferredTenureMonths)
+              : "—"}
+          </Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Existing Loans</Text>
@@ -144,20 +144,18 @@ export const BusinessLoanReviewStep: React.FC<BusinessLoanReviewStepProps> = ({
           <>
             <View style={styles.row}>
               <Text style={styles.label}>Existing Lender Name</Text>
-              <Text style={styles.value}>HDFC Bank</Text>
+              <Text style={styles.value}>{bankingDetails.existingLenderName || "—"}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Outstanding Amount</Text>
-              <Text style={styles.value}>₹5,00,000</Text>
+              <Text style={styles.label}>Total Active Limit</Text>
+              <Text style={styles.value}>{formatCurrency(bankingDetails.existingLoanOutstanding)}</Text>
             </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Current EMI</Text>
-              <Text style={styles.value}>₹12,000</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Remaining Tenure</Text>
-              <Text style={styles.value}>24 Months</Text>
-            </View>
+            {Boolean(loanDetails.existingEmi) && (
+              <View style={styles.row}>
+                <Text style={styles.label}>Existing EMI</Text>
+                <Text style={styles.value}>{formatCurrency(loanDetails.existingEmi)}</Text>
+              </View>
+            )}
           </>
         )}
       </View>
@@ -166,7 +164,7 @@ export const BusinessLoanReviewStep: React.FC<BusinessLoanReviewStepProps> = ({
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
-            <View style={[styles.iconBox, { backgroundColor: "#F3E8FF" }]}>
+            <View style={[styles.iconBox, styles.iconBoxPurple]}>
               <Ionicons name="git-network-outline" size={16} color="#7C3AED" />
             </View>
             <Text style={styles.cardTitle}>Business Details</Text>
@@ -179,37 +177,43 @@ export const BusinessLoanReviewStep: React.FC<BusinessLoanReviewStepProps> = ({
 
         <View style={styles.row}>
           <Text style={styles.label}>Firm / Business Name</Text>
-          <Text style={styles.value}>{businessDetails.businessName || "Levitica"}</Text>
+          <Text style={styles.value}>{businessDetails.businessName || "—"}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Business Constitution</Text>
-          <Text style={styles.value}>{businessDetails.businessConstitution || "Private Limited Company"}</Text>
+          <Text style={styles.value}>{businessDetails.businessConstitution || "—"}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Authorized Signatory</Text>
-          <Text style={styles.value}>{businessDetails.signatoryName || "Ramesh Kumar"}</Text>
+          <Text style={styles.value}>{businessDetails.signatoryName || "—"}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>GSTIN</Text>
-          <Text style={styles.value}>{businessDetails.gstin || "29AAAAA0000A1Z5"}</Text>
+          <Text style={styles.value}>{businessDetails.gstin || "—"}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Udyam Registration</Text>
           <Text style={styles.value}>
-            {businessDetails.udyamRegistration ? `Yes (${businessDetails.udyamRegistration})` : "Yes (UDYAM123456)"}
+            {businessDetails.hasUdyam && businessDetails.udyamRegistration
+              ? `Yes (${businessDetails.udyamRegistration})`
+              : businessDetails.hasUdyam
+              ? "Yes"
+              : "No"}
           </Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Business Vintage</Text>
-          <Text style={styles.value}>{businessDetails.businessVintageYears || "3"} Years</Text>
+          <Text style={styles.value}>
+            {businessDetails.businessVintageYears ? `${businessDetails.businessVintageYears}` : "—"}
+          </Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Annual Turnover</Text>
-          <Text style={styles.value}>{formatCurrency(businessDetails.annualTurnover || "5000000")}</Text>
+          <Text style={styles.value}>{formatCurrency(businessDetails.annualTurnover)}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Net Profit</Text>
-          <Text style={styles.value}>{formatCurrency(businessDetails.netProfit || "800000")}</Text>
+          <Text style={styles.value}>{formatCurrency(businessDetails.netProfit)}</Text>
         </View>
       </View>
 
@@ -217,7 +221,7 @@ export const BusinessLoanReviewStep: React.FC<BusinessLoanReviewStepProps> = ({
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
-            <View style={[styles.iconBox, { backgroundColor: "#FEE2E2" }]}>
+            <View style={[styles.iconBox, styles.iconBoxRed]}>
               <Ionicons name="business" size={16} color="#DC2626" />
             </View>
             <Text style={styles.cardTitle}>Banking & Tax Details</Text>
@@ -230,7 +234,7 @@ export const BusinessLoanReviewStep: React.FC<BusinessLoanReviewStepProps> = ({
 
         <View style={styles.row}>
           <Text style={styles.label}>Bank</Text>
-          <Text style={styles.value}>{bankingDetails.primaryBankName || "HDFC Bank"}</Text>
+          <Text style={styles.value}>{bankingDetails.primaryBankName || "—"}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Account Number</Text>
@@ -238,26 +242,38 @@ export const BusinessLoanReviewStep: React.FC<BusinessLoanReviewStepProps> = ({
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>IFSC Code</Text>
-          <Text style={styles.value}>{bankingDetails.ifscCode || "HDFC0001234"}</Text>
+          <Text style={styles.value}>{bankingDetails.ifscCode || "—"}</Text>
         </View>
         <View style={styles.row}>
-          <Text style={styles.label}>ITR Filing</Text>
-          <Text style={styles.value}>Filed (Last 3 Years)</Text>
+          <Text style={styles.label}>ITR Status</Text>
+          <Text style={styles.value}>
+            {bankingDetails.itrAckNumber
+              ? `Filed (Ack: ${bankingDetails.itrAckNumber})`
+              : bankingDetails.itrFilingStatus || "Not Filed"}
+          </Text>
         </View>
+        {Boolean(bankingDetails.grossTotalIncome) && (
+          <View style={styles.row}>
+            <Text style={styles.label}>Gross Total Income</Text>
+            <Text style={styles.value}>{formatCurrency(bankingDetails.grossTotalIncome)}</Text>
+          </View>
+        )}
       </View>
 
       {/* 5. Uploaded Documents */}
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
-            <View style={[styles.iconBox, { backgroundColor: "#DCFCE7" }]}>
+            <View style={[styles.iconBox, styles.iconBoxGreen]}>
               <Ionicons name="document-text" size={16} color="#166534" />
             </View>
             <Text style={styles.cardTitle}>Uploaded Documents</Text>
           </View>
 
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={styles.docCountText}>12 of 12 uploaded</Text>
+          <View style={styles.docHeaderActions}>
+            <Text style={styles.docCountText}>
+              {uploadedDocs.length} of {documents.length} uploaded
+            </Text>
             <TouchableOpacity style={styles.editAction} onPress={() => onGoToStep(3)} activeOpacity={0.7}>
               <Ionicons name="create-outline" size={14} color="#2563EB" />
               <Text style={styles.editText}>Manage</Text>
@@ -266,12 +282,16 @@ export const BusinessLoanReviewStep: React.FC<BusinessLoanReviewStepProps> = ({
         </View>
 
         <View style={styles.docsGrid}>
-          {REVIEW_DOCUMENTS_LIST.map((docName) => (
-            <View key={docName} style={styles.docBadge}>
-              <Ionicons name="document-text" size={12} color="#166534" />
-              <Text style={styles.docBadgeText}>{docName}</Text>
-            </View>
-          ))}
+          {uploadedDocs.length > 0 ? (
+            uploadedDocs.map((doc) => (
+              <View key={doc.id} style={styles.docBadge}>
+                <Ionicons name="checkmark-circle" size={12} color="#166534" />
+                <Text style={styles.docBadgeText}>{doc.name}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.noDocsText}>No documents uploaded yet.</Text>
+          )}
         </View>
       </View>
 

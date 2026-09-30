@@ -78,24 +78,30 @@ export const validateStep6 = (state: Step6ValidationState): string | null => {
   if (!securities || securities.length === 0) {
     return "Please add at least one Security / Collateral asset.";
   }
-  for (let i = 0; i < securities.length; i++) {
-    const s = securities[i];
-    const prefix = securities.length > 1 ? `Security ${i + 1}: ` : "";
-    if (!s.typeOfSecurity?.trim()) {
-      return `${prefix}Please select Type of Security.`;
-    }
-    if (!s.assetDescription?.trim()) {
-      return `${prefix}Please enter Asset Description.`;
-    }
-    if (!s.estimatedValue?.trim()) {
-      return `${prefix}Please enter Estimated Value.`;
-    }
-    if (!s.ownershipType?.trim()) {
-      return `${prefix}Please select Ownership Type.`;
-    }
-    if (!s.locationOfAsset?.trim()) {
-      return `${prefix}Please enter Location of Asset.`;
-    }
+  const securityError = securities
+    .map((s, i) => {
+      const prefix = securities.length > 1 ? `Security ${i + 1}: ` : "";
+      if (!s.typeOfSecurity?.trim()) {
+        return `${prefix}Please select Type of Security.`;
+      }
+      if (!s.assetDescription?.trim()) {
+        return `${prefix}Please enter Asset Description.`;
+      }
+      if (!s.estimatedValue?.trim()) {
+        return `${prefix}Please enter Estimated Value.`;
+      }
+      if (!s.ownershipType?.trim()) {
+        return `${prefix}Please select Ownership Type.`;
+      }
+      if (!s.locationOfAsset?.trim()) {
+        return `${prefix}Please enter Location of Asset.`;
+      }
+      return null;
+    })
+    .find(Boolean);
+
+  if (securityError) {
+    return securityError;
   }
 
   // 2. Regulatory Compliance
@@ -129,15 +135,21 @@ export const validateStep7 = (state: Step7ValidationState): string | null => {
 
   // 1. Mandatory Documents
   if (documents && documents.length > 0) {
-    for (const doc of documents) {
-      if (doc.isRequired) {
+    const missingDoc = documents
+      .filter((doc) => doc.isRequired)
+      .map((doc) => {
         const isUploaded =
           Boolean(doc.uploadedFileName?.trim()) ||
           Boolean(doc.uploadedFileUri?.trim());
         if (!isUploaded) {
           return `Please upload required document: ${doc.name}.`;
         }
-      }
+        return null;
+      })
+      .find(Boolean);
+
+    if (missingDoc) {
+      return missingDoc;
     }
   }
 

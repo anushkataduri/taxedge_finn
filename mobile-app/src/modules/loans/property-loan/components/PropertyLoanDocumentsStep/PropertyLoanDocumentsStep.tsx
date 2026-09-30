@@ -10,7 +10,11 @@ import {
   pickLoanImageFromGallery,
   pickLoanImageFromCamera,
 } from "../../../services/documentUploadHelper";
-import { styles } from "./PropertyLoanDocumentsStep.styles";
+import {
+  styles,
+  getProgressFillDynamic,
+  getDocIconBoxDynamic,
+} from "./PropertyLoanDocumentsStep.styles";
 
 export interface PropertyLoanDocumentsStepProps {
   documents: LoanDocumentItem[];
@@ -23,6 +27,7 @@ export interface PropertyLoanDocumentsStepProps {
 }
 
 const CATEGORIES: LoanDocumentCategory[] = [
+  "Property & Collateral",
   "Identity & Address",
   "Income & Banking",
   "Business & Tax",
@@ -113,15 +118,7 @@ export const PropertyLoanDocumentsStep: React.FC<PropertyLoanDocumentsStepProps>
           </Text>
         </View>
         <View style={styles.progressBarTrack}>
-          <View
-            style={{
-              height: "100%",
-              width: `${progressPercent}%`,
-              backgroundColor:
-                progressPercent === 100 ? "#16A34A" : BrandColors.PRIMARY_BLUE,
-              borderRadius: 3,
-            }}
-          />
+          <View style={getProgressFillDynamic(progressPercent)} />
         </View>
       </View>
 
@@ -148,13 +145,16 @@ export const PropertyLoanDocumentsStep: React.FC<PropertyLoanDocumentsStepProps>
                     <View
                       style={[
                         styles.iconBox,
-                        { backgroundColor: doc.iconBg || "#F1F5F9" },
+                        getDocIconBoxDynamic(doc.iconBg),
                       ]}
                     >
                       <Ionicons
-                        name={(doc.iconName as any) || "document-text"}
+                        name={
+                          (doc.iconName as keyof typeof Ionicons.glyphMap) ||
+                          "document-text"
+                        }
                         size={20}
-                        color={doc.iconColor || BrandColors.PRIMARY_BLUE}
+                        color={doc.iconColor || BrandColors.PRIMARY_ORANGE}
                       />
                     </View>
 
@@ -280,7 +280,7 @@ export const PropertyLoanDocumentsStep: React.FC<PropertyLoanDocumentsStepProps>
           activeOpacity={1}
           onPress={() => setPreviewDoc(null)}
         >
-          <View style={[styles.sheetContent, { paddingBottom: 24 }]}>
+          <View style={styles.sheetContentPreview}>
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>Document Preview</Text>
               <TouchableOpacity onPress={() => setPreviewDoc(null)}>
@@ -296,25 +296,25 @@ export const PropertyLoanDocumentsStep: React.FC<PropertyLoanDocumentsStepProps>
                   <Text style={styles.previewFileSize}>{previewDoc.fileSize || "3.5 MB"}</Text>
                 </View>
 
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginVertical: 8 }}>
-                  <Text style={{ fontSize: 13, color: "#64748B" }}>Document Category</Text>
-                  <Text style={{ fontSize: 13, fontWeight: "700", color: "#0F2052" }}>
+                <View style={styles.previewMetaRow}>
+                  <Text style={styles.previewMetaLabel}>Document Category</Text>
+                  <Text style={styles.previewMetaValue}>
                     {previewDoc.category}
                   </Text>
                 </View>
 
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginVertical: 8 }}>
-                  <Text style={{ fontSize: 13, color: "#64748B" }}>Upload Timestamp</Text>
-                  <Text style={{ fontSize: 13, fontWeight: "700", color: "#16A34A" }}>
+                <View style={styles.previewMetaRow}>
+                  <Text style={styles.previewMetaLabel}>Upload Timestamp</Text>
+                  <Text style={styles.previewMetaTimestamp}>
                     {previewDoc.uploadedAt ? new Date(previewDoc.uploadedAt).toLocaleDateString("en-IN") : "Just now"}
                   </Text>
                 </View>
 
                 <TouchableOpacity
-                  style={[styles.uploadButton, { justifyContent: "center", marginTop: 16, paddingVertical: 12 }]}
+                  style={styles.previewCloseBtn}
                   onPress={() => setPreviewDoc(null)}
                 >
-                  <Text style={[styles.uploadButtonText, { fontSize: 14 }]}>Close Preview</Text>
+                  <Text style={styles.previewCloseBtnText}>Close Preview</Text>
                 </TouchableOpacity>
               </View>
             )}

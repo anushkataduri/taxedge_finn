@@ -94,4 +94,10 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     color: "#94A3B8",
   },
+  helperText: {
+    fontSize: 11,
+    color: "#64748B",
+    marginTop: 4,
+  },
 });
+

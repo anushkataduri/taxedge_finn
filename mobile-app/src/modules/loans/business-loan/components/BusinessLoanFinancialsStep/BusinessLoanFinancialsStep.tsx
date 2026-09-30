@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Modal, ScrollView } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { LoanDetailsFormData, LoanEmploymentType, ExistingLoanDetail } from "../../../types/loans.types";
+import { LoanDetailsFormData, LoanEmploymentType } from "../../../types/loans.types";
+import { BrandColors } from "../../../../../shared/theme";
 import { styles } from "./BusinessLoanFinancialsStep.styles";
 
 export interface BusinessLoanFinancialsStepProps {
@@ -33,6 +34,7 @@ const COMMON_PURPOSES = [
   "Vehicle Purchase",
   "Debt Consolidation",
   "Personal / Medical Emergency",
+  "Others",
 ];
 
 const TENURE_PRESETS = [
@@ -45,12 +47,109 @@ const TENURE_PRESETS = [
   { label: "240 Mos (20 Yrs)", value: "240" },
 ];
 
+export const formatTenureEquivalent = (monthsStr: string): string => {
+  if (!monthsStr) return "";
+  const months = parseInt(monthsStr, 10);
+  if (isNaN(months) || months <= 0) return "";
+
+  const years = Math.floor(months / 12);
+  const remainingMonths = months % 12;
+
+  if (years === 0) {
+    return `${months} ${months === 1 ? "month" : "months"}`;
+  }
+
+  if (remainingMonths === 0) {
+    return `${months} months (${years} ${years === 1 ? "year" : "years"})`;
+  }
+
+  return `${months} months (${years} ${years === 1 ? "year" : "years"} ${remainingMonths} ${remainingMonths === 1 ? "month" : "months"})`;
+};
+
+const isPresetTenure = (val?: string) =>
+  Boolean(val && TENURE_PRESETS.some((item) => item.value === val));
+
 export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProps> = ({
   data,
   onChange,
   errors = {},
 }) => {
-  const [isPurposeDropdownOpen, setIsPurposeDropdownOpen] = useState(false);
+  const [isPurposeModalOpen, setIsPurposeModalOpen] = useState(false);
+  const [customPurpose, setCustomPurpose] = useState(
+    data.purpose && !COMMON_PURPOSES.includes(data.purpose as any)
+      ? data.purpose
+      : ""
+  );
+
+  const [isCustomTenure, setIsCustomTenure] = useState<boolean>(() => {
+    return Boolean(
+      data.preferredTenureMonths && !isPresetTenure(data.preferredTenureMonths)
+    );
+  });
+  const [customTenureValue, setCustomTenureValue] = useState<string>(() => {
+    return !isPresetTenure(data.preferredTenureMonths)
+      ? data.preferredTenureMonths || ""
+      : "";
+  });
+  const [customError, setCustomError] = useState("");
+
+  const handleSelectPreset = (val: string) => {
+    setIsCustomTenure(false);
+    setCustomError("");
+    onChange("preferredTenureMonths", val);
+  };
+
+  const validateAndPropagateCustom = (clean: string) => {
+    if (!clean) {
+      setCustomError("");
+      onChange("preferredTenureMonths", "");
+      return;
+    }
+    const num = parseInt(clean, 10);
+    if (num < 1) {
+      setCustomError("Tenure must be at least 1 month");
+      onChange("preferredTenureMonths", clean);
+    } else if (num > 240) {
+      setCustomError("Maximum permitted tenure is 240 months (20 years)");
+      onChange("preferredTenureMonths", clean);
+    } else {
+      setCustomError("");
+      onChange("preferredTenureMonths", clean);
+    }
+  };
+
+  const handleSelectCustom = () => {
+    setIsCustomTenure(true);
+    if (customTenureValue) {
+      validateAndPropagateCustom(customTenureValue);
+    } else {
+      onChange("preferredTenureMonths", "");
+    }
+  };
+
+  const handleCustomTenureChange = (text: string) => {
+    const clean = text.replace(/[^0-9]/g, "");
+    setCustomTenureValue(clean);
+    validateAndPropagateCustom(clean);
+  };
+
+  const isOthersSelected =
+    data.purpose === "Others" ||
+    (Boolean(data.purpose) && !COMMON_PURPOSES.includes(data.purpose as any));
+
+  const handleSelectPurpose = (purpose: string) => {
+    setIsPurposeModalOpen(false);
+    if (purpose === "Others") {
+      onChange("purpose", customPurpose || "Others");
+    } else {
+      onChange("purpose", purpose);
+    }
+  };
+
+  const handleCustomPurposeChange = (text: string) => {
+    setCustomPurpose(text);
+    onChange("purpose", text);
+  };
 
   return (
     <View style={styles.container}>
@@ -59,7 +158,7 @@ export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProp
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
             <View style={styles.iconBox}>
-              <Ionicons name="briefcase" size={16} color="#EA580C" />
+              <Ionicons name="briefcase" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
             </View>
             <Text style={styles.cardTitle}>
               Employment / Business Profile <Text style={styles.requiredStar}>*</Text>
@@ -93,7 +192,7 @@ export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProp
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
             <View style={styles.iconBox}>
-              <Ionicons name="wallet" size={16} color="#EA580C" />
+              <Ionicons name="wallet" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
             </View>
             <Text style={styles.cardTitle}>
               Required Loan Amount (₹) <Text style={styles.requiredStar}>*</Text>
@@ -103,11 +202,11 @@ export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProp
 
         <TextInput
           style={[styles.input, errors.requiredAmount && styles.inputError]}
-          placeholder="1000000"
+          placeholder="Enter your required amount"
           placeholderTextColor="#94A3B8"
           keyboardType="numeric"
           value={data.requiredAmount}
-          onChangeText={(text) => onChange("requiredAmount", text)}
+          onChangeText={(text) => onChange("requiredAmount", text.replace(/[^0-9]/g, ""))}
         />
 
         <View style={styles.chipRow}>
@@ -135,7 +234,7 @@ export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProp
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
             <View style={styles.iconBox}>
-              <Ionicons name="location" size={16} color="#EA580C" />
+              <Ionicons name="location" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
             </View>
             <Text style={styles.cardTitle}>
               Purpose of Loan <Text style={styles.requiredStar}>*</Text>
@@ -145,42 +244,51 @@ export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProp
 
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={() => setIsPurposeDropdownOpen(!isPurposeDropdownOpen)}
-          style={styles.dropdownBox}
+          onPress={() => setIsPurposeModalOpen(true)}
+          style={[
+            styles.dropdownSelector,
+            Boolean(data.purpose) && styles.dropdownSelectorActive,
+            errors.purpose && styles.inputError,
+          ]}
         >
-          <Text style={data.purpose ? styles.dropdownText : styles.dropdownPlaceholder}>
-            {data.purpose || "Select your loan type"}
+          <Text
+            style={
+              data.purpose ? styles.dropdownText : styles.dropdownPlaceholder
+            }
+          >
+            {data.purpose || "Select Purpose of Loan..."}
           </Text>
           <Ionicons
-            name={isPurposeDropdownOpen ? "chevron-up" : "chevron-down"}
+            name="chevron-down"
             size={18}
-            color="#64748B"
+            color={
+              data.purpose
+                ? BrandColors.PRIMARY_ORANGE || "#EA580C"
+                : "#64748B"
+            }
           />
         </TouchableOpacity>
+        {errors.purpose && (
+          <Text style={styles.errorText}>{errors.purpose}</Text>
+        )}
 
-        {isPurposeDropdownOpen && (
-          <View style={styles.dropdownMenu}>
-            {COMMON_PURPOSES.map((purpose) => {
-              const isSelected = data.purpose === purpose;
-              return (
-                <TouchableOpacity
-                  key={purpose}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    onChange("purpose", purpose);
-                    setIsPurposeDropdownOpen(false);
-                  }}
-                  style={[styles.dropdownMenuItem, isSelected && styles.dropdownMenuItemActive]}
-                >
-                  <Text style={[styles.dropdownMenuText, isSelected && styles.dropdownMenuTextActive]}>
-                    {purpose}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+        {isOthersSelected && (
+          <View style={styles.customInputContainer}>
+            <Text style={styles.cardTitle}>
+              Specify Custom Purpose <Text style={styles.requiredStar}>*</Text>
+            </Text>
+            <TextInput
+              style={[
+                styles.input,
+                errors.purpose && styles.inputError,
+              ]}
+              placeholder="e.g. Working capital, technology upgrade"
+              placeholderTextColor="#94A3B8"
+              value={customPurpose}
+              onChangeText={handleCustomPurposeChange}
+            />
           </View>
         )}
-        {errors.purpose && <Text style={styles.errorText}>{errors.purpose}</Text>}
       </View>
 
       {/* 4. Preferred Tenure */}
@@ -188,7 +296,7 @@ export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProp
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
             <View style={styles.iconBox}>
-              <Ionicons name="calendar" size={16} color="#EA580C" />
+              <Ionicons name="calendar" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
             </View>
             <Text style={styles.cardTitle}>
               Preferred Tenure (Months) <Text style={styles.requiredStar}>*</Text>
@@ -198,12 +306,12 @@ export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProp
 
         <View style={styles.tenureGrid}>
           {TENURE_PRESETS.map((item) => {
-            const isSelected = data.preferredTenureMonths === item.value;
+            const isSelected = !isCustomTenure && data.preferredTenureMonths === item.value;
             return (
               <TouchableOpacity
                 key={item.value}
                 activeOpacity={0.7}
-                onPress={() => onChange("preferredTenureMonths", item.value)}
+                onPress={() => handleSelectPreset(item.value)}
                 style={[styles.tenureBox, isSelected && styles.tenureBoxActive]}
               >
                 <Text style={[styles.tenureText, isSelected && styles.tenureTextActive]}>
@@ -212,8 +320,64 @@ export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProp
               </TouchableOpacity>
             );
           })}
+
+          {/* + Custom Option */}
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={handleSelectCustom}
+            style={[
+              styles.tenureBox,
+              styles.tenureBoxCustom,
+              isCustomTenure && styles.tenureBoxCustomActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.tenureText,
+                styles.tenureTextCustom,
+                isCustomTenure && styles.tenureTextCustomActive,
+              ]}
+            >
+              + Custom
+            </Text>
+          </TouchableOpacity>
         </View>
-        {errors.preferredTenureMonths && <Text style={styles.errorText}>{errors.preferredTenureMonths}</Text>}
+
+        {/* When the user selects Custom */}
+        {isCustomTenure && (
+          <View style={styles.customTenureSection}>
+            <Text style={styles.customTenureTitle}>
+              Enter Tenure (Months) <Text style={styles.requiredStar}>*</Text>
+            </Text>
+            <TextInput
+              style={[
+                styles.customTenureInput,
+                (Boolean(customError) || Boolean(errors.preferredTenureMonths)) && styles.inputError,
+              ]}
+              placeholder="Enter months (e.g., 48)"
+              placeholderTextColor="#94A3B8"
+              keyboardType="numeric"
+              value={customTenureValue}
+              onChangeText={handleCustomTenureChange}
+              maxLength={3}
+            />
+            {Boolean(customTenureValue) && !customError && (
+              <Text style={styles.tenureEquivalentText}>
+                {formatTenureEquivalent(customTenureValue)}
+              </Text>
+            )}
+            {Boolean(customError) && (
+              <Text style={styles.errorText}>{customError}</Text>
+            )}
+            {!customError && Boolean(errors.preferredTenureMonths) && (
+              <Text style={styles.errorText}>{errors.preferredTenureMonths}</Text>
+            )}
+          </View>
+        )}
+
+        {!isCustomTenure && Boolean(errors.preferredTenureMonths) && (
+          <Text style={styles.errorText}>{errors.preferredTenureMonths}</Text>
+        )}
       </View>
 
       {/* 5. Monthly / Annual Revenue / Turnover */}
@@ -221,7 +385,7 @@ export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProp
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
             <View style={styles.iconBox}>
-              <Ionicons name="bar-chart" size={16} color="#EA580C" />
+              <Ionicons name="bar-chart" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
             </View>
             <Text style={styles.cardTitle}>
               Monthly / Annual Revenue / Turnover (₹) <Text style={styles.requiredStar}>*</Text>
@@ -231,11 +395,11 @@ export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProp
 
         <TextInput
           style={[styles.input, errors.monthlyIncomeOrTurnover && styles.inputError]}
-          placeholder="150000"
+          placeholder="Enter your amount"
           placeholderTextColor="#94A3B8"
           keyboardType="numeric"
           value={data.monthlyIncomeOrTurnover}
-          onChangeText={(text) => onChange("monthlyIncomeOrTurnover", text)}
+          onChangeText={(text) => onChange("monthlyIncomeOrTurnover", text.replace(/[^0-9]/g, ""))}
         />
         {errors.monthlyIncomeOrTurnover && <Text style={styles.errorText}>{errors.monthlyIncomeOrTurnover}</Text>}
       </View>
@@ -245,7 +409,7 @@ export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProp
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
             <View style={styles.iconBox}>
-              <Ionicons name="document-text" size={16} color="#EA580C" />
+              <Ionicons name="document-text" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
             </View>
             <Text style={styles.cardTitle}>
               Do you have any existing loans? <Text style={styles.requiredStar}>*</Text>
@@ -288,6 +452,66 @@ export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProp
         </View>
         {errors.hasExistingLoans && <Text style={styles.errorText}>{errors.hasExistingLoans}</Text>}
       </View>
+
+      {/* Dropdown Modal for Purpose */}
+      <Modal
+        visible={isPurposeModalOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsPurposeModalOpen(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsPurposeModalOpen(false)}
+        >
+          <View
+            style={styles.modalContent}
+            onStartShouldSetResponder={() => true}
+          >
+            <View style={styles.modalHeaderRow}>
+              <Text style={styles.modalTitle}>Select Purpose of Loan</Text>
+              <TouchableOpacity onPress={() => setIsPurposeModalOpen(false)}>
+                <Ionicons name="close-circle" size={24} color="#94A3B8" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {COMMON_PURPOSES.map((purpose) => {
+                const isSelected =
+                  data.purpose === purpose ||
+                  (purpose === "Others" && isOthersSelected);
+                return (
+                  <TouchableOpacity
+                    key={purpose}
+                    style={[
+                      styles.optionItem,
+                      isSelected && styles.optionItemActive,
+                    ]}
+                    onPress={() => handleSelectPurpose(purpose)}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        isSelected && styles.optionTextActive,
+                      ]}
+                    >
+                      {purpose}
+                    </Text>
+                    {isSelected && (
+                      <Ionicons
+                        name="checkmark"
+                        size={18}
+                        color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
