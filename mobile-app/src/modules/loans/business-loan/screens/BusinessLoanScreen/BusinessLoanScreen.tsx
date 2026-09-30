@@ -29,7 +29,6 @@ import {
 } from "../../../validation/loansSchema";
 import {
   BusinessLoanStepIndicator,
-  BusinessLoanCustomerCard,
   BusinessLoanFinancialsStep,
   BusinessLoanBusinessStep,
   BusinessLoanBankingStep,
@@ -61,7 +60,7 @@ export const BusinessLoanScreen: React.FC = () => {
     hasExistingLoans: false,
     existingEmi: "",
     monthlyIncomeOrTurnover: "",
-    employmentType: "" as any,
+    employmentType: "Business Owner",
   });
 
   // Step 2: Business details
@@ -96,7 +95,10 @@ export const BusinessLoanScreen: React.FC = () => {
     JSON.parse(JSON.stringify(BUSINESS_DOCUMENTS_TEMPLATE))
   );
 
-  const handleDetailsChange = (field: keyof LoanDetailsFormData, value: any) => {
+  const handleDetailsChange = <K extends keyof LoanDetailsFormData>(
+    field: K,
+    value: LoanDetailsFormData[K]
+  ) => {
     setLoanDetails((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => {
@@ -107,9 +109,9 @@ export const BusinessLoanScreen: React.FC = () => {
     }
   };
 
-  const handleBusinessChange = (
-    field: keyof LoanBusinessFormData,
-    value: any
+  const handleBusinessChange = <K extends keyof LoanBusinessFormData>(
+    field: K,
+    value: LoanBusinessFormData[K]
   ) => {
     setBusinessDetails((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -153,6 +155,24 @@ export const BusinessLoanScreen: React.FC = () => {
             fileSize,
             uploadedAt: new Date().toISOString(),
           };
+        }
+        return d;
+      })
+    );
+  };
+
+  const handleDocumentDeleted = (docId: string) => {
+    setDocuments((prev) =>
+      prev.map((d) => {
+        const targetId = docId.replace(/^doc-/, "");
+        const itemCleanId = d.id.replace(/^doc-/, "");
+        if (d.id === docId || itemCleanId === targetId) {
+          const nextDoc = { ...d };
+          delete nextDoc.fileUri;
+          delete nextDoc.fileName;
+          delete nextDoc.fileSize;
+          delete nextDoc.uploadedAt;
+          return nextDoc;
         }
         return d;
       })
@@ -255,15 +275,20 @@ export const BusinessLoanScreen: React.FC = () => {
           {
             text: "Track Status",
             onPress: () => {
-              router.replace(
-                `/service/loan-status?id=${response.applicationId}&loanType=Business+Loan` as any
-              );
+              const statusUrl = `/service/loan-status?id=${encodeURIComponent(
+                response.applicationId
+              )}&loanType=${encodeURIComponent("Business Loan")}`;
+              router.replace(statusUrl as any);
             },
           },
         ]
       );
-    } catch {
-      Alert.alert("Submission Error", "Failed to lodge application. Please try again.");
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to lodge application. Please check your network connection and try again.";
+      Alert.alert("Submission Error", errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -273,14 +298,11 @@ export const BusinessLoanScreen: React.FC = () => {
     switch (currentStepIndex) {
       case 0:
         return (
-          <>
-            <BusinessLoanCustomerCard profile={customer || undefined} />
-            <BusinessLoanFinancialsStep
-              data={loanDetails}
-              onChange={handleDetailsChange}
-              errors={errors}
-            />
-          </>
+          <BusinessLoanFinancialsStep
+            data={loanDetails}
+            onChange={handleDetailsChange}
+            errors={errors}
+          />
         );
       case 1:
         return (
@@ -304,6 +326,7 @@ export const BusinessLoanScreen: React.FC = () => {
           <BusinessLoanDocumentsStep
             documents={documents}
             onDocumentUploaded={handleDocumentUploaded}
+            onDocumentDeleted={handleDocumentDeleted}
           />
         );
       case 4:
@@ -327,30 +350,22 @@ export const BusinessLoanScreen: React.FC = () => {
   };
 
   const isFinalStep = currentStepIndex === STEPS.length - 1;
-  const progressPercent = `${((currentStepIndex + 1) / STEPS.length) * 100}%`;
 
   return (
     <View style={[styles.safeArea, { paddingTop: insets.top }]}>
-      {/* Header Bar matching Screenshot 1 */}
-      <View style={styles.headerBar}>
-        <TouchableOpacity style={styles.circularBtn} onPress={handleBack} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={20} color="#0F172A" />
-        </TouchableOpacity>
-
-        <View style={styles.headerCenterContent}>
-          <Text style={styles.headerTitle}>Business Loan</Text>
-          <Text style={styles.headerSubtitle}>
-            Step {currentStepIndex + 1} of {STEPS.length} • {STEPS[currentStepIndex]}
-          </Text>
-        </View>
-
-        <View style={{ width: 36 }} />
-      </View>
-
-      {/* Top Progress Bar Track */}
-      <View style={styles.progressBarTrack}>
-        <View style={[styles.progressBarFill, { width: progressPercent as any }]} />
-      </View>
+      {/* Header with Step X of 5 & Orange Linear Progress Bar */}
+      <BusinessLoanStepIndicator
+        currentStepIndex={currentStepIndex}
+        totalSteps={STEPS.length}
+        stepTitle={STEPS[currentStepIndex]}
+        onBack={handleBack}
+        onSettings={() =>
+          Alert.alert(
+            "Business Loan Assistance",
+            "Need help with your business loan application? Contact support@taxedge.in or your assigned credit officer."
+          )
+        }
+      />
 
       {/* Scrollable Form Content */}
       <ScrollView

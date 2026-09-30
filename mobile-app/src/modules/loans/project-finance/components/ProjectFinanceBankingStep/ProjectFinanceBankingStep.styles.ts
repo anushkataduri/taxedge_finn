@@ -71,8 +71,8 @@ export const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
   },
   statusChipActive: {
-    backgroundColor: "#EFF6FF",
-    borderColor: BrandColors.PRIMARY_BLUE,
+    backgroundColor: "#FEF0E6",
+    borderColor: BrandColors.PRIMARY_ORANGE || "#EA580C",
   },
   statusChipText: {
     fontSize: Typography.fontSize.sm,
@@ -80,7 +80,7 @@ export const styles = StyleSheet.create({
     color: "#64748B",
   },
   statusChipTextActive: {
-    color: BrandColors.PRIMARY_BLUE,
+    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
     fontWeight: "700",
   },
   subCard: {

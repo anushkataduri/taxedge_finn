@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import { BrandColors, Typography, BorderRadius } from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   overlay: {
@@ -10,12 +11,12 @@ export const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: BorderRadius.lg || 16,
     padding: 24,
     alignItems: "center",
     width: "100%",
     maxWidth: 360,
-    shadowColor: "#000",
+    shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
@@ -31,7 +32,7 @@ export const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 18,
+    fontSize: Typography.fontSize.lg,
     fontWeight: "700",
     color: "#0F172A",
     textAlign: "center",
@@ -41,32 +42,49 @@ export const styles = StyleSheet.create({
     backgroundColor: "#F1F5F9",
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: BorderRadius.sm,
     marginBottom: 12,
   },
   appIdText: {
-    fontSize: 12,
+    fontSize: Typography.fontSize.xs,
     fontWeight: "700",
     color: "#475569",
   },
   description: {
-    fontSize: 13,
+    fontSize: Typography.fontSize.xs,
     color: "#64748B",
     textAlign: "center",
     lineHeight: 18,
     marginBottom: 20,
   },
+  trackButton: {
+    backgroundColor: BrandColors.PRIMARY_ORANGE || "#EA580C",
+    borderRadius: BorderRadius.sm,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    width: "100%",
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+  },
+  trackButtonText: {
+    color: "#FFFFFF",
+    fontSize: Typography.fontSize.sm,
+    fontWeight: "700",
+  },
   doneButton: {
-    backgroundColor: "#F97316",
-    borderRadius: 10,
+    backgroundColor: "#F1F5F9",
+    borderRadius: BorderRadius.sm,
     paddingVertical: 12,
     paddingHorizontal: 24,
     width: "100%",
     alignItems: "center",
+    marginTop: 10,
   },
   doneButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
+    color: "#475569",
+    fontSize: Typography.fontSize.sm,
+    fontWeight: "600",
   },
 });

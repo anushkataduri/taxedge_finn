@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   Platform,
   Modal,
@@ -11,6 +12,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
+import { BrandColors } from "../../../../../shared/theme";
 import { styles } from "./ProjectFinanceDatePicker.styles";
 
 interface ProjectFinanceDatePickerProps {
@@ -26,16 +28,38 @@ const MONTHS = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-function formatDate(date: Date): string {
+const formatDate = (date: Date): string => {
   const d = String(date.getDate()).padStart(2, "0");
-  const m = MONTHS[date.getMonth()];
+  const m = String(date.getMonth() + 1).padStart(2, "0");
   const y = date.getFullYear();
-  return `${d} ${m} ${y}`;
-}
+  return `${d}/${m}/${y}`;
+};
 
-function parseDate(str?: string): Date {
+const parseDate = (str?: string): Date => {
   if (!str) return new Date();
   const clean = str.trim();
+  if (clean.includes("/")) {
+    const parts = clean.split("/");
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        return new Date(year, month, day);
+      }
+    }
+  }
+  if (clean.includes("-")) {
+    const parts = clean.split("-");
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        return new Date(year, month, day);
+      }
+    }
+  }
   const parts = clean.split(" ");
   if (parts.length === 3) {
     const day = parseInt(parts[0], 10);
@@ -47,7 +71,7 @@ function parseDate(str?: string): Date {
   }
   const parsed = new Date(clean);
   return isNaN(parsed.getTime()) ? new Date() : parsed;
-}
+};
 
 export const ProjectFinanceDatePicker: React.FC<
   ProjectFinanceDatePickerProps
@@ -55,7 +79,7 @@ export const ProjectFinanceDatePicker: React.FC<
   label,
   value,
   onChange,
-  placeholder = "DD MMM YYYY",
+  placeholder = "DD/MM/YYYY",
   required = false,
 }) => {
   const [showPicker, setShowPicker] = useState(false);
@@ -87,6 +111,17 @@ export const ProjectFinanceDatePicker: React.FC<
     setShowPicker(false);
   };
 
+  const handleTextChange = (text: string) => {
+    const digits = text.replace(/[^0-9]/g, "").slice(0, 8);
+    let formatted = digits;
+    if (digits.length >= 5) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+    } else if (digits.length >= 3) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    }
+    onChange(formatted);
+  };
+
   return (
     <View style={styles.fieldGroup}>
       {label && (
@@ -95,16 +130,29 @@ export const ProjectFinanceDatePicker: React.FC<
         </Text>
       )}
 
-      <TouchableOpacity
-        style={styles.dateContainer}
-        onPress={handleOpen}
-        activeOpacity={0.7}
-      >
-        <Text style={value ? styles.dateText : styles.placeholderText}>
-          {value || placeholder}
-        </Text>
-        <Ionicons name="calendar-outline" size={18} color="#64748B" />
-      </TouchableOpacity>
+      <View style={styles.dateContainer}>
+        <TextInput
+          style={styles.inputField}
+          value={value}
+          onChangeText={handleTextChange}
+          placeholder={placeholder}
+          placeholderTextColor="#94A3B8"
+          keyboardType="number-pad"
+          maxLength={10}
+        />
+        <TouchableOpacity
+          style={styles.calendarIconButton}
+          onPress={handleOpen}
+          activeOpacity={0.7}
+          accessibilityLabel="Open calendar"
+        >
+          <Ionicons
+            name="calendar-outline"
+            size={18}
+            color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
+          />
+        </TouchableOpacity>
+      </View>
 
       {/* Android DateTimePicker */}
       {Platform.OS === "android" && showPicker && (

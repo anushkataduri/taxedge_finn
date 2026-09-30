@@ -5,7 +5,9 @@ import { LoanDocumentItem } from "../../../types/loans.types";
 import {
   pickLoanImageFromGallery,
   pickLoanImageFromCamera,
+  pickLoanDocumentFromFiles,
 } from "../../../services/documentUploadHelper";
+import { BrandColors } from "../../../../../shared/theme";
 import { styles } from "./BusinessLoanDocumentsStep.styles";
 
 export interface BusinessLoanDocumentsStepProps {
@@ -16,6 +18,7 @@ export interface BusinessLoanDocumentsStepProps {
     fileName: string,
     fileSize: string
   ) => void;
+  onDocumentDeleted?: (docId: string) => void;
 }
 
 interface SingleDocCardData {
@@ -24,12 +27,15 @@ interface SingleDocCardData {
   subtitle: string;
   isRequired: boolean;
   isOptional?: boolean;
-  isUploaded: boolean;
   iconName: keyof typeof Ionicons.glyphMap;
-  iconBg: string;
+  iconStyle:
+    | "iconSquareBlue"
+    | "iconSquarePurple"
+    | "iconSquareGreen"
+    | "iconSquareRed"
+    | "iconSquareOrange"
+    | "iconSquarePink";
   iconColor: string;
-  fileUri?: string;
-  fileName?: string;
 }
 
 const DOCUMENT_ITEMS_LIST: SingleDocCardData[] = [
@@ -38,9 +44,8 @@ const DOCUMENT_ITEMS_LIST: SingleDocCardData[] = [
     title: "PAN Card",
     subtitle: "Entity PAN card & Promoter/Director PAN card",
     isRequired: true,
-    isUploaded: false,
     iconName: "document-text",
-    iconBg: "#E0F2FE",
+    iconStyle: "iconSquareBlue",
     iconColor: "#2563EB",
   },
   {
@@ -48,9 +53,8 @@ const DOCUMENT_ITEMS_LIST: SingleDocCardData[] = [
     title: "Aadhaar Card",
     subtitle: "Aadhaar of all Primary Directors / Partners",
     isRequired: true,
-    isUploaded: false,
     iconName: "card-outline",
-    iconBg: "#F3E8FF",
+    iconStyle: "iconSquarePurple",
     iconColor: "#7C3AED",
   },
   {
@@ -58,9 +62,8 @@ const DOCUMENT_ITEMS_LIST: SingleDocCardData[] = [
     title: "KYC of Directors / Partners",
     subtitle: "PAN, Aadhaar, DIN and Passport photo",
     isRequired: true,
-    isUploaded: false,
     iconName: "people-outline",
-    iconBg: "#DCFCE7",
+    iconStyle: "iconSquareGreen",
     iconColor: "#16A34A",
   },
   {
@@ -68,9 +71,8 @@ const DOCUMENT_ITEMS_LIST: SingleDocCardData[] = [
     title: "Business Address Proof",
     subtitle: "Utility bill / Rent agreement / Property document",
     isRequired: true,
-    isUploaded: false,
     iconName: "home-outline",
-    iconBg: "#FEE2E2",
+    iconStyle: "iconSquareRed",
     iconColor: "#DC2626",
   },
   {
@@ -78,19 +80,17 @@ const DOCUMENT_ITEMS_LIST: SingleDocCardData[] = [
     title: "Current Account Bank Statements",
     subtitle: "Last 12 months bank statements",
     isRequired: true,
-    isUploaded: false,
     iconName: "business-outline",
-    iconBg: "#FFEDD5",
-    iconColor: "#EA580C",
+    iconStyle: "iconSquareOrange",
+    iconColor: BrandColors.PRIMARY_ORANGE || "#FF7A00",
   },
   {
     id: "doc-gst-cert",
     title: "GST Certificate (REG-06)",
     subtitle: "GST registration certificate",
     isRequired: true,
-    isUploaded: false,
     iconName: "document-text-outline",
-    iconBg: "#DCFCE7",
+    iconStyle: "iconSquareGreen",
     iconColor: "#16A34A",
   },
   {
@@ -98,19 +98,17 @@ const DOCUMENT_ITEMS_LIST: SingleDocCardData[] = [
     title: "GST Returns (12 Months)",
     subtitle: "Filed GSTR-3B & GSTR-1 returns for last 12 months",
     isRequired: true,
-    isUploaded: false,
     iconName: "analytics-outline",
-    iconBg: "#FFEDD5",
-    iconColor: "#EA580C",
+    iconStyle: "iconSquareOrange",
+    iconColor: BrandColors.PRIMARY_ORANGE || "#FF7A00",
   },
   {
     id: "doc-itr",
     title: "Business ITR (Last 2-3 Years)",
     subtitle: "ITR-V and computation for the last 3 assessment years",
     isRequired: true,
-    isUploaded: false,
     iconName: "document-attach-outline",
-    iconBg: "#F3E8FF",
+    iconStyle: "iconSquarePurple",
     iconColor: "#7C3AED",
   },
   {
@@ -118,9 +116,8 @@ const DOCUMENT_ITEMS_LIST: SingleDocCardData[] = [
     title: "Audited Balance Sheet",
     subtitle: "CA audited balance sheet for last 2-3 years",
     isRequired: true,
-    isUploaded: false,
     iconName: "pie-chart-outline",
-    iconBg: "#FCE7F3",
+    iconStyle: "iconSquarePink",
     iconColor: "#DB2777",
   },
   {
@@ -128,9 +125,8 @@ const DOCUMENT_ITEMS_LIST: SingleDocCardData[] = [
     title: "Profit & Loss Statement",
     subtitle: "CA certified P&L statement with schedules",
     isRequired: true,
-    isUploaded: false,
     iconName: "bar-chart-outline",
-    iconBg: "#F3E8FF",
+    iconStyle: "iconSquarePurple",
     iconColor: "#7C3AED",
   },
   {
@@ -138,9 +134,8 @@ const DOCUMENT_ITEMS_LIST: SingleDocCardData[] = [
     title: "Cash Flow Statement",
     subtitle: "Cash flow statement for the latest financial year",
     isRequired: true,
-    isUploaded: false,
     iconName: "document-outline",
-    iconBg: "#E0F2FE",
+    iconStyle: "iconSquareBlue",
     iconColor: "#2563EB",
   },
   {
@@ -149,9 +144,8 @@ const DOCUMENT_ITEMS_LIST: SingleDocCardData[] = [
     subtitle: "MSME registration certificate",
     isRequired: false,
     isOptional: true,
-    isUploaded: false,
     iconName: "briefcase-outline",
-    iconBg: "#DCFCE7",
+    iconStyle: "iconSquareGreen",
     iconColor: "#16A34A",
   },
   {
@@ -159,33 +153,29 @@ const DOCUMENT_ITEMS_LIST: SingleDocCardData[] = [
     title: "Business Registration Proof",
     subtitle: "Certificate of Incorporation / Business license",
     isRequired: true,
-    isUploaded: false,
     iconName: "folder-open-outline",
-    iconBg: "#FFEDD5",
-    iconColor: "#EA580C",
+    iconStyle: "iconSquareOrange",
+    iconColor: BrandColors.PRIMARY_ORANGE || "#FF7A00",
   },
   {
     id: "doc-expansion",
     title: "Business Expansion Document",
     subtitle: "Project report / Business plan / Estimated cost",
     isRequired: true,
-    isUploaded: false,
     iconName: "document-attach-outline",
-    iconBg: "#E0F2FE",
+    iconStyle: "iconSquareBlue",
     iconColor: "#2563EB",
   },
 ];
 
 export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps> = ({
+  documents,
   onDocumentUploaded,
+  onDocumentDeleted,
 }) => {
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [viewModalVisible, setViewModalVisible] = useState(false);
-  const [uploadedState, setUploadedState] = useState<Record<string, boolean>>({});
-  const [uploadedFiles, setUploadedFiles] = useState<
-    Record<string, { uri: string; name: string; size: string }>
-  >({});
   const [previewDoc, setPreviewDoc] = useState<{
     title: string;
     uri: string;
@@ -193,22 +183,28 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
     size: string;
   } | null>(null);
 
+  const findUploadedDoc = (itemId: string): LoanDocumentItem | undefined => {
+    const cleanTargetId = itemId.replace(/^doc-/, "");
+    return documents.find((d) => {
+      const cleanDocId = d.id.replace(/^doc-/, "");
+      return d.id === itemId || cleanDocId === cleanTargetId;
+    });
+  };
+
   const handleOpenUploadSheet = (docId: string) => {
     setActiveDocId(docId);
     setModalVisible(true);
   };
 
-  const handleView = (docId: string, docTitle: string) => {
-    const fileData = uploadedFiles[docId];
-    const uri = fileData?.uri || `file:///mock/storage/${docId}.pdf`;
-    const name = fileData?.name || `${docTitle.replace(/\s+/g, "_")}.pdf`;
-    const size = fileData?.size || "2.4 MB";
+  const handleView = (item: SingleDocCardData) => {
+    const docRecord = findUploadedDoc(item.id);
+    if (!docRecord?.fileUri) return;
 
     setPreviewDoc({
-      title: docTitle,
-      uri,
-      name,
-      size,
+      title: item.title,
+      uri: docRecord.fileUri,
+      name: docRecord.fileName || `${item.title.replace(/\s+/g, "_")}.pdf`,
+      size: docRecord.fileSize || "Verified",
     });
     setViewModalVisible(true);
   };
@@ -223,59 +219,75 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
           text: "Delete",
           style: "destructive",
           onPress: () => {
-            setUploadedState((prev) => ({ ...prev, [docId]: false }));
-            setUploadedFiles((prev) => {
-              const next = { ...prev };
-              delete next[docId];
-              return next;
-            });
+            if (onDocumentDeleted) {
+              onDocumentDeleted(docId);
+            }
           },
         },
       ]
     );
   };
 
+  const isFileSizeValid = (sizeStr: string): boolean => {
+    const match = sizeStr.match(/([\d.]+)\s*(MB|KB|GB)?/i);
+    if (!match) return true;
+    const value = parseFloat(match[1]);
+    const unit = (match[2] || "MB").toUpperCase();
+    if (unit === "GB") return false;
+    if (unit === "MB" && value > 5.0) return false;
+    if (unit === "KB" && value > 5120) return false;
+    return true;
+  };
+
   const handlePickGallery = async () => {
     setModalVisible(false);
     if (!activeDocId) return;
-    const file = await pickLoanImageFromGallery();
-    if (file) {
-      setUploadedFiles((prev) => ({
-        ...prev,
-        [activeDocId]: { uri: file.uri, name: file.name, size: file.size },
-      }));
-      setUploadedState((prev) => ({ ...prev, [activeDocId]: true }));
-      onDocumentUploaded(activeDocId, file.uri, file.name, file.size);
+    try {
+      const file = await pickLoanImageFromGallery();
+      if (file) {
+        if (!isFileSizeValid(file.size)) {
+          Alert.alert("File Too Large", "Selected image exceeds 5 MB. Please choose a smaller file.");
+          return;
+        }
+        onDocumentUploaded(activeDocId, file.uri, file.name, file.size);
+      }
+    } catch {
+      Alert.alert("Upload Error", "Failed to select image from gallery.");
     }
   };
 
   const handlePickCamera = async () => {
     setModalVisible(false);
     if (!activeDocId) return;
-    const file = await pickLoanImageFromCamera();
-    if (file) {
-      setUploadedFiles((prev) => ({
-        ...prev,
-        [activeDocId]: { uri: file.uri, name: file.name, size: file.size },
-      }));
-      setUploadedState((prev) => ({ ...prev, [activeDocId]: true }));
-      onDocumentUploaded(activeDocId, file.uri, file.name, file.size);
+    try {
+      const file = await pickLoanImageFromCamera();
+      if (file) {
+        if (!isFileSizeValid(file.size)) {
+          Alert.alert("File Too Large", "Captured image exceeds 5 MB. Please try again.");
+          return;
+        }
+        onDocumentUploaded(activeDocId, file.uri, file.name, file.size);
+      }
+    } catch {
+      Alert.alert("Camera Error", "Failed to capture image.");
     }
   };
 
-  const handleMockPdf = () => {
+  const handlePickDocument = async () => {
     setModalVisible(false);
     if (!activeDocId) return;
-    const mockUri = `file:///mock/storage/${activeDocId}.pdf`;
-    const mockName = `${activeDocId}.pdf`;
-    const mockSize = "2.1 MB";
-
-    setUploadedFiles((prev) => ({
-      ...prev,
-      [activeDocId]: { uri: mockUri, name: mockName, size: mockSize },
-    }));
-    setUploadedState((prev) => ({ ...prev, [activeDocId]: true }));
-    onDocumentUploaded(activeDocId, mockUri, mockName, mockSize);
+    try {
+      const file = await pickLoanDocumentFromFiles();
+      if (file) {
+        if (!isFileSizeValid(file.size)) {
+          Alert.alert("File Too Large", "Selected document exceeds 5 MB. Please select a smaller file.");
+          return;
+        }
+        onDocumentUploaded(activeDocId, file.uri, file.name, file.size);
+      }
+    } catch {
+      Alert.alert("Document Error", "Failed to attach document.");
+    }
   };
 
   const isImageUri = (uri?: string) => {
@@ -302,7 +314,7 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
         </View>
 
         <View style={styles.formatsNoticeBox}>
-          <Ionicons name="information-circle-outline" size={14} color="#EA580C" />
+          <Ionicons name="information-circle-outline" size={14} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
           <Text style={styles.formatsNoticeText}>
             Accepted formats: PDF, JPG, PNG{"\n"}Max file size: 5 MB per file
           </Text>
@@ -311,12 +323,13 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
 
       {/* Document Items List */}
       {DOCUMENT_ITEMS_LIST.map((item) => {
-        const isUploaded = uploadedState[item.id] !== undefined ? uploadedState[item.id] : item.isUploaded;
+        const docRecord = findUploadedDoc(item.id);
+        const isUploaded = Boolean(docRecord?.fileUri && docRecord.fileUri.trim() !== "");
 
         return (
           <View key={item.id} style={styles.docCard}>
             <View style={styles.docCardLeft}>
-              <View style={[styles.iconSquare, { backgroundColor: item.iconBg }]}>
+              <View style={[styles.iconSquare, styles[item.iconStyle]]}>
                 <Ionicons name={item.iconName} size={18} color={item.iconColor} />
               </View>
 
@@ -342,7 +355,7 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
                 <>
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    onPress={() => handleView(item.id, item.title)}
+                    onPress={() => handleView(item)}
                     style={styles.viewBtn}
                   >
                     <Ionicons name="eye-outline" size={13} color="#0F172A" />
@@ -364,7 +377,7 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
                   onPress={() => handleOpenUploadSheet(item.id)}
                   style={styles.uploadBtn}
                 >
-                  <Ionicons name="cloud-upload-outline" size={14} color="#EA580C" />
+                  <Ionicons name="cloud-upload-outline" size={14} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
                   <Text style={styles.uploadBtnText}>Upload</Text>
                 </TouchableOpacity>
               )}
@@ -394,18 +407,18 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
             </View>
 
             <TouchableOpacity style={styles.sheetOption} onPress={handlePickCamera}>
-              <Ionicons name="camera-outline" size={22} color="#EA580C" />
+              <Ionicons name="camera-outline" size={22} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
               <Text style={styles.sheetOptionText}>Take Photo with Camera</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.sheetOption} onPress={handlePickGallery}>
-              <Ionicons name="images-outline" size={22} color="#EA580C" />
+              <Ionicons name="images-outline" size={22} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
               <Text style={styles.sheetOptionText}>Choose from Gallery</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.sheetOption} onPress={handleMockPdf}>
-              <Ionicons name="document-attach-outline" size={22} color="#EA580C" />
-              <Text style={styles.sheetOptionText}>Attach Document PDF</Text>
+            <TouchableOpacity style={styles.sheetOption} onPress={handlePickDocument}>
+              <Ionicons name="document-attach-outline" size={22} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+              <Text style={styles.sheetOptionText}>Attach Document (PDF, Word, Excel)</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -422,7 +435,7 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
           <View style={styles.viewModalContent}>
             <View style={styles.previewHeader}>
               <View style={styles.previewTitleRow}>
-                <Ionicons name="document-text" size={20} color="#EA580C" />
+                <Ionicons name="document-text" size={20} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
                 <Text style={styles.previewTitle}>{previewDoc?.title || "Document Preview"}</Text>
               </View>
 
@@ -440,7 +453,7 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
                 />
               ) : (
                 <View style={styles.previewPdfBox}>
-                  <Ionicons name="document-attach" size={48} color="#EA580C" />
+                  <Ionicons name="document-attach" size={48} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
                   <View style={styles.previewBadge}>
                     <Ionicons name="checkmark-circle" size={14} color="#166534" />
                     <Text style={styles.previewBadgeText}>Document Uploaded & Verified</Text>

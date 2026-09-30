@@ -41,50 +41,53 @@ export const calculateRepaymentSchedule = (
   const r = annualRate / 100 / 12;
   const n = Math.max(1, tenureYears * 12);
 
-  let monthlyEmi = 0;
-  if (r > 0) {
-    const factor = Math.pow(1 + r, n);
-    monthlyEmi = (p * r * factor) / (factor - 1);
-  } else {
-    monthlyEmi = p / n;
-  }
+  const monthlyEmi =
+    r > 0 ? (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1) : p / n;
 
-  let currentBalance = p;
-  const rows: RepaymentScheduleRow[] = [];
+  const yearIndices = Array.from({ length: tenureYears }, (_, i) => i + 1);
 
-  for (let year = 1; year <= tenureYears; year++) {
-    const openingBalance = currentBalance;
-    let yearlyPrincipal = 0;
-    let yearlyInterest = 0;
+  const scheduleResult = yearIndices.reduce(
+    (acc, year) => {
+      const openingBalance = acc.balance;
+      const monthIndices = Array.from({ length: 12 }, (_, i) => i);
 
-    for (let m = 0; m < 12; m++) {
-      if (currentBalance <= 0) break;
-      const monthInterest = currentBalance * r;
-      let monthPrincipal = monthlyEmi - monthInterest;
-      if (monthPrincipal > currentBalance) {
-        monthPrincipal = currentBalance;
-      }
-      yearlyInterest += monthInterest;
-      yearlyPrincipal += monthPrincipal;
-      currentBalance -= monthPrincipal;
-    }
+      const yearCalc = monthIndices.reduce(
+        (mAcc) => {
+          if (mAcc.balance <= 0) return mAcc;
+          const monthInterest = mAcc.balance * r;
+          const monthPrincipal = Math.min(monthlyEmi - monthInterest, mAcc.balance);
+          return {
+            balance: Math.max(0, mAcc.balance - monthPrincipal),
+            yearlyInterest: mAcc.yearlyInterest + monthInterest,
+            yearlyPrincipal: mAcc.yearlyPrincipal + monthPrincipal,
+          };
+        },
+        { balance: openingBalance, yearlyInterest: 0, yearlyPrincipal: 0 }
+      );
 
-    const totalPayment = yearlyPrincipal + yearlyInterest;
-    const closingBalance = Math.max(0, currentBalance);
+      const totalPayment = yearCalc.yearlyPrincipal + yearCalc.yearlyInterest;
+      const closingBalance = Math.max(0, yearCalc.balance);
 
-    rows.push({
-      year: `Year ${year}`,
-      openingBalance: formatIndianCurrency(openingBalance),
-      principal: formatIndianCurrency(yearlyPrincipal),
-      interest: formatIndianCurrency(yearlyInterest),
-      totalPayment: formatIndianCurrency(totalPayment),
-      closingBalance: formatIndianCurrency(closingBalance),
-    });
-  }
+      const row: RepaymentScheduleRow = {
+        year: `Year ${year}`,
+        openingBalance: formatIndianCurrency(openingBalance),
+        principal: formatIndianCurrency(yearCalc.yearlyPrincipal),
+        interest: formatIndianCurrency(yearCalc.yearlyInterest),
+        totalPayment: formatIndianCurrency(totalPayment),
+        closingBalance: formatIndianCurrency(closingBalance),
+      };
+
+      return {
+        balance: closingBalance,
+        rows: [...acc.rows, row],
+      };
+    },
+    { balance: p, rows: [] as RepaymentScheduleRow[] }
+  );
 
   return {
-    schedule: rows,
-    calculatedEmi: formatIndianCurrency(monthlyEmi),
+    schedule: scheduleResult.rows,
+    calculatedEmi: formatIndianCurrency(Math.round(monthlyEmi)),
   };
 };
 

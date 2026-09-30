@@ -25,7 +25,7 @@ export const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 6,
-    backgroundColor: "#FEF0E6",
+    backgroundColor: BrandColors.PRIMARY_LIGHT_ORANGE || "#FEF0E6",
     alignItems: "center",
     justifyContent: "center",
   },

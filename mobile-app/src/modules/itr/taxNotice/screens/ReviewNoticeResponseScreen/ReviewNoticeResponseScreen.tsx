@@ -5,17 +5,18 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
+  StatusBar,
   Alert,
   Modal,
   TouchableWithoutFeedback,
 } from "react-native";
-import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { TaxNoticeHeader } from "../../components/common";
 import { DraftedResponseCard } from "../../components/review";
 import { generateNoticeDraftResponse } from "../../mock/taxNoticeData";
+import { taxNoticeApi } from "../../../services/taxNoticeApi";
 import { useApplicationStore } from "@/store/applicationStore";
 import { useAuthStore } from "@/modules/authentication/store/authStore";
 import {
@@ -136,7 +137,7 @@ Meera Iyer, Tax Executive`;
 
   return (
     <View style={[styles.container, getContainerInsetsStyle(insets.top)]}>
-      <FocusAwareStatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Screen Header */}
       <TaxNoticeHeader subtitle="Review Response" />
@@ -223,126 +224,17 @@ Meera Iyer, Tax Executive`;
       {/* Bottom Sticky Action Buttons */}
       <View style={[styles.bottomBar, getBottomBarInsetsStyle(insets.bottom)]}>
         <View style={styles.buttonsRow}>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => setShowEditModal(true)}
-            style={styles.editButton}
-          >
-            <Text style={styles.editButtonText}>Edit Request</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={handleApproveAndSubmit}
-            style={styles.approveButton}
-          >
-            <Text style={styles.approveButtonText}>Approve & Submit</Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={handleApproveAndSubmit}
+              style={[styles.approveButton, { flex: 1 }]}
+            >
+              <Text style={styles.approveButtonText}>Approve & Submit</Text>
+            </TouchableOpacity>
+          </View>
       </View>
 
-      {/* Edit Request Modal */}
-      <Modal
-        visible={showEditModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowEditModal(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setShowEditModal(false)}>
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(15, 23, 42, 0.6)",
-              justifyContent: "center",
-              paddingHorizontal: 20,
-            }}
-          >
-            <TouchableWithoutFeedback>
-              <View
-                style={{
-                  backgroundColor: "#FFFFFF",
-                  borderRadius: 20,
-                  padding: 20,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "700",
-                    color: "#0F172A",
-                    marginBottom: 8,
-                  }}
-                >
-                  Request Edits from Tax Executive
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: "#64748B",
-                    marginBottom: 14,
-                    lineHeight: 18,
-                  }}
-                >
-                  Describe any modifications, corrections in income amounts, or additional facts you would like added to the response.
-                </Text>
-
-                <TextInput
-                  style={{
-                    height: 100,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: "#CBD5E1",
-                    padding: 12,
-                    fontSize: 14,
-                    color: "#0F172A",
-                    textAlignVertical: "top",
-                    marginBottom: 16,
-                  }}
-                  multiline
-                  numberOfLines={4}
-                  placeholder="e.g. Please clarify that interest from SBI was already declared under Schedule OS line 2..."
-                  placeholderTextColor="#94A3B8"
-                  value={editNotes}
-                  onChangeText={setEditNotes}
-                />
-
-                <View style={{ flexDirection: "row", gap: 10 }}>
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={() => setShowEditModal(false)}
-                    style={{
-                      flex: 1,
-                      height: 46,
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: "#CBD5E1",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text style={{ fontWeight: "600", color: "#475569" }}>Cancel</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    onPress={handleSendEditRequest}
-                    style={{
-                      flex: 1,
-                      height: 46,
-                      borderRadius: 12,
-                      backgroundColor: "#FF7A00",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text style={{ fontWeight: "700", color: "#FFFFFF" }}>Send to Executive</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+      
     </View>
   );
 };

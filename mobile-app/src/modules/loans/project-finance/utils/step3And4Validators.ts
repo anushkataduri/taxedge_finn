@@ -89,36 +89,42 @@ export const validateStep4 = (state: Step4ValidationState): string | null => {
   if (!products || products.length === 0) {
     return "Please add at least one Product / Service.";
   }
-  for (let i = 0; i < products.length; i++) {
-    const p = products[i];
-    const prefix = products.length > 1 ? `Product ${i + 1}: ` : "";
-    if (!p.name?.trim()) {
-      return `${prefix}Please enter Product / Service Name.`;
-    }
-    if (!p.category?.trim()) {
-      return `${prefix}Please select Product Category.`;
-    }
-    if (!p.unit?.trim()) {
-      return `${prefix}Please select Unit of Measurement.`;
-    }
-    if (!p.installedCapacity?.trim()) {
-      return `${prefix}Please enter Installed Capacity.`;
-    }
-    if (!p.expectedProductionAnnual?.trim()) {
-      return `${prefix}Please enter Expected Production (Annual).`;
-    }
-    if (!p.capacityUtilisation?.trim()) {
-      return `${prefix}Please enter Capacity Utilisation (%).`;
-    }
-    if (!p.sellingPrice?.trim()) {
-      return `${prefix}Please enter Selling Price.`;
-    }
-    if (!p.domesticExport?.trim()) {
-      return `${prefix}Please select Domestic / Export.`;
-    }
-    if (!p.productMix?.trim()) {
-      return `${prefix}Please enter Product Mix (%).`;
-    }
+  const productError = products
+    .map((p, i) => {
+      const prefix = products.length > 1 ? `Product ${i + 1}: ` : "";
+      if (!p.name?.trim()) {
+        return `${prefix}Please enter Product / Service Name.`;
+      }
+      if (!p.category?.trim()) {
+        return `${prefix}Please select Product Category.`;
+      }
+      if (!p.unit?.trim()) {
+        return `${prefix}Please select Unit of Measurement.`;
+      }
+      if (!p.installedCapacity?.trim()) {
+        return `${prefix}Please enter Installed Capacity.`;
+      }
+      if (!p.expectedProductionAnnual?.trim()) {
+        return `${prefix}Please enter Expected Production (Annual).`;
+      }
+      if (!p.capacityUtilisation?.trim()) {
+        return `${prefix}Please enter Capacity Utilisation (%).`;
+      }
+      if (!p.sellingPrice?.trim()) {
+        return `${prefix}Please enter Selling Price.`;
+      }
+      if (!p.domesticExport?.trim()) {
+        return `${prefix}Please select Domestic / Export.`;
+      }
+      if (!p.productMix?.trim()) {
+        return `${prefix}Please enter Product Mix (%).`;
+      }
+      return null;
+    })
+    .find(Boolean);
+
+  if (productError) {
+    return productError;
   }
 
   // 2. Market Details
@@ -139,24 +145,30 @@ export const validateStep4 = (state: Step4ValidationState): string | null => {
   if (!customers || customers.length === 0) {
     return "Please add at least one Customer / Offtaker.";
   }
-  for (let i = 0; i < customers.length; i++) {
-    const c = customers[i];
-    const prefix = customers.length > 1 ? `Customer ${i + 1}: ` : "";
-    if (!c.customerName?.trim()) {
-      return `${prefix}Please enter Customer / Offtaker Name.`;
-    }
-    if (!c.customerType?.trim()) {
-      return `${prefix}Please select Customer Type.`;
-    }
-    if (!c.expectedPurchaseQty?.trim()) {
-      return `${prefix}Please enter Expected Purchase Quantity.`;
-    }
-    if (!c.unit?.trim()) {
-      return `${prefix}Please select Unit.`;
-    }
-    if (!c.expectedRevenue?.trim()) {
-      return `${prefix}Please enter Expected Revenue.`;
-    }
+  const customerError = customers
+    .map((c, i) => {
+      const prefix = customers.length > 1 ? `Customer ${i + 1}: ` : "";
+      if (!c.customerName?.trim()) {
+        return `${prefix}Please enter Customer / Offtaker Name.`;
+      }
+      if (!c.customerType?.trim()) {
+        return `${prefix}Please select Customer Type.`;
+      }
+      if (!c.expectedPurchaseQty?.trim()) {
+        return `${prefix}Please enter Expected Purchase Quantity.`;
+      }
+      if (!c.unit?.trim()) {
+        return `${prefix}Please select Unit.`;
+      }
+      if (!c.expectedRevenue?.trim()) {
+        return `${prefix}Please enter Expected Revenue.`;
+      }
+      return null;
+    })
+    .find(Boolean);
+
+  if (customerError) {
+    return customerError;
   }
 
   // 4. Projection Setup

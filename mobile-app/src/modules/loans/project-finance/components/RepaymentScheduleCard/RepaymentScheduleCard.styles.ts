@@ -70,7 +70,7 @@ export const styles = StyleSheet.create({
   summaryVal: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#1E3A8A",
+    color: "#EA580C",
     marginTop: 4,
   },
   tableWrapper: {
@@ -81,7 +81,7 @@ export const styles = StyleSheet.create({
   },
   tableHeaderRow: {
     flexDirection: "row",
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#FEF0E6",
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
     paddingVertical: 10,
@@ -89,7 +89,7 @@ export const styles = StyleSheet.create({
   tableHeaderCell: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#1E3A8A",
+    color: "#EA580C",
     paddingHorizontal: 8,
   },
   tableDataRow: {
@@ -127,4 +127,16 @@ export const styles = StyleSheet.create({
     width: 120,
     textAlign: "right",
   },
+  emptyContainer: {
+    paddingVertical: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    fontSize: 13,
+    color: "#64748B",
+    marginTop: 8,
+    textAlign: "center",
+  },
 });
+
