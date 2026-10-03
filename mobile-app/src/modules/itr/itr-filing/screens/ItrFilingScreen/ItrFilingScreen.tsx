@@ -31,6 +31,7 @@ export const ItrFilingScreen: React.FC = () => {
 
   // Store bindings
   const currentStep = useITRStore((state) => state.currentStep);
+  const maxStepReached = useITRStore((state) => state.maxStepReached);
   const setStep = useITRStore((state) => state.setStep);
   const formData = useITRStore((state) => state.formData);
 
@@ -283,7 +284,7 @@ export const ItrFilingScreen: React.FC = () => {
       >
         {/* Step 1: Personal Information, AY & Bank (Pre-filled from DB/GST) */}
         {currentStep === 0 && (
-          <Step1PersonalInfo
+          <Step1PersonalInfo isEditing={maxStepReached > 0}
             personalInfo={formData.personalInfo}
             onUpdatePersonalInfo={setPersonalInfo}
             bankDetails={formData.bankDetails}
@@ -299,7 +300,7 @@ export const ItrFilingScreen: React.FC = () => {
 
         {/* Step 2: Income Sources & Smart ITR Form Determination */}
         {currentStep === 1 && (
-          <Step2IncomeSources
+          <Step2IncomeSources isEditing={maxStepReached > 1}
             sources={formData.incomeSources}
             determinedForm={formData.determinedForm}
             gstReconciliation={formData.gstReconciliation}
@@ -316,7 +317,7 @@ export const ItrFilingScreen: React.FC = () => {
 
         {/* Step 3: Tax Regime & Structured Deductions */}
         {currentStep === 2 && (
-          <Step3RegimeAndDeductions
+          <Step3RegimeAndDeductions isEditing={maxStepReached > 2}
             regime={formData.regime}
             onChangeRegime={setRegime}
             deductions={formData.deductions}
@@ -329,7 +330,7 @@ export const ItrFilingScreen: React.FC = () => {
 
         {/* Step 4: Dynamic Document Checklist & Upload */}
         {currentStep === 3 && (
-          <Step4DocumentChecklist
+          <Step4DocumentChecklist isEditing={maxStepReached > 3}
             documents={formData.documents}
             onUpdateDocument={updateDocument}
             onContinue={() => setStep(4)}

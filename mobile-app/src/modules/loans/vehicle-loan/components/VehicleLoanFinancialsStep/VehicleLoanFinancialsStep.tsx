@@ -10,6 +10,7 @@ import {
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
 import { VehicleLoanDetailsFormData } from "../../types/vehicleLoan.types";
+import { LoanAmountInput, type LoanAmountPreset } from "../../../components/LoanAmountInput";
 import { styles } from "./VehicleLoanFinancialsStep.styles";
 
 export interface VehicleLoanFinancialsStepProps {
@@ -72,7 +73,7 @@ const VEHICLE_MODELS = [
   "Other (Specify Custom Vehicle Model)",
 ];
 
-const AMOUNT_PRESETS = [
+const AMOUNT_PRESETS: readonly LoanAmountPreset[] = [
   { label: "₹3 Lakhs", value: "300000" },
   { label: "₹5 Lakhs", value: "500000" },
   { label: "₹8 Lakhs", value: "800000" },
@@ -166,46 +167,15 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
           Enter your required loan amount or select one of the quick presets below.
         </Text>
 
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Amount (₹) <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, errors.requiredAmount && styles.inputError]}
-            placeholder="Enter required loan amount (₹)"
-            placeholderTextColor="#94A3B8"
-            keyboardType="numeric"
-            value={data.requiredAmount}
-            onChangeText={(text) => onChange("requiredAmount", text)}
-          />
-          {errors.requiredAmount && (
-            <Text style={styles.errorText}>{errors.requiredAmount}</Text>
-          )}
-
-          <View style={styles.chipRow}>
-            {AMOUNT_PRESETS.map((item) => {
-              const isSelected =
-                Boolean(data.requiredAmount) && data.requiredAmount === item.value;
-              return (
-                <TouchableOpacity
-                  key={item.value}
-                  activeOpacity={0.7}
-                  onPress={() => onChange("requiredAmount", item.value)}
-                  style={[styles.chip, isSelected && styles.chipActive]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      isSelected && styles.chipTextActive,
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
+        <LoanAmountInput
+          label="Amount (₹)"
+          required
+          placeholder="Enter required loan amount (₹)"
+          value={data.requiredAmount}
+          onChange={(value) => onChange("requiredAmount", value)}
+          presets={AMOUNT_PRESETS}
+          error={errors.requiredAmount}
+        />
       </View>
 
       {/* 2. Vehicle Category & Purpose Card */}
@@ -221,7 +191,7 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
           </View>
         </View>
         <Text style={styles.cardDescription}>
-          Select your automobile category. Select "Others" if your specific requirement is not listed.
+          Select your automobile category. Select &quot;Others&quot; if your specific requirement is not listed.
         </Text>
 
         <View style={styles.fieldGroup}>
@@ -642,16 +612,7 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
 
             <ScrollView showsVerticalScrollIndicator={false}>
               {/* Below 1 Year Header */}
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: "700",
-                  color: "#64748B",
-                  marginTop: 8,
-                  marginBottom: 4,
-                  textTransform: "uppercase",
-                }}
-              >
+              <Text style={styles.tenureGroupHeaderFirst}>
                 Below 1 Year (Short Term)
               </Text>
               {TENURE_OPTIONS.filter((t) => ["3", "6", "9"].includes(t.value)).map(
@@ -687,16 +648,7 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
               )}
 
               {/* 1 Year and Above Header */}
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: "700",
-                  color: "#64748B",
-                  marginTop: 14,
-                  marginBottom: 4,
-                  textTransform: "uppercase",
-                }}
-              >
+              <Text style={styles.tenureGroupHeader}>
                 1 Year & Above
               </Text>
               {TENURE_OPTIONS.filter(

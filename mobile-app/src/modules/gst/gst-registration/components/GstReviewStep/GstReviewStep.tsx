@@ -7,10 +7,10 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
-import { GstBusinessFormData } from "../GstBusinessStep/GstBusinessStep";
-import { DocumentItem } from "../GstUnifiedDocumentStep/GstUnifiedDocumentStep";
+import { GstBusinessFormData } from "@/modules/gst/gst-registration/components/GstBusinessStep/GstBusinessStep";
+import { DocumentItem } from "@/modules/gst/gst-registration/components/GstUnifiedDocumentStep/GstUnifiedDocumentStep";
+import { DocumentPreviewModal } from "@/modules/gst/gst-registration/components/GstUnifiedDocumentStep/GstDocumentModals";
 import { styles, getDocProgressFillStyle } from "./GstReviewStep.styles";
-import { DocumentPreviewModal } from "../GstUnifiedDocumentStep/GstDocumentModals";
 
 interface GstReviewStepProps {
   businessData: GstBusinessFormData;
@@ -56,11 +56,11 @@ export const GstReviewStep: React.FC<GstReviewStepProps> = ({
 
   if (isFetching && !businessData.legalName) {
     return (
-      <View style={{ paddingVertical: 48, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ fontSize: 15, fontWeight: "600", color: BrandColors.TEXT_PRIMARY }}>
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingTitle}>
           Retrieving Application Data
         </Text>
-        <Text style={{ marginTop: 6, fontSize: 13, color: BrandColors.TEXT_SECONDARY }}>
+        <Text style={styles.loadingSubtitle}>
           Fetching saved details from database...
         </Text>
       </View>

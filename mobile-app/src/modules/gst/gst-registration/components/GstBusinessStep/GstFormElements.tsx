@@ -156,21 +156,15 @@ export const FormDatePicker: React.FC<DatePickerProps> = ({
       onPress={onPress}
       style={[
         styles.dateInput,
+        styles.formDatePickerBtn,
         error && styles.inputError,
-        {
-          height: 50,
-          paddingHorizontal: 10,
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        },
       ]}
     >
       <Text
         style={[
           styles.selectText,
+          styles.formDatePickerText,
           !value && styles.placeholderText,
-          { flex: 1, fontSize: 13 },
         ]}
         numberOfLines={1}
       >

@@ -10,6 +10,7 @@ import {
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
 import { LoanDetailsFormData } from "../../../types/loans.types";
+import { LoanAmountInput, type LoanAmountPreset } from "../../../components/LoanAmountInput";
 import { styles } from "./HomeLoanFinancialsStep.styles";
 
 export interface HomeLoanFinancialsStepProps {
@@ -37,7 +38,7 @@ const TENURE_OPTIONS = [
   { label: "30 Yrs (360 M)", value: "360" },
 ];
 
-const AMOUNT_PRESETS = [
+const AMOUNT_PRESETS: readonly LoanAmountPreset[] = [
   { label: "₹25 Lakhs", value: "2500000" },
   { label: "₹50 Lakhs", value: "5000000" },
   { label: "₹75 Lakhs", value: "7500000" },
@@ -90,45 +91,15 @@ export const HomeLoanFinancialsStep: React.FC<HomeLoanFinancialsStepProps> = ({
           Enter your required loan amount or select one of the quick presets below.
         </Text>
 
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Amount (₹) <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, errors.requiredAmount && styles.inputError]}
-            placeholder="Enter required loan amount (₹)"
-            placeholderTextColor="#94A3B8"
-            keyboardType="numeric"
-            value={data.requiredAmount}
-            onChangeText={(text) => onChange("requiredAmount", text)}
-          />
-          {errors.requiredAmount && (
-            <Text style={styles.errorText}>{errors.requiredAmount}</Text>
-          )}
-
-          <View style={styles.chipRow}>
-            {AMOUNT_PRESETS.map((item) => {
-              const isSelected = Boolean(data.requiredAmount) && data.requiredAmount === item.value;
-              return (
-                <TouchableOpacity
-                  key={item.value}
-                  activeOpacity={0.7}
-                  onPress={() => onChange("requiredAmount", item.value)}
-                  style={[styles.chip, isSelected && styles.chipActive]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      isSelected && styles.chipTextActive,
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
+        <LoanAmountInput
+          label="Amount (₹)"
+          required
+          placeholder="Enter required loan amount (₹)"
+          value={data.requiredAmount}
+          onChange={(value) => onChange("requiredAmount", value)}
+          presets={AMOUNT_PRESETS}
+          error={errors.requiredAmount}
+        />
       </View>
 
       {/* 2. Property Intent / Purpose Card (Dropdown with Others) */}
@@ -140,7 +111,7 @@ export const HomeLoanFinancialsStep: React.FC<HomeLoanFinancialsStepProps> = ({
           </View>
         </View>
         <Text style={styles.cardDescription}>
-          Select the housing requirement. Select "Others" if your specific property purpose is not listed.
+          Select the housing requirement. Select &quot;Others&quot; if your specific property purpose is not listed.
         </Text>
 
         <View style={styles.fieldGroup}>

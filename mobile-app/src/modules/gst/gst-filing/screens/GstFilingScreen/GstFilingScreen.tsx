@@ -15,13 +15,13 @@ import { KeyboardAwareScrollView } from "@/shared/components/KeyboardAwareFormLa
 import { useApplicationStore } from "@/store/applicationStore";
 import { applicationService } from "@/modules/applications/services/applicationService";
 import { gstApi } from "@/modules/gst/services/gstApi";
-import { useGstFiling } from "../../hooks/useGstFiling";
+import { useGstFiling } from "@/modules/gst/gst-filing/hooks/useGstFiling";
 import {
   styles,
   getHeaderBarStyle,
   getScrollContentStyle,
   getSubmitButtonStyle,
-} from "./GstFilingScreen.styles";
+} from "@/modules/gst/gst-filing/screens/GstFilingScreen/GstFilingScreen.styles";
 
 export const GstFilingScreen: React.FC = () => {
   const insets = useSafeAreaInsets();

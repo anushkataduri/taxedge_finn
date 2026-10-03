@@ -7,11 +7,13 @@ import {
   Alert,
 } from "react-native";
 import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
+import { useRevisedProgressStore } from "../../store/revisedProgressStore";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
+import { DocumentPreviewModal } from "../../../itr-filing/components/DocumentPreviewModal/DocumentPreviewModal";
 import { DocumentUploadBottomSheet } from "@/modules/itr/tds/components/upload/DocumentUploadBottomSheet/DocumentUploadBottomSheet";
 import { RevisedItrHeader } from "../../components/common";
 import { REVISED_SUPPORTING_DOCUMENTS } from "../../mock/revisedItrData";
@@ -26,6 +28,7 @@ import {
 
 export const RevisedDocumentsScreen: React.FC = () => {
   const router = useRouter();
+  const maxStepReached = useRevisedProgressStore((s) => s.maxStepReached);
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     acknowledgementNumber?: string;
@@ -62,6 +65,7 @@ export const RevisedDocumentsScreen: React.FC = () => {
   const isCompleted = uploadedCount === totalCount && totalCount > 0;
   const percent = totalCount > 0 ? (uploadedCount / totalCount) * 100 : 0;
 
+  const [previewDoc, setPreviewDoc] = useState<any>(null);
   const [selectedDocForUpload, setSelectedDocForUpload] = useState<RevisedDocumentItem | null>(null);
 
   const handleFileSelected = (uri: string, name: string, size?: number) => {
@@ -172,6 +176,13 @@ export const RevisedDocumentsScreen: React.FC = () => {
   };
 
   const handleContinue = () => {
+    const checkReq = documents.filter((d) => isDocRequired(d.id, params.revisionReason));
+    const missing = checkReq.filter((d) => d.status !== "uploaded");
+    if (missing.length > 0) {
+      Alert.alert("Missing Documents", "Please upload all required documents before continuing.");
+      return;
+    }
+
     // Navigate to Screen 5: Review Revised Computation
     router.push({
       pathname: "/service/revised-itr-review" as any,
@@ -206,7 +217,7 @@ export const RevisedDocumentsScreen: React.FC = () => {
             <View style={styles.actionsRow}>
               <TouchableOpacity
                 activeOpacity={0.7}
-                onPress={() => Alert.alert("View Document", item.fileName || item.title)}
+                onPress={() => setPreviewDoc(item)}
                 style={styles.actionBtn}
               >
                 <Text style={styles.actionBtnText}>View</Text>
@@ -324,7 +335,7 @@ export const RevisedDocumentsScreen: React.FC = () => {
           onPress={handleContinue}
           style={styles.continueButton}
         >
-          <Text style={styles.continueButtonText}>Continue</Text>
+          <Text style={styles.continueButtonText}>{maxStepReached >= 3 ? "Update and Continue" : "Continue"}</Text>
         </TouchableOpacity>
       </View>
 

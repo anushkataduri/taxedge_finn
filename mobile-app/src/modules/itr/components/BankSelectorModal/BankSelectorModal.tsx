@@ -40,6 +40,16 @@ export const BankSelectorModal: React.FC<BankSelectorModalProps> = ({
       Alert.alert("Required Fields", "Please provide the bank name, account number, and IFSC code.");
       return;
     }
+    
+    if (bankName.trim().length < 3 || !/^[A-Za-z\s]+$/.test(bankName)) {
+      Alert.alert("Invalid Bank Name", "Bank name should only contain alphabets and be at least 3 characters long.");
+      return;
+    }
+    
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode.toUpperCase())) {
+      Alert.alert("Invalid IFSC", "Please enter a valid 11-character IFSC code (e.g. SBIN0001234).");
+      return;
+    }
 
     const masked = `•••• •••• ${accountNumber.trim().slice(-4)}`;
     const newBank: ItrSelectableBank = {
@@ -134,7 +144,7 @@ export const BankSelectorModal: React.FC<BankSelectorModalProps> = ({
                       placeholder="e.g. State Bank of India"
                       placeholderTextColor="#94A3B8"
                       value={bankName}
-                      onChangeText={setBankName}
+                      onChangeText={(val) => setBankName(val.replace(/[^A-Za-z\\s]/g, ""))} maxLength={50}
                     />
                   </View>
                 </View>
@@ -148,7 +158,7 @@ export const BankSelectorModal: React.FC<BankSelectorModalProps> = ({
                       placeholder="Enter account number"
                       placeholderTextColor="#94A3B8"
                       value={accountNumber}
-                      onChangeText={setAccountNumber}
+                      onChangeText={(val) => setAccountNumber(val.replace(/[^0-9]/g, ""))} maxLength={18}
                     />
                   </View>
                 </View>
@@ -162,7 +172,7 @@ export const BankSelectorModal: React.FC<BankSelectorModalProps> = ({
                       placeholder="e.g. SBIN0001234"
                       placeholderTextColor="#94A3B8"
                       value={ifscCode}
-                      onChangeText={setIfscCode}
+                      onChangeText={setIfscCode} maxLength={11}
                     />
                   </View>
                 </View>

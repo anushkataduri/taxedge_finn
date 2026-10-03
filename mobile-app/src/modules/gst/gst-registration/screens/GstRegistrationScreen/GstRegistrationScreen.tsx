@@ -15,15 +15,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
 
-import { GstStepIndicator } from "../../components/GstStepIndicator/GstStepIndicator";
-import { GstBusinessStep } from "../../components/GstBusinessStep/GstBusinessStep";
-import { GstUnifiedDocumentStep } from "../../components/GstUnifiedDocumentStep/GstUnifiedDocumentStep";
-import { GstReviewStep } from "../../components/GstReviewStep/GstReviewStep";
-import { GstRegistrationPaymentStep } from "../../components/GstRegistrationPaymentStep/GstRegistrationPaymentStep";
-import { GstApplicationStatusStep } from "../../../gst-status/components/GstApplicationStatusStep/GstApplicationStatusStep";
+import { GstStepIndicator } from "@/modules/gst/gst-registration/components/GstStepIndicator/GstStepIndicator";
+import { GstBusinessStep } from "@/modules/gst/gst-registration/components/GstBusinessStep/GstBusinessStep";
+import { GstUnifiedDocumentStep } from "@/modules/gst/gst-registration/components/GstUnifiedDocumentStep/GstUnifiedDocumentStep";
+import { GstReviewStep } from "@/modules/gst/gst-registration/components/GstReviewStep/GstReviewStep";
+import { GstRegistrationPaymentStep } from "@/modules/gst/gst-registration/components/GstRegistrationPaymentStep/GstRegistrationPaymentStep";
+import { GstApplicationStatusStep } from "@/modules/gst/gst-status/components/GstApplicationStatusStep/GstApplicationStatusStep";
 import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 
-import { useGstRegistrationFlow } from "../../hooks/useGstRegistrationFlow";
+import { useGstRegistrationFlow } from "@/modules/gst/gst-registration/hooks/useGstRegistrationFlow";
 import { styles, getHeaderBarStyle } from "./GstRegistrationScreen.styles";
 
 const STEPS = ["Business", "Documents", "Review", "Payment"];

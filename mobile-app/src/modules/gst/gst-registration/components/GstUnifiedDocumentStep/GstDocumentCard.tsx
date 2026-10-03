@@ -45,6 +45,7 @@ export const GstDocumentCard: React.FC<CardProps> = ({
     status === "processing" || status === "uploading" || isUploading;
 
   const renderBadge = () => {
+    if (status === "idle") return null;
     const badgeStyle =
       status === "uploaded"
         ? styles.statusUploaded

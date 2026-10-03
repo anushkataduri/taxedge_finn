@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -21,39 +22,51 @@ public class GstFilingDocuments {
 	@JoinColumn(name = "filing_id", nullable = false, unique = true)
 	private GstFiling gstFiling;
 
-	@Column(name = "sales_invoice", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "sales_invoice", columnDefinition = "LONGTEXT")
 	private String salesInvoice;
 
-	@Column(name = "purchase_invoices", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "purchase_invoices", columnDefinition = "LONGTEXT")
 	private String purchaseInvoices;
 
-	@Column(name = "gstr2b_itc_statement", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "gstr2b_itc_statement", columnDefinition = "LONGTEXT")
 	private String gstr2bItcStatement;
 
-	@Column(name = "credit_notes", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "credit_notes", columnDefinition = "LONGTEXT")
 	private String creditNotes;
 
-	@Column(name = "debit_notes", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "debit_notes", columnDefinition = "LONGTEXT")
 	private String debitNotes;
 
-	@Column(name = "e_invoice_data", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "e_invoice_data", columnDefinition = "LONGTEXT")
 	private String eInvoiceData;
 
-	@Column(name = "e_way_bill_data", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "e_way_bill_data", columnDefinition = "LONGTEXT")
 	private String eWayBillData;
 
-	@Column(name = "expense_invoices_and_vouchers", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "expense_invoices_and_vouchers", columnDefinition = "LONGTEXT")
 	private String expenseInvoicesAndVouchers;
 
-	@Column(name = "bank_statement", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "bank_statement", columnDefinition = "LONGTEXT")
 	private String bankStatement;
 
-	@Column(name = "previous_gst_returns", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "previous_gst_returns", columnDefinition = "LONGTEXT")
 	private String previousGstReturns;
 
-	@Column(name = "previous_filing_acknowledgement", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "previous_filing_acknowledgement", columnDefinition = "LONGTEXT")
 	private String previousFilingAcknowledgement;
 
-	@Column(name = "other_supporting_documents", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "other_supporting_documents", columnDefinition = "LONGTEXT")
 	private String otherSupportingDocuments;
 }

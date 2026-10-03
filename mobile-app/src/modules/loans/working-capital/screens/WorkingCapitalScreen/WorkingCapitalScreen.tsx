@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect } from "react";
+import React, { useState, useRef, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
@@ -16,7 +16,6 @@ import { loansApi } from "../../../services/loansApi";
 import { BUSINESS_DOCUMENTS_TEMPLATE } from "../../../mock/loanServices";
 import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useApplicationStore } from "@/store/applicationStore";
 import {
   LoanDetailsFormData,
@@ -30,10 +29,14 @@ import {
   validateLoanDetails,
   validateLoanBusiness,
   validateLoanBanking,
-  validateLoanDocuments,
 } from "../../../validation/loansSchema";
+import { useLoanWizard } from "../../../hooks/useLoanWizard";
+import { useLoanDocuments } from "../../../hooks/useLoanDocuments";
+import { useLoanDraft } from "../../../hooks/useLoanDraft";
+import { LOAN_DRAFT_STORAGE_KEYS } from "../../../constants/loanDraftKeys";
+import { LoanStepIndicator } from "../../../components/LoanStepIndicator";
+import { getBottomBarPadding, getSafeAreaTopPadding } from "../../../styles/loanScreenLayout.styles";
 import {
-  WorkingCapitalStepIndicator,
   WorkingCapitalFinancialsStep,
   WorkingCapitalBusinessStep,
   WorkingCapitalBankingStep,
@@ -42,8 +45,9 @@ import {
 } from "../../components";
 import { styles } from "./WorkingCapitalScreen.styles";
 
-const STEPS = ["Financials", "Business & Banking", "Documents", "Review"];
-const DRAFT_STORAGE_KEY = "@taxedge_working_capital_draft_v1";
+const STEPS = ["Financials", "Business & Banking", "Documents", "Review"] as const;
+/** Upload limit of the document picker this flow used before (2 MB). */
+const WORKING_CAPITAL_MAX_FILE_SIZE_MB = 2;
 
 const INITIAL_LOAN_DETAILS: LoanDetailsFormData = {
   loanType: "Working Capital",
@@ -76,38 +80,59 @@ const INITIAL_BANKING_DETAILS: LoanBankingFormData = {
   grossTotalIncome: "",
 };
 
+/** Persisted draft shape; field order matches the JSON this screen has always written. */
+interface WorkingCapitalDraft {
+  loanType: "Working Capital";
+  loanTypeId: "working-capital";
+  currentStepIndex: number;
+  loanDetails?: LoanDetailsFormData;
+  businessDetails?: LoanBusinessFormData;
+  bankingDetails?: LoanBankingFormData;
+  documents?: LoanDocumentItem[];
+}
+
 export const WorkingCapitalScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
   const customer = useAuthStore((s) => s.customer);
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConsentChecked, setIsConsentChecked] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loanDetails, setLoanDetails] = useState<LoanDetailsFormData>(INITIAL_LOAN_DETAILS);
   const [businessDetails, setBusinessDetails] = useState<LoanBusinessFormData>(INITIAL_BUSINESS_DETAILS);
   const [bankingDetails, setBankingDetails] = useState<LoanBankingFormData>(INITIAL_BANKING_DETAILS);
-  const [documents, setDocuments] = useState<LoanDocumentItem[]>(() =>
-    JSON.parse(JSON.stringify(BUSINESS_DOCUMENTS_TEMPLATE))
-  );
 
-  useEffect(() => {
-    const loadDraft = async () => {
-      try {
-        const raw = await AsyncStorage.getItem(DRAFT_STORAGE_KEY);
-        if (!raw) return;
-        const draft = JSON.parse(raw);
-        if (draft.loanDetails) setLoanDetails(draft.loanDetails);
-        if (draft.businessDetails) setBusinessDetails(draft.businessDetails);
-        if (draft.bankingDetails) setBankingDetails(draft.bankingDetails);
-        if (draft.documents) setDocuments(draft.documents);
-        if (typeof draft.currentStepIndex === "number") setCurrentStepIndex(draft.currentStepIndex);
-      } catch { /* Ignore storage read errors */ }
-    };
-    loadDraft();
+  const loanDocuments = useLoanDocuments({
+    template: BUSINESS_DOCUMENTS_TEMPLATE,
+    maxSizeMB: WORKING_CAPITAL_MAX_FILE_SIZE_MB,
+  });
+  const { documents } = loanDocuments;
+
+  const scrollToTop = useCallback(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   }, []);
+
+  const wizard = useLoanWizard({
+    totalSteps: STEPS.length,
+    validateStep: (stepIndex) => validateStep(stepIndex),
+    onExitFromFirstStep: () => openDraftModal(),
+    onStepChange: scrollToTop,
+  });
+  const { currentStepIndex } = wizard;
+
+  const draft = useLoanDraft<WorkingCapitalDraft>({
+    storageKey: LOAN_DRAFT_STORAGE_KEYS.workingCapital,
+    restoreOnMount: true,
+    onRestore: (saved) => {
+      if (saved.loanDetails) setLoanDetails(saved.loanDetails);
+      if (saved.businessDetails) setBusinessDetails(saved.businessDetails);
+      if (saved.bankingDetails) setBankingDetails(saved.bankingDetails);
+      if (saved.documents) loanDocuments.setDocuments(saved.documents);
+      if (typeof saved.currentStepIndex === "number") wizard.goToStep(saved.currentStepIndex);
+    },
+  });
 
   const isFormDirty = useMemo(
     () =>
@@ -129,15 +154,17 @@ export const WorkingCapitalScreen: React.FC = () => {
     handleCancel,
   } = useUniversalDraftGuard({
     isDirty: () => isFormDirty,
-    onSaveDraft: async () => {
-      try {
-        const draft = { loanType: "Working Capital", loanTypeId: "working-capital", currentStepIndex, loanDetails, businessDetails, bankingDetails, documents, savedAt: new Date().toISOString() };
-        await AsyncStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
-      } catch { /* Ignore storage write errors */ }
-    },
-    onDiscardDraft: async () => {
-      try { await AsyncStorage.removeItem(DRAFT_STORAGE_KEY); } catch { /* Ignore */ }
-    },
+    onSaveDraft: () =>
+      draft.saveDraft({
+        loanType: "Working Capital",
+        loanTypeId: "working-capital",
+        currentStepIndex,
+        loanDetails,
+        businessDetails,
+        bankingDetails,
+        documents,
+      }),
+    onDiscardDraft: draft.clearDraft,
   });
 
   const clearFieldError = (field: string) => {
@@ -154,37 +181,32 @@ export const WorkingCapitalScreen: React.FC = () => {
     value: LoanDetailsFormData[K]
   ) => {
     setLoanDetails((prev) => ({ ...prev, [field]: value }));
-    clearFieldError(field as string);
+    clearFieldError(field);
   };
   const handleBusinessChange = <K extends keyof LoanBusinessFormData>(field: K, value: LoanBusinessFormData[K]) => {
     setBusinessDetails((prev) => ({ ...prev, [field]: value }));
-    clearFieldError(field as string);
+    clearFieldError(field);
   };
   const handleBankingChange = <K extends keyof LoanBankingFormData>(field: K, value: LoanBankingFormData[K]) => {
     setBankingDetails((prev) => ({ ...prev, [field]: value }));
-    clearFieldError(field as string);
-  };
-  const handleDocumentUploaded = (docId: string, fileUri: string, fileName: string, fileSize: string) => {
-    setDocuments((prev) =>
-      prev.map((d) => d.id === docId ? { ...d, fileUri, fileName, fileSize, uploadedAt: new Date().toISOString() } : d)
-    );
+    clearFieldError(field);
   };
 
-  const validateCurrentStep = (): boolean => {
-    if (currentStepIndex === 0) {
+  function validateStep(stepIndex: number): boolean {
+    if (stepIndex === 0) {
       const errs = validateLoanDetails(loanDetails, { requireIncomeOrTurnover: false });
       setErrors(errs);
       return Object.keys(errs).length === 0;
     }
 
-    if (currentStepIndex === 1) {
+    if (stepIndex === 1) {
       const errs = { ...validateLoanBusiness(businessDetails), ...validateLoanBanking(bankingDetails) };
       setErrors(errs);
       return Object.keys(errs).length === 0;
     }
 
-    if (currentStepIndex === 2) {
-      const { isValid, missingDocs } = validateLoanDocuments(documents);
+    if (stepIndex === 2) {
+      const { isValid, missingDocs } = loanDocuments.validateDocuments();
       if (!isValid) {
         Alert.alert(
           "Mandatory Documents Required",
@@ -195,30 +217,14 @@ export const WorkingCapitalScreen: React.FC = () => {
     }
 
     return true;
-  };
-
-  const scrollToTop = () => scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-
-  const handleGoToStep = (stepIdx: number) => {
-    setCurrentStepIndex(stepIdx);
-    scrollToTop();
-  };
-
-  const handleBack = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex((prev) => prev - 1);
-      scrollToTop();
-    } else {
-      openDraftModal();
-    }
-  };
+  }
 
   const handleNext = () => {
-    if (!validateCurrentStep()) return;
-    if (currentStepIndex < STEPS.length - 1) {
-      setCurrentStepIndex((prev) => prev + 1);
-      scrollToTop();
-    } else {
+    if (!wizard.isLastStep) {
+      wizard.goToNextStep();
+      return;
+    }
+    if (validateStep(currentStepIndex)) {
       handleSubmitApplication();
     }
   };
@@ -272,9 +278,10 @@ export const WorkingCapitalScreen: React.FC = () => {
         true
       );
 
-      await AsyncStorage.removeItem(DRAFT_STORAGE_KEY);
+      await draft.clearDraft();
       markSubmitted();
-      router.replace(`/service/loan-status?id=${appId}&loanType=Working+Capital` as any);
+      const statusRoute: Href = `/service/loan-status?id=${appId}&loanType=Working+Capital`;
+      router.replace(statusRoute);
     } catch {
       Alert.alert("Submission Error", "Failed to submit application. Please try again.");
     } finally {
@@ -300,7 +307,7 @@ export const WorkingCapitalScreen: React.FC = () => {
           </>
         );
       case 2:
-        return <WorkingCapitalDocumentsStep documents={documents} onDocumentUploaded={handleDocumentUploaded} />;
+        return <WorkingCapitalDocumentsStep loanDocuments={loanDocuments} />;
       case 3:
       default:
         return (
@@ -312,34 +319,23 @@ export const WorkingCapitalScreen: React.FC = () => {
             profile={customer || undefined}
             isConsentChecked={isConsentChecked}
             onConsentToggle={setIsConsentChecked}
-            onGoToStep={handleGoToStep}
+            onGoToStep={wizard.goToStep}
           />
         );
     }
   };
 
-  const isFinalStep = currentStepIndex === STEPS.length - 1;
-
   return (
-    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.headerBar}>
-        <TouchableOpacity style={styles.circularBtn} onPress={openDraftModal} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={20} color="#0F172A" />
-        </TouchableOpacity>
-
-        <View style={styles.headerCenterContent}>
-          <Text style={styles.headerTitle}>Working Capital</Text>
-          <Text style={styles.headerSubtitle}>
-            Step {currentStepIndex + 1} of {STEPS.length} • {STEPS[currentStepIndex]}
-          </Text>
-        </View>
-
-        <View style={styles.headerRightSpacer} />
-      </View>
-
-      {/* Step Progress Bar */}
-      <WorkingCapitalStepIndicator steps={STEPS} currentStepIndex={currentStepIndex} />
+    <View style={[styles.safeArea, getSafeAreaTopPadding(insets.top)]}>
+      {/* Header with back, step title and progress bar */}
+      <LoanStepIndicator
+        variant="linear"
+        title="Working Capital"
+        subtitle={STEPS[currentStepIndex]}
+        currentStepIndex={currentStepIndex}
+        totalSteps={STEPS.length}
+        onBack={openDraftModal}
+      />
 
       {/* Scrollable Step Content */}
       <ScrollView
@@ -352,12 +348,12 @@ export const WorkingCapitalScreen: React.FC = () => {
       </ScrollView>
 
       {/* Sticky Bottom Actions */}
-      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        {currentStepIndex > 0 ? (
-          <TouchableOpacity style={styles.backButton} onPress={handleBack} disabled={isSubmitting}>
+      <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
+        {wizard.isFirstStep ? null : (
+          <TouchableOpacity style={styles.backButton} onPress={wizard.handleBack} disabled={isSubmitting}>
             <Text style={styles.backButtonText}>Back</Text>
           </TouchableOpacity>
-        ) : null}
+        )}
 
         <TouchableOpacity
           style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
@@ -369,10 +365,10 @@ export const WorkingCapitalScreen: React.FC = () => {
           ) : (
             <>
               <Text style={styles.nextButtonText}>
-                {isFinalStep ? "Submit Application" : "Continue"}
+                {wizard.isLastStep ? "Submit Application" : "Continue"}
               </Text>
               <Ionicons
-                name={isFinalStep ? "shield-checkmark" : "arrow-forward"}
+                name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
                 size={18}
                 color={BrandColors.WHITE}
               />

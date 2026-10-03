@@ -345,6 +345,13 @@ export const BUSINESS_DOCUMENTS_TEMPLATE: LoanDocumentItem[] = [
   },
 ];
 
+/**
+ * Property Loan uses the business document checklist — the same list
+ * `getDocumentsForLoanType("Property Loan")` returns and the screen used
+ * before it switched to this named import.
+ */
+export const PROPERTY_LOAN_DOCUMENTS_TEMPLATE: LoanDocumentItem[] = BUSINESS_DOCUMENTS_TEMPLATE;
+
 export const HOME_LOAN_DOCUMENTS_TEMPLATE: LoanDocumentItem[] = [
   {
     id: "pan",

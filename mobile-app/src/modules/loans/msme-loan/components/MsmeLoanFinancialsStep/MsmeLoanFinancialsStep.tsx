@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { LoanDetailsFormData, LoanEmploymentType } from "../../../types/loans.types";
+import { LoanAmountInput, type LoanAmountPreset } from "../../../components/LoanAmountInput";
 import { styles } from "./MsmeLoanFinancialsStep.styles";
 
 export interface MsmeLoanFinancialsStepProps {
@@ -26,7 +27,7 @@ const TENURE_OPTIONS = [
   { label: "60 M (5 Yrs)", value: "60" },
 ];
 
-const AMOUNT_PRESETS = [
+const AMOUNT_PRESETS: readonly LoanAmountPreset[] = [
   { label: "₹5 Lakhs", value: "500000" },
   { label: "₹15 Lakhs", value: "1500000" },
   { label: "₹25 Lakhs", value: "2500000" },
@@ -53,33 +54,15 @@ export const MsmeLoanFinancialsStep: React.FC<MsmeLoanFinancialsStepProps> = ({
       </Text>
 
       {/* Required Loan Amount */}
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>
-          Required Credit Limit / Loan (₹) <Text style={styles.requiredStar}>*</Text>
-        </Text>
-        <TextInput
-          style={[styles.input, errors.requiredAmount && styles.inputError]}
-          placeholder="e.g. 1500000"
-          placeholderTextColor="#94A3B8"
-          keyboardType="numeric"
-          value={data.requiredAmount}
-          onChangeText={(text) => onChange("requiredAmount", text)}
-        />
-        <View style={styles.chipRow}>
-          {AMOUNT_PRESETS.map((item) => (
-            <TouchableOpacity
-              key={item.value}
-              onPress={() => onChange("requiredAmount", item.value)}
-              style={styles.chip}
-            >
-              <Text style={styles.chipText}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        {errors.requiredAmount && (
-          <Text style={styles.errorText}>{errors.requiredAmount}</Text>
-        )}
-      </View>
+      <LoanAmountInput
+        label="Required Credit Limit / Loan (₹)"
+        required
+        placeholder="e.g. 1500000"
+        value={data.requiredAmount}
+        onChange={(value) => onChange("requiredAmount", value)}
+        presets={AMOUNT_PRESETS}
+        error={errors.requiredAmount}
+      />
 
       {/* MSME Scheme Purpose */}
       <View style={styles.fieldGroup}>

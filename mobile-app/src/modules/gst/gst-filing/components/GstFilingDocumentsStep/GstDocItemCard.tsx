@@ -2,8 +2,8 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
-import { FilingDocItem } from "../../config/gstFilingDocumentsConfig";
-import { styles, getIconBoxStyle } from "./GstFilingDocumentsStep.styles";
+import { FilingDocItem } from "@/modules/gst/gst-filing/config/gstFilingDocumentsConfig";
+import { styles, getIconBoxStyle } from "@/modules/gst/gst-filing/components/GstFilingDocumentsStep/GstFilingDocumentsStep.styles";
 
 interface GstDocItemCardProps {
   doc: FilingDocItem;

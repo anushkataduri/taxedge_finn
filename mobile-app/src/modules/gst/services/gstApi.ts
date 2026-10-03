@@ -16,16 +16,6 @@ export interface GstinEntityDetails {
 
 const resolveCustomerId = async (): Promise<string> => {
   try {
-    const token = await tokenManager.getAccessToken();
-    if (token) {
-      const payload = JwtUtils.decodePayload(token);
-      if (payload?.sub && typeof payload.sub === "string" && payload.sub.trim() !== "") {
-        return payload.sub.trim();
-      }
-    }
-  } catch {}
-
-  try {
     const authState = useAuthStore.getState();
     const custId =
       authState.customer?.customerId ||
@@ -33,7 +23,7 @@ const resolveCustomerId = async (): Promise<string> => {
       (authState.authenticatedUser as any)?.custId ||
       (authState.customer as any)?.custId ||
       "";
-    if (custId && typeof custId === "string" && custId.trim() !== "") {
+    if (custId && typeof custId === "string" && custId.trim() !== "" && custId.trim() !== "undefined") {
       return custId.trim();
     }
   } catch {}
@@ -46,8 +36,18 @@ const resolveCustomerId = async (): Promise<string> => {
       (user as any)?.custId ||
       (session as any)?.activeCustId ||
       "";
-    if (custId && typeof custId === "string" && custId.trim() !== "") {
+    if (custId && typeof custId === "string" && custId.trim() !== "" && custId.trim() !== "undefined") {
       return custId.trim();
+    }
+  } catch {}
+
+  try {
+    const token = await tokenManager.getAccessToken();
+    if (token) {
+      const payload = JwtUtils.decodePayload(token);
+      if (payload?.sub && typeof payload.sub === "string" && payload.sub.trim() !== "" && payload.sub.trim() !== "undefined") {
+        return payload.sub.trim();
+      }
     }
   } catch {}
 
@@ -464,7 +464,7 @@ export const gstApi = {
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     const finalPayload = { ...payload };
-    if (!finalPayload.customerId || String(finalPayload.customerId).trim() === "") {
+    if (!finalPayload.customerId || String(finalPayload.customerId).trim() === "" || String(finalPayload.customerId).trim() === "undefined") {
       const custId = await resolveCustomerId();
       if (custId) finalPayload.customerId = custId;
     }
@@ -490,7 +490,7 @@ export const gstApi = {
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     const finalPayload = { ...payload };
-    if (!finalPayload.customerId || String(finalPayload.customerId).trim() === "") {
+    if (!finalPayload.customerId || String(finalPayload.customerId).trim() === "" || String(finalPayload.customerId).trim() === "undefined") {
       const custId = await resolveCustomerId();
       if (custId) finalPayload.customerId = custId;
     }
@@ -589,12 +589,19 @@ export const gstApi = {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(xhr.responseText);
         } else {
+          let errText = xhr.responseText;
+          try {
+            const parsed = JSON.parse(xhr.responseText);
+            if (parsed.message) {
+              errText = parsed.message;
+            }
+          } catch {}
           reject(
             new Error(
               "Upload failed with status " +
                 xhr.status +
                 ": " +
-                xhr.responseText,
+                errText,
             ),
           );
         }
@@ -673,12 +680,19 @@ export const gstApi = {
           console.log(`🌐 [API] PUT update returned ${xhr.status}, falling back to POST upload...`);
           gstApi.uploadAllFilingDocuments(cleanFilingId, documents).then(resolve).catch(reject);
         } else {
+          let errText = xhr.responseText;
+          try {
+            const parsed = JSON.parse(xhr.responseText);
+            if (parsed.message) {
+              errText = parsed.message;
+            }
+          } catch {}
           reject(
             new Error(
               "Update failed with status " +
                 xhr.status +
                 ": " +
-                xhr.responseText,
+                errText,
             ),
           );
         }

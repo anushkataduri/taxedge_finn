@@ -14,12 +14,27 @@ export const styles = StyleSheet.create({
     paddingTop: 8,
     gap: 14,
   },
+  loadingContainer: {
+    paddingVertical: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: BrandColors.TEXT_PRIMARY,
+  },
+  loadingSubtitle: {
+    marginTop: 6,
+    fontSize: 13,
+    color: BrandColors.TEXT_SECONDARY,
+  },
   card: {
     backgroundColor: BrandColors.WHITE,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#EEF2F6",
+    borderColor: BrandColors.BORDER,
   },
   cardHeader: {
     flexDirection: "row",
@@ -46,7 +61,7 @@ export const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: BrandColors.CARD_BORDER,
     marginVertical: 12,
   },
   row: {
@@ -57,7 +72,7 @@ export const styles = StyleSheet.create({
   },
   label: {
     fontSize: 13,
-    color: "#64748B",
+    color: BrandColors.TEXT_SECONDARY,
     fontFamily: Platform.select({ ios: "System", android: "sans-serif" }),
   },
   value: {
@@ -72,7 +87,7 @@ export const styles = StyleSheet.create({
   },
   docProgressBar: {
     height: 5,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: BrandColors.CARD_BORDER,
     borderRadius: 3,
     marginTop: 12,
     overflow: "hidden",
@@ -86,7 +101,7 @@ export const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: "#F1F5F9",
+    borderTopColor: BrandColors.CARD_BORDER,
     gap: 10,
   },
   uploadedDocItem: {

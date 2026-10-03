@@ -1,15 +1,12 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Modal, Alert } from "react-native";
+import React from "react";
+import { View, Text, TouchableOpacity, Alert } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
-import {
-  LoanDocumentItem,
-  LoanDocumentCategory,
-} from "../../../types/loans.types";
-import {
-  pickLoanImageFromGallery,
-  pickLoanImageFromCamera,
-} from "../../../services/documentUploadHelper";
+import { DocumentUploadBottomSheet } from "../../../../../shared/components/DocumentUploadBottomSheet";
+import { LoanDocumentItem, LoanDocumentCategory } from "../../../types/loans.types";
+import type { LoanDocuments } from "../../../hooks/useLoanDocuments";
+import { DocumentPreviewModal } from "../../../components/DocumentPreviewModal";
+import { getDocumentIconName } from "../../../utils/documentIcon";
 import {
   styles,
   getProgressFillDynamic,
@@ -17,13 +14,8 @@ import {
 } from "./PropertyLoanDocumentsStep.styles";
 
 export interface PropertyLoanDocumentsStepProps {
-  documents: LoanDocumentItem[];
-  onDocumentUploaded: (
-    docId: string,
-    fileUri: string,
-    fileName: string,
-    fileSize: string
-  ) => void;
+  /** Document checklist state from `useLoanDocuments`, owned by the screen. */
+  loanDocuments: LoanDocuments;
 }
 
 const CATEGORIES: LoanDocumentCategory[] = [
@@ -34,58 +26,16 @@ const CATEGORIES: LoanDocumentCategory[] = [
   "Collateral & Others",
 ];
 
-export const PropertyLoanDocumentsStep: React.FC<PropertyLoanDocumentsStepProps> = ({
-  documents,
-  onDocumentUploaded,
-}) => {
-  const [activeDocId, setActiveDocId] = useState<string | null>(null);
-  const [uploadModalVisible, setUploadModalVisible] = useState(false);
-  const [previewDoc, setPreviewDoc] = useState<LoanDocumentItem | null>(null);
+const ICON_COLORS = {
+  uploaded: "#16A34A",
+  view: "#2563EB",
+  delete: "#DC2626",
+} as const;
 
-  const totalRequired = documents.filter((d) => d.required).length;
-  const uploadedRequired = documents.filter(
-    (d) => d.required && Boolean(d.fileUri)
-  ).length;
-  const progressPercent =
-    totalRequired > 0
-      ? Math.round((uploadedRequired / totalRequired) * 100)
-      : 100;
-
-  const handleOpenUploadSheet = (docId: string) => {
-    setActiveDocId(docId);
-    setUploadModalVisible(true);
-  };
-
-  const handlePickGallery = async () => {
-    setUploadModalVisible(false);
-    if (!activeDocId) return;
-    const file = await pickLoanImageFromGallery();
-    if (file) {
-      onDocumentUploaded(activeDocId, file.uri, file.name, file.size);
-    }
-  };
-
-  const handlePickCamera = async () => {
-    setUploadModalVisible(false);
-    if (!activeDocId) return;
-    const file = await pickLoanImageFromCamera();
-    if (file) {
-      onDocumentUploaded(activeDocId, file.uri, file.name, file.size);
-    }
-  };
-
-  const handleMockPdf = () => {
-    setUploadModalVisible(false);
-    if (!activeDocId) return;
-    const doc = documents.find((d) => d.id === activeDocId);
-    const mockName = `${doc?.name.replace(/\s+/g, "_") || "property_chain"}.pdf`;
-    onDocumentUploaded(
-      activeDocId,
-      `file:///mock/storage/${mockName}`,
-      mockName,
-      "3.5 MB"
-    );
-  };
+export const PropertyLoanDocumentsStep: React.FC<PropertyLoanDocumentsStepProps> = ({ loanDocuments }) => {
+  const { documents, progress, openUpload, removeDocument, openPreview, uploadSheetProps, previewModalProps } =
+    loanDocuments;
+  const { uploadedRequired, totalRequired, requiredPercent } = progress;
 
   const handleDeleteDocument = (doc: LoanDocumentItem) => {
     Alert.alert(
@@ -96,7 +46,7 @@ export const PropertyLoanDocumentsStep: React.FC<PropertyLoanDocumentsStepProps>
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => onDocumentUploaded(doc.id, "", "", ""),
+          onPress: () => removeDocument(doc.id),
         },
       ]
     );
@@ -114,11 +64,11 @@ export const PropertyLoanDocumentsStep: React.FC<PropertyLoanDocumentsStepProps>
         <View style={styles.progressHeader}>
           <Text style={styles.progressTitle}>Mandatory Document Progress</Text>
           <Text style={styles.progressCount}>
-            {uploadedRequired} of {totalRequired} ({progressPercent}%)
+            {uploadedRequired} of {totalRequired} ({requiredPercent}%)
           </Text>
         </View>
         <View style={styles.progressBarTrack}>
-          <View style={getProgressFillDynamic(progressPercent)} />
+          <View style={getProgressFillDynamic(requiredPercent)} />
         </View>
       </View>
 
@@ -134,25 +84,11 @@ export const PropertyLoanDocumentsStep: React.FC<PropertyLoanDocumentsStepProps>
               const isUploaded = Boolean(doc.fileUri);
 
               return (
-                <View
-                  key={doc.id}
-                  style={[
-                    styles.docCard,
-                    isUploaded && styles.docCardUploaded,
-                  ]}
-                >
+                <View key={doc.id} style={[styles.docCard, isUploaded && styles.docCardUploaded]}>
                   <View style={styles.docLeft}>
-                    <View
-                      style={[
-                        styles.iconBox,
-                        getDocIconBoxDynamic(doc.iconBg),
-                      ]}
-                    >
+                    <View style={[styles.iconBox, getDocIconBoxDynamic(doc.iconBg)]}>
                       <Ionicons
-                        name={
-                          (doc.iconName as keyof typeof Ionicons.glyphMap) ||
-                          "document-text"
-                        }
+                        name={getDocumentIconName(doc.iconName)}
                         size={20}
                         color={doc.iconColor || BrandColors.PRIMARY_ORANGE}
                       />
@@ -170,17 +106,11 @@ export const PropertyLoanDocumentsStep: React.FC<PropertyLoanDocumentsStepProps>
 
                       {isUploaded && (
                         <View style={styles.fileMetaRow}>
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={14}
-                            color="#16A34A"
-                          />
+                          <Ionicons name="checkmark-circle" size={14} color={ICON_COLORS.uploaded} />
                           <Text style={styles.fileNameText} numberOfLines={1}>
                             {doc.fileName || "Uploaded"}
                           </Text>
-                          <Text style={styles.fileSizeText}>
-                            ({doc.fileSize || "2.8 MB"})
-                          </Text>
+                          <Text style={styles.fileSizeText}>({doc.fileSize || "2.8 MB"})</Text>
                         </View>
                       )}
                     </View>
@@ -189,37 +119,31 @@ export const PropertyLoanDocumentsStep: React.FC<PropertyLoanDocumentsStepProps>
                   {/* Actions Right */}
                   {isUploaded ? (
                     <View style={styles.actionRow}>
-                      {/* View Option */}
                       <TouchableOpacity
                         activeOpacity={0.7}
-                        onPress={() => setPreviewDoc(doc)}
+                        onPress={() => openPreview(doc.id)}
                         style={styles.viewButton}
                       >
-                        <Ionicons name="eye-outline" size={14} color="#2563EB" />
+                        <Ionicons name="eye-outline" size={14} color={ICON_COLORS.view} />
                         <Text style={styles.viewButtonText}>View</Text>
                       </TouchableOpacity>
 
-                      {/* Delete Option */}
                       <TouchableOpacity
                         activeOpacity={0.7}
                         onPress={() => handleDeleteDocument(doc)}
                         style={styles.deleteButton}
                       >
-                        <Ionicons name="trash-outline" size={14} color="#DC2626" />
+                        <Ionicons name="trash-outline" size={14} color={ICON_COLORS.delete} />
                         <Text style={styles.deleteButtonText}>Delete</Text>
                       </TouchableOpacity>
                     </View>
                   ) : (
                     <TouchableOpacity
                       activeOpacity={0.7}
-                      onPress={() => handleOpenUploadSheet(doc.id)}
+                      onPress={() => openUpload(doc.id)}
                       style={styles.uploadButton}
                     >
-                      <Ionicons
-                        name="cloud-upload-outline"
-                        size={14}
-                        color={BrandColors.PRIMARY_ORANGE}
-                      />
+                      <Ionicons name="cloud-upload-outline" size={14} color={BrandColors.PRIMARY_ORANGE} />
                       <Text style={styles.uploadButtonText}>Upload</Text>
                     </TouchableOpacity>
                   )}
@@ -230,97 +154,8 @@ export const PropertyLoanDocumentsStep: React.FC<PropertyLoanDocumentsStepProps>
         );
       })}
 
-      {/* Upload Sheet Modal */}
-      <Modal
-        visible={uploadModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setUploadModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setUploadModalVisible(false)}
-        >
-          <View style={styles.sheetContent}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Select Upload Source</Text>
-              <TouchableOpacity onPress={() => setUploadModalVisible(false)}>
-                <Ionicons name="close" size={20} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity style={styles.sheetOption} onPress={handlePickCamera}>
-              <Ionicons name="camera-outline" size={22} color={BrandColors.PRIMARY_ORANGE} />
-              <Text style={styles.sheetOptionText}>Take Photo with Camera</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.sheetOption} onPress={handlePickGallery}>
-              <Ionicons name="images-outline" size={22} color={BrandColors.PRIMARY_ORANGE} />
-              <Text style={styles.sheetOptionText}>Choose Image from Gallery</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.sheetOption} onPress={handleMockPdf}>
-              <Ionicons name="document-attach-outline" size={22} color={BrandColors.PRIMARY_ORANGE} />
-              <Text style={styles.sheetOptionText}>Upload PDF Document</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Document View/Preview Modal */}
-      <Modal
-        visible={previewDoc !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPreviewDoc(null)}
-      >
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setPreviewDoc(null)}
-        >
-          <View style={styles.sheetContentPreview}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Document Preview</Text>
-              <TouchableOpacity onPress={() => setPreviewDoc(null)}>
-                <Ionicons name="close" size={24} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-
-            {previewDoc && (
-              <View>
-                <View style={styles.previewCard}>
-                  <Ionicons name="document-text" size={48} color={BrandColors.PRIMARY_ORANGE} />
-                  <Text style={styles.previewFileName}>{previewDoc.fileName || previewDoc.name}</Text>
-                  <Text style={styles.previewFileSize}>{previewDoc.fileSize || "3.5 MB"}</Text>
-                </View>
-
-                <View style={styles.previewMetaRow}>
-                  <Text style={styles.previewMetaLabel}>Document Category</Text>
-                  <Text style={styles.previewMetaValue}>
-                    {previewDoc.category}
-                  </Text>
-                </View>
-
-                <View style={styles.previewMetaRow}>
-                  <Text style={styles.previewMetaLabel}>Upload Timestamp</Text>
-                  <Text style={styles.previewMetaTimestamp}>
-                    {previewDoc.uploadedAt ? new Date(previewDoc.uploadedAt).toLocaleDateString("en-IN") : "Just now"}
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.previewCloseBtn}
-                  onPress={() => setPreviewDoc(null)}
-                >
-                  <Text style={styles.previewCloseBtnText}>Close Preview</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      <DocumentUploadBottomSheet {...uploadSheetProps} />
+      <DocumentPreviewModal {...previewModalProps} />
     </View>
   );
 };

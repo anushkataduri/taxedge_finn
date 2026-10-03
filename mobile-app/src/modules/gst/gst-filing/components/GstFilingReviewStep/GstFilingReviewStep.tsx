@@ -16,7 +16,7 @@ import {
   formatIndianNumberInput,
   toRawNumericString,
 } from "@/shared/formatters/currencyFormatter";
-import { styles } from "./GstFilingReviewStep.styles";
+import { styles } from "@/modules/gst/gst-filing/components/GstFilingReviewStep/GstFilingReviewStep.styles";
 
 export interface GstFilingReviewStepProps {
   isFetching?: boolean;
@@ -142,21 +142,9 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
   return (
     <View style={styles.container}>
       {isFetching && (
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            paddingVertical: 10,
-            paddingHorizontal: 14,
-            backgroundColor: "#EFF6FF",
-            borderRadius: 8,
-            marginBottom: 12,
-            gap: 8,
-          }}
-        >
+        <View style={styles.syncBanner}>
           <ActivityIndicator size="small" color={BrandColors.PRIMARY_ORANGE} />
-          <Text style={{ fontSize: 13, color: "#1E40AF", fontWeight: "500" }}>
+          <Text style={styles.syncBannerText}>
             Synchronizing live details from database...
           </Text>
         </View>

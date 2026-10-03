@@ -1,9 +1,9 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { FilingDocItem } from "../../config/gstFilingDocumentsConfig";
-import { styles } from "./GstFilingDocumentsStep.styles";
-import { GstDocItemCard } from "./GstDocItemCard";
-import { filterDocsByCategory } from "./gstDocStepUtils";
+import { FilingDocItem } from "@/modules/gst/gst-filing/config/gstFilingDocumentsConfig";
+import { styles } from "@/modules/gst/gst-filing/components/GstFilingDocumentsStep/GstFilingDocumentsStep.styles";
+import { GstDocItemCard } from "@/modules/gst/gst-filing/components/GstFilingDocumentsStep/GstDocItemCard";
+import { filterDocsByCategory } from "@/modules/gst/gst-filing/components/GstFilingDocumentsStep/gstDocStepUtils";
 
 interface RecursiveDocListProps {
   docs: readonly FilingDocItem[];

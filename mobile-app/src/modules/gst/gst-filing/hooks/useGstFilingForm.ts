@@ -1,11 +1,11 @@
 import { useState, useCallback } from "react";
 import { Alert } from "react-native";
 import { GstValidators } from "@/modules/gst/utils/gstValidators";
-import { GstFilingPeriodData } from "../components/GstFilingPeriodStep/GstFilingPeriodStep";
+import { GstFilingPeriodData } from "@/modules/gst/gst-filing/components/GstFilingPeriodStep/GstFilingPeriodStep";
 import {
   INITIAL_FILING_DOCS,
   FilingDocItem,
-} from "../components/GstFilingDocumentsStep/GstFilingDocumentsStep";
+} from "@/modules/gst/gst-filing/components/GstFilingDocumentsStep/GstFilingDocumentsStep";
 import { useApplicationStore } from "@/store/applicationStore";
 import { applicationService } from "@/modules/applications/services/applicationService";
 

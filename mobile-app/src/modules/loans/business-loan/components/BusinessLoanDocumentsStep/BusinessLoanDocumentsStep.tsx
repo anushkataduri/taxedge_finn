@@ -2,24 +2,26 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Modal, Alert, Image } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { LoanDocumentItem } from "../../../types/loans.types";
-import {
-  pickLoanImageFromGallery,
-  pickLoanImageFromCamera,
-  pickLoanDocumentFromFiles,
-} from "../../../services/documentUploadHelper";
+import type { LoanDocuments } from "../../../hooks/useLoanDocuments";
+import { DocumentUploadBottomSheet } from "../../../../../shared/components/DocumentUploadBottomSheet";
 import { BrandColors } from "../../../../../shared/theme";
 import { styles } from "./BusinessLoanDocumentsStep.styles";
 
 export interface BusinessLoanDocumentsStepProps {
-  documents: LoanDocumentItem[];
-  onDocumentUploaded: (
-    docId: string,
-    fileUri: string,
-    fileName: string,
-    fileSize: string
-  ) => void;
-  onDocumentDeleted?: (docId: string) => void;
+  /** Document checklist state from `useLoanDocuments`, owned by the screen. */
+  loanDocuments: LoanDocuments;
 }
+
+const ICON_COLORS = {
+  accent: BrandColors.PRIMARY_ORANGE,
+  view: BrandColors.TEXT_PRIMARY,
+  delete: "#DC2626",
+  close: BrandColors.TEXT_SECONDARY,
+  verified: "#166534",
+} as const;
+
+/** Card ids carry a "doc-" prefix that the checklist ids do not ("doc-pan" ↔ "pan"). */
+const stripDocPrefix = (id: string): string => id.replace(/^doc-/, "");
 
 interface SingleDocCardData {
   id: string;
@@ -168,13 +170,8 @@ const DOCUMENT_ITEMS_LIST: SingleDocCardData[] = [
   },
 ];
 
-export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps> = ({
-  documents,
-  onDocumentUploaded,
-  onDocumentDeleted,
-}) => {
-  const [activeDocId, setActiveDocId] = useState<string | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
+export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps> = ({ loanDocuments }) => {
+  const { documents, openUpload, removeDocument, uploadSheetProps } = loanDocuments;
   const [viewModalVisible, setViewModalVisible] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<{
     title: string;
@@ -184,16 +181,19 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
   } | null>(null);
 
   const findUploadedDoc = (itemId: string): LoanDocumentItem | undefined => {
-    const cleanTargetId = itemId.replace(/^doc-/, "");
-    return documents.find((d) => {
-      const cleanDocId = d.id.replace(/^doc-/, "");
-      return d.id === itemId || cleanDocId === cleanTargetId;
-    });
+    const cleanTargetId = stripDocPrefix(itemId);
+    return documents.find((d) => d.id === itemId || stripDocPrefix(d.id) === cleanTargetId);
   };
 
-  const handleOpenUploadSheet = (docId: string) => {
-    setActiveDocId(docId);
-    setModalVisible(true);
+  /**
+   * Checklist id a card stores its file under. Cards with no matching checklist
+   * entry keep their own id, so — as before this refactor — their uploads are
+   * not recorded.
+   */
+  const resolveDocumentId = (itemId: string): string => findUploadedDoc(itemId)?.id ?? itemId;
+
+  const handleOpenUploadSheet = (item: SingleDocCardData) => {
+    openUpload(resolveDocumentId(item.id), item.title);
   };
 
   const handleView = (item: SingleDocCardData) => {
@@ -218,76 +218,10 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            if (onDocumentDeleted) {
-              onDocumentDeleted(docId);
-            }
-          },
+          onPress: () => removeDocument(resolveDocumentId(docId)),
         },
       ]
     );
-  };
-
-  const isFileSizeValid = (sizeStr: string): boolean => {
-    const match = sizeStr.match(/([\d.]+)\s*(MB|KB|GB)?/i);
-    if (!match) return true;
-    const value = parseFloat(match[1]);
-    const unit = (match[2] || "MB").toUpperCase();
-    if (unit === "GB") return false;
-    if (unit === "MB" && value > 5.0) return false;
-    if (unit === "KB" && value > 5120) return false;
-    return true;
-  };
-
-  const handlePickGallery = async () => {
-    setModalVisible(false);
-    if (!activeDocId) return;
-    try {
-      const file = await pickLoanImageFromGallery();
-      if (file) {
-        if (!isFileSizeValid(file.size)) {
-          Alert.alert("File Too Large", "Selected image exceeds 5 MB. Please choose a smaller file.");
-          return;
-        }
-        onDocumentUploaded(activeDocId, file.uri, file.name, file.size);
-      }
-    } catch {
-      Alert.alert("Upload Error", "Failed to select image from gallery.");
-    }
-  };
-
-  const handlePickCamera = async () => {
-    setModalVisible(false);
-    if (!activeDocId) return;
-    try {
-      const file = await pickLoanImageFromCamera();
-      if (file) {
-        if (!isFileSizeValid(file.size)) {
-          Alert.alert("File Too Large", "Captured image exceeds 5 MB. Please try again.");
-          return;
-        }
-        onDocumentUploaded(activeDocId, file.uri, file.name, file.size);
-      }
-    } catch {
-      Alert.alert("Camera Error", "Failed to capture image.");
-    }
-  };
-
-  const handlePickDocument = async () => {
-    setModalVisible(false);
-    if (!activeDocId) return;
-    try {
-      const file = await pickLoanDocumentFromFiles();
-      if (file) {
-        if (!isFileSizeValid(file.size)) {
-          Alert.alert("File Too Large", "Selected document exceeds 5 MB. Please select a smaller file.");
-          return;
-        }
-        onDocumentUploaded(activeDocId, file.uri, file.name, file.size);
-      }
-    } catch {
-      Alert.alert("Document Error", "Failed to attach document.");
-    }
   };
 
   const isImageUri = (uri?: string) => {
@@ -314,7 +248,7 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
         </View>
 
         <View style={styles.formatsNoticeBox}>
-          <Ionicons name="information-circle-outline" size={14} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+          <Ionicons name="information-circle-outline" size={14} color={ICON_COLORS.accent} />
           <Text style={styles.formatsNoticeText}>
             Accepted formats: PDF, JPG, PNG{"\n"}Max file size: 5 MB per file
           </Text>
@@ -358,7 +292,7 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
                     onPress={() => handleView(item)}
                     style={styles.viewBtn}
                   >
-                    <Ionicons name="eye-outline" size={13} color="#0F172A" />
+                    <Ionicons name="eye-outline" size={13} color={ICON_COLORS.view} />
                     <Text style={styles.viewBtnText}>View</Text>
                   </TouchableOpacity>
 
@@ -367,17 +301,17 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
                     onPress={() => handleDeleteFile(item.id, item.title)}
                     style={styles.deleteBtn}
                   >
-                    <Ionicons name="trash-outline" size={13} color="#DC2626" />
+                    <Ionicons name="trash-outline" size={13} color={ICON_COLORS.delete} />
                     <Text style={styles.deleteBtnText}>Delete</Text>
                   </TouchableOpacity>
                 </>
               ) : (
                 <TouchableOpacity
                   activeOpacity={0.8}
-                  onPress={() => handleOpenUploadSheet(item.id)}
+                  onPress={() => handleOpenUploadSheet(item)}
                   style={styles.uploadBtn}
                 >
-                  <Ionicons name="cloud-upload-outline" size={14} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+                  <Ionicons name="cloud-upload-outline" size={14} color={ICON_COLORS.accent} />
                   <Text style={styles.uploadBtnText}>Upload</Text>
                 </TouchableOpacity>
               )}
@@ -386,43 +320,8 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
         );
       })}
 
-      {/* Upload Bottom Sheet Modal */}
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setModalVisible(false)}
-        >
-          <View style={styles.sheetContent}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Select Upload Method</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={22} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity style={styles.sheetOption} onPress={handlePickCamera}>
-              <Ionicons name="camera-outline" size={22} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
-              <Text style={styles.sheetOptionText}>Take Photo with Camera</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.sheetOption} onPress={handlePickGallery}>
-              <Ionicons name="images-outline" size={22} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
-              <Text style={styles.sheetOptionText}>Choose from Gallery</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.sheetOption} onPress={handlePickDocument}>
-              <Ionicons name="document-attach-outline" size={22} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
-              <Text style={styles.sheetOptionText}>Attach Document (PDF, Word, Excel)</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      {/* Upload sheet: Files/Drive (PDF, Word, Excel), Gallery, Camera */}
+      <DocumentUploadBottomSheet {...uploadSheetProps} />
 
       {/* Document View / Preview Modal */}
       <Modal
@@ -435,12 +334,12 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
           <View style={styles.viewModalContent}>
             <View style={styles.previewHeader}>
               <View style={styles.previewTitleRow}>
-                <Ionicons name="document-text" size={20} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+                <Ionicons name="document-text" size={20} color={ICON_COLORS.accent} />
                 <Text style={styles.previewTitle}>{previewDoc?.title || "Document Preview"}</Text>
               </View>
 
               <TouchableOpacity onPress={() => setViewModalVisible(false)}>
-                <Ionicons name="close-circle" size={24} color="#64748B" />
+                <Ionicons name="close-circle" size={24} color={ICON_COLORS.close} />
               </TouchableOpacity>
             </View>
 
@@ -453,9 +352,9 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
                 />
               ) : (
                 <View style={styles.previewPdfBox}>
-                  <Ionicons name="document-attach" size={48} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+                  <Ionicons name="document-attach" size={48} color={ICON_COLORS.accent} />
                   <View style={styles.previewBadge}>
-                    <Ionicons name="checkmark-circle" size={14} color="#166534" />
+                    <Ionicons name="checkmark-circle" size={14} color={ICON_COLORS.verified} />
                     <Text style={styles.previewBadgeText}>Document Uploaded & Verified</Text>
                   </View>
                   <Text style={styles.previewFileName}>{previewDoc?.name}</Text>

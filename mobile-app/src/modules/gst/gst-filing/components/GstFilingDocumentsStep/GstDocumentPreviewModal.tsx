@@ -2,8 +2,8 @@ import React from "react";
 import { Modal, View, Text, TouchableOpacity, Image } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
-import { FilingDocItem } from "../../config/gstFilingDocumentsConfig";
-import { styles } from "./GstFilingDocumentsStep.styles";
+import { FilingDocItem } from "@/modules/gst/gst-filing/config/gstFilingDocumentsConfig";
+import { styles } from "@/modules/gst/gst-filing/components/GstFilingDocumentsStep/GstFilingDocumentsStep.styles";
 
 interface GstDocumentPreviewModalProps {
   visible: boolean;

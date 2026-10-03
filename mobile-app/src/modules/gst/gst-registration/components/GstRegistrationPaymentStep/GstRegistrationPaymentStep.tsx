@@ -12,8 +12,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { BrandColors } from "../../../../../shared/theme";
-import { formatIndianCurrency } from "../../../../../shared/formatters/currencyFormatter";
+import { BrandColors } from "@/shared/theme";
+import { formatIndianCurrency } from "@/shared/formatters/currencyFormatter";
 import { styles, getIconBoxStyle } from "./GstRegistrationPaymentStep.styles";
 
 const PAYMENT_METHODS = [

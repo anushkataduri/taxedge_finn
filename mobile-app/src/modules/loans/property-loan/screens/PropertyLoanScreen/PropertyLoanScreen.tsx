@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
@@ -19,11 +19,13 @@ import {
   LoanApplicantFormData,
   LoanPropertyFormData,
   LoanOwnershipFormData,
-  LoanDocumentItem,
   LoanApplicationDraft,
 } from "../../../types/loans.types";
+import { useLoanWizard } from "../../../hooks/useLoanWizard";
+import { useLoanDocuments } from "../../../hooks/useLoanDocuments";
+import { LoanStepIndicator } from "../../../components/LoanStepIndicator";
+import { getBottomBarPadding, getSafeAreaTopPadding } from "../../../styles/loanScreenLayout.styles";
 import {
-  PropertyLoanStepIndicator,
   PropertyLoanFinancialsStep,
   PropertyLoanApplicantStep,
   PropertyLoanPropertyStep,
@@ -32,11 +34,7 @@ import {
   PropertyLoanReviewStep,
 } from "../../components";
 import { validatePropertyLoanStep } from "../../utils/propertyLoanValidators";
-import {
-  styles,
-  getSafeAreaDynamic,
-  getBottomBarDynamic,
-} from "./PropertyLoanScreen.styles";
+import { styles } from "./PropertyLoanScreen.styles";
 
 const STEPS = [
   "Loan Requirement",
@@ -45,7 +43,7 @@ const STEPS = [
   "Ownership",
   "Documents",
   "Review",
-];
+] as const;
 
 export const PropertyLoanScreen: React.FC = () => {
   const router = useRouter();
@@ -54,8 +52,8 @@ export const PropertyLoanScreen: React.FC = () => {
 
   const customer = useAuthStore((s) => s.customer);
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConsentChecked, setIsConsentChecked] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Step 1: Loan Requirement
@@ -121,23 +119,37 @@ export const PropertyLoanScreen: React.FC = () => {
     isConfirmationChecked: false,
   });
 
-  // Documents
-  const [documents, setDocuments] = useState<LoanDocumentItem[]>(() =>
-    JSON.parse(JSON.stringify(PROPERTY_LOAN_DOCUMENTS_TEMPLATE))
-  );
+  // Step 5: Documents (no persistence; Property Loan has never kept drafts)
+  const loanDocuments = useLoanDocuments({ template: PROPERTY_LOAN_DOCUMENTS_TEMPLATE });
+  const { documents } = loanDocuments;
+
+  const scrollToTop = useCallback(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
+  const wizard = useLoanWizard({
+    totalSteps: STEPS.length,
+    validateStep: (stepIndex) => validateStep(stepIndex),
+    onExitFromFirstStep: () => router.back(),
+    onStepChange: scrollToTop,
+  });
+  const { currentStepIndex } = wizard;
+
+  const clearFieldError = (field: string) => {
+    if (!errors[field]) return;
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
 
   const handleDetailsChange = (
     field: keyof LoanDetailsFormData,
     value: string | number | boolean | null
   ) => {
     setLoanDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field);
   };
 
   const handleApplicantChange = (
@@ -145,71 +157,23 @@ export const PropertyLoanScreen: React.FC = () => {
     value: string | boolean | null
   ) => {
     setApplicantDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field);
   };
 
-  const handlePropertyChange = (
-    field: keyof LoanPropertyFormData,
-    value: string
-  ) => {
+  const handlePropertyChange = (field: keyof LoanPropertyFormData, value: string) => {
     setPropertyDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field);
   };
 
-  const handleOwnershipChange = (
-    field: keyof LoanOwnershipFormData,
-    value: string | boolean
-  ) => {
+  const handleOwnershipChange = (field: keyof LoanOwnershipFormData, value: string | boolean) => {
     setOwnershipDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field);
   };
 
-  const handleDocumentUploaded = (
-    docId: string,
-    fileUri: string,
-    fileName: string,
-    fileSize: string
-  ) => {
-    setDocuments((prev) =>
-      prev.map((d) => {
-        const targetId = docId.replace(/^doc-/, "");
-        const itemCleanId = d.id.replace(/^doc-/, "");
-        if (d.id === docId || itemCleanId === targetId) {
-          return {
-            ...d,
-            fileUri,
-            fileName,
-            fileSize,
-            uploadedAt: new Date().toISOString(),
-          };
-        }
-        return d;
-      })
-    );
-  };
-
-  // Step Validation Logic using extracted validator
-  const validateCurrentStep = (): boolean => {
+  // Step validation stays in the Property Loan validator
+  function validateStep(stepIndex: number): boolean {
     const result = validatePropertyLoanStep({
-      currentStepIndex,
+      currentStepIndex: stepIndex,
       loanDetails,
       applicantDetails,
       propertyDetails,
@@ -227,27 +191,15 @@ export const PropertyLoanScreen: React.FC = () => {
 
     setErrors({});
     return true;
-  };
+  }
 
   const handleNext = () => {
-    if (!validateCurrentStep()) {
+    if (!wizard.isLastStep) {
+      wizard.goToNextStep();
       return;
     }
-
-    if (currentStepIndex < STEPS.length - 1) {
-      setCurrentStepIndex((prev) => prev + 1);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    } else {
+    if (validateStep(currentStepIndex)) {
       handleSubmitApplication();
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex((prev) => prev - 1);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    } else {
-      router.back();
     }
   };
 
@@ -266,19 +218,11 @@ export const PropertyLoanScreen: React.FC = () => {
       };
 
       const response = await loansApi.applyLoan(draft);
+      const statusRoute: Href = `/service/loan-status?id=${response.applicationId}&loanType=Property+Loan`;
       Alert.alert(
         "Property Loan Submitted",
         `Your application (Ref: ${response.referenceNumber}) has been submitted. Our legal and technical valuation team will contact you shortly.`,
-        [
-          {
-            text: "Track Status",
-            onPress: () => {
-              router.replace(
-                `/service/loan-status?id=${response.applicationId}&loanType=Property+Loan` as any
-              );
-            },
-          },
-        ]
+        [{ text: "Track Status", onPress: () => router.replace(statusRoute) }]
       );
     } catch {
       Alert.alert("Submission Error", "Failed to lodge application. Please try again.");
@@ -286,8 +230,6 @@ export const PropertyLoanScreen: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-
-  const [isConsentChecked, setIsConsentChecked] = useState(true);
 
   const renderActiveStep = () => {
     switch (currentStepIndex) {
@@ -324,12 +266,7 @@ export const PropertyLoanScreen: React.FC = () => {
           />
         );
       case 4:
-        return (
-          <PropertyLoanDocumentsStep
-            documents={documents}
-            onDocumentUploaded={handleDocumentUploaded}
-          />
-        );
+        return <PropertyLoanDocumentsStep loanDocuments={loanDocuments} />;
       case 5:
       default:
         return (
@@ -340,21 +277,23 @@ export const PropertyLoanScreen: React.FC = () => {
             ownershipDetails={ownershipDetails}
             documents={documents}
             isConsentChecked={isConsentChecked}
-            onConsentToggle={(checked) => setIsConsentChecked(checked)}
-            onGoToStep={(stepIdx) => setCurrentStepIndex(stepIdx)}
+            onConsentToggle={setIsConsentChecked}
+            onGoToStep={wizard.goToStep}
           />
         );
     }
   };
 
   return (
-    <View style={[styles.safeArea, getSafeAreaDynamic(insets.top)]}>
+    <View style={[styles.safeArea, getSafeAreaTopPadding(insets.top)]}>
       {/* Top Header */}
-      <PropertyLoanStepIndicator
+      <LoanStepIndicator
+        variant="linear"
+        title="Property Loan"
+        subtitle={STEPS[currentStepIndex]}
         currentStepIndex={currentStepIndex}
         totalSteps={STEPS.length}
-        stepTitle={STEPS[currentStepIndex]}
-        onBack={handleBack}
+        onBack={wizard.handleBack}
       />
 
       {/* Step Content */}
@@ -369,7 +308,7 @@ export const PropertyLoanScreen: React.FC = () => {
       </ScrollView>
 
       {/* Bottom Sticky Action Bar */}
-      <View style={[styles.bottomBar, getBottomBarDynamic(insets.bottom)]}>
+      <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
         <TouchableOpacity
           style={[styles.continueBtn, isSubmitting && styles.continueBtnDisabled]}
           onPress={handleNext}
@@ -381,16 +320,10 @@ export const PropertyLoanScreen: React.FC = () => {
           ) : (
             <>
               <Text style={styles.continueBtnText}>
-                {currentStepIndex === STEPS.length - 1
-                  ? "Submit Application"
-                  : "Continue"}
+                {wizard.isLastStep ? "Submit Application" : "Continue"}
               </Text>
               <Ionicons
-                name={
-                  currentStepIndex === STEPS.length - 1
-                    ? "shield-checkmark"
-                    : "arrow-forward"
-                }
+                name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
                 size={18}
                 color={BrandColors.WHITE}
               />

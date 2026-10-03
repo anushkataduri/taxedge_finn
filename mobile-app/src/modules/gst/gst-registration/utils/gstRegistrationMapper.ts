@@ -1,4 +1,4 @@
-import { GstBusinessFormData } from "../components/GstBusinessStep/GstBusinessStep";
+import { GstBusinessFormData } from "@/modules/gst/gst-registration/components/GstBusinessStep/GstBusinessStep";
 
 /**
  * Normalizes input string to UPPER_SNAKE_CASE for exact matching.

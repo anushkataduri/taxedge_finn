@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -21,21 +22,27 @@ public class RevisedItrDocument {
 	@JoinColumn(name = "revised_itr_id", nullable = false)
 	private RevisedItr revisedItr;
 
-	@Column(name = "pan_card", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "pan_card", columnDefinition = "LONGTEXT")
 	private String panCard;
 
-	@Column(name = "aadhaar_card", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "aadhaar_card", columnDefinition = "LONGTEXT")
 	private String aadhaarCard;
 
-	@Column(name = "form_16_form_16a", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "form_16_form_16a", columnDefinition = "LONGTEXT")
 	private String form16Form16A;
 
-	@Column(name = "ais_tis_statement", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "ais_tis_statement", columnDefinition = "LONGTEXT")
 	private String aisTisStatement;
 
-	@Column(name = "bank_statements", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "bank_statements", columnDefinition = "LONGTEXT")
 	private String bankStatements;
 
-	@Column(name = "investment_proofs", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "investment_proofs", columnDefinition = "LONGTEXT")
 	private String investmentProofs;
 }

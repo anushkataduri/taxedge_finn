@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTdsProgressStore } from "../../store/tdsProgressStore";
 import {
   View,
   Text,
@@ -33,6 +34,7 @@ import {
 
 export const TdsDocumentChecklistScreen: React.FC = () => {
   const router = useRouter();
+  const maxStepReached = useTdsProgressStore((s: any) => s.maxStepReached);
   const insets = useSafeAreaInsets();
   const [isSaving, setIsSaving] = useState(false);
 
@@ -44,7 +46,7 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
     const draft = tdsDraft as any;
     if (draft && draft.documents && Array.isArray(draft.documents) && draft.documents.length > 0) {
       const savedMap = new Map(draft.documents.map((d: any) => [d.id, d]));
-      return INITIAL_TDS_DOCUMENTS.map((doc) => {
+      return INITIAL_TDS_DOCUMENTS.map((doc: any) => {
         const saved = savedMap.get(doc.id) as any;
         if (saved && (saved.fileUri || saved.status === "uploaded")) {
           return {
@@ -87,7 +89,7 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
     handleCancel: cancelExit,
   } = useUniversalDraftGuard({
     isDirty: () =>
-      documents.some((d) => Boolean(d.fileUri || d.status === "uploaded")),
+      documents.some((d: any) => Boolean(d.fileUri || d.status === "uploaded")),
     onSaveDraft: async () => {
       saveTdsDraft?.({
         formData: tdsDraft?.formData || {},
@@ -112,13 +114,13 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
 
   // Functional count of uploaded documents - zero loops
   const uploadedCount = documents.filter(
-    (d) => d.status === "uploaded" || !!d.fileUri
+    (d: any) => d.status === "uploaded" || !!d.fileUri
   ).length;
   const totalCount = documents.length;
 
-  const mandatoryDocs = documents.filter((d) => d.isMandatory);
+  const mandatoryDocs = documents.filter((d: any) => d.isMandatory);
   const isMandatoryComplete = mandatoryDocs.every(
-    (d) => d.status === "uploaded" || !!d.fileUri
+    (d: any) => d.status === "uploaded" || !!d.fileUri
   );
 
   const getOrFetchRefundId = async (): Promise<string | null> => {
@@ -144,7 +146,7 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
   };
 
   const handleUploadSuccess = async (id: string, payload: DocumentUploadPayload) => {
-    const updated = documents.map((doc) =>
+    const updated = documents.map((doc: any) =>
       doc.id === id
         ? {
             ...doc,
@@ -181,8 +183,8 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
   };
 
   const handleUploadError = (id: string, errorMessage: string) => {
-    setDocuments((prev) =>
-      prev.map((doc) =>
+    setDocuments((prev: any) =>
+      prev.map((doc: any) =>
         doc.id === id
           ? {
               ...doc,
@@ -195,7 +197,7 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
   };
 
   const handleRemove = async (id: string) => {
-    const updated = documents.map((doc) =>
+    const updated = documents.map((doc: any) =>
       doc.id === id
         ? {
             ...doc,
@@ -234,8 +236,8 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
   const handleContinue = async () => {
     if (!isMandatoryComplete) {
       // Mark missing mandatory documents with inline card errors functionally - zero loops
-      setDocuments((prev) =>
-        prev.map((doc) =>
+      setDocuments((prev: any) =>
+        prev.map((doc: any) =>
           doc.isMandatory && !doc.fileUri && doc.status !== "uploaded"
             ? {
                 ...doc,
@@ -275,7 +277,7 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
   };
 
   const handleBackPress = () => {
-    const isDirty = documents.some((d) => Boolean(d.fileUri || d.status === "uploaded"));
+    const isDirty = documents.some((d: any) => Boolean(d.fileUri || d.status === "uploaded"));
     if (isDirty) {
       openDraftModal();
     } else if (router.canGoBack()) {
@@ -308,7 +310,7 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
         />
 
         {/* 9 Document Cards with inline field validation - zero loops */}
-        {documents.map((doc) => (
+        {documents.map((doc: any) => (
           <TdsDocumentCard
             key={doc.id}
             item={doc}
@@ -336,7 +338,7 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
             <>
-              <Text style={styles.continueButtonText}>Proceed to Review</Text>
+              <Text style={styles.continueButtonText}>{maxStepReached > 2 ? "Update and Continue" : "Continue to Review"} <Ionicons name="arrow-forward" /></Text>
               <Ionicons
                 name="arrow-forward"
                 size={18}

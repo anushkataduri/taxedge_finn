@@ -1,44 +1,33 @@
-
-
 import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Modal,
   Platform,
   KeyboardAvoidingView,
-  Keyboard,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { BrandColors } from "@/shared/theme";
 import { ComplianceHeader } from "@/modules/gst/gst-compliance/components/ComplianceHeader/ComplianceHeader";
-import { BottomSheetSelector, SelectorOption } from "@/modules/gst/gst-compliance/components/BottomSheetSelector/BottomSheetSelector";
+import {
+  BottomSheetSelector,
+  SelectorOption,
+} from "@/modules/gst/gst-compliance/components/BottomSheetSelector/BottomSheetSelector";
 import { RequestTypeSection } from "@/modules/gst/gst-compliance/components/RequestTypeSection/RequestTypeSection";
 import { FloatingLabelInput } from "@/modules/gst/gst-compliance/components/FloatingLabelInput/FloatingLabelInput";
 import {
   ComplianceConfirmModal,
   ComplianceResumeModal,
 } from "@/modules/gst/gst-compliance/components/ComplianceModals/ComplianceModals";
+import { GstComplianceReviewStep } from "@/modules/gst/gst-compliance/components/GstComplianceReviewStep/GstComplianceReviewStep";
 import { useComplianceForm } from "@/modules/gst/hooks/useComplianceForm";
 import {
   styles,
-  getRootThemeStyle,
-  getCardThemeStyle,
-  getTextThemeStyle,
-  getLabelThemeStyle,
-  getInputWrapperThemeStyle,
-  getSubmitBtnThemeStyle,
-  getDialogCardThemeStyle,
-  getDialogMessageThemeStyle,
-  getDialogCancelBtnThemeStyle,
-  getDialogCancelTextThemeStyle,
-} from "./GstComplianceScreen.styles";
+  getRootBgStyle,
+} from "@/modules/gst/gst-compliance/screens/GstComplianceScreen/GstComplianceScreen.styles";
 
 const FINANCIAL_YEARS: SelectorOption[] = [
   { label: "2025-26", value: "2025-26", icon: "calendar-outline" },
@@ -66,6 +55,9 @@ export function GstComplianceScreen() {
   const { isDark } = useTheme();
 
   const {
+    currentStep,
+    setCurrentStep,
+    isEditMode,
     formData,
     errors,
     isSubmitting,
@@ -77,35 +69,20 @@ export function GstComplianceScreen() {
     updateField,
     clearError,
     handleGstinChange,
-    handlePressSubmit,
+    handleEditStep,
+    handleContinue,
+    handleBack,
     handleConfirmSubmit,
+    getButtonText,
   } = useComplianceForm();
 
-  const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  // Track on-screen keyboard height for dynamic bottom clearance
+  // Scroll to top when switching steps
   useEffect(() => {
-    const showSub = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      (e) => {
-        setKeyboardHeight(e.endCoordinates.height);
-      }
-    );
-    const hideSub = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => {
-        setKeyboardHeight(0);
-      }
-    );
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  }, [currentStep]);
 
-  // Smoothly scrolls the active input field into full view above the keyboard
   const handleScrollField = (fieldName: string) => {
     if (fieldName === "gstin") {
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
@@ -120,19 +97,33 @@ export function GstComplianceScreen() {
     }
   };
 
-  // BottomSheet Modals
   const [showFyModal, setShowFyModal] = useState(false);
   const [showTypeModal, setShowTypeModal] = useState(false);
 
   return (
-    <View
-      style={[
-        styles.root,
-        { backgroundColor: isDark ? "#0F172A" : "#F8FAFC" },
-      ]}
-    >
-      {/* Top App Bar with Thin Orange Progress Line and Info Card */}
-      <ComplianceHeader />
+    <View style={[styles.root, getRootBgStyle(isDark)]}>
+      {/* Top Header Bar */}
+      <ComplianceHeader
+        title={currentStep === 1 ? "Review Compliance Request" : "GST Compliance"}
+        onBackPress={handleBack}
+      />
+
+      {/* Step Indicator Bar (Step 0: Form & Docs, Step 1: Review) */}
+      <View style={styles.stepIndicatorContainer}>
+        <View
+          style={[
+            styles.stepIndicatorBar,
+            styles.stepIndicatorBarActive,
+          ]}
+        />
+        <View
+          style={[
+            styles.stepIndicatorBar,
+            isDark && styles.stepIndicatorBarDark,
+            currentStep >= 1 && styles.stepIndicatorBarActive,
+          ]}
+        />
+      </View>
 
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
@@ -142,204 +133,222 @@ export function GstComplianceScreen() {
         <ScrollView
           ref={scrollViewRef}
           style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            {
-              paddingBottom: Math.max(
-                keyboardHeight + 80,
-                insets.bottom + 50
-              ),
-            },
-          ]}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
-          automaticallyAdjustKeyboardInsets={true}
+          bounces={false}
         >
-          {/* Section 1: Core Details Card */}
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: isDark ? "#1E293B" : "#FFFFFF",
-                borderColor: isDark ? "#334155" : "#E2E8F0",
-              },
-            ]}
-          >
-            <Text
+          {/* Edit Mode Top Banner */}
+          {isEditMode && currentStep === 0 && (
+            <View
               style={[
-                styles.sectionTitle,
-                { color: isDark ? "#F8FAFC" : "#0F172A" },
+                styles.editModeBanner,
+                isDark && styles.editModeBannerDark,
               ]}
             >
-              Business & Filing Details
-            </Text>
-
-            {/* 1. GSTIN with Material Floating Label */}
-            <FloatingLabelInput
-              label="GSTIN"
-              floatingLabel="GSTIN"
-              placeholder="Enter 15-character GSTIN"
-              required
-              value={formData.gstin}
-              onChangeText={handleGstinChange}
-              autoCapitalize="characters"
-              maxLength={15}
-              autoCorrect={false}
-              error={errors.gstin}
-              cardBackground={isDark ? "#1E293B" : "#FFFFFF"}
-              rightElement={
-                formData.gstin.length === 15 && !errors.gstin ? (
-                  <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
-                ) : null
-              }
-              onClear={() => {
-                updateField("gstin", "");
-                clearError("gstin");
-              }}
-              onFocusScroll={() => handleScrollField("gstin")}
-            />
-
-          {/* 2. Financial Year Dropdown */}
-          <View style={styles.fieldGroup}>
-            <Text
-              style={[
-                styles.label,
-                { color: isDark ? "#E2E8F0" : "#334155" },
-              ]}
-            >
-              Financial Year <Text style={styles.star}>*</Text>
-            </Text>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => setShowFyModal(true)}
-              style={[
-                styles.selectorBox,
-                {
-                  backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
-                  borderColor: errors.financialYear
-                    ? "#EF4444"
-                    : isDark
-                    ? "#334155"
-                    : "#CBD5E1",
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.selectorText,
-                  {
-                    color: formData.financialYear
-                      ? isDark
-                        ? "#F8FAFC"
-                        : "#0F172A"
-                      : isDark
-                      ? "#64748B"
-                      : "#94A3B8",
-                  },
-                ]}
-              >
-                {formData.financialYear || "Select Financial Year"}
-              </Text>
-              <Ionicons
-                name="chevron-down"
-                size={18}
-                color={isDark ? "#94A3B8" : "#64748B"}
-              />
-            </TouchableOpacity>
-            {errors.financialYear ? (
-              <Text style={styles.errorText}>{errors.financialYear}</Text>
-            ) : null}
-          </View>
-
-          {/* 3. Request Type Dropdown (Only 2 options: Reconciliation Support, Notice Response) */}
-          <View style={styles.fieldGroup}>
-            <Text
-              style={[
-                styles.label,
-                { color: isDark ? "#E2E8F0" : "#334155" },
-              ]}
-            >
-              Request Type <Text style={styles.star}>*</Text>
-            </Text>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => setShowTypeModal(true)}
-              style={[
-                styles.selectorBox,
-                {
-                  backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
-                  borderColor: errors.requestType
-                    ? "#EF4444"
-                    : isDark
-                    ? "#334155"
-                    : "#CBD5E1",
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.selectorText,
-                  {
-                    color: formData.requestType
-                      ? isDark
-                        ? "#F8FAFC"
-                        : "#0F172A"
-                      : isDark
-                      ? "#64748B"
-                      : "#94A3B8",
-                  },
-                ]}
-              >
-                {formData.requestType || "Select Request Type"}
-              </Text>
-              <Ionicons
-                name="chevron-down"
-                size={18}
-                color={isDark ? "#94A3B8" : "#64748B"}
-              />
-            </TouchableOpacity>
-            {errors.requestType ? (
-              <Text style={styles.errorText}>{errors.requestType}</Text>
-            ) : null}
-          </View>
-        </View>
-
-        {/* Dynamic Form Sections (Reanimated accordion transition) */}
-        <RequestTypeSection
-          formData={formData}
-          errors={errors}
-          onUpdateField={updateField}
-          onClearError={clearError}
-          onScrollField={handleScrollField}
-        />
-
-        {/* Large Full-Width Submit Button */}
-        <View style={styles.submitWrapper}>
-          <TouchableOpacity
-            style={[
-              styles.submitBtn,
-              {
-                backgroundColor: BrandColors.PRIMARY_ORANGE,
-                opacity: isSubmitting ? 0.75 : 1,
-              },
-            ]}
-            activeOpacity={0.85}
-            onPress={handlePressSubmit}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator size="small" color="#FFFFFF" />
-                <Text style={styles.submitBtnText}>Submitting Request...</Text>
+              <View style={styles.editModeBannerLeft}>
+                <Ionicons
+                  name="information-circle-outline"
+                  size={18}
+                  color={isDark ? "#FED7AA" : "#C2410C"}
+                />
+                <Text
+                  style={[
+                    styles.editModeBannerText,
+                    isDark && styles.editModeBannerTextDark,
+                  ]}
+                >
+                  Editing Application Details
+                </Text>
               </View>
-            ) : (
-              <Text style={styles.submitBtnText}>Submit Request</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+              <TouchableOpacity
+                style={styles.returnToReviewBtn}
+                onPress={() => setCurrentStep(1)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.returnToReviewBtnText}>Back to Review</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Step 0: Input Form & Upload Cards */}
+          {currentStep === 0 && (
+            <>
+              {/* Business & Filing Details Card */}
+              <View
+                style={[
+                  styles.card,
+                  isDark ? styles.cardDark : styles.cardLight,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    isDark && styles.sectionTitleDark,
+                  ]}
+                >
+                  Business & Filing Details
+                </Text>
+
+                {/* 1. GSTIN Floating Label */}
+                <FloatingLabelInput
+                  label="GSTIN"
+                  floatingLabel="GSTIN"
+                  placeholder="Enter 15-character GSTIN"
+                  required
+                  value={formData.gstin}
+                  onChangeText={handleGstinChange}
+                  autoCapitalize="characters"
+                  maxLength={15}
+                  autoCorrect={false}
+                  error={errors.gstin}
+                  cardBackground={isDark ? "#1E293B" : BrandColors.WHITE}
+                  rightElement={
+                    formData.gstin.length === 15 && !errors.gstin ? (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={18}
+                        color="#16A34A"
+                      />
+                    ) : null
+                  }
+                  onClear={() => {
+                    updateField("gstin", "");
+                    clearError("gstin");
+                  }}
+                  onFocusScroll={() => handleScrollField("gstin")}
+                />
+
+                {/* 2. Financial Year Selector */}
+                <View style={styles.fieldGroup}>
+                  <Text
+                    style={[
+                      styles.label,
+                      isDark && styles.labelDark,
+                    ]}
+                  >
+                    Financial Year <Text style={styles.star}>*</Text>
+                  </Text>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => setShowFyModal(true)}
+                    style={[
+                      styles.selectorBox,
+                      isDark && styles.selectorBoxDark,
+                      Boolean(errors.financialYear) && styles.selectorBoxError,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.selectorText,
+                        isDark && styles.selectorTextDark,
+                        !formData.financialYear &&
+                          (isDark
+                            ? styles.selectorPlaceholderDark
+                            : styles.selectorPlaceholder),
+                      ]}
+                    >
+                      {formData.financialYear || "Select Financial Year"}
+                    </Text>
+                    <Ionicons
+                      name="chevron-down"
+                      size={18}
+                      color={isDark ? "#94A3B8" : "#64748B"}
+                    />
+                  </TouchableOpacity>
+                  {errors.financialYear ? (
+                    <Text style={styles.errorText}>
+                      {errors.financialYear}
+                    </Text>
+                  ) : null}
+                </View>
+
+                {/* 3. Request Type Selector */}
+                <View style={styles.fieldGroup}>
+                  <Text
+                    style={[
+                      styles.label,
+                      isDark && styles.labelDark,
+                    ]}
+                  >
+                    Request Type <Text style={styles.star}>*</Text>
+                  </Text>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => setShowTypeModal(true)}
+                    style={[
+                      styles.selectorBox,
+                      isDark && styles.selectorBoxDark,
+                      Boolean(errors.requestType) && styles.selectorBoxError,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.selectorText,
+                        isDark && styles.selectorTextDark,
+                        !formData.requestType &&
+                          (isDark
+                            ? styles.selectorPlaceholderDark
+                            : styles.selectorPlaceholder),
+                      ]}
+                    >
+                      {formData.requestType || "Select Request Type"}
+                    </Text>
+                    <Ionicons
+                      name="chevron-down"
+                      size={18}
+                      color={isDark ? "#94A3B8" : "#64748B"}
+                    />
+                  </TouchableOpacity>
+                  {errors.requestType ? (
+                    <Text style={styles.errorText}>{errors.requestType}</Text>
+                  ) : null}
+                </View>
+              </View>
+
+              {/* Dynamic Section (Reconciliation vs Notice Response + Image 1 Document Cards) */}
+              <RequestTypeSection
+                formData={formData}
+                errors={errors}
+                onUpdateField={updateField}
+                onClearError={clearError}
+                onScrollField={handleScrollField}
+              />
+            </>
+          )}
+
+          {/* Step 1: Review Application Screen with Edit Buttons */}
+          {currentStep === 1 && (
+            <GstComplianceReviewStep
+              formData={formData}
+              onEditStep={handleEditStep}
+            />
+          )}
+
+          {/* Primary Action Button (Continue / Update & Review / Submit) */}
+          <View style={styles.submitWrapper}>
+            <TouchableOpacity
+              style={[
+                styles.submitBtn,
+                isSubmitting && styles.submitBtnDisabled,
+              ]}
+              activeOpacity={0.85}
+              onPress={handleContinue}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <View style={styles.loadingRow}>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text style={styles.submitBtnText}>Submitting Request...</Text>
+                </View>
+              ) : (
+                <Text style={styles.submitBtnText}>{getButtonText()}</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Financial Year Selector Modal */}
       <BottomSheetSelector
@@ -370,7 +379,7 @@ export function GstComplianceScreen() {
         onClose={() => setShowTypeModal(false)}
       />
 
-      {/* Confirmation Modal */}
+      {/* Confirmation Modal Before Submission */}
       <ComplianceConfirmModal
         visible={showConfirmModal}
         isDark={isDark}
@@ -392,4 +401,3 @@ export function GstComplianceScreen() {
 }
 
 export default GstComplianceScreen;
-

@@ -407,4 +407,20 @@ export const styles = StyleSheet.create({
     color: BrandColors.PRIMARY_ORANGE,
     fontWeight: "700",
   },
+  syncBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: "#EFF6FF",
+    borderRadius: 8,
+    marginBottom: 12,
+    gap: 8,
+  },
+  syncBannerText: {
+    fontSize: 13,
+    color: "#1E40AF",
+    fontWeight: "500",
+  },
 });

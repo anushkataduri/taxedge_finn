@@ -14,7 +14,7 @@ import {
   styles,
   getInputContainerDynamicStyle,
   getTextInputDynamicStyle,
-} from "./FloatingLabelInput.styles";
+} from "@/modules/gst/gst-compliance/components/FloatingLabelInput/FloatingLabelInput.styles";
 
 export interface FloatingLabelInputProps extends TextInputProps {
   label: string;

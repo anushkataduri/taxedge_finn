@@ -12,7 +12,7 @@ import {
   downloadAndOpenInvoicePdf,
   shareInvoicePdfDocument,
 } from "@/shared/utils/invoicePdfGenerator";
-import { styles } from "./GstPaymentReceiptStep.styles";
+import { styles } from "@/modules/gst/gst-filing/components/payment/GstPaymentReceiptStep/GstPaymentReceiptStep.styles";
 
 export interface GstPaymentReceiptStepProps {
   amount?: string;

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
@@ -19,14 +19,17 @@ import {
   LoanDetailsFormData,
   LoanBusinessFormData,
   LoanBankingFormData,
-  LoanDocumentItem,
   LoanApplicationDraft,
 } from "../../../types/loans.types";
 import {
   validateGstin,
 } from "../../../../../shared/validators/indianTaxValidators";
+import { useLoanWizard } from "../../../hooks/useLoanWizard";
+import { useLoanDocuments } from "../../../hooks/useLoanDocuments";
+import { getMissingRequiredDocuments } from "../../../documents/loanDocumentEngine";
+import { LoanStepIndicator } from "../../../components/LoanStepIndicator";
+import { getBottomBarPadding, getSafeAreaTopPadding } from "../../../styles/loanScreenLayout.styles";
 import {
-  MachineryLoanStepIndicator,
   MachineryLoanFinancialsStep,
   MachineryLoanBusinessStep,
   MachineryLoanBankingStep,
@@ -35,7 +38,7 @@ import {
 } from "../../components";
 import { styles } from "./MachineryLoanScreen.styles";
 
-const STEPS = ["Loan Details", "Business Details", "Banking", "Documents & Review"];
+const STEPS = ["Loan Details", "Business Details", "Banking", "Documents & Review"] as const;
 
 export const MachineryLoanScreen: React.FC = () => {
   const router = useRouter();
@@ -44,7 +47,6 @@ export const MachineryLoanScreen: React.FC = () => {
 
   const customer = useAuthStore((s) => s.customer);
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConsentChecked, setIsConsentChecked] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -80,74 +82,49 @@ export const MachineryLoanScreen: React.FC = () => {
   });
 
   // Step 4: Documents
-  const [documents, setDocuments] = useState<LoanDocumentItem[]>(() =>
-    JSON.parse(JSON.stringify(MACHINERY_DOCUMENTS_TEMPLATE))
-  );
+  const loanDocuments = useLoanDocuments({ template: MACHINERY_DOCUMENTS_TEMPLATE });
+  const { documents } = loanDocuments;
 
-  const handleDetailsChange = (field: keyof LoanDetailsFormData, value: any) => {
+  const scrollToTop = useCallback(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
+  const wizard = useLoanWizard({
+    totalSteps: STEPS.length,
+    validateStep: (stepIndex) => validateStep(stepIndex),
+    onExitFromFirstStep: () => router.back(),
+    onStepChange: scrollToTop,
+  });
+  const { currentStepIndex } = wizard;
+
+  const clearFieldError = (field: string) => {
+    if (!errors[field]) return;
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const handleDetailsChange = <K extends keyof LoanDetailsFormData>(field: K, value: LoanDetailsFormData[K]) => {
     setLoanDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field);
   };
 
-  const handleBusinessChange = (
-    field: keyof LoanBusinessFormData,
-    value: any
-  ) => {
+  const handleBusinessChange = <K extends keyof LoanBusinessFormData>(field: K, value: LoanBusinessFormData[K]) => {
     setBusinessDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field);
   };
 
-  const handleBankingChange = (
-    field: keyof LoanBankingFormData,
-    value: string
-  ) => {
+  const handleBankingChange = <K extends keyof LoanBankingFormData>(field: K, value: LoanBankingFormData[K]) => {
     setBankingDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field);
   };
 
-  const handleDocumentUploaded = (
-    docId: string,
-    fileUri: string,
-    fileName: string,
-    fileSize: string
-  ) => {
-    setDocuments((prev) =>
-      prev.map((d) =>
-        d.id === docId
-          ? {
-              ...d,
-              fileUri,
-              fileName,
-              fileSize,
-              uploadedAt: new Date().toISOString(),
-            }
-          : d
-      )
-    );
-  };
-
-  const validateCurrentStep = (): boolean => {
+  function validateStep(stepIndex: number): boolean {
     const newErrors: Record<string, string> = {};
 
-    if (currentStepIndex === 0) {
+    if (stepIndex === 0) {
       if (!loanDetails.requiredAmount) {
         newErrors.requiredAmount = "Select required loan amount";
       }
@@ -164,7 +141,7 @@ export const MachineryLoanScreen: React.FC = () => {
       }
     }
 
-    if (currentStepIndex === 1) {
+    if (stepIndex === 1) {
       if (!businessDetails.businessName || !businessDetails.businessName.trim()) {
         newErrors.businessName = "Enter business name";
       }
@@ -186,7 +163,7 @@ export const MachineryLoanScreen: React.FC = () => {
       }
     }
 
-    if (currentStepIndex === 2) {
+    if (stepIndex === 2) {
       if (!bankingDetails.primaryBankName || !bankingDetails.primaryBankName.trim()) {
         newErrors.primaryBankName = "Enter bank name";
       }
@@ -200,10 +177,8 @@ export const MachineryLoanScreen: React.FC = () => {
       }
     }
 
-    if (currentStepIndex === 3) {
-      const missingRequired = documents.filter(
-        (d) => d.required && (!d.fileUri || !d.fileUri.trim())
-      );
+    if (stepIndex === 3) {
+      const missingRequired = getMissingRequiredDocuments(documents);
       if (missingRequired.length > 0) {
         Alert.alert(
           "Required Documents Missing",
@@ -215,27 +190,15 @@ export const MachineryLoanScreen: React.FC = () => {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }
 
   const handleNext = () => {
-    if (!validateCurrentStep()) {
+    if (!wizard.isLastStep) {
+      wizard.goToNextStep();
       return;
     }
-
-    if (currentStepIndex < STEPS.length - 1) {
-      setCurrentStepIndex((prev) => prev + 1);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    } else {
+    if (validateStep(currentStepIndex)) {
       handleSubmitApplication();
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex((prev) => prev - 1);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    } else {
-      router.back();
     }
   };
 
@@ -295,19 +258,11 @@ export const MachineryLoanScreen: React.FC = () => {
         true
       );
 
+      const statusRoute: Href = `/service/loan-status?id=${appId}&loanType=Machinery+Loan`;
       Alert.alert(
         "Machinery Loan Submitted",
         `Your application (Ref: ${response.referenceNumber || appId}) has been submitted. Our TaxEdge Loan Agent will process the application shortly.`,
-        [
-          {
-            text: "Track Status",
-            onPress: () => {
-              router.replace(
-                `/service/loan-status?id=${appId}&loanType=Machinery+Loan` as any
-              );
-            },
-          },
-        ]
+        [{ text: "Track Status", onPress: () => router.replace(statusRoute) }]
       );
     } catch {
       Alert.alert("Submission Error", "Failed to lodge application. Please try again.");
@@ -347,11 +302,8 @@ export const MachineryLoanScreen: React.FC = () => {
       default:
         return (
           <>
-            <MachineryLoanDocumentsStep
-              documents={documents}
-              onDocumentUploaded={handleDocumentUploaded}
-            />
-            <View style={{ height: 24 }} />
+            <MachineryLoanDocumentsStep loanDocuments={loanDocuments} />
+            <View style={styles.documentsReviewSpacer} />
             <MachineryLoanReviewStep
               loanDetails={loanDetails}
               businessDetails={businessDetails}
@@ -359,44 +311,36 @@ export const MachineryLoanScreen: React.FC = () => {
               documents={documents}
               isConsentChecked={isConsentChecked}
               onConsentToggle={setIsConsentChecked}
-              onGoToStep={(stepIdx) => {
-                setCurrentStepIndex(stepIdx);
-                scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-              }}
+              onGoToStep={wizard.goToStep}
             />
           </>
         );
     }
   };
 
-  const isFinalStep = currentStepIndex === STEPS.length - 1;
-
   return (
-    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
+    <View style={[styles.safeArea, getSafeAreaTopPadding(insets.top)]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={handleBack}>
-            <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <TouchableOpacity onPress={wizard.handleBack}>
+            <Ionicons name="arrow-back" size={24} color={BrandColors.TEXT_PRIMARY} />
           </TouchableOpacity>
           <View>
             <Text style={styles.headerTitle}>Machinery Loan</Text>
             <Text style={styles.headerSubtitle}>
-              Step {currentStepIndex + 1} of {STEPS.length} • {STEPS[currentStepIndex]}
+              Step {wizard.stepNumber} of {STEPS.length} • {STEPS[currentStepIndex]}
             </Text>
           </View>
         </View>
       </View>
 
       {/* Step Progress Stepper */}
-      <MachineryLoanStepIndicator
+      <LoanStepIndicator
+        variant="numbered"
         steps={STEPS}
         currentStepIndex={currentStepIndex}
-        onStepPress={(idx) => {
-          if (idx <= currentStepIndex) {
-            setCurrentStepIndex(idx);
-          }
-        }}
+        onStepPress={wizard.goToStep}
       />
 
       {/* Scrollable Step Content */}
@@ -410,20 +354,13 @@ export const MachineryLoanScreen: React.FC = () => {
       </ScrollView>
 
       {/* Sticky Bottom Actions */}
-      <View
-        style={[
-          styles.bottomBar,
-          { paddingBottom: Math.max(insets.bottom, 12) },
-        ]}
-      >
+      <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={handleBack}
+          onPress={wizard.handleBack}
           disabled={isSubmitting}
         >
-          <Text style={styles.backButtonText}>
-            {currentStepIndex === 0 ? "Back" : "Back"}
-          </Text>
+          <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -436,10 +373,10 @@ export const MachineryLoanScreen: React.FC = () => {
           ) : (
             <>
               <Text style={styles.nextButtonText}>
-                {isFinalStep ? "Submit Application" : "Continue"}
+                {wizard.isLastStep ? "Submit Application" : "Continue"}
               </Text>
               <Ionicons
-                name={isFinalStep ? "shield-checkmark" : "arrow-forward"}
+                name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
                 size={18}
                 color={BrandColors.WHITE}
               />
@@ -452,4 +389,3 @@ export const MachineryLoanScreen: React.FC = () => {
 };
 
 export default MachineryLoanScreen;
-

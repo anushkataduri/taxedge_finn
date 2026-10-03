@@ -12,16 +12,16 @@ import { gstApi } from "@/modules/gst/services/gstApi";
 import { GstValidators } from "@/modules/gst/utils/gstValidators";
 import { getCurrentFinancialYear } from "@/modules/gst/utils/gstDateUtils";
 import { dismissKeyboardThen } from "@/shared/components/KeyboardAwareFormLayout";
-import { styles } from "./GstFilingPeriodStep.styles";
-import { GstFilingSelectModal } from "./GstFilingSelectModal";
-import { GstCalculationMethodSection } from "./GstCalculationMethodSection";
+import { styles } from "@/modules/gst/gst-filing/components/GstFilingPeriodStep/GstFilingPeriodStep.styles";
+import { GstFilingSelectModal } from "@/modules/gst/gst-filing/components/GstFilingPeriodStep/GstFilingSelectModal";
+import { GstCalculationMethodSection } from "@/modules/gst/gst-filing/components/GstFilingPeriodStep/GstCalculationMethodSection";
 import {
   FILING_PERIODS,
   FILING_NATURE_OPTIONS,
   FINANCIAL_YEARS,
   getFilingPeriodsForFrequency,
   getReturnTypesForFrequency,
-} from "./gstPeriodUtils";
+} from "@/modules/gst/gst-filing/components/GstFilingPeriodStep/gstPeriodUtils";
 
 export {
   FILING_PERIODS,
@@ -51,6 +51,8 @@ export interface GstFilingPeriodData {
   exemptSales?: string;
   taxablePurchases?: string;
   eligibleItc?: string;
+  customerId?: string;
+  filingId?: string;
 }
 
 interface GstFilingPeriodStepProps {

@@ -8,6 +8,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -25,25 +26,31 @@ public class Documents {
 	@JoinColumn(name = "gst_id", nullable = false)
 	private Business business;
 
-	@Column(name = "pan_card", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "pan_card", columnDefinition = "LONGTEXT")
 	private String panCard;
 
-	@Column(name = "aadhaar_card", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "aadhaar_card", columnDefinition = "LONGTEXT")
 	private String aadhaarCard;
 
-	@Column(name = "business_registration_proof", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "business_registration_proof", columnDefinition = "LONGTEXT")
 	private String businessRegistrationProof;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "principal_place_address_type", length = 50)
 	private PrincipalPlaceAddressType principalPlaceAddressType;
 
-	@Column(name = "principal_place_address_proof", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "principal_place_address_proof", columnDefinition = "LONGTEXT")
 	private String principalPlaceAddressProof;
 
-	@Column(name = "bank_passbook_or_cancelled_cheque", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "bank_passbook_or_cancelled_cheque", columnDefinition = "LONGTEXT")
 	private String bankPassbookOrCancelledCheque;
 
-	@Column(name = "passport_size_photograph", columnDefinition = "TEXT")
+	@Lob
+	@Column(name = "passport_size_photograph", columnDefinition = "LONGTEXT")
 	private String passportSizePhotograph;
 }

@@ -9,8 +9,13 @@ import {
   LoanOwnershipFormData,
   LoanDocumentItem,
 } from "../../../types/loans.types";
-import { formatTenureEquivalent } from "../PropertyLoanFinancialsStep/PropertyLoanFinancialsStep";
+import { formatReviewAmountDigits, formatTenureEquivalent } from "../../../utils/loanFormatting";
+import { maskPan as maskPanBase, maskMobile } from "../../../utils/maskingUtils";
 import { styles } from "./PropertyLoanReviewStep.styles";
+
+/** Property Loan review shows the first five PAN characters and the last one. */
+const maskPan = (pan?: string): string => maskPanBase(pan, { visibleStart: 5, visibleEnd: 1 });
+const formatCurrency = formatReviewAmountDigits;
 
 export interface PropertyLoanReviewStepProps {
   loanDetails: LoanDetailsFormData;
@@ -33,22 +38,6 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
   onConsentToggle,
   onGoToStep,
 }) => {
-  const formatCurrency = (val?: string | number) => {
-    const num = Number((val || "").toString().replace(/[^0-9]/g, ""));
-    if (!val || isNaN(num)) return "₹0";
-    return "₹" + num.toLocaleString("en-IN");
-  };
-
-  const maskPan = (pan?: string) => {
-    if (!pan || pan.length < 5) return pan || "—";
-    return `${pan.slice(0, 5)}XXXX${pan.slice(-1)}`;
-  };
-
-  const maskMobile = (mob?: string) => {
-    if (!mob || mob.length < 6) return mob || "—";
-    return `+91 ${mob.slice(0, 2)}XXXXXX${mob.slice(-2)}`;
-  };
-
   const uploadedDocs = documents.filter((d) => Boolean(d.fileUri));
   const hasExistingLoan = Boolean(
     ownershipDetails.currentLender ||

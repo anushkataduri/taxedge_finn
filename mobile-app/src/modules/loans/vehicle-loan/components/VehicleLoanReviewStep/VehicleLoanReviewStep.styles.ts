@@ -166,4 +166,14 @@ export const styles = StyleSheet.create({
     color: "#475569",
     lineHeight: 18,
   },
+  verifiedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  verifiedText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#16A34A",
+  },
 });

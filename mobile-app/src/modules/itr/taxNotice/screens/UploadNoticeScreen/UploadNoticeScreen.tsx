@@ -33,6 +33,8 @@ import {
   getScrollContentInsetsStyle,
   getBottomBarInsetsStyle,
 } from "./UploadNoticeScreen.styles";
+import { validateStep1Data, validateStep2Data } from "./UploadNoticeScreen.utils";
+import { AssessmentYearDropdown, NoticeTypeDropdown } from "./UploadNoticeScreen.components";
 
 export const UploadNoticeScreen: React.FC = () => {
   const router = useRouter();
@@ -71,16 +73,6 @@ export const UploadNoticeScreen: React.FC = () => {
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const ayOptions = [
-    "AY 2027-28",
-    "AY 2026-27",
-    "AY 2025-26",
-    "AY 2024-25",
-    "AY 2023-24",
-    "AY 2022-23",
-    "Other"
-  ];
   const [showOtherAyInput, setShowOtherAyInput] = useState(false);
 
   // Universal Draft Guard Hook for intercepting back navigation
@@ -143,52 +135,9 @@ export const UploadNoticeScreen: React.FC = () => {
     }
   };
 
-  const validateStep1 = (): boolean => {
-    const newErrors: Record<string, string> = {};
+  const validateStep1 = (): boolean => validateStep1Data(formData, setErrors);
 
-    const panTrimmed = (formData.pan || "").trim().toUpperCase();
-    if (!panTrimmed) {
-      newErrors.pan = "PAN is required.";
-    } else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panTrimmed)) {
-      newErrors.pan = "Enter a valid 10-character PAN (e.g. ABCDE1234F).";
-    }
-
-    if (!formData.assessmentYear.trim()) {
-      newErrors.assessmentYear = "Assessment year is required.";
-    }
-
-    if (!formData.noticeType.trim()) {
-      newErrors.noticeType = "Please select the notice type.";
-    }
-
-    if (!formData.noticeDate.trim()) {
-      newErrors.noticeDate = "Notice date is required.";
-    }
-
-    if (!formData.noticeNumber.trim()) {
-      newErrors.noticeNumber = "Notice reference number / DIN is required.";
-    }
-
-    if (!formData.responseDueDate.trim()) {
-      newErrors.responseDueDate = "Response due date is required.";
-    }
-
-    if (!formData.customerExplanation.trim()) {
-      newErrors.customerExplanation = "Please provide a brief explanation of your case.";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateStep2 = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.noticeFileName) {
-      newErrors.file = "Please upload your Income Tax notice document.";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const validateStep2 = (): boolean => validateStep2Data(formData, setErrors);
   const handleStep1Continue = async () => {
     if (!validateStep1()) return;
 
@@ -300,145 +249,24 @@ export const UploadNoticeScreen: React.FC = () => {
             </View>
 
             {/* Field 2: Assessment Year */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>
-                Assessment Year (AY) <Text style={styles.requiredStar}>*</Text>
-              </Text>
-              {showOtherAyInput ? (
-                <View style={[styles.textInput, { flexDirection: "row", alignItems: "center", paddingRight: 8 }, errors.assessmentYear ? styles.inputError : null]}>
-                  <TextInput
-                    style={{ flex: 1, color: "#0F172A", fontSize: 16, height: 48 }}
-                    placeholder="E.g., AY 2028-29"
-                    placeholderTextColor="#94A3B8"
-                    value={formData.assessmentYear}
-                    onChangeText={(text) => handleFieldChange("assessmentYear", text)}
-                    autoFocus
-                  />
-                  <TouchableOpacity onPress={() => { setShowOtherAyInput(false); handleFieldChange("assessmentYear", ""); }}>
-                    <Ionicons name="close-circle" size={20} color="#94A3B8" />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <>
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={() => setShowAyDropdown(!showAyDropdown)}
-                    style={[styles.dropdownSelector, errors.assessmentYear ? styles.inputError : null]}
-                  >
-                    <Text style={[styles.dropdownValue, !formData.assessmentYear && { color: "#94A3B8" }]}>{formData.assessmentYear || "Select Assessment Year"}</Text>
-                    <Ionicons
-                      name={showAyDropdown ? "chevron-up" : "chevron-down"}
-                      size={18}
-                      color="#64748B"
-                    />
-                  </TouchableOpacity>
-
-                  {showAyDropdown && (
-                    <View style={styles.dropdownMenu}>
-                      {ayOptions.map((opt) => (
-                        <TouchableOpacity
-                          key={opt}
-                          activeOpacity={0.7}
-                          onPress={() => {
-                            if (opt === "Other") { 
-                              setShowOtherAyInput(true); 
-                              handleFieldChange("assessmentYear", ""); 
-                            } else { 
-                              setShowOtherAyInput(false); 
-                              handleFieldChange("assessmentYear", opt); 
-                            }
-                            setShowAyDropdown(false);
-                          }}
-                          style={styles.dropdownItem}
-                        >
-                          <Text
-                            style={[
-                              styles.dropdownItemText,
-                              formData.assessmentYear === opt
-                                ? styles.dropdownItemActive
-                                : null,
-                            ]}
-                          >
-                            {opt}
-                          </Text>
-                          {formData.assessmentYear === opt && (
-                            <Ionicons name="checkmark" size={16} color="#F97316" />
-                          )}
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
-                </>
-              )}
-            </View>
+            <AssessmentYearDropdown
+              formData={formData}
+              errors={errors}
+              handleFieldChange={handleFieldChange}
+              showOtherAyInput={showOtherAyInput}
+              setShowOtherAyInput={setShowOtherAyInput}
+              showAyDropdown={showAyDropdown}
+              setShowAyDropdown={setShowAyDropdown}
+            />
 
             {/* Field 3: Notice Type */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>
-                Notice Type / Section <Text style={styles.requiredStar}>*</Text>
-              </Text>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => setShowTypeDropdown(!showTypeDropdown)}
-                style={[
-                  styles.dropdownSelector,
-                  errors.noticeType ? styles.inputError : null,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.dropdownValue,
-                    !formData.noticeType ? { color: "#94A3B8" } : null,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {formData.noticeType || "Select Notice Type"}
-                </Text>
-                <Ionicons
-                  name={showTypeDropdown ? "chevron-up" : "chevron-down"}
-                  size={18}
-                  color="#64748B"
-                />
-              </TouchableOpacity>
-
-              {showTypeDropdown && (
-                <View style={styles.dropdownMenu}>
-                  {NOTICE_TYPE_OPTIONS.map((item) => (
-                    <TouchableOpacity
-                      key={item.value}
-                      activeOpacity={0.7}
-                      onPress={() => {
-                        handleFieldChange("noticeType", item.label);
-                        setShowTypeDropdown(false);
-                      }}
-                      style={styles.dropdownItem}
-                    >
-                      <View style={{ flex: 1, paddingRight: 8 }}>
-                        <Text
-                          style={[
-                            styles.dropdownItemText,
-                            formData.noticeType === item.label
-                              ? styles.dropdownItemActive
-                              : null,
-                          ]}
-                        >
-                          {item.label}
-                        </Text>
-                        <Text style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>
-                          {item.description}
-                        </Text>
-                      </View>
-                      {formData.noticeType === item.label && (
-                        <Ionicons name="checkmark" size={16} color="#F97316" />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-              {errors.noticeType ? (
-                <Text style={styles.errorText}>{errors.noticeType}</Text>
-              ) : null}
-            </View>
+            <NoticeTypeDropdown
+              formData={formData}
+              errors={errors}
+              handleFieldChange={handleFieldChange}
+              showTypeDropdown={showTypeDropdown}
+              setShowTypeDropdown={setShowTypeDropdown}
+            />
 
             {/* Field 4: Notice Date (Interactive Calendar DatePicker) */}
             <TaxNoticeDatePickerInput

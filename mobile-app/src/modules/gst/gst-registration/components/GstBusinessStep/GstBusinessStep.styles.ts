@@ -37,10 +37,10 @@ export const styles = StyleSheet.create({
     marginBottom: 14,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: BrandColors.BACKGROUND,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: BrandColors.BORDER,
   },
   accordionTitle: {
     fontSize: 15,
@@ -65,7 +65,7 @@ export const styles = StyleSheet.create({
     backgroundColor: BrandColors.WHITE,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: BrandColors.BORDER,
     paddingHorizontal: 16,
     fontSize: 14,
     color: BrandColors.TEXT_PRIMARY,
@@ -76,8 +76,8 @@ export const styles = StyleSheet.create({
     backgroundColor: "#FEF2F2",
   },
   inputReadOnly: {
-    backgroundColor: "#F8FAFC",
-    color: "#475569",
+    backgroundColor: BrandColors.BACKGROUND,
+    color: BrandColors.TEXT_SECONDARY,
   },
   errorText: {
     fontSize: 11.5,
@@ -91,7 +91,7 @@ export const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   lookupInfoText: {
-    color: "#64748B",
+    color: BrandColors.TEXT_SECONDARY,
     fontSize: 11.5,
     marginTop: -6,
     marginBottom: 10,
@@ -114,7 +114,7 @@ export const styles = StyleSheet.create({
     backgroundColor: BrandColors.WHITE,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: BrandColors.BORDER,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
@@ -220,10 +220,21 @@ export const styles = StyleSheet.create({
     backgroundColor: BrandColors.WHITE,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: BrandColors.BORDER,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
+  },
+  formDatePickerBtn: {
+    height: 50,
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  formDatePickerText: {
+    flex: 1,
+    fontSize: 13,
   },
   // Shared UniversalDatePicker, styled to match the existing GST date fields.
   datePickerContainer: {

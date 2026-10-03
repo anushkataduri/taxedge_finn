@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -6,12 +6,15 @@ import {
   ComplianceFormData,
   ValidationErrors,
   validateComplianceForm,
-} from "../validation/complianceSchema";
+} from "@/modules/gst/validation/complianceSchema";
 import {
   cleanGstinInput,
   isValidGstin,
-} from "../utils/gstValidation";
-import { submitComplianceRequest, SubmissionResult } from "../services/gstComplianceService";
+} from "@/modules/gst/utils/gstValidation";
+import {
+  submitComplianceRequest,
+  SubmissionResult,
+} from "@/modules/gst/services/gstComplianceService";
 import { useAuthStore } from "@/store/authStore";
 import { addDraftToIndex, removeDraftFromIndex } from "@/shared/hooks/useServiceDraft";
 
@@ -30,7 +33,7 @@ const initialFormData: ComplianceFormData = {
   noticeRemarks: "",
 };
 
-function getDraftKey(mobile: string) {
+function getDraftKey(mobile: string): string {
   return `@taxedge_draft_${mobile}_gst-compliance`;
 }
 
@@ -46,17 +49,19 @@ function getCleanMobile(): string {
 export function useComplianceForm() {
   const router = useRouter();
 
+  const [currentStep, setCurrentStep] = useState<number>(0); // 0 = Form, 1 = Review
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [formData, setFormData] = useState<ComplianceFormData>(initialFormData);
   const [errors, setErrors] = useState<ValidationErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [showResumeModal, setShowResumeModal] = useState(false);
-  const [hasCheckedDraft, setHasCheckedDraft] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
+  const [showResumeModal, setShowResumeModal] = useState<boolean>(false);
+  const [hasCheckedDraft, setHasCheckedDraft] = useState<boolean>(false);
 
-  // Check if draft exists on mount (from AsyncStorage)
+  // Check if draft exists on mount
   useEffect(() => {
     if (!hasCheckedDraft) {
-      const check = async () => {
+      const checkDraft = async () => {
         try {
           const mobile = getCleanMobile();
           if (!mobile) return;
@@ -75,15 +80,15 @@ export function useComplianceForm() {
             }
           }
         } catch {
-          // ignore
+          // ignore draft read failure
         }
         setHasCheckedDraft(true);
       };
-      check();
+      checkDraft();
     }
   }, [hasCheckedDraft]);
 
-  // Auto-save draft on any change if fields are filled
+  // Auto-save draft on form change
   useEffect(() => {
     const isDirty = Boolean(
       formData.gstin ||
@@ -105,14 +110,14 @@ export function useComplianceForm() {
             serviceKey: "gst-compliance",
             serviceName: "GST Compliance",
             category: "GST",
-            step: 0,
+            step: currentStep,
             formData,
             updatedAt: new Date().toISOString().split("T")[0],
           })
         ).catch(() => {});
       }
     }
-  }, [formData, hasCheckedDraft]);
+  }, [formData, currentStep, hasCheckedDraft]);
 
   const resumeDraft = useCallback(async () => {
     try {
@@ -126,7 +131,7 @@ export function useComplianceForm() {
         }
       }
     } catch {
-      // ignore
+      // ignore draft recovery error
     }
     setShowResumeModal(false);
   }, []);
@@ -139,6 +144,8 @@ export function useComplianceForm() {
     }
     setFormData(initialFormData);
     setErrors({});
+    setCurrentStep(0);
+    setIsEditMode(false);
     setShowResumeModal(false);
   }, []);
 
@@ -158,13 +165,12 @@ export function useComplianceForm() {
     });
   }, []);
 
-  // Instant GSTIN handling
+  // Instant GSTIN sanitization and validation
   const handleGstinChange = useCallback(
     (text: string) => {
       const cleaned = cleanGstinInput(text);
       updateField("gstin", cleaned);
 
-      // Instant validation feedback: only show error if full 15 chars and invalid
       if (cleaned.length === 15) {
         if (!isValidGstin(cleaned)) {
           setErrors((prev) => ({
@@ -181,24 +187,45 @@ export function useComplianceForm() {
     [updateField, clearError]
   );
 
-  // Validate and open confirmation popup
-  const handlePressSubmit = useCallback(() => {
-    const { isValid, errors: validationErrors } = validateComplianceForm(formData);
+  // Edit action triggered from Review Step
+  const handleEditStep = useCallback((_section?: string) => {
+    setIsEditMode(true);
+    setCurrentStep(0);
+  }, []);
 
-    if (!isValid) {
-      setErrors(validationErrors);
-      Alert.alert(
-        "Required Fields Missing",
-        "Please fill in all required fields highlighted in red."
-      );
-      return;
+  // Continue or Save & Review action
+  const handleContinue = useCallback(() => {
+    if (currentStep === 0) {
+      const { isValid, errors: validationErrors } = validateComplianceForm(formData);
+      if (!isValid) {
+        setErrors(validationErrors);
+        Alert.alert(
+          "Required Fields Missing",
+          "Please fill in all required fields highlighted in red."
+        );
+        return;
+      }
+
+      if (isEditMode) {
+        Alert.alert("Changes Saved", "Your details have been updated.");
+        setIsEditMode(false);
+      }
+
+      setCurrentStep(1);
+    } else {
+      setShowConfirmModal(true);
     }
+  }, [currentStep, isEditMode, formData]);
 
-    // Open Confirmation Popup to prevent accidental submissions
-    setShowConfirmModal(true);
-  }, [formData]);
+  const handleBack = useCallback(() => {
+    if (currentStep === 1) {
+      setCurrentStep(0);
+    } else {
+      router.back();
+    }
+  }, [currentStep, router]);
 
-  // Execute submission
+  // Execute backend submission
   const handleConfirmSubmit = useCallback(async () => {
     setShowConfirmModal(false);
     setIsSubmitting(true);
@@ -207,14 +234,12 @@ export function useComplianceForm() {
       const result: SubmissionResult = await submitComplianceRequest(formData);
 
       if (result.success) {
-        // Clear draft from AsyncStorage
         const mobile = getCleanMobile();
         if (mobile) {
           removeDraftFromIndex(mobile, "gst-compliance");
           AsyncStorage.removeItem(getDraftKey(mobile)).catch(() => {});
         }
 
-        // Navigate to dedicated success screen
         router.replace({
           pathname: "/service/gst-compliance-success" as any,
           params: {
@@ -228,7 +253,7 @@ export function useComplianceForm() {
       } else {
         Alert.alert(
           "Submission Failed",
-          result.error || "Unable to submit your request. Please check your internet connection and try again.",
+          result.error || "Unable to submit your request. Please check your connection and retry.",
           [
             { text: "Cancel", style: "cancel" },
             { text: "Retry", onPress: handleConfirmSubmit },
@@ -238,7 +263,7 @@ export function useComplianceForm() {
     } catch (err) {
       Alert.alert(
         "Network Error",
-        "Please check your internet connection and retry.",
+        "Could not communicate with the server. Please verify your internet connection.",
         [
           { text: "Cancel", style: "cancel" },
           { text: "Retry", onPress: handleConfirmSubmit },
@@ -249,7 +274,20 @@ export function useComplianceForm() {
     }
   }, [formData, router]);
 
+  const getButtonText = useCallback((): string => {
+    if (isEditMode && currentStep === 0) {
+      return "Update & Review";
+    }
+    if (currentStep === 0) {
+      return "Continue to Review";
+    }
+    return "Submit Compliance Request";
+  }, [currentStep, isEditMode]);
+
   return {
+    currentStep,
+    setCurrentStep,
+    isEditMode,
     formData,
     errors,
     isSubmitting,
@@ -262,7 +300,10 @@ export function useComplianceForm() {
     updateField,
     clearError,
     handleGstinChange,
-    handlePressSubmit,
+    handleEditStep,
+    handleContinue,
+    handleBack,
     handleConfirmSubmit,
+    getButtonText,
   };
 }

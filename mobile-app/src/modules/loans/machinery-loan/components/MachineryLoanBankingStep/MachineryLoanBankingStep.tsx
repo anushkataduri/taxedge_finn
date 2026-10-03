@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, Text, TextInput, ActivityIndicator } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { LoanBankingFormData } from "../../../types/loans.types";
-import { ifscService } from "../../../../gst/services/ifscService";
+import { useIfscLookup } from "../../../hooks/useIfscLookup";
 import { styles } from "./MachineryLoanBankingStep.styles";
 
 export interface MachineryLoanBankingStepProps {
@@ -18,30 +18,14 @@ export const MachineryLoanBankingStep: React.FC<MachineryLoanBankingStepProps> =
   errors = {},
   hasExistingLoans = false,
 }) => {
-  const [isIfscLoading, setIsIfscLoading] = useState(false);
-  const [ifscError, setIfscError] = useState<string | null>(null);
-  const [branchName, setBranchName] = useState<string>("");
+  const ifsc = useIfscLookup({
+    trigger: "length",
+    onResolved: (details) => onChange("primaryBankName", details.bank),
+  });
+  const { isLoading: isIfscLoading, error: ifscError, branchName } = ifsc;
 
-  const handleIfscChange = async (text: string) => {
-    const cleaned = text.toUpperCase().replace(/[^A-Z0-9]/g, "");
-    onChange("ifscCode", cleaned);
-
-    if (cleaned.length === 11) {
-      setIsIfscLoading(true);
-      setIfscError(null);
-      try {
-        const details = await ifscService.lookup(cleaned);
-        onChange("primaryBankName", details.bank);
-        setBranchName(details.branch);
-      } catch (err: any) {
-        setIfscError(err?.message || "Invalid IFSC Code");
-      } finally {
-        setIsIfscLoading(false);
-      }
-    } else {
-      setIfscError(null);
-      if (branchName) setBranchName("");
-    }
+  const handleIfscChange = (text: string) => {
+    onChange("ifscCode", ifsc.handleIfscChange(text));
   };
 
   return (

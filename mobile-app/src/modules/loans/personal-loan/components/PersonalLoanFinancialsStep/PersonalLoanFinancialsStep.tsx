@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { LoanDetailsFormData } from "../../../types/loans.types";
+import { LoanAmountInput, type LoanAmountPreset } from "../../../components/LoanAmountInput";
 import { styles } from "./PersonalLoanFinancialsStep.styles";
 
 export interface PersonalLoanFinancialsStepProps {
@@ -31,7 +32,7 @@ const TENURE_OPTIONS = [
   { label: "60 Mos (5 Yrs)", value: "60" },
 ];
 
-const AMOUNT_PRESETS = [
+const AMOUNT_PRESETS: readonly LoanAmountPreset[] = [
   { label: "₹1 Lakh", value: "100000" },
   { label: "₹3 Lakhs", value: "300000" },
   { label: "₹5 Lakhs", value: "500000" },
@@ -53,34 +54,16 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
       </Text>
 
       {/* Required Amount */}
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>
-          Required Loan Amount (₹) <Text style={styles.requiredStar}>*</Text>
-        </Text>
-        <TextInput
-          style={[styles.input, errors.requiredAmount && styles.inputError]}
-          placeholder="e.g. 500000"
-          placeholderTextColor="#94A3B8"
-          keyboardType="numeric"
-          value={data.requiredAmount}
-          onFocus={() => onInputFocus?.("requiredAmount")}
-          onChangeText={(text) => onChange("requiredAmount", text)}
-        />
-        <View style={styles.chipRow}>
-          {AMOUNT_PRESETS.map((item) => (
-            <TouchableOpacity
-              key={item.value}
-              onPress={() => onChange("requiredAmount", item.value)}
-              style={styles.chip}
-            >
-              <Text style={styles.chipText}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        {errors.requiredAmount && (
-          <Text style={styles.errorText}>{errors.requiredAmount}</Text>
-        )}
-      </View>
+      <LoanAmountInput
+        label="Required Loan Amount (₹)"
+        required
+        placeholder="e.g. 500000"
+        value={data.requiredAmount}
+        onChange={(value) => onChange("requiredAmount", value)}
+        onFocus={() => onInputFocus?.("requiredAmount")}
+        presets={AMOUNT_PRESETS}
+        error={errors.requiredAmount}
+      />
 
       {/* Purpose */}
       <View style={styles.fieldGroup}>

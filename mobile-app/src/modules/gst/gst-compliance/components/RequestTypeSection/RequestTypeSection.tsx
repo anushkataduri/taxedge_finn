@@ -1,14 +1,7 @@
-/**
- * Component: RequestTypeSection
- * Migrated from internal StyleSheet to external styles module.
- * Uses shared design tokens from src/shared/theme.ts.
- */
-
 import React from "react";
-import { View, Text } from "react-native";
+import { Text } from "react-native";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
 import { useTheme } from "@/shared/hooks/useTheme";
-import { BrandColors } from "@/shared/theme";
 import {
   ComplianceFormData,
   UploadedDocInfo,
@@ -18,10 +11,10 @@ import {
   RECONCILIATION_ALLOWED_EXTENSIONS,
   NOTICE_ALLOWED_EXTENSIONS,
 } from "@/modules/gst/utils/gstValidation";
-import { FileUploadCard } from "../FileUploadCard/FileUploadCard";
-import { NativeDatePickerInput } from "../NativeDatePickerInput/NativeDatePickerInput";
-import { FloatingLabelInput } from "../FloatingLabelInput/FloatingLabelInput";
-import { styles, getSectionHeaderColor } from "./RequestTypeSection.styles";
+import { FileUploadCard } from "@/modules/gst/gst-compliance/components/FileUploadCard/FileUploadCard";
+import { NativeDatePickerInput } from "@/modules/gst/gst-compliance/components/NativeDatePickerInput/NativeDatePickerInput";
+import { FloatingLabelInput } from "@/modules/gst/gst-compliance/components/FloatingLabelInput/FloatingLabelInput";
+import { styles, getSectionHeaderColor } from "@/modules/gst/gst-compliance/components/RequestTypeSection/RequestTypeSection.styles";
 
 export interface RequestTypeSectionProps {
   formData: ComplianceFormData;
@@ -45,6 +38,8 @@ export const RequestTypeSection: React.FC<RequestTypeSectionProps> = ({
 
   if (!formData.requestType) return null;
 
+  const cardBg = isDark ? "#0F172A" : "#F8FAFC";
+
   if (formData.requestType === "Reconciliation Support") {
     return (
       <Animated.View
@@ -56,9 +51,10 @@ export const RequestTypeSection: React.FC<RequestTypeSectionProps> = ({
           Reconciliation Documents
         </Text>
 
-        {/* 1. Purchase Register (Required) */}
+        {/* 1. Purchase Register (Required - Image 1 Card) */}
         <FileUploadCard
           title="Purchase Register"
+          description="Upload purchase register or Excel/CSV records"
           required
           allowedExtensions={RECONCILIATION_ALLOWED_EXTENSIONS}
           uploadedDoc={formData.purchaseDoc}
@@ -70,9 +66,10 @@ export const RequestTypeSection: React.FC<RequestTypeSectionProps> = ({
           onClearError={() => onClearError("purchaseDoc")}
         />
 
-        {/* 2. Sales Register (Required) */}
+        {/* 2. Sales Register (Required - Image 1 Card) */}
         <FileUploadCard
           title="Sales Register"
+          description="Upload sales register or outward supplies statement"
           required
           allowedExtensions={RECONCILIATION_ALLOWED_EXTENSIONS}
           uploadedDoc={formData.salesDoc}
@@ -92,7 +89,7 @@ export const RequestTypeSection: React.FC<RequestTypeSectionProps> = ({
           value={formData.gstr2bRef}
           onChangeText={(text) => onUpdateField("gstr2bRef", text)}
           autoCapitalize="characters"
-          cardBackground={isDark ? "#0F172A" : "#F8FAFC"}
+          cardBackground={cardBg}
           onClear={() => onUpdateField("gstr2bRef", "")}
           onFocusScroll={() => onScrollField?.("gstr2bRef")}
         />
@@ -106,7 +103,7 @@ export const RequestTypeSection: React.FC<RequestTypeSectionProps> = ({
           onChangeText={(text) => onUpdateField("reconciliationRemarks", text)}
           multiline
           numberOfLines={3}
-          cardBackground={isDark ? "#0F172A" : "#F8FAFC"}
+          cardBackground={cardBg}
           onFocusScroll={() => onScrollField?.("reconciliationRemarks")}
         />
       </Animated.View>
@@ -137,7 +134,7 @@ export const RequestTypeSection: React.FC<RequestTypeSectionProps> = ({
         }}
         autoCapitalize="characters"
         error={errors.noticeNumber}
-        cardBackground={isDark ? "#0F172A" : "#F8FAFC"}
+        cardBackground={cardBg}
         onClear={() => {
           onUpdateField("noticeNumber", "");
           onClearError("noticeNumber");
@@ -171,9 +168,10 @@ export const RequestTypeSection: React.FC<RequestTypeSectionProps> = ({
         placeholder="Select Reply Due Date"
       />
 
-      {/* 4. Upload Notice Copy (Required) */}
+      {/* 4. Upload Notice Copy (Required - Image 1 Card) */}
       <FileUploadCard
         title="Upload Notice Copy"
+        description="Upload official GST notice or assessment order"
         required
         allowedExtensions={NOTICE_ALLOWED_EXTENSIONS}
         uploadedDoc={formData.noticeDoc}
@@ -194,9 +192,11 @@ export const RequestTypeSection: React.FC<RequestTypeSectionProps> = ({
         onChangeText={(text) => onUpdateField("noticeRemarks", text)}
         multiline
         numberOfLines={3}
-        cardBackground={isDark ? "#0F172A" : "#F8FAFC"}
+        cardBackground={cardBg}
         onFocusScroll={() => onScrollField?.("noticeRemarks")}
       />
     </Animated.View>
   );
 };
+
+export default RequestTypeSection;

@@ -11,15 +11,15 @@ import {
   DocumentBadgeType,
   FilingDocItem,
   INITIAL_FILING_DOCS,
-} from "../../config/gstFilingDocumentsConfig";
-import { styles, getProgressFillStyle } from "./GstFilingDocumentsStep.styles";
+} from "@/modules/gst/gst-filing/config/gstFilingDocumentsConfig";
+import { styles, getProgressFillStyle } from "@/modules/gst/gst-filing/components/GstFilingDocumentsStep/GstFilingDocumentsStep.styles";
 import {
   FILING_DOC_CATEGORIES,
   countUploadedDocuments,
   updateDocumentInList,
-} from "./gstDocStepUtils";
-import { RecursiveCategorySections } from "./RecursiveDocSections";
-import { GstDocumentPreviewModal } from "./GstDocumentPreviewModal";
+} from "@/modules/gst/gst-filing/components/GstFilingDocumentsStep/gstDocStepUtils";
+import { RecursiveCategorySections } from "@/modules/gst/gst-filing/components/GstFilingDocumentsStep/RecursiveDocSections";
+import { GstDocumentPreviewModal } from "@/modules/gst/gst-filing/components/GstFilingDocumentsStep/GstDocumentPreviewModal";
 
 export type { DocumentBadgeType, FilingDocItem };
 export { INITIAL_FILING_DOCS };

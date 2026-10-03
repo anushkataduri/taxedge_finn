@@ -1,51 +1,37 @@
-import React, { useRef, useState } from "react";
+import React from "react";
 import { View, Text, TextInput, ActivityIndicator } from "react-native";
-import { ifscService } from "../../../../gst/services/ifscService";
 import { LoanBankingFormData } from "../../../types/loans.types";
+import { useIfscLookup } from "../../../hooks/useIfscLookup";
 import { styles } from "./PersonalLoanBankingStep.styles";
 
 export interface PersonalLoanBankingStepProps {
   data: LoanBankingFormData;
-  onChange: (field: keyof LoanBankingFormData, value: any) => void;
+  onChange: <K extends keyof LoanBankingFormData>(field: K, value: LoanBankingFormData[K]) => void;
   errors?: Record<string, string>;
 }
+
+const IFSC_LOADER_COLOR = "#F97316";
 
 export const PersonalLoanBankingStep: React.FC<PersonalLoanBankingStepProps> = ({
   data,
   onChange,
   errors = {},
 }) => {
-  const [isIfscLoading, setIsIfscLoading] = useState(false);
-  const [ifscError, setIfscError] = useState<string | null>(null);
-  const lookupRequest = useRef(0);
-
-  const handleIfscChange = async (value: string) => {
-    const cleanIfsc = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-    const requestId = ++lookupRequest.current;
-    setIfscError(null);
-    onChange("ifscCode", cleanIfsc);
-    onChange("branchName", "");
-    onChange("isIfscVerified", false);
-
-    if (!ifscService.isValidFormat(cleanIfsc)) {
-      setIsIfscLoading(false);
-      return;
-    }
-
-    setIsIfscLoading(true);
-    try {
-      const details = await ifscService.lookup(cleanIfsc);
-      if (requestId !== lookupRequest.current) return;
+  const ifsc = useIfscLookup({
+    trigger: "validFormat",
+    errorMessage: "Invalid IFSC code. Please check branch details.",
+    onResolved: (details) => {
       onChange("primaryBankName", details.bank);
       onChange("branchName", details.branch);
       onChange("isIfscVerified", true);
-    } catch {
-      if (requestId !== lookupRequest.current) return;
-      setIfscError("Invalid IFSC code. Please check branch details.");
-      onChange("isIfscVerified", false);
-    } finally {
-      if (requestId === lookupRequest.current) setIsIfscLoading(false);
-    }
+    },
+  });
+
+  // Every edit un-verifies the code; a successful lookup re-verifies it via onResolved.
+  const handleIfscChange = (value: string) => {
+    onChange("ifscCode", ifsc.handleIfscChange(value));
+    onChange("branchName", "");
+    onChange("isIfscVerified", false);
   };
 
   return (
@@ -105,9 +91,9 @@ export const PersonalLoanBankingStep: React.FC<PersonalLoanBankingStepProps> = (
           onChangeText={handleIfscChange}
         />
         <Text style={styles.helperText}>11-digit alphanumeric bank code</Text>
-        {isIfscLoading && (
+        {ifsc.isLoading && (
           <View style={styles.ifscLoadingRow}>
-            <ActivityIndicator size="small" color="#F97316" />
+            <ActivityIndicator size="small" color={IFSC_LOADER_COLOR} />
             <Text style={styles.helperText}>Verifying IFSC...</Text>
           </View>
         )}
@@ -118,8 +104,8 @@ export const PersonalLoanBankingStep: React.FC<PersonalLoanBankingStepProps> = (
             </Text>
           </View>
         )}
-        {(errors.ifscCode || ifscError) && (
-          <Text style={styles.errorText}>{errors.ifscCode || ifscError}</Text>
+        {(errors.ifscCode || ifsc.error) && (
+          <Text style={styles.errorText}>{errors.ifscCode || ifsc.error}</Text>
         )}
       </View>
     </View>

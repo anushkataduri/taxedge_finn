@@ -1,14 +1,6 @@
 import { StyleSheet } from "react-native";
 import { BrandColors, Typography } from "../../../../../shared/theme";
 
-export const getSafeAreaDynamic = (insetsTop: number) => ({
-  paddingTop: insetsTop,
-});
-
-export const getBottomBarDynamic = (insetsBottom: number) => ({
-  paddingBottom: Math.max(insetsBottom, 12),
-});
-
 export const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
