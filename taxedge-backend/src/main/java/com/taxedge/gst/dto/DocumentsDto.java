@@ -1,22 +1,25 @@
 package com.taxedge.gst.dto;
 
-import com.taxedge.gst.enums.AddressProofType;
-import com.taxedge.gst.enums.DocumentType;
+import com.taxedge.gst.enums.PrincipalPlaceAddressType;
 
 import lombok.Data;
 
 @Data
 public class DocumentsDto {
 
-    private Long id;
-
     private String gstId;
 
-    private DocumentType documentType;
+    private String panCard;
 
-    private AddressProofType addressProofType;
+    private String aadhaarCard;
 
-    private String fileName;
+    private String businessRegistrationProof;
 
-    private String fileType;
+    private PrincipalPlaceAddressType principalPlaceAddressType;
+
+    private String principalPlaceAddressProof;
+
+    private String bankPassbookOrCancelledCheque;
+
+    private String passportSizePhotograph;
 }

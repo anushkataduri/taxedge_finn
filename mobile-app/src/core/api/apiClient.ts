@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ApiError } from "./apiError";
 import { InterceptorManager } from "./interceptors";
+import { tokenManager } from "../authentication/tokenManager";
 import { tokenRefreshManager } from "../authentication/tokenRefreshManager";
 import {
   getDefaultBaseUrl,
@@ -216,6 +217,15 @@ export class ApiClient {
 
       if (body instanceof FormData) {
         delete initialHeaders["Content-Type"];
+      }
+
+      if (!initialHeaders["Authorization"]) {
+        try {
+          const token = await tokenManager.getAccessToken();
+          if (token) {
+            initialHeaders["Authorization"] = `Bearer ${token}`;
+          }
+        } catch {}
       }
 
       const interceptedConfig = await this.interceptors.runRequestInterceptors({

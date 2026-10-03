@@ -141,13 +141,13 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
   radioCircleSelected: {
-    borderColor: "#EA580C",
+    borderColor: "#FF6500",
   },
   radioInner: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#EA580C",
+    backgroundColor: "#FF6500",
   },
   radioText: {
     fontSize: 13,

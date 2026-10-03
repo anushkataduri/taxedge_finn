@@ -116,10 +116,4 @@ export const styles = StyleSheet.create({
     color: "#64748B",
     marginLeft: 6,
   },
-  helperText: {
-    fontSize: 11,
-    color: "#64748B",
-    marginTop: 4,
-  },
 });
-

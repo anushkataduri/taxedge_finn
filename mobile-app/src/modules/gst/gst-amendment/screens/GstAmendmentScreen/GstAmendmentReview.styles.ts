@@ -239,4 +239,16 @@ export const reviewStyles = StyleSheet.create({
   modalScrollContent: {
     paddingBottom: 24,
   },
+  scrollContentReview: {
+    paddingBottom: 24,
+  },
+  primaryBtnDisabled: {
+    opacity: 0.65,
+  },
+  successRowValPrimary: {
+    color: BrandColors.PRIMARY_BLUE,
+  },
+  successRowValSubmitted: {
+    color: "#16A34A",
+  },
 });

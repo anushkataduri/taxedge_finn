@@ -66,6 +66,8 @@ const BANK_OPTIONS = [
 const ACCOUNT_TYPES = ["Current", "Savings", "Cash Credit / OD"];
  
 export interface GstBusinessFormData {
+  gstId?: string;
+  customerId?: string;
   legalName: string;
   businessName: string;
   businessType: string;
@@ -475,7 +477,7 @@ export const GstBusinessStep: React.FC<Props> = ({
         </Text>
       </View>
       {errors.aadhaarConsent ? (
-        <Text style={[styles.errorText, { marginBottom: 14 }]}>
+        <Text style={[styles.errorText, styles.errorTextMarginBottom]}>
           {errors.aadhaarConsent}
         </Text>
       ) : null}

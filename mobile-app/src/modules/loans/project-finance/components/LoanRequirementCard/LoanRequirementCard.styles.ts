@@ -99,10 +99,4 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
     backgroundColor: "#FFFFFF",
   },
-  helperText: {
-    fontSize: 11,
-    color: "#64748B",
-    marginTop: 4,
-  },
 });
-

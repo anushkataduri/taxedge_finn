@@ -72,9 +72,9 @@ export const RepaymentScheduleCard: React.FC<RepaymentScheduleCardProps> = ({
           </View>
 
           {schedule.length === 0 ? (
-            <View style={styles.emptyContainer}>
+            <View style={{ paddingVertical: 20, alignItems: "center", justifyContent: "center" }}>
               <Ionicons name="calculator-outline" size={32} color="#94A3B8" />
-              <Text style={styles.emptyText}>
+              <Text style={{ fontSize: 13, color: "#64748B", marginTop: 8, textAlign: "center" }}>
                 Enter Loan Required, Interest Rate, and Tenure above to generate repayment schedule.
               </Text>
             </View>

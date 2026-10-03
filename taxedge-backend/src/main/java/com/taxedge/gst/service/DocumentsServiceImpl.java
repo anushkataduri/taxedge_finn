@@ -2,7 +2,6 @@ package com.taxedge.gst.service;
 
 import java.io.IOException;
 import java.util.Base64;
-import java.util.List;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,205 +9,175 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.taxedge.gst.dto.DocumentsDto;
+import com.taxedge.gst.entity.Business;
 import com.taxedge.gst.entity.Documents;
-import com.taxedge.gst.enums.AddressProofType;
-import com.taxedge.gst.enums.DocumentType;
+import com.taxedge.gst.enums.PrincipalPlaceAddressType;
 import com.taxedge.gst.exception.ResourceNotFoundException;
+import com.taxedge.gst.helper.RandomNumberGenerator;
 import com.taxedge.gst.repository.BusinessRepository;
 import com.taxedge.gst.repository.DocumentsRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class DocumentsServiceImpl implements DocumentsService {
 
-    @Autowired
-    private DocumentsRepository documentsRepository;
+	
+	private final DocumentsRepository documentsRepository;
 
-    @Autowired
-    private BusinessRepository businessRepository;
-   
-    @Autowired
-    private ModelMapper modelMapper;
-    
-    @Override
-    public String uploadFile(
-            String gstId,
-            String documentType,
-            String addressProofType,
-            MultipartFile file) throws IOException {
+	private final BusinessRepository businessRepository;
 
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("Please select a file");
-        }
+	@Autowired
+	private ModelMapper modelMapper;
 
-        businessRepository.findById(gstId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Business not found with gstId: " + gstId));
+	@Override
+	public String uploadFile(String gstId, MultipartFile panCard, MultipartFile aadhaarCard,
+			MultipartFile businessRegistrationProof, PrincipalPlaceAddressType principalPlaceAddressType,
+			MultipartFile principalPlaceAddressProof, MultipartFile bankPassbookOrCancelledCheque,
+			MultipartFile passportSizePhotograph) throws IOException {
 
-        long documentCount = documentsRepository.countByGstId(gstId);
+		Business business = businessRepository.findById(gstId)
+				.orElseThrow(() -> new ResourceNotFoundException("Business not found with gstId: " + gstId));
 
-        if (documentCount >= 6) {
-            throw new IllegalArgumentException(
-                    "Maximum 6 documents allowed for one GST ID");
-        }
+		if (panCard == null && aadhaarCard == null && businessRegistrationProof == null
+				&& principalPlaceAddressProof == null && bankPassbookOrCancelledCheque == null
+				&& passportSizePhotograph == null) {
 
-        DocumentType type = DocumentType.valueOf(documentType);
+			throw new IllegalArgumentException("Please select at least one document");
+		}
 
-        boolean alreadyExists =
-                documentsRepository.existsByGstIdAndDocumentType(gstId,type);
+		if (principalPlaceAddressProof != null && !principalPlaceAddressProof.isEmpty()) {
 
-        if (alreadyExists) {
-            throw new IllegalArgumentException(
-                    type + " document already uploaded for this GST ID");
-        }
+			if (principalPlaceAddressType == null) {
+				throw new IllegalArgumentException("Principal place address type is required");
+			}
+		}
 
-        AddressProofType proofType = null;
+		Documents document = documentsRepository.findByBusiness_GstId(gstId).orElse(new Documents());
 
-        if (type == DocumentType.PRINCIPAL_PLACE_ADDRESS_PROOF) {
+		document.setBusiness(business);
 
-            if (addressProofType == null || addressProofType.trim().isEmpty()) {
-                throw new IllegalArgumentException(
-                        "Address proof type is required for principal place address proof");
-            }
+		if (document.getDocumentId() == null) {
+			document.setDocumentId(RandomNumberGenerator.generateDocumentId());
+		}
 
-            proofType = AddressProofType.valueOf(addressProofType);
+		if (panCard != null && !panCard.isEmpty()) {
+			document.setPanCard(convertFile(panCard));
+		}
 
-        } else {
+		if (aadhaarCard != null && !aadhaarCard.isEmpty()) {
+			document.setAadhaarCard(convertFile(aadhaarCard));
+		}
 
-            if (addressProofType != null && !addressProofType.trim().isEmpty()) {
-                throw new IllegalArgumentException(
-                        "Address proof type is allowed only for principal place address proof");
-            }
-        }
+		if (businessRegistrationProof != null && !businessRegistrationProof.isEmpty()) {
 
-        byte[] fileBytes = file.getBytes();
+			document.setBusinessRegistrationProof(convertFile(businessRegistrationProof));
+		}
 
-        String base64Data =
-                Base64.getEncoder().encodeToString(fileBytes);
+		if (principalPlaceAddressProof != null && !principalPlaceAddressProof.isEmpty()) {
 
-        Documents document = new Documents();
+			document.setPrincipalPlaceAddressType(principalPlaceAddressType);
 
-        document.setGstId(gstId);
-        document.setDocumentType(type);
-        document.setAddressProofType(proofType);
-        document.setFileName(file.getOriginalFilename());
-        document.setFileType(file.getContentType());
-        document.setImageData(base64Data);
+			document.setPrincipalPlaceAddressProof(convertFile(principalPlaceAddressProof));
+		}
 
-        documentsRepository.save(document);
+		if (bankPassbookOrCancelledCheque != null && !bankPassbookOrCancelledCheque.isEmpty()) {
 
-        return "Document uploaded successfully";
-    }
+			document.setBankPassbookOrCancelledCheque(convertFile(bankPassbookOrCancelledCheque));
+		}
 
-    @Override
-    public String updateFile(
-            String gstId,
-            Long id,
-            String addressProofType,
-            MultipartFile file) throws IOException {
+		if (passportSizePhotograph != null && !passportSizePhotograph.isEmpty()) {
 
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("Please select a file");
-        }
+			document.setPassportSizePhotograph(convertFile(passportSizePhotograph));
+		}
 
-        businessRepository.findById(gstId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Business not found with gstId: " + gstId));
+		documentsRepository.save(document);
 
-        Documents document = documentsRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Document not found with id: " + id));
+		return "Documents uploaded successfully. Document ID: " + document.getDocumentId();
+	}
 
-        if (!document.getGstId().equals(gstId)) {
-            throw new ResourceNotFoundException(
-                    "Document does not belong to gstId: " + gstId);
-        }
+	@Override
+	public DocumentsDto getDocuments(String documentId) {
 
-        DocumentType type = document.getDocumentType();
+		Documents document = documentsRepository.findById(documentId)
+				.orElseThrow(() -> new ResourceNotFoundException("Documents not found with ID: " + documentId));
 
-        AddressProofType proofType = null;
+		DocumentsDto dto = modelMapper.map(document, DocumentsDto.class);
 
-        if (type == DocumentType.PRINCIPAL_PLACE_ADDRESS_PROOF) {
+		dto.setGstId(document.getBusiness().getGstId());
 
-            if (addressProofType == null || addressProofType.trim().isEmpty()) {
-                throw new IllegalArgumentException(
-                        "Address proof type is required for principal place address proof");
-            }
+		return dto;
+	}
 
-            proofType = AddressProofType.valueOf(addressProofType);
+	@Override
+	public String updateFile(String documentId, MultipartFile panCard, MultipartFile aadhaarCard,
+			MultipartFile businessRegistrationProof, PrincipalPlaceAddressType principalPlaceAddressType,
+			MultipartFile principalPlaceAddressProof, MultipartFile bankPassbookOrCancelledCheque,
+			MultipartFile passportSizePhotograph) throws IOException {
 
-        } else {
+		Documents document = documentsRepository.findById(documentId)
+				.orElseThrow(() -> new ResourceNotFoundException("Documents not found with ID: " + documentId));
 
-            if (addressProofType != null && !addressProofType.trim().isEmpty()) {
-                throw new IllegalArgumentException(
-                        "Address proof type is allowed only for principal place address proof");
-            }
-        }
+		if (panCard == null && aadhaarCard == null && businessRegistrationProof == null
+				&& principalPlaceAddressProof == null && bankPassbookOrCancelledCheque == null
+				&& passportSizePhotograph == null) {
 
-        byte[] fileBytes = file.getBytes();
+			throw new IllegalArgumentException("Please select at least one document");
+		}
 
-        String base64Data =
-                Base64.getEncoder().encodeToString(fileBytes);
+		if (principalPlaceAddressProof != null && !principalPlaceAddressProof.isEmpty()) {
 
-        document.setAddressProofType(proofType);
-        document.setFileName(file.getOriginalFilename());
-        document.setFileType(file.getContentType());
-        document.setImageData(base64Data);
+			if (principalPlaceAddressType == null) {
+				throw new IllegalArgumentException("Principal place address type is required");
+			}
 
-        documentsRepository.save(document);
+			document.setPrincipalPlaceAddressType(principalPlaceAddressType);
 
-        return "Document updated successfully";
-    }
+			document.setPrincipalPlaceAddressProof(convertFile(principalPlaceAddressProof));
+		}
 
-    @Override
-    public String deleteFile(String gstId,Long id) {
+		if (panCard != null && !panCard.isEmpty()) {
+			document.setPanCard(convertFile(panCard));
+		}
 
-        businessRepository.findById(gstId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Business not found with gstId: " + gstId));
+		if (aadhaarCard != null && !aadhaarCard.isEmpty()) {
+			document.setAadhaarCard(convertFile(aadhaarCard));
+		}
 
-        Documents document = documentsRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Document not found with id: " + id));
+		if (businessRegistrationProof != null && !businessRegistrationProof.isEmpty()) {
 
-        if (!document.getGstId().equals(gstId)) {
-            throw new ResourceNotFoundException(
-                    "Document does not belong to gstId: " + gstId);
-        }
+			document.setBusinessRegistrationProof(convertFile(businessRegistrationProof));
+		}
 
-        documentsRepository.delete(document);
+		if (bankPassbookOrCancelledCheque != null && !bankPassbookOrCancelledCheque.isEmpty()) {
 
-        return "Document deleted successfully";
-    }
+			document.setBankPassbookOrCancelledCheque(convertFile(bankPassbookOrCancelledCheque));
+		}
 
-//    @Override
-//    public List<DocumentsDto> getDocumentsByGstId(String gstId) {
-//
-//        businessRepository.findById(gstId)
-//                .orElseThrow(() ->
-//                        new ResourceNotFoundException(
-//                                "Business not found with gstId: " + gstId));
-//
-//        return documentsRepository.findByGstId(gstId);
-//    }
-    
-    @Override
-    public List<DocumentsDto> getDocumentsByGstId(String gstId) {
+		if (passportSizePhotograph != null && !passportSizePhotograph.isEmpty()) {
 
-        businessRepository.findById(gstId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Business not found with gstId: " + gstId));
+			document.setPassportSizePhotograph(convertFile(passportSizePhotograph));
+		}
 
-        List<Documents> documents =
-                documentsRepository.findByGstId(gstId);
+		documentsRepository.save(document);
 
-        return documents.stream()
-                .map(document -> modelMapper.map(document, DocumentsDto.class))
-                .toList();
-    }
+		return "Documents updated successfully. Document ID: " + document.getDocumentId();
+	}
+
+	@Override
+	public String deleteFile(String documentId) {
+
+		Documents document = documentsRepository.findById(documentId)
+				.orElseThrow(() -> new ResourceNotFoundException("Documents not found with ID: " + documentId));
+
+		documentsRepository.delete(document);
+
+		return "Documents deleted successfully";
+	}
+
+	private String convertFile(MultipartFile file) throws IOException {
+
+		return Base64.getEncoder().encodeToString(file.getBytes());
+	}
 }

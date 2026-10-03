@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { BrandColors, Typography, BorderRadius } from "../../../../../shared/theme";
+import { BrandColors, Typography } from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   container: {
@@ -18,16 +18,11 @@ export const styles = StyleSheet.create({
   },
   progressContainer: {
     backgroundColor: BrandColors.WHITE,
-    borderRadius: BorderRadius.md || 12,
-    padding: 16,
+    borderRadius: 10,
+    padding: 14,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     marginBottom: 16,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
   },
   progressHeader: {
     flexDirection: "row",
@@ -37,13 +32,13 @@ export const styles = StyleSheet.create({
   },
   progressTitle: {
     fontSize: Typography.fontSize.sm,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontWeight: "600",
+    color: "#1E293B",
   },
   progressCount: {
     fontSize: Typography.fontSize.sm,
     fontWeight: "700",
-    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
+    color: BrandColors.PRIMARY_BLUE,
   },
   progressBarTrack: {
     height: 6,
@@ -55,9 +50,9 @@ export const styles = StyleSheet.create({
     marginBottom: 18,
   },
   categoryHeader: {
-    fontSize: Typography.fontSize.xs,
+    fontSize: Typography.fontSize.sm,
     fontWeight: "700",
-    color: "#334155",
+    color: "#475569",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 8,
@@ -65,7 +60,7 @@ export const styles = StyleSheet.create({
   },
   docCard: {
     backgroundColor: BrandColors.WHITE,
-    borderRadius: BorderRadius.md || 10,
+    borderRadius: 10,
     padding: 14,
     borderWidth: 1,
     borderColor: "#E2E8F0",
@@ -73,11 +68,6 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 2,
-    elevation: 1,
   },
   docCardUploaded: {
     borderColor: "#86EFAC",
@@ -111,54 +101,29 @@ export const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#0F172A",
   },
-  mandatoryStar: {
-    color: "#EF4444",
-    fontSize: Typography.fontSize.xs,
-  },
-  uploadedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    backgroundColor: "#DCFCE7",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  uploadedText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#16A34A",
-  },
   requiredBadge: {
     backgroundColor: "#FEE2E2",
     paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingVertical: 1,
     borderRadius: 4,
   },
   requiredText: {
     fontSize: 10,
-    fontWeight: "700",
-    color: "#EF4444",
+    fontWeight: "600",
+    color: "#DC2626",
   },
   optionalBadge: {
     backgroundColor: "#F1F5F9",
     paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingVertical: 1,
     borderRadius: 4,
   },
   optionalText: {
     fontSize: 10,
-    fontWeight: "600",
     color: "#64748B",
   },
   docSubtitle: {
-    fontSize: Typography.fontSize.xs - 1,
-    color: "#64748B",
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  docDescription: {
-    fontSize: Typography.fontSize.xs - 1,
+    fontSize: Typography.fontSize.xs,
     color: "#64748B",
     marginTop: 2,
   },
@@ -181,9 +146,9 @@ export const styles = StyleSheet.create({
   uploadButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FEF0E6",
+    backgroundColor: "#EFF6FF",
     borderWidth: 1,
-    borderColor: BrandColors.PRIMARY_ORANGE || "#EA580C",
+    borderColor: BrandColors.PRIMARY_BLUE,
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 6,
@@ -191,8 +156,8 @@ export const styles = StyleSheet.create({
   },
   uploadButtonText: {
     fontSize: Typography.fontSize.xs,
-    fontWeight: "700",
-    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
+    fontWeight: "600",
+    color: BrandColors.PRIMARY_BLUE,
   },
   replaceButton: {
     flexDirection: "row",
@@ -210,7 +175,7 @@ export const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.4)",
+    backgroundColor: "rgba(0,0,0,0.45)",
     justifyContent: "flex-end",
   },
   sheetContent: {
@@ -244,16 +209,4 @@ export const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#1E293B",
   },
-});
-
-export const getProgressFillStyle = (percent: number) => ({
-  height: "100%" as const,
-  width: `${percent}%` as any,
-  backgroundColor:
-    percent === 100 ? "#16A34A" : BrandColors.PRIMARY_ORANGE || "#EA580C",
-  borderRadius: 3,
-});
-
-export const getIconBoxStyle = (bgColor?: string) => ({
-  backgroundColor: bgColor || "#F1F5F9",
 });

@@ -29,7 +29,7 @@ public class ContactAmendmentEntity {
     @Column(name = "new_email", nullable = false)
     private String newEmail;
 
-    @Column(name = "image_data", columnDefinition = "LONGTEXT")
+    @Column(name = "image_data", columnDefinition = "TEXT")
     private String imageData;
 
     @Column(name = "created_at")

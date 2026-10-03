@@ -1,60 +1,66 @@
 import { StyleSheet } from "react-native";
-import { BrandColors, Typography, Spacing } from "../../../../../shared/theme";
-
-export const getProgressFillWidth = (percent: number) => ({
-  width: `${percent}%` as any,
-});
 
 export const styles = StyleSheet.create({
   headerWrapper: {
     backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    paddingBottom: 10,
   },
   topRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.sm,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 10,
   },
   circleBackButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F8FAFC",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#E2E8F0",
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   centerContent: {
     alignItems: "center",
     justifyContent: "center",
+    flex: 1,
   },
   titleText: {
-    fontSize: Typography.fontSize.base,
-    fontWeight: Typography.fontWeight.bold,
-    color: "#0B1F3A",
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0B1B36",
     textAlign: "center",
   },
   stepText: {
-    fontSize: Typography.fontSize.xs,
-    fontWeight: Typography.fontWeight.medium,
-    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#FF6500",
     marginTop: 2,
     textAlign: "center",
   },
   rightSpacer: {
-    width: 40,
+    width: 36,
+    height: 36,
   },
   progressTrack: {
-    height: 3,
+    height: 3.5,
     backgroundColor: "#E2E8F0",
-    width: "100%",
+    borderRadius: 2,
+    marginHorizontal: 16,
+    marginTop: 4,
+    overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: BrandColors.PRIMARY_ORANGE || "#EA580C",
+    backgroundColor: "#FF6500",
+    borderRadius: 2,
   },
 });

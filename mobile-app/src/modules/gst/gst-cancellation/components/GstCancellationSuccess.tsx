@@ -11,10 +11,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
 import { useApplicationStore } from "@/store/applicationStore";
-import { styles } from "../screens/GstCancellationScreen/GstCancellationScreen.styles";
+import {
+  styles,
+  getSuccessHeroStyle,
+  getSuccessActionsWrapStyle,
+} from "../screens/GstCancellationScreen/GstCancellationScreen.styles";
 
 interface GstCancellationSuccessProps {
-  submissionResult: any;
+  submissionResult: {
+    arn?: string;
+    appId?: string;
+    date?: string;
+    [key: string]: any;
+  };
   gstin: string;
   cancellationDate: string;
 }
@@ -47,7 +56,7 @@ export function GstCancellationSuccess({
         contentContainerStyle={styles.successScrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.successHero, { paddingTop: insets.top + 32 }]}>
+        <View style={[styles.successHero, getSuccessHeroStyle(insets.top)]}>
           <View style={styles.successHeroIconBox}>
             <View style={styles.successHeroCheckCircle}>
               <Ionicons name="checkmark" size={36} color="#FFFFFF" />
@@ -64,12 +73,12 @@ export function GstCancellationSuccess({
             {
               k: "ARN / Reference",
               v: submissionResult.arn,
-              c: BrandColors.PRIMARY_BLUE,
+              isPrimary: true,
             },
             { k: "GSTIN", v: gstin },
             { k: "Submission Date", v: submissionResult.date },
             { k: "Effective Date", v: cancellationDate },
-            { k: "Current Status", v: "Submitted", c: "#16A34A" },
+            { k: "Current Status", v: "Submitted", isSuccess: true },
           ].map((row, i) => (
             <React.Fragment key={row.k}>
               {i > 0 && <View style={styles.successDivider} />}
@@ -78,7 +87,8 @@ export function GstCancellationSuccess({
                 <Text
                   style={[
                     styles.successRowVal,
-                    row.c ? { color: row.c } : null,
+                    row.isPrimary && styles.successRowValPrimary,
+                    row.isSuccess && styles.successRowValSuccess,
                   ]}
                 >
                   {row.v}
@@ -91,17 +101,19 @@ export function GstCancellationSuccess({
       <View
         style={[
           styles.successActionsWrap,
-          { paddingBottom: Math.max(insets.bottom, 16) },
+          getSuccessActionsWrapStyle(insets.bottom),
         ]}
       >
         <TouchableOpacity
           style={styles.primaryBtn}
           activeOpacity={0.85}
           onPress={() => {
-            useApplicationStore
-              .getState()
-              .setSelectedApplicationId(submissionResult.appId);
-            router.replace(`/application/${submissionResult.appId}`);
+            if (submissionResult.appId) {
+              useApplicationStore
+                .getState()
+                .setSelectedApplicationId(submissionResult.appId);
+              router.replace(`/application/${submissionResult.appId}`);
+            }
           }}
         >
           <Text style={styles.primaryBtnText}>Track Cancellation</Text>
@@ -128,17 +140,19 @@ export function GstCancellationSuccess({
         <TouchableOpacity
           style={[
             styles.secondaryBtn,
-            { marginTop: 4, borderColor: "#EF4444", borderWidth: 1 },
+            styles.secondaryBtnDanger,
           ]}
           activeOpacity={0.85}
           onPress={() => {
-            useApplicationStore
-              .getState()
-              .deleteApplication(submissionResult.appId);
+            if (submissionResult.appId) {
+              useApplicationStore
+                .getState()
+                .deleteApplication(submissionResult.appId);
+            }
             router.replace("/(main)/home");
           }}
         >
-          <Text style={[styles.secondaryBtnText, { color: "#EF4444" }]}>
+          <Text style={[styles.secondaryBtnText, styles.secondaryBtnTextDanger]}>
             Withdraw Cancellation
           </Text>
         </TouchableOpacity>

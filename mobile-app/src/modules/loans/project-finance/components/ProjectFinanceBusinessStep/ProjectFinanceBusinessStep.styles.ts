@@ -71,15 +71,15 @@ export const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
   },
   vintageChipActive: {
-    backgroundColor: "#FEF0E6",
-    borderColor: BrandColors.PRIMARY_ORANGE || "#EA580C",
+    backgroundColor: "#EFF6FF",
+    borderColor: BrandColors.PRIMARY_BLUE,
   },
   vintageChipText: {
     fontSize: Typography.fontSize.sm,
     color: "#475569",
   },
   vintageChipTextActive: {
-    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
+    color: BrandColors.PRIMARY_BLUE,
     fontWeight: "700",
   },
 });

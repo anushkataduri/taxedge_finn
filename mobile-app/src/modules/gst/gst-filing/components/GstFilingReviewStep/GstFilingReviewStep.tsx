@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
@@ -18,6 +19,7 @@ import {
 import { styles } from "./GstFilingReviewStep.styles";
 
 export interface GstFilingReviewStepProps {
+  isFetching?: boolean;
   gstin?: string;
   businessName?: string;
   taxpayerScheme?: string;
@@ -80,6 +82,7 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
   onEditTaxComputation,
   onEditFilingFee,
   onEditDocuments,
+  isFetching,
   onReuploadDocuments,
   onUpdateComputation,
 }) => {
@@ -89,6 +92,15 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
 
   const [currentTurnover, setCurrentTurnover] = useState(baseTurnover);
   const [currentItc, setCurrentItc] = useState(baseItc);
+
+  // Automatically update computation state when values are retrieved from database
+  useEffect(() => {
+    setCurrentTurnover(baseTurnover);
+  }, [baseTurnover]);
+
+  useEffect(() => {
+    setCurrentItc(baseItc);
+  }, [baseItc]);
 
   // Derived reconciled calculations
   const outputGst = Math.round(currentTurnover * 0.18);
@@ -129,6 +141,27 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
 
   return (
     <View style={styles.container}>
+      {isFetching && (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            paddingVertical: 10,
+            paddingHorizontal: 14,
+            backgroundColor: "#EFF6FF",
+            borderRadius: 8,
+            marginBottom: 12,
+            gap: 8,
+          }}
+        >
+          <ActivityIndicator size="small" color={BrandColors.PRIMARY_ORANGE} />
+          <Text style={{ fontSize: 13, color: "#1E40AF", fontWeight: "500" }}>
+            Synchronizing live details from database...
+          </Text>
+        </View>
+      )}
+
       {/* Ready for Review Banner */}
       <View style={styles.readyCard}>
         <View style={styles.readyIconBox}>
@@ -193,7 +226,7 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
         <View style={styles.row}>
           <Text style={styles.label}>Attached Documents</Text>
           {missingDocsCount > 0 ? (
-            <Text style={[styles.value, { color: "#E11D48", fontWeight: "700" }]}>
+            <Text style={[styles.value, styles.valueMissing]}>
               {missingDocsCount} {missingDocsCount === 1 ? "Document" : "Documents"} Missing
             </Text>
           ) : (
@@ -224,7 +257,7 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
 
         <View style={styles.row}>
           <Text style={styles.label}>Eligible Input Tax Credit (ITC)</Text>
-          <Text style={[styles.value, { color: "#16A34A" }]}>- {formatInr(currentItc)}</Text>
+          <Text style={[styles.value, styles.valueSuccess]}>- {formatInr(currentItc)}</Text>
         </View>
 
         <View style={styles.row}>
@@ -361,7 +394,7 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
               </View>
               <View style={styles.modalSummaryRow}>
                 <Text style={styles.modalSummaryLabel}>Net Tax Liability:</Text>
-                <Text style={[styles.modalSummaryVal, { color: BrandColors.PRIMARY_ORANGE, fontWeight: "700" }]}>
+                <Text style={[styles.modalSummaryVal, styles.modalSummaryValHighlight]}>
                   {formatInr(
                     Math.max(
                       0,

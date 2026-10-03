@@ -15,7 +15,13 @@ import { useApplicationStore } from "@/store/applicationStore";
 import { useGstStore } from "@/modules/gst/store/gstStore";
 import { notificationService } from "@/modules/notifications/services/notificationService";
 import { getInitialGstDocuments } from "@/modules/gst/types/gstDocumentConfig";
-import { st } from "./GstCertificateScreen.styles";
+import {
+  st,
+  getTopBarStyle,
+  getScaleTransformStyle,
+  getTranslateYTransformStyle,
+  getOpacityAnimStyle,
+} from "./GstCertificateScreen.styles";
 
 const CERTIFICATE_REQUEST_TYPES = ["Download Existing Certificate (Form REG-06)", "Request Reprint / Duplicate Copy", "Certificate Verification & Status Check"];
 
@@ -310,7 +316,7 @@ export function GstCertificateScreen() {
   );
 
   const renderCertificateActions = () => (
-    <Animated.View style={[{ transform: [{ scale: btnScale }] }, st.btnScaleAnimWrap]}>
+    <Animated.View style={[getScaleTransformStyle(btnScale), st.btnScaleAnimWrap]}>
       {renderActionButton("cloud-download-outline", "Download Certificate", handleDownload, "primary", pressIn, pressOut)}
       {renderActionButton("share-social-outline", "Share Certificate", handleShare, "outline")}
       {renderActionButton("briefcase-outline", "Track in My Applications", handleApplications, "outline")}
@@ -339,19 +345,19 @@ export function GstCertificateScreen() {
     return (
       <View style={st.root}>
         <FocusAwareStatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <View style={[st.topBar, { paddingTop: Math.max(insets.top, 12) + 4 }]}>
+        <View style={[st.topBar, getTopBarStyle(insets.top)]}>
           <TouchableOpacity activeOpacity={0.7} onPress={handleApplications} style={st.backBtn}><Ionicons name="chevron-back" size={22} color="#0F172A" /></TouchableOpacity>
         </View>
         <ScrollView style={st.flex1} contentContainerStyle={st.readyScroll} showsVerticalScrollIndicator={false}>
-          <Animated.View style={[st.readyHeroWrap, { transform: [{ translateY: floatAnim }] }]}>
+          <Animated.View style={[st.readyHeroWrap, getTranslateYTransformStyle(floatAnim)]}>
             <View style={st.podiumBase} /><View style={st.podiumRing} />
             <View style={st.readyDocCard}>
               <Text style={st.docGstTag}>GST</Text>
               <View style={st.docLineWide} /><View style={st.docLineMed} /><View style={st.docLineWide} />
               <View style={st.readyCheckBadge}><Ionicons name="checkmark" size={24} color="#FFF" /></View>
             </View>
-            <View style={[st.confettiDot, { top: 12, left: 30, backgroundColor: "#FF7A00" }]} /><View style={[st.confettiDot, { top: 22, right: 34, backgroundColor: "#1E5EFF" }]} />
-            <View style={[st.confettiDot, { bottom: 40, left: 16, backgroundColor: "#1E5EFF" }]} /><View style={[st.confettiDot, { bottom: 35, right: 20, backgroundColor: "#FF7A00" }]} />
+            <View style={[st.confettiDot, st.confettiDot1]} /><View style={[st.confettiDot, st.confettiDot2]} />
+            <View style={[st.confettiDot, st.confettiDot3]} /><View style={[st.confettiDot, st.confettiDot4]} />
           </Animated.View>
           <Text style={st.readyTitle}>Certificate <Text style={st.highlightBlueText}>Ready!</Text></Text>
           <Text style={st.readySub}>Your GST Registration Certificate (Form REG-06) for <Text style={st.blueBold}>{gstin}</Text> is ready.</Text>
@@ -377,19 +383,19 @@ export function GstCertificateScreen() {
   return (
     <View style={st.root}>
       <FocusAwareStatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <View style={[st.topBar, { paddingTop: Math.max(insets.top, 12) + 4 }]}>
+      <View style={[st.topBar, getTopBarStyle(insets.top)]}>
         <TouchableOpacity activeOpacity={0.7} onPress={() => router.back()} style={st.backBtn}><Ionicons name="chevron-back" size={22} color="#0F172A" /></TouchableOpacity>
         <Text style={st.headerTitle}>GST Certificate</Text>
         <View style={st.taxEdgeBadge}><Text style={st.taxText}>Tax</Text><Text style={st.edgeText}>Edge</Text></View>
       </View>
       <ScrollView style={st.flex1} contentContainerStyle={st.inputScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <Animated.View style={[st.heroContainer, { opacity: fadeAnim }]}>
+        <Animated.View style={[st.heroContainer, getOpacityAnimStyle(fadeAnim)]}>
           <View style={st.heroLeft}>
             <Text style={st.heroKicker}>YOUR BUSINESS, OUR SUPPORT</Text>
             <Text style={st.heroTitle}>Get Your GST{"\n"}Registration Certificate</Text>
             <Text style={st.heroSub}>Download official Form REG-06 GST Registration Certificate with digital verification</Text>
           </View>
-          <Animated.View style={[st.heroGraphicWrap, { transform: [{ translateY: floatAnim }] }]}>
+          <Animated.View style={[st.heroGraphicWrap, getTranslateYTransformStyle(floatAnim)]}>
             <View style={st.heroGlowCircle} />
             <View style={st.heroDoc}>
               <View style={st.heroDocHeader} /><Text style={st.heroDocGst}>GST</Text>
@@ -427,7 +433,7 @@ export function GstCertificateScreen() {
           <Ionicons name="information-circle" size={20} color="#1E5EFF" style={st.iconMarginRight10} />
           <Text style={st.infoText}>Your certificate will be generated using your GST registration details and saved as a PDF on your device.</Text>
         </View>
-        <Animated.View style={[{ transform: [{ scale: btnScale }] }, st.btnScaleSmallMargin]}>
+        <Animated.View style={[getScaleTransformStyle(btnScale), st.btnScaleSmallMargin]}>
           <TouchableOpacity style={[st.orangeCta, isProcessing && st.orangeCtaDisabled]} activeOpacity={0.9} onPressIn={pressIn} onPressOut={pressOut} onPress={handleAction} disabled={isProcessing}>
             <Text style={st.orangeCtaText}>{getButtonText()}</Text>
             <View style={st.ctaArrowCircle}><Ionicons name={isProcessing ? "sync-outline" : "arrow-forward"} size={16} color="#FF7A00" /></View>

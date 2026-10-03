@@ -26,7 +26,7 @@ public class LegalNameAmendmentEntity {
     @Column(name = "new_legal_name", nullable = false)
     private String newLegalName;
 
-    @Column(name = "image_data", columnDefinition = "LONGTEXT")
+    @Column(name = "image_data", columnDefinition = "TEXT")
     private String imageData;
 
     @Column(name = "created_at")

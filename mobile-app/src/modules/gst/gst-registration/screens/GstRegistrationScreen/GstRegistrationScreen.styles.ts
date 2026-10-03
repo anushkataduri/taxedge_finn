@@ -85,3 +85,7 @@ export const styles = StyleSheet.create({
     paddingBottom: 24,
   },
 });
+
+export const getHeaderBarStyle = (topInset: number) => ({
+  paddingTop: Math.max(topInset, 12) + 6,
+});

@@ -48,6 +48,7 @@ const NoticePreviewScreen: React.FC = () => {
         <View style={styles.headerArea}>
           <Text style={styles.title}>Review Your Details</Text>
           <Text style={styles.subtitle}>Please verify the information before we draft the response.</Text>
+        </View>
 
         {/* Step 1 Details */}
         <View style={styles.card}>
@@ -144,7 +145,7 @@ const NoticePreviewScreen: React.FC = () => {
               resizeMode="contain" 
             />
           )}
-        
+        </View>
       </Modal>
     </View>
   );

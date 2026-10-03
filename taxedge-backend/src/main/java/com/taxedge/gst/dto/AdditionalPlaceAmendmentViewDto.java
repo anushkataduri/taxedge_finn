@@ -1,7 +1,9 @@
 package com.taxedge.gst.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import com.taxedge.gst.enums.NatureOfPremises;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

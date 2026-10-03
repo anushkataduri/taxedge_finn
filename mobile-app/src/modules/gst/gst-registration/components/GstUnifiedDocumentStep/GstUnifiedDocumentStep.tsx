@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from "react";
-import { View, Text, Alert, Platform } from "react-native";
+import { View, Text, Alert } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
 import { useDocumentUploadHelper } from "@/shared/hooks/useDocumentUploadHelper";
@@ -115,7 +115,7 @@ export const GstUnifiedDocumentStep: React.FC<Props> = ({
 
   const uploadHelper = useDocumentUploadHelper({
     maxSizeMB: 10,
-    allowsEditing: Platform.OS === "android",
+    allowsEditing: false,
     onProcessingStart: (docKey) => {
       if (docKey) onUpdateDocument(docKey, { uploadStatus: "processing" });
     },

@@ -396,4 +396,15 @@ export const styles = StyleSheet.create({
   flex1Col: {
     flex: 1,
   },
+  valueMissing: {
+    color: "#E11D48",
+    fontWeight: "700",
+  },
+  valueSuccess: {
+    color: "#16A34A",
+  },
+  modalSummaryValHighlight: {
+    color: BrandColors.PRIMARY_ORANGE,
+    fontWeight: "700",
+  },
 });

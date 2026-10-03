@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text } from "react-native";
 import { FilingDocItem } from "../../config/gstFilingDocumentsConfig";
-import { styles } from "./style";
+import { styles } from "./GstFilingDocumentsStep.styles";
 import { GstDocItemCard } from "./GstDocItemCard";
 import { filterDocsByCategory } from "./gstDocStepUtils";
 

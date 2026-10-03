@@ -56,9 +56,9 @@ export const ProjectFinanceReviewStep: React.FC<ProjectFinanceReviewStepProps> =
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Lead Sponsor Information</Text>
-          <View style={styles.verifiedBadge}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <Ionicons name="checkmark-circle" size={14} color="#16A34A" />
-            <Text style={styles.verifiedText}>
+            <Text style={{ fontSize: 11, fontWeight: "600", color: "#16A34A" }}>
               Verified Profile
             </Text>
           </View>
@@ -89,7 +89,7 @@ export const ProjectFinanceReviewStep: React.FC<ProjectFinanceReviewStepProps> =
             <Ionicons
               name="create-outline"
               size={14}
-              color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
+              color={BrandColors.PRIMARY_BLUE}
             />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
@@ -124,7 +124,7 @@ export const ProjectFinanceReviewStep: React.FC<ProjectFinanceReviewStepProps> =
             <Ionicons
               name="create-outline"
               size={14}
-              color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
+              color={BrandColors.PRIMARY_BLUE}
             />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
@@ -171,7 +171,7 @@ export const ProjectFinanceReviewStep: React.FC<ProjectFinanceReviewStepProps> =
             <Ionicons
               name="create-outline"
               size={14}
-              color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
+              color={BrandColors.PRIMARY_BLUE}
             />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
@@ -204,7 +204,7 @@ export const ProjectFinanceReviewStep: React.FC<ProjectFinanceReviewStepProps> =
             <Ionicons
               name="create-outline"
               size={14}
-              color={BrandColors.PRIMARY_ORANGE || "#EA580C"}
+              color={BrandColors.PRIMARY_BLUE}
             />
             <Text style={styles.editText}>Manage</Text>
           </TouchableOpacity>
@@ -218,7 +218,7 @@ export const ProjectFinanceReviewStep: React.FC<ProjectFinanceReviewStepProps> =
             </View>
           ))}
           {uploadedDocs.length === 0 && (
-            <Text style={styles.emptyLabel}>
+            <Text style={[styles.label, { fontStyle: "italic" }]}>
               No documents uploaded yet.
             </Text>
           )}

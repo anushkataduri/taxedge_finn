@@ -5,7 +5,7 @@ import { DeclarationCard } from "../DeclarationCard/DeclarationCard";
 import { SubmitApplicationCard } from "../SubmitApplicationCard/SubmitApplicationCard";
 import { DocumentUploadItem } from "../../data/step7Data";
 
-export interface Step7DocumentsSubmitViewProps {
+interface Step7DocumentsSubmitViewProps {
   documents: DocumentUploadItem[];
   onUploadDocument: (
     id: string,
@@ -17,12 +17,6 @@ export interface Step7DocumentsSubmitViewProps {
   onToggleAgreeAccuracy: () => void;
   agreeVerification: boolean;
   onToggleAgreeVerification: () => void;
-  applicantName?: string;
-  projectName?: string;
-  projectSector?: string;
-  totalCost?: string;
-  loanRequired?: string;
-  tenureYears?: string;
 }
 
 export const Step7DocumentsSubmitView: React.FC<
@@ -36,22 +30,12 @@ export const Step7DocumentsSubmitView: React.FC<
   onToggleAgreeAccuracy,
   agreeVerification,
   onToggleAgreeVerification,
-  applicantName,
-  projectName,
-  projectSector,
-  totalCost,
-  loanRequired,
-  tenureYears,
 }) => {
   const [expanded, setExpanded] = useState({
     docs: true,
     review: true,
     declaration: true,
   });
-
-  const uploadedDocsCount = documents.filter(
-    (d) => Boolean(d.uploadedFileName) || Boolean(d.uploadedFileUri)
-  ).length;
 
   return (
     <>
@@ -69,13 +53,6 @@ export const Step7DocumentsSubmitView: React.FC<
         onToggleExpand={() =>
           setExpanded((p) => ({ ...p, review: !p.review }))
         }
-        applicantName={applicantName}
-        projectName={projectName}
-        projectSector={projectSector}
-        totalCost={totalCost}
-        loanRequired={loanRequired}
-        tenureYears={tenureYears}
-        uploadedDocsCount={uploadedDocsCount}
       />
 
       <DeclarationCard

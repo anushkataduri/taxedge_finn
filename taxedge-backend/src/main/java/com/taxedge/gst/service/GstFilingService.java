@@ -7,11 +7,11 @@ import com.taxedge.gst.entity.GstFiling;
 
 public interface GstFilingService {
 
-    String createFiling(GstFilingDto gstFilingDto);
+	String createFiling(GstFilingDto gstFilingDto);
 
-    List<GstFiling> getFilingsByGstin(String gstin);
+	GstFiling getFilingById(String id);
 
-    String updateFiling(String id, GstFilingDto gstFilingDto);
+	String updateFiling(String id, GstFilingDto gstFilingDto);
 
-    String deleteFiling(String id);
+	String deleteFiling(String id);
 }

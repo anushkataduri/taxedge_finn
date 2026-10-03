@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { BrandColors, Typography, BorderRadius } from "../../../../../shared/theme";
+import { BrandColors, Typography } from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   container: {
@@ -16,36 +16,27 @@ export const styles = StyleSheet.create({
     color: "#64748B",
     marginBottom: 16,
   },
-  card: {
-    backgroundColor: BrandColors.WHITE,
-    borderRadius: BorderRadius.md || 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    marginBottom: 16,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  cardTitle: {
-    fontSize: Typography.fontSize.base,
-    fontWeight: "700",
-    color: "#0F172A",
-    marginBottom: 12,
-  },
   fieldGroup: {
-    marginBottom: 14,
+    marginBottom: 18,
   },
   label: {
-    fontSize: Typography.fontSize.xs,
+    fontSize: Typography.fontSize.sm,
     fontWeight: "600",
     color: "#334155",
-    marginBottom: 6,
+    marginBottom: 8,
   },
   requiredStar: {
     color: "#EF4444",
+  },
+  helperText: {
+    fontSize: Typography.fontSize.xs,
+    color: "#64748B",
+    marginTop: 4,
+  },
+  errorText: {
+    fontSize: Typography.fontSize.xs,
+    color: "#EF4444",
+    marginTop: 4,
   },
   input: {
     backgroundColor: BrandColors.WHITE,
@@ -53,35 +44,30 @@ export const styles = StyleSheet.create({
     borderColor: "#CBD5E1",
     borderRadius: 8,
     paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontSize: Typography.fontSize.sm,
+    paddingVertical: 12,
+    fontSize: Typography.fontSize.base,
     color: "#0F172A",
   },
   inputError: {
     borderColor: "#EF4444",
   },
-  errorText: {
-    fontSize: Typography.fontSize.xs - 1,
-    color: "#EF4444",
-    marginTop: 4,
-  },
   chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginTop: 6,
+    marginTop: 8,
   },
   chip: {
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F1F5F9",
     borderWidth: 1,
     borderColor: "#E2E8F0",
   },
   chipActive: {
-    backgroundColor: "#FEF0E6",
-    borderColor: BrandColors.PRIMARY_ORANGE || "#EA580C",
+    backgroundColor: "#EFF6FF",
+    borderColor: BrandColors.PRIMARY_BLUE,
   },
   chipText: {
     fontSize: Typography.fontSize.xs,
@@ -89,7 +75,7 @@ export const styles = StyleSheet.create({
     color: "#475569",
   },
   chipTextActive: {
-    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
+    color: BrandColors.PRIMARY_BLUE,
     fontWeight: "700",
   },
   toggleContainer: {
@@ -106,9 +92,9 @@ export const styles = StyleSheet.create({
   },
   toggleButtonActive: {
     backgroundColor: BrandColors.WHITE,
-    shadowColor: "#0F172A",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
@@ -118,7 +104,7 @@ export const styles = StyleSheet.create({
     color: "#64748B",
   },
   toggleTextActive: {
-    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
+    color: BrandColors.PRIMARY_BLUE,
     fontWeight: "700",
   },
   tenureGrid: {
@@ -128,22 +114,22 @@ export const styles = StyleSheet.create({
   },
   tenureBox: {
     paddingHorizontal: 14,
-    paddingVertical: 9,
+    paddingVertical: 8,
     borderRadius: 8,
     backgroundColor: "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#CBD5E1",
+    borderColor: "#E2E8F0",
   },
   tenureBoxActive: {
-    backgroundColor: "#FEF0E6",
-    borderColor: BrandColors.PRIMARY_ORANGE || "#EA580C",
+    backgroundColor: "#EFF6FF",
+    borderColor: BrandColors.PRIMARY_BLUE,
   },
   tenureText: {
     fontSize: Typography.fontSize.sm,
     color: "#475569",
   },
   tenureTextActive: {
-    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
+    color: BrandColors.PRIMARY_BLUE,
     fontWeight: "700",
   },
 });

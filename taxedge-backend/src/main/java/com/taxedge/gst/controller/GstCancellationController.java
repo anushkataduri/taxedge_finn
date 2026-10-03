@@ -23,41 +23,29 @@ import com.taxedge.gst.service.GstCancellationService;
 @RequestMapping("/api/v1/gst/cancellation")
 public class GstCancellationController {
 
-    @Autowired
-    private ObjectMapper objectMapper;
+	@Autowired
+	private ObjectMapper objectMapper;
 
-    @Autowired
-    private GstCancellationService cancellationService;
+	@Autowired
+	private GstCancellationService gstCancellationService;
 
-    @PostMapping(
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> createCancellation(
+	@PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<String> createCancellation(@RequestPart("data") String data,
+			@RequestPart(value = "supportingProofDocument", required = false) MultipartFile supportingProofDocument)
+			throws IOException {
 
-            @RequestPart("data") String data,
+		GstCancellationDto gstCancellationDto = objectMapper.readValue(data, GstCancellationDto.class);
 
-            @RequestPart(value = "supportingProofDocument", required = false)
-            MultipartFile supportingProofDocument) throws IOException {
+		String result = gstCancellationService.createCancellation(gstCancellationDto, supportingProofDocument);
 
-        GstCancellationDto dto =
-                objectMapper.readValue(data, GstCancellationDto.class);
+		return new ResponseEntity<>(result, HttpStatus.CREATED);
+	}
 
-        dto.setSupportingProofDocument(supportingProofDocument);
+	@GetMapping("/{cancellationId}")
+	public ResponseEntity<GstCancellation> getCancellation(@PathVariable String cancellationId) {
 
-        String result =
-                cancellationService.createCancellation(dto);
+		GstCancellation cancellation = gstCancellationService.getCancellation(cancellationId);
 
-        return new ResponseEntity<>(
-                result,
-                HttpStatus.CREATED);
-    }
-
-    @GetMapping("/{gstin}")
-    public ResponseEntity<GstCancellation> getCancellation(
-            @PathVariable String gstin) {
-
-        GstCancellation cancellation =
-                cancellationService.getCancellation(gstin);
-
-        return ResponseEntity.ok(cancellation);
-    }
+		return ResponseEntity.ok(cancellation);
+	}
 }

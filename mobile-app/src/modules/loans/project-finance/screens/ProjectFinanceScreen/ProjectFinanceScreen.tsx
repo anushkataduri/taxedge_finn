@@ -1,18 +1,11 @@
 import React, { useState, useRef } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import {
-  ProjectFinanceStepIndicator,
+  ProjectFinanceHeader,
   ProjectFinanceSuccessModal,
 } from "../../components";
 import { ProjectFinanceStepRenderer } from "./ProjectFinanceStepRenderer";
@@ -24,12 +17,7 @@ import {
   validateStep6,
   validateStep7,
 } from "../../utils/step5To7Validators";
-import { submitProjectFinanceLoan } from "../../services/projectFinanceApiService";
-import {
-  styles,
-  getSafeAreaTop,
-  getBottomBarPadding,
-} from "./ProjectFinanceScreen.styles";
+import { styles } from "./ProjectFinanceScreen.styles";
 
 const STEP_TITLES = [
   "Applicant & Project",
@@ -50,8 +38,6 @@ export const ProjectFinanceScreen: React.FC = () => {
   const state = useProjectFinanceState();
 
   const handleNextOrSubmit = () => {
-    if (state.isSubmitting) return;
-
     if (currentStepIndex === 0) {
       const err = validateStep1({
         applicantDetails: state.applicantDetails,
@@ -135,54 +121,7 @@ export const ProjectFinanceScreen: React.FC = () => {
         Alert.alert("Missing / Invalid Information", err);
         return;
       }
-
-      state.setIsSubmitting(true);
-      submitProjectFinanceLoan({
-        applicantDetails: state.applicantDetails,
-        registeredAddress: state.registeredAddress,
-        promoters: state.promoters,
-        projectClassification: state.projectClassification,
-        projectLocation: state.projectLocation,
-        landDetails: state.landDetails,
-        parcels: state.parcels,
-        rightOfWay: state.rightOfWay,
-        utilities: state.utilities,
-        technicalDetails: state.technicalDetails,
-        capacityProduction: state.capacityProduction,
-        machineries: state.machineries,
-        rawMaterials: state.rawMaterials,
-        epcExecution: state.epcExecution,
-        milestones: state.milestones,
-        manpower: state.manpower,
-        projectCost: state.projectCost,
-        meansOfFinance: state.meansOfFinance,
-        disbursementSchedule: state.disbursementSchedule,
-        products: state.products,
-        marketDetails: state.marketDetails,
-        customers: state.customers,
-        projectionSetup: state.projectionSetup,
-        workingCapital: state.workingCapital,
-        loanRequirement: state.loanRequirement,
-        repaymentDetails: state.repaymentDetails,
-        repaymentSources: state.repaymentSources,
-        securities: state.securities,
-        regulatoryCompliance: state.regulatoryCompliance,
-        documents: state.documents,
-      })
-        .then(async (response) => {
-          state.setIsSubmitting(false);
-          state.setSubmittedAppId(response.applicationId);
-          state.setSubmittedRefNumber(response.referenceNumber);
-          await state.clearDraft();
-          state.setShowSuccessModal(true);
-        })
-        .catch((error) => {
-          state.setIsSubmitting(false);
-          Alert.alert(
-            "Submission Error",
-            error?.message || "Failed to submit loan application. Please try again."
-          );
-        });
+      state.setShowSuccessModal(true);
       return;
     }
 
@@ -199,29 +138,15 @@ export const ProjectFinanceScreen: React.FC = () => {
     }
   };
 
-  const handleTrackStatus = () => {
-    state.setShowSuccessModal(false);
-    router.push(
-      `/service/loan-status?id=${encodeURIComponent(
-        state.submittedAppId
-      )}&loanType=${encodeURIComponent("Project Finance")}` as any
-    );
-  };
-
   return (
-    <View style={[styles.safeArea, getSafeAreaTop(insets.top)]}>
+    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
       {/* Top Header with Circle Back Button & Progress Bar matching design */}
-      <ProjectFinanceStepIndicator
-        currentStepIndex={currentStepIndex}
+      <ProjectFinanceHeader
+        onBack={handleBack}
+        title="Project Finance"
+        currentStep={currentStepIndex + 1}
         totalSteps={7}
         stepTitle={STEP_TITLES[currentStepIndex]}
-        onBack={handleBack}
-        onSettings={() =>
-          Alert.alert(
-            "Project Finance Assistance",
-            "Need guidance on your project appraisal, DSCR calculations, or consortium syndication? Contact corporate-finance@taxedge.in."
-          )
-        }
       />
 
       <View style={styles.mainContainer}>
@@ -242,43 +167,28 @@ export const ProjectFinanceScreen: React.FC = () => {
         </ScrollView>
 
         {/* Sticky Bottom Action Bar */}
-        <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
+        <View
+          style={[
+            styles.bottomBar,
+            { paddingBottom: Math.max(insets.bottom, 14) },
+          ]}
+        >
           <TouchableOpacity
-            style={[
-              styles.continueButton,
-              state.isSubmitting && styles.continueButtonDisabled,
-            ]}
+            style={styles.continueButton}
             onPress={handleNextOrSubmit}
             activeOpacity={0.8}
-            disabled={state.isSubmitting}
           >
-            {state.isSubmitting ? (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator size="small" color="#FFFFFF" />
-                <Text style={styles.continueButtonText}>Processing Application...</Text>
-              </View>
-            ) : (
-              <>
-                <Text style={styles.continueButtonText}>
-                  {currentStepIndex === 6 ? "Submit Application" : "Save & Continue"}
-                </Text>
-                <Ionicons
-                  name={currentStepIndex === 6 ? "shield-checkmark" : "arrow-forward"}
-                  size={18}
-                  color="#FFFFFF"
-                />
-              </>
-            )}
+            <Text style={styles.continueButtonText}>
+              {currentStepIndex === 6 ? "Submit Application" : "Save & Continue"}
+            </Text>
+            <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Production Success Modal */}
+      {/* Success Modal */}
       <ProjectFinanceSuccessModal
         visible={state.showSuccessModal}
-        applicationId={state.submittedAppId}
-        referenceNumber={state.submittedRefNumber}
-        onTrackStatus={handleTrackStatus}
         onClose={() => {
           state.setShowSuccessModal(false);
           router.back();

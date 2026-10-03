@@ -24,7 +24,7 @@ import { GstApplicationStatusStep } from "../../../gst-status/components/GstAppl
 import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 
 import { useGstRegistrationFlow } from "../../hooks/useGstRegistrationFlow";
-import { styles } from "./GstRegistrationScreen.styles";
+import { styles, getHeaderBarStyle } from "./GstRegistrationScreen.styles";
 
 const STEPS = ["Business", "Documents", "Review", "Payment"];
 
@@ -39,7 +39,10 @@ const getScreenTitle = (index: number) => {
   return titles[index] || titles[0];
 };
 
-const getButtonText = (index: number) => {
+const getButtonText = (index: number, isEditMode: boolean = false) => {
+  if (isEditMode && (index === 0 || index === 1)) {
+    return "Update & Review";
+  }
   const texts = [
     "Continue to Documents",
     "Continue to Review",
@@ -70,13 +73,16 @@ export const GstRegistrationScreen: React.FC = () => {
     handleContinue,
     handlePaymentSuccess,
     handleBack,
+    isEditMode,
+    handleEditStep,
+    isFetchingReview,
   } = useGstRegistrationFlow(scrollViewRef);
 
   return (
     <View style={styles.root}>
       {/* Top Header Bar */}
       <View
-        style={[styles.headerBar, { paddingTop: Math.max(insets.top, 12) + 6 }]}
+        style={[styles.headerBar, getHeaderBarStyle(insets.top)]}
       >
         <TouchableOpacity
           activeOpacity={0.7}
@@ -137,9 +143,10 @@ export const GstRegistrationScreen: React.FC = () => {
           <GstReviewStep
             businessData={businessData}
             documents={documents}
-            onEditStep={setScreenIndex}
+            onEditStep={handleEditStep}
             declared={declared}
             onToggleDeclaration={() => setDeclared((prev: boolean) => !prev)}
+            isFetching={isFetchingReview}
           />
         )}
 
@@ -159,7 +166,7 @@ export const GstRegistrationScreen: React.FC = () => {
 
         {screenIndex === 4 && (
           <GstApplicationStatusStep
-            appId={createdAppId}
+            appId={createdGstId || createdAppId || businessData.gstId}
             businessName={businessData.businessName || "Your Business"}
             appliedDate="Today"
             serviceName="GST Registration"
@@ -179,7 +186,7 @@ export const GstRegistrationScreen: React.FC = () => {
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text style={styles.submitBtnText}>
-                  {getButtonText(screenIndex)}
+                  {getButtonText(screenIndex, isEditMode)}
                 </Text>
               )}
             </TouchableOpacity>

@@ -8,3 +8,13 @@ export const styles = StyleSheet.create({
   ...formStyles,
   ...reviewStyles,
 });
+
+export {
+  getHeaderBarStyle,
+  getCardIconBoxStyle,
+  getScrollContentStyle,
+  getBottomBarStyle,
+  getSuccessHeroStyle,
+  getSuccessActionsWrapStyle,
+} from "./GstAmendmentCommon.styles";
+

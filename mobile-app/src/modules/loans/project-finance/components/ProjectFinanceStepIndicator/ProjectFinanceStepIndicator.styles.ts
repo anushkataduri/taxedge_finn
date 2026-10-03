@@ -1,57 +1,70 @@
 import { StyleSheet } from "react-native";
-import { BrandColors, Typography, Spacing } from "../../../../../shared/theme";
-
-export const getProgressBarFillDynamic = (progressPercent: number) => ({
-  width: `${progressPercent}%` as any,
-});
+import { BrandColors, Typography } from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFFFF",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: BrandColors.WHITE,
     borderBottomWidth: 1,
     borderBottomColor: "#F1F5F9",
   },
-  topRow: {
+  stepsRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.sm,
   },
-  circleBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+  stepItem: {
+    alignItems: "center",
+    flex: 1,
+  },
+  stepCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#CBD5E1",
   },
-  titleCenter: {
-    alignItems: "center",
+  stepCircleActive: {
+    backgroundColor: BrandColors.PRIMARY_BLUE,
+    borderColor: BrandColors.PRIMARY_BLUE,
   },
-  mainTitle: {
-    fontSize: Typography.fontSize.base,
-    fontWeight: Typography.fontWeight.bold,
-    color: "#0B1F3A",
+  stepCircleCompleted: {
+    backgroundColor: "#16A34A",
+    borderColor: "#16A34A",
   },
-  subTitle: {
+  stepNumber: {
     fontSize: Typography.fontSize.xs,
-    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
-    fontWeight: Typography.fontWeight.medium,
-    marginTop: 2,
+    fontWeight: "700",
+    color: "#64748B",
   },
-  rightSpacer: {
-    width: 40,
+  stepNumberActive: {
+    color: BrandColors.WHITE,
   },
-  progressBarTrack: {
-    height: 3,
+  stepTitle: {
+    fontSize: 11,
+    color: "#64748B",
+    marginTop: 4,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  stepTitleActive: {
+    color: BrandColors.PRIMARY_BLUE,
+    fontWeight: "700",
+  },
+  stepLine: {
+    position: "absolute",
+    top: 14,
+    left: "50%",
+    right: "-50%",
+    height: 2,
     backgroundColor: "#E2E8F0",
-    width: "100%",
+    zIndex: -1,
   },
-  progressBarFill: {
-    height: "100%",
-    backgroundColor: BrandColors.PRIMARY_ORANGE,
+  stepLineCompleted: {
+    backgroundColor: "#16A34A",
   },
 });

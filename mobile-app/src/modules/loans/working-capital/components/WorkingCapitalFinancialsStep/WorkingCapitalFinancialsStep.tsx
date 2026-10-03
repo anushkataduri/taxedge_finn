@@ -1,15 +1,23 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
-import { LoanDetailsFormData } from "../../../types/loans.types";
+import { LoanDetailsFormData, LoanEmploymentType } from "../../../types/loans.types";
 import { styles } from "./WorkingCapitalFinancialsStep.styles";
 
 export interface WorkingCapitalFinancialsStepProps {
   data: LoanDetailsFormData;
-  onChange: (field: keyof LoanDetailsFormData, value: any) => void;
+  onChange: <K extends keyof LoanDetailsFormData>(
+    field: K,
+    value: LoanDetailsFormData[K]
+  ) => void;
   errors?: Record<string, string>;
 }
 
-const WC_PURPOSES = [
+export interface AmountPreset {
+  label: string;
+  value: string;
+}
+
+const WC_PURPOSES: readonly string[] = [
   "Working Capital",
   "Inventory / Stock",
   "Raw Material Purchase",
@@ -19,13 +27,13 @@ const WC_PURPOSES = [
   "Other",
 ];
 
-const WC_FACILITIES = [
+const WC_FACILITIES: readonly string[] = [
   "Cash Credit (CC) Facility",
   "Overdraft (OD) Line",
   "Invoice / Bill Discounting",
 ];
 
-const AMOUNT_PRESETS = [
+const AMOUNT_PRESETS: readonly AmountPreset[] = [
   { label: "₹10 Lakhs", value: "1000000" },
   { label: "₹25 Lakhs", value: "2500000" },
   { label: "₹50 Lakhs", value: "5000000" },
@@ -38,6 +46,74 @@ export const WorkingCapitalFinancialsStep: React.FC<WorkingCapitalFinancialsStep
   onChange,
   errors = {},
 }) => {
+  const handleAmountChange = (val: string) => {
+    onChange("requiredAmount", val);
+  };
+
+  const handlePurposeChange = (purpose: string) => {
+    onChange("purpose", purpose);
+  };
+
+  const handleFacilityChange = (facility: string) => {
+    onChange("employmentType", facility as LoanEmploymentType);
+  };
+
+  const handleExistingLoansToggle = (hasLoans: boolean) => {
+    onChange("hasExistingLoans", hasLoans);
+    if (!hasLoans && data.existingEmi) {
+      onChange("existingEmi", "");
+    }
+  };
+
+  const handleEmiChange = (text: string) => {
+    onChange("existingEmi", text);
+  };
+
+  const renderAmountChip = (item: AmountPreset) => {
+    const isSelected = data.requiredAmount === item.value;
+    return (
+      <TouchableOpacity
+        key={item.value}
+        onPress={() => handleAmountChange(item.value)}
+        style={[styles.chip, isSelected && styles.chipActive]}
+      >
+        <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
+          {item.label}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderPurposeChip = (purpose: string) => {
+    const isSelected = data.purpose === purpose;
+    return (
+      <TouchableOpacity
+        key={purpose}
+        onPress={() => handlePurposeChange(purpose)}
+        style={[styles.chip, isSelected && styles.chipActive]}
+      >
+        <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
+          {purpose}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderFacilityChip = (facility: string) => {
+    const isSelected = (data.employmentType as string) === facility;
+    return (
+      <TouchableOpacity
+        key={facility}
+        onPress={() => handleFacilityChange(facility)}
+        style={[styles.chip, isSelected && styles.chipActive]}
+      >
+        <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
+          {facility}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
       {/* Card 1: Credit Limit / Loan Amount */}
@@ -53,28 +129,10 @@ export const WorkingCapitalFinancialsStep: React.FC<WorkingCapitalFinancialsStep
             placeholderTextColor="#94A3B8"
             keyboardType="numeric"
             value={data.requiredAmount}
-            onChangeText={(text) => onChange("requiredAmount", text)}
+            onChangeText={handleAmountChange}
           />
           <View style={styles.chipRow}>
-            {AMOUNT_PRESETS.map((item) => (
-              <TouchableOpacity
-                key={item.value}
-                onPress={() => onChange("requiredAmount", item.value)}
-                style={[
-                  styles.chip,
-                  data.requiredAmount === item.value && styles.chipActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    data.requiredAmount === item.value && styles.chipTextActive,
-                  ]}
-                >
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {AMOUNT_PRESETS.map(renderAmountChip)}
           </View>
           {errors.requiredAmount && (
             <Text style={styles.errorText}>{errors.requiredAmount}</Text>
@@ -90,25 +148,7 @@ export const WorkingCapitalFinancialsStep: React.FC<WorkingCapitalFinancialsStep
             Credit Purpose <Text style={styles.requiredStar}>*</Text>
           </Text>
           <View style={styles.chipRow}>
-            {WC_PURPOSES.map((purpose) => {
-              const isSelected = data.purpose === purpose;
-              return (
-                <TouchableOpacity
-                  key={purpose}
-                  onPress={() => onChange("purpose", purpose)}
-                  style={[styles.chip, isSelected && styles.chipActive]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      isSelected && styles.chipTextActive,
-                    ]}
-                  >
-                    {purpose}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+            {WC_PURPOSES.map(renderPurposeChip)}
           </View>
           {errors.purpose && (
             <Text style={styles.errorText}>{errors.purpose}</Text>
@@ -124,25 +164,7 @@ export const WorkingCapitalFinancialsStep: React.FC<WorkingCapitalFinancialsStep
             Preferred Facility Type <Text style={styles.requiredStar}>*</Text>
           </Text>
           <View style={styles.chipRow}>
-            {WC_FACILITIES.map((facility) => {
-              const isSelected = data.employmentType === (facility as any);
-              return (
-                <TouchableOpacity
-                  key={facility}
-                  onPress={() => onChange("employmentType", facility as any)}
-                  style={[styles.chip, isSelected && styles.chipActive]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      isSelected && styles.chipTextActive,
-                    ]}
-                  >
-                    {facility}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+            {WC_FACILITIES.map(renderFacilityChip)}
           </View>
         </View>
       </View>
@@ -153,7 +175,7 @@ export const WorkingCapitalFinancialsStep: React.FC<WorkingCapitalFinancialsStep
         <View style={styles.fieldGroup}>
           <View style={styles.toggleContainer}>
             <TouchableOpacity
-              onPress={() => onChange("hasExistingLoans", false)}
+              onPress={() => handleExistingLoansToggle(false)}
               style={[
                 styles.toggleButton,
                 !data.hasExistingLoans && styles.toggleButtonActive,
@@ -169,7 +191,7 @@ export const WorkingCapitalFinancialsStep: React.FC<WorkingCapitalFinancialsStep
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => onChange("hasExistingLoans", true)}
+              onPress={() => handleExistingLoansToggle(true)}
               style={[
                 styles.toggleButton,
                 data.hasExistingLoans && styles.toggleButtonActive,
@@ -198,7 +220,7 @@ export const WorkingCapitalFinancialsStep: React.FC<WorkingCapitalFinancialsStep
               placeholderTextColor="#94A3B8"
               keyboardType="numeric"
               value={data.existingEmi}
-              onChangeText={(text) => onChange("existingEmi", text)}
+              onChangeText={handleEmiChange}
             />
             {errors.existingEmi && (
               <Text style={styles.errorText}>{errors.existingEmi}</Text>
@@ -211,3 +233,4 @@ export const WorkingCapitalFinancialsStep: React.FC<WorkingCapitalFinancialsStep
 };
 
 export default WorkingCapitalFinancialsStep;
+

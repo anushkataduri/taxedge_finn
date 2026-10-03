@@ -10,23 +10,25 @@ import lombok.Data;
 @Data
 public class GstFilingDto {
 
-    private String gstin;
+	private String gstin;
 
-    private String financialYear;
+	private String customerId;
 
-    private String filingPeriod;
+	private String financialYear;
 
-    private FilingFrequency filingFrequency;
+	private String filingPeriod;
 
-    private ReturnType returnType;
+	private FilingFrequency filingFrequency;
 
-    private FilingType filingType;
+	private ReturnType returnType;
 
-    private TaxCalculationMethod taxCalculationMethod;
+	private FilingType filingType;
 
-    private Long estimatedTaxableSales;
+	private TaxCalculationMethod taxCalculationMethod;
 
-    private Long estimatedTaxablePurchases;
+	private Long estimatedTaxableSales;
 
-    private Long estimatedEligibleItc;
+	private Long estimatedTaxablePurchases;
+
+	private Long estimatedEligibleItc;
 }

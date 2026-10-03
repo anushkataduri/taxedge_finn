@@ -225,5 +225,42 @@ export const st = StyleSheet.create({
   highlightBlueText: { color: "#1E5EFF" },
   btnScaleAnimWrap: { width: "100%", marginTop: 18, gap: 10 },
   btnScaleSmallMargin: { marginTop: 6 },
+  confettiDot1: {
+    top: 12,
+    left: 30,
+    backgroundColor: "#FF7A00",
+  },
+  confettiDot2: {
+    top: 22,
+    right: 34,
+    backgroundColor: "#1E5EFF",
+  },
+  confettiDot3: {
+    bottom: 40,
+    left: 16,
+    backgroundColor: "#1E5EFF",
+  },
+  confettiDot4: {
+    bottom: 35,
+    right: 20,
+    backgroundColor: "#FF7A00",
+  },
 });
+
+export const getTopBarStyle = (topInset: number) => ({
+  paddingTop: Math.max(topInset, 12) + 4,
+});
+
+export const getScaleTransformStyle = (scale: any) => ({
+  transform: [{ scale }],
+});
+
+export const getTranslateYTransformStyle = (translateY: any) => ({
+  transform: [{ translateY }],
+});
+
+export const getOpacityAnimStyle = (opacity: any) => ({
+  opacity,
+});
+
 export default st;

@@ -1,10 +1,4 @@
-import { useState, useEffect, useRef } from "react";
-import { useAuthStore } from "../../../../authentication/store/authStore";
-import {
-  saveProjectFinanceDraft,
-  loadProjectFinanceDraft,
-  clearProjectFinanceDraft,
-} from "../../services/projectFinanceDraftService";
+import { useState } from "react";
 import {
   ApplicantDetailsForm,
   RegisteredAddressForm,
@@ -81,9 +75,6 @@ import {
 } from "../../data/step7Data";
 
 export const useProjectFinanceState = () => {
-  const authUser = useAuthStore((s: any) => s.authenticatedUser || s.customer);
-  const activeMobile = authUser?.mobileNumber || authUser?.mobile || "guest";
-  const isLoadedRef = useRef(false);
   // Step 1
   const [applicantDetails, setApplicantDetails] = useState<ApplicantDetailsForm>({
     applicantName: "", constitutionType: "", pan: "", cinLlpin: "",
@@ -181,72 +172,6 @@ export const useProjectFinanceState = () => {
   const [agreeVerification, setAgreeVerification] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // Submission Status
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submittedAppId, setSubmittedAppId] = useState<string>("PF-2026-9842");
-  const [submittedRefNumber, setSubmittedRefNumber] = useState<string | undefined>();
-
-  // Restore draft on mount
-  useEffect(() => {
-    let isCancelled = false;
-    const restoreDraft = async () => {
-      const saved = await loadProjectFinanceDraft(activeMobile);
-      if (saved && !isCancelled) {
-        if (saved.applicantDetails) setApplicantDetails(saved.applicantDetails as any);
-        if (saved.registeredAddress) setRegisteredAddress(saved.registeredAddress as any);
-        if (saved.promoters) setPromoters(saved.promoters as any);
-        if (saved.projectClassification) setProjectClassification(saved.projectClassification as any);
-        if (saved.projectLocation) setProjectLocation(saved.projectLocation as any);
-        if (saved.landDetails) setLandDetails(saved.landDetails as any);
-        if (saved.projectCost) setProjectCost(saved.projectCost as any);
-        if (saved.meansOfFinance) setMeansOfFinance(saved.meansOfFinance as any);
-        if (saved.loanRequirement) setLoanRequirement(saved.loanRequirement as any);
-        if (saved.repaymentDetails) setRepaymentDetails(saved.repaymentDetails as any);
-      }
-      isLoadedRef.current = true;
-    };
-    restoreDraft();
-    return () => {
-      isCancelled = true;
-    };
-  }, [activeMobile]);
-
-  // Auto-save draft on state change (debounced)
-  useEffect(() => {
-    if (!isLoadedRef.current) return;
-    const timer = setTimeout(() => {
-      saveProjectFinanceDraft(activeMobile, {
-        applicantDetails,
-        registeredAddress,
-        promoters,
-        projectClassification,
-        projectLocation,
-        landDetails,
-        projectCost,
-        meansOfFinance,
-        loanRequirement,
-        repaymentDetails,
-      });
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [
-    activeMobile,
-    applicantDetails,
-    registeredAddress,
-    promoters,
-    projectClassification,
-    projectLocation,
-    landDetails,
-    projectCost,
-    meansOfFinance,
-    loanRequirement,
-    repaymentDetails,
-  ]);
-
-  const clearDraft = async () => {
-    await clearProjectFinanceDraft(activeMobile);
-  };
-
   return {
     applicantDetails, setApplicantDetails,
     registeredAddress, setRegisteredAddress,
@@ -292,12 +217,7 @@ export const useProjectFinanceState = () => {
     agreeAccuracy, setAgreeAccuracy,
     agreeVerification, setAgreeVerification,
     showSuccessModal, setShowSuccessModal,
-    isSubmitting, setIsSubmitting,
-    submittedAppId, setSubmittedAppId,
-    submittedRefNumber, setSubmittedRefNumber,
-    clearDraft,
   };
 };
 
 export default useProjectFinanceState;
-

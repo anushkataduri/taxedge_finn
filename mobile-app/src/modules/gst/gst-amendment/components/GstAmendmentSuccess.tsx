@@ -8,7 +8,11 @@ import {
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
-import { styles } from "../screens/GstAmendmentScreen/GstAmendmentScreen.styles";
+import {
+  styles,
+  getSuccessHeroStyle,
+  getSuccessActionsWrapStyle,
+} from "../screens/GstAmendmentScreen/GstAmendmentScreen.styles";
 import { SubmissionResult } from "../types/gstAmendmentTypes";
 
 interface GstAmendmentSuccessProps {
@@ -36,7 +40,7 @@ export const GstAmendmentSuccess: React.FC<GstAmendmentSuccessProps> = ({
         bounces={false}
       >
         {/* Hero Banner with curved bottom */}
-        <View style={[styles.successHero, { paddingTop: insets.top + 32 }]}>
+        <View style={[styles.successHero, getSuccessHeroStyle(insets.top)]}>
           <View style={styles.successHeroIconBox}>
             <View style={styles.successHeroCheckCircle}>
               <Ionicons name="checkmark" size={32} color="#FFFFFF" />
@@ -55,7 +59,7 @@ export const GstAmendmentSuccess: React.FC<GstAmendmentSuccessProps> = ({
 
           <View style={styles.successRow}>
             <Text style={styles.successRowKey}>ARN / Reference</Text>
-            <Text style={[styles.successRowVal, { color: BrandColors.PRIMARY_BLUE }]}>
+            <Text style={[styles.successRowVal, styles.successRowValPrimary]}>
               {submissionResult.arn}
             </Text>
           </View>
@@ -75,13 +79,13 @@ export const GstAmendmentSuccess: React.FC<GstAmendmentSuccessProps> = ({
 
           <View style={styles.successRow}>
             <Text style={styles.successRowKey}>Current Status</Text>
-            <Text style={[styles.successRowVal, { color: "#16A34A" }]}>Submitted</Text>
+            <Text style={[styles.successRowVal, styles.successRowValSubmitted]}>Submitted</Text>
           </View>
         </View>
       </ScrollView>
 
       {/* Fixed Bottom Action Area */}
-      <View style={[styles.successActionsWrap, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      <View style={[styles.successActionsWrap, getSuccessActionsWrapStyle(insets.bottom)]}>
         <TouchableOpacity
           style={styles.primaryBtn}
           activeOpacity={0.85}

@@ -42,7 +42,7 @@ public class SignatoryAmendmentEntity {
     @Column(name = "new_signatory_email")
     private String newSignatoryEmail;
 
-    @Column(name = "image_data", columnDefinition = "LONGTEXT")
+    @Column(name = "image_data", columnDefinition = "TEXT")
     private String imageData;
 
     @Column(name = "created_at")

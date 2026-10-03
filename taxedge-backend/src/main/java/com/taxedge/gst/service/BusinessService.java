@@ -6,7 +6,9 @@ public interface BusinessService {
 
 	String registerBusiness(BusinessDto businessDto);
 
+	BusinessDto getBusinessId(String gstId);
+
 	String updateBusiness(String gstId, BusinessDto businessDto);
 
-	BusinessDto getBusinessId(String gstId);
+	String deleteBusiness(String gstId);
 }

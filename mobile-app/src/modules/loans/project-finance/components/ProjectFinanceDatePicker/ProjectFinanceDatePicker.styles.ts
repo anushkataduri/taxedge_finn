@@ -1,5 +1,4 @@
 import { StyleSheet } from "react-native";
-import { BrandColors } from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   fieldGroup: {
@@ -24,19 +23,6 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: "#FFFFFF",
-  },
-  inputField: {
-    flex: 1,
-    fontSize: 13,
-    color: "#0F172A",
-    height: "100%",
-    paddingVertical: 0,
-  },
-  calendarIconButton: {
-    padding: 6,
-    marginLeft: 6,
-    alignItems: "center",
-    justifyContent: "center",
   },
   dateText: {
     fontSize: 13,
@@ -76,6 +62,6 @@ export const styles = StyleSheet.create({
   iosDoneButton: {
     fontSize: 15,
     fontWeight: "600",
-    color: BrandColors.PRIMARY_ORANGE || "#EA580C",
+    color: "#EA580C",
   },
 });

@@ -1,9 +1,15 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  Pressable,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { SecurityCollateralItem } from "../../types/projectFinance.types";
 import { SecurityCollateralItemCard } from "./SecurityCollateralItemCard";
-import { OptionPickerModal } from "../OptionPickerModal";
 import { styles } from "./SecurityCollateralCard.styles";
 
 interface SecurityCollateralCardProps {
@@ -119,13 +125,12 @@ export const SecurityCollateralCard: React.FC<SecurityCollateralCardProps> = ({
         </View>
       )}
 
-      {/* Reusable Option Picker Modal */}
-      <OptionPickerModal
+      {/* Modal Picker */}
+      <Modal
         visible={modalConfig.visible}
-        title={modalConfig.title}
-        options={modalConfig.options}
-        onSelect={handleSelectOption}
-        onClose={() =>
+        transparent
+        animationType="fade"
+        onRequestClose={() =>
           setModalConfig({
             visible: false,
             title: "",
@@ -134,7 +139,61 @@ export const SecurityCollateralCard: React.FC<SecurityCollateralCardProps> = ({
             field: null,
           })
         }
-      />
+      >
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(15, 23, 42, 0.5)",
+            justifyContent: "flex-end",
+          }}
+          onPress={() =>
+            setModalConfig({
+              visible: false,
+              title: "",
+              options: [],
+              securityId: "",
+              field: null,
+            })
+          }
+        >
+          <Pressable
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              maxHeight: "60%",
+              padding: 16,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "700",
+                color: "#0F172A",
+                marginBottom: 12,
+              }}
+            >
+              {modalConfig.title}
+            </Text>
+            <FlatList
+              data={modalConfig.options}
+              keyExtractor={(opt) => opt}
+              renderItem={({ item: opt }) => (
+                <TouchableOpacity
+                  style={{
+                    paddingVertical: 12,
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#F1F5F9",
+                  }}
+                  onPress={() => handleSelectOption(opt)}
+                >
+                  <Text style={{ fontSize: 14, color: "#1E293B" }}>{opt}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 };

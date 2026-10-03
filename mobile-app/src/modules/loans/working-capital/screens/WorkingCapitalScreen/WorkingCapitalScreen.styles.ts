@@ -131,4 +131,11 @@ export const styles = StyleSheet.create({
     fontWeight: "700",
     color: BrandColors.WHITE,
   },
+  headerRightSpacer: {
+    width: 36,
+  },
+  stepSpacer: {
+    height: 16,
+  },
 });
+

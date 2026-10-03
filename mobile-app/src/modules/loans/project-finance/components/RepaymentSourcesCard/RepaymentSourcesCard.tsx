@@ -1,12 +1,19 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  Pressable,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { RepaymentSourcesForm } from "../../types/projectFinance.types";
 import {
   PRIMARY_SOURCES_REPAYMENT,
   SECONDARY_SOURCES_REPAYMENT,
 } from "../../data/projectFinanceData";
-import { OptionPickerModal } from "../OptionPickerModal";
 import { styles } from "./RepaymentSourcesCard.styles";
 
 export interface RepaymentSourcesCardProps {
@@ -142,7 +149,7 @@ export const RepaymentSourcesCard: React.FC<RepaymentSourcesCardProps> = ({
               value={data.projectedDscr || autoCalculatedDscr || ""}
               onChangeText={(text) => onChange("projectedDscr", text)}
             />
-            <Text style={styles.helperText}>
+            <Text style={{ fontSize: 11, color: "#64748B", marginTop: 4 }}>
               Auto-calculated based on projected financials. Editable.
             </Text>
           </View>
@@ -165,16 +172,63 @@ export const RepaymentSourcesCard: React.FC<RepaymentSourcesCardProps> = ({
         </View>
       )}
 
-      {/* Reusable Option Picker Modal */}
-      <OptionPickerModal
+      {/* Modal */}
+      <Modal
         visible={modalConfig.visible}
-        title={modalConfig.title}
-        options={modalConfig.options}
-        onSelect={handleSelectOption}
-        onClose={() =>
+        transparent
+        animationType="fade"
+        onRequestClose={() =>
           setModalConfig({ visible: false, title: "", options: [], field: null })
         }
-      />
+      >
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(15, 23, 42, 0.5)",
+            justifyContent: "flex-end",
+          }}
+          onPress={() =>
+            setModalConfig({ visible: false, title: "", options: [], field: null })
+          }
+        >
+          <Pressable
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              maxHeight: "60%",
+              padding: 16,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "700",
+                color: "#0F172A",
+                marginBottom: 12,
+              }}
+            >
+              {modalConfig.title}
+            </Text>
+            <FlatList
+              data={modalConfig.options}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={{
+                    paddingVertical: 12,
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#F1F5F9",
+                  }}
+                  onPress={() => handleSelectOption(item)}
+                >
+                  <Text style={{ fontSize: 14, color: "#1E293B" }}>{item}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 };

@@ -12,7 +12,7 @@ import { gstApi } from "@/modules/gst/services/gstApi";
 import { GstValidators } from "@/modules/gst/utils/gstValidators";
 import { getCurrentFinancialYear } from "@/modules/gst/utils/gstDateUtils";
 import { dismissKeyboardThen } from "@/shared/components/KeyboardAwareFormLayout";
-import { styles } from "./style";
+import { styles } from "./GstFilingPeriodStep.styles";
 import { GstFilingSelectModal } from "./GstFilingSelectModal";
 import { GstCalculationMethodSection } from "./GstCalculationMethodSection";
 import {

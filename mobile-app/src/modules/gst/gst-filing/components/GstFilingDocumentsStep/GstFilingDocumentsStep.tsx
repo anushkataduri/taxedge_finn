@@ -12,7 +12,7 @@ import {
   FilingDocItem,
   INITIAL_FILING_DOCS,
 } from "../../config/gstFilingDocumentsConfig";
-import { styles, getProgressFillStyle } from "./style";
+import { styles, getProgressFillStyle } from "./GstFilingDocumentsStep.styles";
 import {
   FILING_DOC_CATEGORIES,
   countUploadedDocuments,

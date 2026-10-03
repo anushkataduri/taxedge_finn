@@ -56,18 +56,16 @@ export const getReturnTypesForFrequency = (frequency: string): string[] => {
     return [
       "GSTR-1 (QRMP — Quarterly)",
       "GSTR-3B (QRMP — Quarterly)",
-      "GSTR-4 (Composition Dealer)",
-      "CMP-08 (Composition Scheme Quarterly Statement)",
     ];
   }
   if (frequency === "Annual") {
     return [
-      "GSTR-9 (Annual Comprehensive Return)",
-      "GSTR-9C (Reconciliation Statement)",
+      "GSTR-1 (Outward Supplies)",
+      "GSTR-3B (Summary Return)",
     ];
   }
   return [
-    "GSTR-3B (Monthly Summary Return)",
     "GSTR-1 (Outward Supplies)",
+    "GSTR-3B (Monthly Summary Return)",
   ];
 };

@@ -165,7 +165,7 @@ export const NoticeDocumentsScreen: React.FC = () => {
       d.id === id
         ? {
             ...d,
-            status: "pending" as const,
+            status: "not_uploaded" as const,
             fileUri: undefined,
             fileName: undefined,
             fileSize: undefined,

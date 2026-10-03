@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
 import { FilingDocItem } from "../../config/gstFilingDocumentsConfig";
-import { styles, getIconBoxStyle } from "./style";
+import { styles, getIconBoxStyle } from "./GstFilingDocumentsStep.styles";
 
 interface GstDocItemCardProps {
   doc: FilingDocItem;

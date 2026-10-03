@@ -9,12 +9,19 @@ import lombok.Data;
 @Data
 public class GstCancellationDto {
 
-    private String gstin;
-    private String reasonForCancellation;
-    private LocalDate dateCancellationIsSought;
-    private String closingStockAndInputTaxReversal;
-    private String pendingDuesLiabilities;
-    private String lastGstr3bFiledArnPeriod;
-    private MultipartFile supportingProofDocument;
-    
+	private String customerId;
+
+	private String gstin;
+
+	private String reasonForCancellation;
+
+	private LocalDate dateCancellationIsSought;
+
+	private String closingStockAndInputTaxReversal;
+
+	private String pendingDuesLiabilities;
+
+	private String lastGstr3bFiledArnPeriod;
+
+	private MultipartFile supportingProofDocument;
 }

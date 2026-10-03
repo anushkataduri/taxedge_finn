@@ -5,7 +5,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,17 +19,18 @@ import com.taxedge.gst.repository.AdditionalPlaceAmendmentRepository;
 import com.taxedge.gst.repository.BusinessRepository;
 
 @Service
+@RequiredArgsConstructor
 public class AdditionalPlaceAmendmentServiceImpl implements AdditionalPlaceAmendmentService {
 
-    @Autowired
-    private BusinessRepository businessRepository;
-    @Autowired
-    private AdditionalPlaceAmendmentRepository additionalPlaceRepository;
+    private final BusinessRepository businessRepository;
+    private final AdditionalPlaceAmendmentRepository additionalPlaceRepository;
 
     private Business resolveBusiness(String gstId) {
+        if (gstId == null || gstId.trim().isEmpty()) {
+            throw new ResourceNotFoundException("GST ID must not be empty");
+        }
         return businessRepository.findById(gstId)
-                .orElseGet(() -> businessRepository.findAll().stream().findFirst()
-                        .orElseThrow(() -> new ResourceNotFoundException("No registered business found in the system.")));
+                .orElseThrow(() -> new ResourceNotFoundException("No registered business found for GST ID: " + gstId));
     }
 
     @Override

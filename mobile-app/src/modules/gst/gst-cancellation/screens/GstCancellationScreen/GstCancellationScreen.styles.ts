@@ -353,4 +353,65 @@ export const styles = StyleSheet.create({
     flex: 1,
     resizeMode: "contain",
   },
+  selectBoxChoice: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  selectBoxChoiceSelected: {
+    borderColor: BrandColors.PRIMARY_BLUE,
+    backgroundColor: "#F0F9FF",
+  },
+  selectTextSelected: {
+    color: BrandColors.PRIMARY_BLUE,
+    fontWeight: "600",
+  },
+  secondaryBtnDanger: {
+    marginTop: 4,
+    borderColor: "#EF4444",
+    borderWidth: 1,
+  },
+  secondaryBtnTextDanger: {
+    color: "#EF4444",
+  },
+  successRowValPrimary: {
+    color: BrandColors.PRIMARY_BLUE,
+  },
+  successRowValSuccess: {
+    color: "#16A34A",
+  },
+  // Edit button used in Review screen
+  reviewCardEditRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  editOptionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#FFF1E8",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#FED7AA",
+  },
+  editOptionText: {
+    fontSize: 12.5,
+    fontWeight: "700" as const,
+    color: BrandColors.PRIMARY_ORANGE,
+  },
+});
+
+export const getHeaderBarStyle = (topInset: number) => ({
+  paddingTop: Math.max(topInset, 12) + 6,
+});
+
+export const getSuccessHeroStyle = (topInset: number) => ({
+  paddingTop: topInset + 32,
+});
+
+export const getSuccessActionsWrapStyle = (bottomInset: number) => ({
+  paddingBottom: Math.max(bottomInset, 16),
 });
