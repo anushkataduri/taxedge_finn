@@ -177,7 +177,6 @@ export const VehicleLoanScreen: React.FC = () => {
     },
   });
 
-<<<<<<< HEAD
   const {
     showDraftModal,
     openDraftModal,
@@ -185,33 +184,6 @@ export const VehicleLoanScreen: React.FC = () => {
     handleDiscardAndExit,
     handleCancel,
     markSubmitted,
-=======
-  const resetAllFields = () => {
-    setLoanDetails(INITIAL_LOAN_DETAILS);
-    setBusinessDetails(INITIAL_BUSINESS_DETAILS);
-    setBankingDetails(INITIAL_BANKING_DETAILS);
-    loanDocuments.resetDocuments();
-    wizard.resetWizard();
-    setErrors({});
-  };
-
-  const isFormDirty = useCallback((): boolean => {
-    const hasAmount = Boolean(loanDetails.requiredAmount?.trim());
-    const hasPurpose = Boolean(loanDetails.purpose?.trim());
-    const hasCondition = Boolean(loanDetails.vehicleCondition);
-    const hasMake = Boolean(loanDetails.vehicleMakeModel?.trim());
-    const hasPrice = Boolean(loanDetails.onRoadPrice?.trim());
-    const hasTenure = Boolean(loanDetails.preferredTenureMonths);
-    const hasEmp = Boolean(loanDetails.employmentType);
-    const hasIncome = Boolean(loanDetails.monthlyIncomeOrTurnover?.trim());
-    const hasBank = Boolean(bankingDetails.primaryBankName?.trim() || bankingDetails.accountNumber?.trim() || bankingDetails.ifscCode?.trim());
-    const hasDocs = documents.some((d) => Boolean(d.fileUri));
-    return hasAmount || hasPurpose || hasCondition || hasMake || hasPrice || hasTenure || hasEmp || hasIncome || hasBank || hasDocs || currentStepIndex > 0;
-  }, [loanDetails, bankingDetails, documents, currentStepIndex]);
-
-  const {
-    showDraftModal, openDraftModal, markSubmitted, handleSaveAndExit, handleDiscardAndExit, handleCancel,
->>>>>>> anushka/main
   } = useUniversalDraftGuard({
     isDirty: isFormDirty,
     onSaveDraft: () => {
@@ -338,14 +310,10 @@ export const VehicleLoanScreen: React.FC = () => {
       const statusRoute: Href = `/service/loan-status?id=${response.applicationId}&loanType=Vehicle+Loan&isSuccess=true`;
       router.replace(statusRoute);
     } catch {
-<<<<<<< HEAD
       Alert.alert(
         "Submission Error",
         "Failed to submit application. Please try again."
       );
-=======
-      Alert.alert("Submission Error", "Failed to lodge vehicle loan application. Please try again.");
->>>>>>> anushka/main
     } finally {
       setIsSubmitting(false);
     }
