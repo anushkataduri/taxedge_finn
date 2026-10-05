@@ -332,4 +332,28 @@ export const styles = StyleSheet.create({
     fontWeight: "700",
     color: BrandColors.WHITE,
   },
+  sectionDivider: {
+    marginTop: 14,
+    marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  sectionDividerTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: 0.2,
+  },
+  sectionDividerBadge: {
+    backgroundColor: BrandColors.PRIMARY_LIGHT_ORANGE || "#FEF0E6",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  sectionDividerBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
+  },
 });

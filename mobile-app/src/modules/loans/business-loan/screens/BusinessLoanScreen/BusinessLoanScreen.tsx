@@ -15,12 +15,17 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
 import { useAuthStore } from "../../../../authentication/store/authStore";
 import { loansApi } from "../../../services/loansApi";
-import { BUSINESS_DOCUMENTS_TEMPLATE } from "../../../mock/loanServices";
+import {
+  BUSINESS_LOAN_DOCUMENTS_TEMPLATE,
+  getApplicableBusinessDocuments,
+  BusinessDocItemConfig,
+} from "../../constants/businessLoanDocuments";
 import {
   LoanDetailsFormData,
   LoanBusinessFormData,
   LoanBankingFormData,
   LoanApplicationDraft,
+  LoanDocumentItem,
 } from "../../../types/loans.types";
 import {
   businessLoanSchemas,
@@ -108,7 +113,7 @@ export const BusinessLoanScreen: React.FC = () => {
   });
 
   const loanDocuments = useLoanDocuments({
-    template: BUSINESS_DOCUMENTS_TEMPLATE,
+    template: BUSINESS_LOAN_DOCUMENTS_TEMPLATE,
     fileTypes: "withOfficeDocuments",
   });
   const { documents } = loanDocuments;
@@ -175,11 +180,29 @@ export const BusinessLoanScreen: React.FC = () => {
         );
       }
     } else if (stepIndex === 3) {
-      const uploadedDocs = documents.filter((d) => d.fileUri && d.fileUri.trim() !== "");
-      if (uploadedDocs.length === 0) {
+      const applicableDocs = getApplicableBusinessDocuments({
+        loanDetails,
+        businessDetails,
+      });
+      const requiredDocs = applicableDocs.filter((d: BusinessDocItemConfig) => d.isRequired);
+
+      const missingRequired = requiredDocs.filter((reqDoc: BusinessDocItemConfig) => {
+        const cleanId = reqDoc.id.replace(/^doc-/, "");
+        const match = documents.find(
+          (d: LoanDocumentItem) =>
+            (d.id === reqDoc.id ||
+              d.id === cleanId ||
+              d.id.replace(/^doc-/, "") === cleanId) &&
+            Boolean(d.fileUri && d.fileUri.trim() !== "")
+        );
+        return !match;
+      });
+
+      if (missingRequired.length > 0) {
+        const missingNames = missingRequired.map((d: BusinessDocItemConfig) => `• ${d.title}`).join("\n");
         Alert.alert(
-          "Document Required",
-          "Please upload at least one required document in Step 4 before proceeding to the review page."
+          "Required Documents Missing",
+          `Please upload the following required documents before proceeding:\n\n${missingNames}`
         );
         return false;
       }
@@ -270,7 +293,13 @@ export const BusinessLoanScreen: React.FC = () => {
           />
         );
       case 3:
-        return <BusinessLoanDocumentsStep loanDocuments={loanDocuments} />;
+        return (
+          <BusinessLoanDocumentsStep
+            loanDocuments={loanDocuments}
+            loanDetails={loanDetails}
+            businessDetails={businessDetails}
+          />
+        );
       case 4:
       default:
         return (

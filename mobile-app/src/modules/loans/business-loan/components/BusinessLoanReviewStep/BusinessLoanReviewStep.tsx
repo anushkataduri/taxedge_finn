@@ -272,10 +272,10 @@ export const BusinessLoanReviewStep: React.FC<BusinessLoanReviewStepProps> = ({
 
           <View style={styles.docHeaderActions}>
             <Text style={styles.docCountText}>
-              {uploadedDocs.length} of {documents.length} uploaded
+              {uploadedDocs.length} uploaded
             </Text>
             <TouchableOpacity style={styles.editAction} onPress={() => onGoToStep(3)} activeOpacity={0.7}>
-              <Ionicons name="create-outline" size={14} color="#2563EB" />
+              <Ionicons name="create-outline" size={14} color={BrandColors.PRIMARY_ORANGE || "#EA580C"} />
               <Text style={styles.editText}>Manage</Text>
             </TouchableOpacity>
           </View>
