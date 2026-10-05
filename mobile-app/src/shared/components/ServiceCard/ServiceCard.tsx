@@ -100,7 +100,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ item, onPress }) => {
           </Text>
         </View>
 
-        {item.badgeText || item.rateText ? (
+        {item.badgeText ? (
           <View style={styles.rightCol}>
             {item.badgeText && (
               <View
@@ -118,10 +118,6 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ item, onPress }) => {
                   {item.badgeText}
                 </Text>
               </View>
-            )}
-
-            {item.rateText && (
-              <Text style={styles.rateText}>{item.rateText}</Text>
             )}
 
             <Ionicons

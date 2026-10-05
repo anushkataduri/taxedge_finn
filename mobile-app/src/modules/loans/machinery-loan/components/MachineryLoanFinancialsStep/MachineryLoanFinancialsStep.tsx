@@ -61,7 +61,7 @@ export const MachineryLoanFinancialsStep: React.FC<MachineryLoanFinancialsStepPr
         <Dropdown
           label="Required Loan Amount"
           required
-          placeholder="Select amount"
+          placeholder="Select Loan Amount"
           options={MACHINERY_AMOUNT_OPTIONS}
           value={data.requiredAmount}
           onSelect={(val) => onChange("requiredAmount", val)}
@@ -74,7 +74,7 @@ export const MachineryLoanFinancialsStep: React.FC<MachineryLoanFinancialsStepPr
         <Dropdown
           label="Machinery / Equipment Type"
           required
-          placeholder="Select equipment type"
+          placeholder="Select Machinery / Equipment Type"
           options={MACHINERY_EQUIPMENT_OPTIONS}
           value={isOtherEquipment && data.purpose !== "Other" ? "Other" : data.purpose}
           onSelect={(val) => {
@@ -118,7 +118,7 @@ export const MachineryLoanFinancialsStep: React.FC<MachineryLoanFinancialsStepPr
         <Dropdown
           label="Repayment Tenure"
           required
-          placeholder="Select tenure"
+          placeholder="Select Repayment Tenure"
           options={MACHINERY_TENURE_OPTIONS}
           value={data.preferredTenureMonths}
           onSelect={(val) => onChange("preferredTenureMonths", val)}

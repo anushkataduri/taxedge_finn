@@ -344,7 +344,6 @@ export const WorkingCapitalScreen: React.FC = () => {
 
       {/* Sticky Bottom Actions */}
       <LoanNavigation
-        onBack={wizard.handleBack}
         onNext={handleNext}
         isFirstStep={wizard.isFirstStep}
         isLastStep={wizard.isLastStep}
