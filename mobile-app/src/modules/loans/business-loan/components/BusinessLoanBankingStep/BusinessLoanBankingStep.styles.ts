@@ -82,6 +82,26 @@ export const styles = StyleSheet.create({
   inputError: {
     borderColor: "#EF4444",
   },
+  ifscLoadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+  },
+  ifscSuccessBox: {
+    backgroundColor: "#F0FDF4",
+    borderWidth: 1,
+    borderColor: "#86EFAC",
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginTop: 6,
+  },
+  ifscSuccessText: {
+    fontSize: 11,
+    color: "#166534",
+    fontWeight: "600",
+  },
   subCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: BorderRadius.md,

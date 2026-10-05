@@ -6,6 +6,8 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,6 +26,7 @@ import {
 import { useLoanWizard } from "../../../hooks/useLoanWizard";
 import { useLoanDocuments } from "../../../hooks/useLoanDocuments";
 import { LoanStepIndicator } from "../../../components/LoanStepIndicator";
+import { KeyboardAwareScrollView } from "@/shared/components/KeyboardAwareFormLayout";
 import { getBottomBarPadding, getSafeAreaTopPadding } from "../../../styles/loanScreenLayout.styles";
 import {
   PropertyLoanFinancialsStep,
@@ -119,8 +122,10 @@ export const PropertyLoanScreen: React.FC = () => {
     isConfirmationChecked: false,
   });
 
-  // Step 5: Documents (no persistence; Property Loan has never kept drafts)
-  const loanDocuments = useLoanDocuments({ template: PROPERTY_LOAN_DOCUMENTS_TEMPLATE });
+  const loanDocuments = useLoanDocuments({
+    template: PROPERTY_LOAN_DOCUMENTS_TEMPLATE,
+    fileTypes: "withOfficeDocuments",
+  });
   const { documents } = loanDocuments;
 
   const scrollToTop = useCallback(() => {
@@ -170,7 +175,6 @@ export const PropertyLoanScreen: React.FC = () => {
     clearFieldError(field);
   };
 
-  // Step validation stays in the Property Loan validator
   function validateStep(stepIndex: number): boolean {
     const result = validatePropertyLoanStep({
       currentStepIndex: stepIndex,
@@ -218,14 +222,26 @@ export const PropertyLoanScreen: React.FC = () => {
       };
 
       const response = await loansApi.applyLoan(draft);
-      const statusRoute: Href = `/service/loan-status?id=${response.applicationId}&loanType=Property+Loan`;
       Alert.alert(
-        "Property Loan Submitted",
-        `Your application (Ref: ${response.referenceNumber}) has been submitted. Our legal and technical valuation team will contact you shortly.`,
-        [{ text: "Track Status", onPress: () => router.replace(statusRoute) }]
+        "Application Submitted",
+        `Your Loan Against Property application has been submitted successfully.\nApplication ID: ${response.applicationId}`,
+        [
+          {
+            text: "View Status",
+            onPress: () => {
+              const statusUrl: Href = `/service/loan-status?id=${encodeURIComponent(
+                response.applicationId
+              )}&loanType=${encodeURIComponent("Property Loan")}`;
+              router.replace(statusUrl);
+            },
+          },
+        ]
       );
     } catch {
-      Alert.alert("Submission Error", "Failed to lodge application. Please try again.");
+      Alert.alert(
+        "Submission Failed",
+        "Unable to submit your application. Please check your network connection and try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -296,41 +312,52 @@ export const PropertyLoanScreen: React.FC = () => {
         onBack={wizard.handleBack}
       />
 
-      {/* Step Content */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {renderActiveStep()}
-      </ScrollView>
-
-      {/* Bottom Sticky Action Bar */}
-      <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
-        <TouchableOpacity
-          style={[styles.continueBtn, isSubmitting && styles.continueBtnDisabled]}
-          onPress={handleNext}
-          disabled={isSubmitting}
-          activeOpacity={0.8}
+        {/* Step Content with Keyboard Awareness */}
+        <KeyboardAwareScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: Math.max(insets.bottom, 16) + 30 },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          enableAutomaticScroll={true}
+          extraScrollHeight={60}
         >
-          {isSubmitting ? (
-            <ActivityIndicator color={BrandColors.WHITE} size="small" />
-          ) : (
-            <>
-              <Text style={styles.continueBtnText}>
-                {wizard.isLastStep ? "Submit Application" : "Continue"}
-              </Text>
-              <Ionicons
-                name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
-                size={18}
-                color={BrandColors.WHITE}
-              />
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
+          {renderActiveStep()}
+        </KeyboardAwareScrollView>
+
+        {/* Bottom Sticky Action Bar */}
+        <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
+          <TouchableOpacity
+            style={[styles.continueBtn, isSubmitting && styles.continueBtnDisabled]}
+            onPress={handleNext}
+            disabled={isSubmitting}
+            activeOpacity={0.8}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color={BrandColors.WHITE} size="small" />
+            ) : (
+              <>
+                <Text style={styles.continueBtnText}>
+                  {wizard.isLastStep ? "Submit Application" : "Continue"}
+                </Text>
+                <Ionicons
+                  name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
+                  size={18}
+                  color={BrandColors.WHITE}
+                />
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 };

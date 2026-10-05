@@ -6,6 +6,8 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -21,13 +23,13 @@ import {
   LoanApplicationDraft,
 } from "../../../types/loans.types";
 import {
-  validateLoanDetails,
-  validateLoanBusiness,
-  validateLoanBanking,
-} from "../../../validation/loansSchema";
+  businessLoanSchemas,
+  validateForm,
+} from "../../../validation/loanValidationEngine";
 import { useLoanWizard } from "../../../hooks/useLoanWizard";
 import { useLoanDocuments } from "../../../hooks/useLoanDocuments";
 import { LoanStepIndicator } from "../../../components/LoanStepIndicator";
+import { KeyboardAwareScrollView } from "@/shared/components/KeyboardAwareFormLayout";
 import { getBottomBarPadding, getSafeAreaTopPadding } from "../../../styles/loanScreenLayout.styles";
 import {
   BusinessLoanFinancialsStep,
@@ -39,12 +41,9 @@ import {
 import { styles } from "./BusinessLoanScreen.styles";
 
 const STEPS = ["Loan & Applicant", "Business", "Banking", "Documents", "Review"] as const;
-/** Upload limit of the pickers this flow used before (5 MB, Office files included). */
-const BUSINESS_LOAN_MAX_FILE_SIZE_MB = 5;
 const SUBMISSION_FALLBACK_MESSAGE =
   "Failed to lodge application. Please check your network connection and try again.";
 
-/** Server message of an HTTP-style error (`response.data.message`), else the error's own message. */
 const getSubmissionErrorMessage = (error: unknown): string => {
   if (typeof error !== "object" || error === null) return SUBMISSION_FALLBACK_MESSAGE;
   const response = "response" in error ? error.response : undefined;
@@ -103,17 +102,14 @@ export const BusinessLoanScreen: React.FC = () => {
     ifscCode: "",
     existingLenderName: "",
     existingLoanOutstanding: "",
-    itrFilingStatus: "Not Filed",
+    itrFilingStatus: "Filed",
     itrAckNumber: "",
     grossTotalIncome: "",
   });
 
-  // Step 4: Documents — PDF, images, Word and Excel, 5 MB per file on every picker.
   const loanDocuments = useLoanDocuments({
     template: BUSINESS_DOCUMENTS_TEMPLATE,
     fileTypes: "withOfficeDocuments",
-    maxSizeMB: BUSINESS_LOAN_MAX_FILE_SIZE_MB,
-    enforceSizeLimitOnOfficeFiles: true,
   });
   const { documents } = loanDocuments;
 
@@ -138,12 +134,12 @@ export const BusinessLoanScreen: React.FC = () => {
     });
   };
 
-  const handleDetailsChange = <K extends keyof LoanDetailsFormData>(field: K, value: LoanDetailsFormData[K]) => {
+  const handleDetailsChange = (field: keyof LoanDetailsFormData, value: any) => {
     setLoanDetails((prev) => ({ ...prev, [field]: value }));
     clearFieldError(field);
   };
 
-  const handleBusinessChange = <K extends keyof LoanBusinessFormData>(field: K, value: LoanBusinessFormData[K]) => {
+  const handleBusinessChange = (field: keyof LoanBusinessFormData, value: any) => {
     setBusinessDetails((prev) => ({ ...prev, [field]: value }));
     clearFieldError(field);
   };
@@ -153,7 +149,6 @@ export const BusinessLoanScreen: React.FC = () => {
     clearFieldError(field);
   };
 
-  /** Shows the step's field errors plus an alert; returns false so the wizard stays put. */
   const rejectStep = (stepErrors: Record<string, string>, message: string): false => {
     setErrors(stepErrors);
     Alert.alert("Required Fields Missing", message);
@@ -162,17 +157,17 @@ export const BusinessLoanScreen: React.FC = () => {
 
   function validateStep(stepIndex: number): boolean {
     if (stepIndex === 0) {
-      const step1Errors = validateLoanDetails(loanDetails, { requireExistingEmi: false });
+      const step1Errors = validateForm(loanDetails, businessLoanSchemas.financials);
       if (Object.keys(step1Errors).length > 0) {
         return rejectStep(step1Errors, "Please fill in all required fields in Step 1 before proceeding.");
       }
     } else if (stepIndex === 1) {
-      const step2Errors = validateLoanBusiness(businessDetails);
+      const step2Errors = validateForm(businessDetails, businessLoanSchemas.business);
       if (Object.keys(step2Errors).length > 0) {
         return rejectStep(step2Errors, "Please fill in all required fields in Step 2 before proceeding.");
       }
     } else if (stepIndex === 2) {
-      const step3Errors = validateLoanBanking(bankingDetails);
+      const step3Errors = validateForm(bankingDetails, businessLoanSchemas.banking);
       if (Object.keys(step3Errors).length > 0) {
         return rejectStep(
           step3Errors,
@@ -180,7 +175,6 @@ export const BusinessLoanScreen: React.FC = () => {
         );
       }
     } else if (stepIndex === 3) {
-      // Business Loan only requires at least one uploaded document to reach the review.
       const uploadedDocs = documents.filter((d) => d.fileUri && d.fileUri.trim() !== "");
       if (uploadedDocs.length === 0) {
         Alert.alert(
@@ -312,40 +306,52 @@ export const BusinessLoanScreen: React.FC = () => {
         }
       />
 
-      {/* Scrollable Form Content */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {renderActiveStep()}
-      </ScrollView>
-
-      {/* Sticky Bottom Actions */}
-      <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
-        <TouchableOpacity
-          style={[styles.continueBtn, isSubmitting && styles.continueBtnDisabled]}
-          onPress={handleNext}
-          disabled={isSubmitting}
-          activeOpacity={0.8}
+        {/* Scrollable Form Content with Keyboard Awareness */}
+        <KeyboardAwareScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: Math.max(insets.bottom, 16) + 30 },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          enableAutomaticScroll={true}
+          extraScrollHeight={60}
         >
-          {isSubmitting ? (
-            <ActivityIndicator size="small" color={BrandColors.WHITE} />
-          ) : (
-            <>
-              <Text style={styles.continueBtnText}>
-                {wizard.isLastStep ? "Submit Application" : "Continue"}
-              </Text>
-              <Ionicons
-                name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
-                size={18}
-                color={BrandColors.WHITE}
-              />
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
+          {renderActiveStep()}
+        </KeyboardAwareScrollView>
+
+        {/* Sticky Bottom Actions */}
+        <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
+          <TouchableOpacity
+            style={[styles.continueBtn, isSubmitting && styles.continueBtnDisabled]}
+            onPress={handleNext}
+            disabled={isSubmitting}
+            activeOpacity={0.8}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color={BrandColors.WHITE} />
+            ) : (
+              <>
+                <Text style={styles.continueBtnText}>
+                  {wizard.isLastStep ? "Submit Application" : "Continue"}
+                </Text>
+                <Ionicons
+                  name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
+                  size={18}
+                  color={BrandColors.WHITE}
+                />
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 };

@@ -111,7 +111,7 @@ export const BusinessLoanReviewStep: React.FC<BusinessLoanReviewStepProps> = ({
             <Text style={styles.cardTitle}>Loan Requirement</Text>
           </View>
           <TouchableOpacity style={styles.editAction} onPress={() => onGoToStep(0)} activeOpacity={0.7}>
-            <Ionicons name="create-outline" size={14} color="#2563EB" />
+            <Ionicons name="create-outline" size={14} color={BrandColors.PRIMARY_ORANGE || "#EA580C"} />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
         </View>
@@ -170,7 +170,7 @@ export const BusinessLoanReviewStep: React.FC<BusinessLoanReviewStepProps> = ({
             <Text style={styles.cardTitle}>Business Details</Text>
           </View>
           <TouchableOpacity style={styles.editAction} onPress={() => onGoToStep(1)} activeOpacity={0.7}>
-            <Ionicons name="create-outline" size={14} color="#2563EB" />
+            <Ionicons name="create-outline" size={14} color={BrandColors.PRIMARY_ORANGE || "#EA580C"} />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
         </View>
@@ -227,7 +227,7 @@ export const BusinessLoanReviewStep: React.FC<BusinessLoanReviewStepProps> = ({
             <Text style={styles.cardTitle}>Banking & Tax Details</Text>
           </View>
           <TouchableOpacity style={styles.editAction} onPress={() => onGoToStep(2)} activeOpacity={0.7}>
-            <Ionicons name="create-outline" size={14} color="#2563EB" />
+            <Ionicons name="create-outline" size={14} color={BrandColors.PRIMARY_ORANGE || "#EA580C"} />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
         </View>

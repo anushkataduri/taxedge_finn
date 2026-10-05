@@ -6,6 +6,8 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,11 +27,16 @@ import {
   VehicleLoanDetailsFormData,
   VehicleLoanDraftData,
 } from "../../types/vehicleLoan.types";
+import {
+  vehicleLoanSchemas,
+  validateForm,
+} from "../../../validation/loanValidationEngine";
 import { useLoanWizard } from "../../../hooks/useLoanWizard";
 import { useLoanDocuments } from "../../../hooks/useLoanDocuments";
 import { useLoanDraft } from "../../../hooks/useLoanDraft";
 import { LOAN_DRAFT_STORAGE_KEYS } from "../../../constants/loanDraftKeys";
 import { LoanStepIndicator } from "../../../components/LoanStepIndicator";
+import { KeyboardAwareScrollView } from "@/shared/components/KeyboardAwareFormLayout";
 import { getBottomBarPadding, getSafeAreaTopPadding } from "../../../styles/loanScreenLayout.styles";
 import {
   VehicleLoanFinancialsStep,
@@ -86,7 +93,6 @@ const INITIAL_BANKING_DETAILS: LoanBankingFormData = {
   grossTotalIncome: "",
 };
 
-/** The saved draft without its timestamp, which the draft storage adds on save. */
 type VehicleLoanDraft = Omit<VehicleLoanDraftData, "savedAt">;
 
 export const VehicleLoanScreen: React.FC = () => {
@@ -108,7 +114,6 @@ export const VehicleLoanScreen: React.FC = () => {
   const [bankingDetails, setBankingDetails] =
     useState<LoanBankingFormData>(INITIAL_BANKING_DETAILS);
 
-  // Word/Excel files stay accepted, as in the original Files/Drive picker of this flow.
   const loanDocuments = useLoanDocuments({
     template: VEHICLE_LOAN_DOCUMENTS_TEMPLATE,
     fileTypes: "withOfficeDocuments",
@@ -119,90 +124,92 @@ export const VehicleLoanScreen: React.FC = () => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   }, []);
 
+  const isFormDirty = useCallback((): boolean => {
+    const hasLoanDetails = Boolean(
+      loanDetails.requiredAmount.trim() ||
+        loanDetails.purpose.trim() ||
+        loanDetails.customPurpose?.trim() ||
+        loanDetails.vehicleCondition ||
+        loanDetails.vehicleMakeModel?.trim() ||
+        loanDetails.onRoadPrice?.trim() ||
+        loanDetails.downPayment?.trim() ||
+        loanDetails.registrationNumber?.trim() ||
+        loanDetails.registrationYear?.trim() ||
+        loanDetails.preferredTenureMonths ||
+        loanDetails.hasExistingLoans ||
+        loanDetails.existingEmi?.trim() ||
+        loanDetails.monthlyIncomeOrTurnover?.trim() ||
+        loanDetails.employmentType
+    );
+
+    const hasBusinessDetails = Boolean(
+      businessDetails.businessName.trim() ||
+        businessDetails.gstin?.trim() ||
+        businessDetails.udyamRegistration?.trim() ||
+        businessDetails.businessVintageYears?.trim() ||
+        businessDetails.annualTurnover?.trim() ||
+        businessDetails.netProfit?.trim()
+    );
+
+    const hasBankingDetails = Boolean(
+      bankingDetails.primaryBankName.trim() ||
+        bankingDetails.accountNumber.trim() ||
+        bankingDetails.ifscCode.trim() ||
+        bankingDetails.existingLenderName?.trim() ||
+        bankingDetails.existingLoanOutstanding?.trim() ||
+        bankingDetails.itrFilingStatus ||
+        bankingDetails.itrAckNumber?.trim() ||
+        bankingDetails.grossTotalIncome?.trim()
+    );
+
+    const hasDocuments = documents.some((d) => Boolean(d.fileUri));
+
+    return hasLoanDetails || hasBusinessDetails || hasBankingDetails || hasDocuments;
+  }, [loanDetails, businessDetails, bankingDetails, documents]);
+
   const wizard = useLoanWizard({
     totalSteps: STEPS.length,
     validateStep: (stepIndex) => validateStep(stepIndex),
-    onExitFromFirstStep: () => (isFormDirty() ? openDraftModal() : router.back()),
+    onExitFromFirstStep: () => router.back(),
     onStepChange: scrollToTop,
   });
   const { currentStepIndex } = wizard;
 
-  // Restore saved draft on mount if exists (key "@taxedge_vehicle_loan_draft_v1")
   const draft = useLoanDraft<VehicleLoanDraft>({
     storageKey: LOAN_DRAFT_STORAGE_KEYS.vehicleLoan,
     restoreOnMount: true,
-    onRestore: (savedDraft) => {
-      setLoanDetails(savedDraft.loanDetails);
-      setBusinessDetails(savedDraft.businessDetails);
-      setBankingDetails(savedDraft.bankingDetails);
-      loanDocuments.setDocuments(savedDraft.documents);
-      wizard.goToStep(savedDraft.currentStepIndex || 0);
+    onRestore: (saved) => {
+      if (saved.loanDetails) setLoanDetails(saved.loanDetails);
+      if (saved.businessDetails) setBusinessDetails(saved.businessDetails);
+      if (saved.bankingDetails) setBankingDetails(saved.bankingDetails);
+      if (saved.documents) loanDocuments.setDocuments(saved.documents);
+      if (typeof saved.currentStepIndex === "number") {
+        wizard.goToStep(saved.currentStepIndex);
+      }
     },
   });
 
-  const resetAllFields = () => {
-    setLoanDetails(INITIAL_LOAN_DETAILS);
-    setBusinessDetails(INITIAL_BUSINESS_DETAILS);
-    setBankingDetails(INITIAL_BANKING_DETAILS);
-    loanDocuments.resetDocuments();
-    wizard.resetWizard();
-    setErrors({});
-  };
-
-  const isFormDirty = useCallback((): boolean => {
-    const hasAmount = Boolean(loanDetails.requiredAmount?.trim());
-    const hasPurpose = Boolean(loanDetails.purpose?.trim());
-    const hasCondition = Boolean(loanDetails.vehicleCondition);
-    const hasMake = Boolean(loanDetails.vehicleMakeModel?.trim());
-    const hasPrice = Boolean(loanDetails.onRoadPrice?.trim());
-    const hasTenure = Boolean(loanDetails.preferredTenureMonths);
-    const hasEmp = Boolean(loanDetails.employmentType);
-    const hasIncome = Boolean(loanDetails.monthlyIncomeOrTurnover?.trim());
-    const hasBank = Boolean(
-      bankingDetails.primaryBankName?.trim() ||
-      bankingDetails.accountNumber?.trim() ||
-      bankingDetails.ifscCode?.trim()
-    );
-    const hasDocs = documents.some((d) => Boolean(d.fileUri));
-    return (
-      hasAmount ||
-      hasPurpose ||
-      hasCondition ||
-      hasMake ||
-      hasPrice ||
-      hasTenure ||
-      hasEmp ||
-      hasIncome ||
-      hasBank ||
-      hasDocs ||
-      currentStepIndex > 0
-    );
-  }, [loanDetails, bankingDetails, documents, currentStepIndex]);
-
-  // Universal Draft Guard Hook for Step 1 back button & gestures
   const {
     showDraftModal,
     openDraftModal,
-    markSubmitted,
     handleSaveAndExit,
     handleDiscardAndExit,
     handleCancel,
+    markSubmitted,
   } = useUniversalDraftGuard({
     isDirty: isFormDirty,
     onSaveDraft: () => {
-      draft.saveDraft({
-        currentStepIndex,
+      void draft.saveDraft({
         loanDetails,
         businessDetails,
         bankingDetails,
         documents,
+        currentStepIndex,
       });
     },
     onDiscardDraft: () => {
-      draft.clearDraft();
-      resetAllFields();
+      void draft.clearDraft();
     },
-    isSubmitted: () => currentStepIndex >= 4 && isSubmitting,
   });
 
   const clearFieldError = (field: string) => {
@@ -214,15 +221,18 @@ export const VehicleLoanScreen: React.FC = () => {
     });
   };
 
-  const handleDetailsChange = <K extends keyof VehicleLoanDetailsFormData>(
-    field: K,
-    value: VehicleLoanDetailsFormData[K]
+  const handleDetailsChange = (
+    field: keyof VehicleLoanDetailsFormData,
+    value: any
   ) => {
     setLoanDetails((prev) => ({ ...prev, [field]: value }));
     clearFieldError(field);
   };
 
-  const handleBusinessChange = <K extends keyof LoanBusinessFormData>(field: K, value: LoanBusinessFormData[K]) => {
+  const handleBusinessChange = (
+    field: keyof LoanBusinessFormData,
+    value: string
+  ) => {
     setBusinessDetails((prev) => ({ ...prev, [field]: value }));
     clearFieldError(field);
   };
@@ -234,34 +244,7 @@ export const VehicleLoanScreen: React.FC = () => {
 
   function validateStep(stepIndex: number): boolean {
     if (stepIndex === 0) {
-      const errs: Record<string, string> = {};
-      const amountNum = Number(loanDetails.requiredAmount);
-      if (!loanDetails.requiredAmount || isNaN(amountNum) || amountNum < 10000) {
-        errs.requiredAmount =
-          "Enter a valid required loan amount (minimum ₹10,000)";
-      }
-      if (!loanDetails.purpose || loanDetails.purpose.trim() === "") {
-        errs.purpose = "Please select a vehicle category / purpose";
-      } else if (
-        loanDetails.purpose === "Others" &&
-        (!loanDetails.customPurpose || loanDetails.customPurpose.trim() === "")
-      ) {
-        errs.customPurpose = "Please specify custom vehicle requirement";
-      }
-      if (!loanDetails.preferredTenureMonths) {
-        errs.preferredTenureMonths = "Please select a repayment tenure";
-      }
-      if (!loanDetails.vehicleCondition) {
-        errs.vehicleCondition = "Please select vehicle condition (New or Pre-Owned)";
-      }
-      if (!loanDetails.vehicleMakeModel || loanDetails.vehicleMakeModel.trim() === "") {
-        errs.vehicleMakeModel = "Please enter vehicle make and model";
-      }
-      const priceNum = Number(loanDetails.onRoadPrice);
-      if (!loanDetails.onRoadPrice || isNaN(priceNum) || priceNum <= 0) {
-        errs.onRoadPrice = "Please enter estimated on-road price / valuation";
-      }
-
+      const errs = validateForm(loanDetails, vehicleLoanSchemas.financials);
       setErrors(errs);
       if (Object.keys(errs).length > 0) {
         Alert.alert(
@@ -274,33 +257,8 @@ export const VehicleLoanScreen: React.FC = () => {
     }
 
     if (stepIndex === 1) {
-      const errs: Record<string, string> = {};
-      if (!loanDetails.employmentType) {
-        errs.employmentType = "Please select an employment category";
-      }
-      const incomeStr = loanDetails.monthlyIncomeOrTurnover?.trim();
-      const incomeNum = Number(incomeStr);
-      if (
-        !incomeStr ||
-        (!isNaN(incomeNum) && incomeNum <= 0)
-      ) {
-        errs.monthlyIncomeOrTurnover = "Please select or enter monthly in-hand net income";
-      }
-      if (loanDetails.hasExistingLoans) {
-        const emiNum = Number(loanDetails.existingEmi);
-        if (!loanDetails.existingEmi || isNaN(emiNum) || emiNum <= 0) {
-          errs.existingEmi = "Please specify ongoing monthly EMI obligations";
-        }
-      }
-
-      if (
-        loanDetails.employmentType === "Business Owner" &&
-        (!businessDetails.businessName ||
-          businessDetails.businessName.trim() === "")
-      ) {
-        errs.businessName = "Business name is required for business owners";
-      }
-
+      const merged = { ...loanDetails, ...businessDetails };
+      const errs = validateForm(merged, vehicleLoanSchemas.employment);
       setErrors(errs);
       if (Object.keys(errs).length > 0) {
         Alert.alert(
@@ -313,29 +271,7 @@ export const VehicleLoanScreen: React.FC = () => {
     }
 
     if (stepIndex === 2) {
-      const errs: Record<string, string> = {};
-      if (
-        !bankingDetails.primaryBankName ||
-        bankingDetails.primaryBankName.trim() === ""
-      ) {
-        errs.primaryBankName = "Primary operating bank name is required";
-      }
-      if (
-        !bankingDetails.accountNumber ||
-        bankingDetails.accountNumber.trim().length < 6
-      ) {
-        errs.accountNumber =
-          "Valid bank account number is required (min 6 digits)";
-      }
-      if (
-        !bankingDetails.ifscCode ||
-        bankingDetails.ifscCode.trim().length < 11
-      ) {
-        errs.ifscCode = "Valid 11-digit bank IFSC code is required";
-      }
-      if (!bankingDetails.itrFilingStatus) {
-        errs.itrFilingStatus = "Please select an ITR filing status";
-      }
+      const errs = validateForm(bankingDetails, vehicleLoanSchemas.banking);
       setErrors(errs);
       if (Object.keys(errs).length > 0) {
         Alert.alert(
@@ -405,7 +341,7 @@ export const VehicleLoanScreen: React.FC = () => {
     } catch {
       Alert.alert(
         "Submission Error",
-        "Failed to lodge vehicle loan application. Please try again."
+        "Failed to submit application. Please try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -482,39 +418,52 @@ export const VehicleLoanScreen: React.FC = () => {
         }
       />
 
-      {/* Scrollable Step Content (Modular Card Layout) */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {renderActiveStep()}
-      </ScrollView>
-
-      {/* Sticky Bottom Navigation with Orange Theme */}
-      <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
-        <TouchableOpacity
-          style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
-          onPress={handleNext}
-          disabled={isSubmitting}
+        {/* Scrollable Step Content with Keyboard Awareness */}
+        <KeyboardAwareScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: Math.max(insets.bottom, 16) + 30 },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          enableAutomaticScroll={true}
+          extraScrollHeight={60}
         >
-          {isSubmitting ? (
-            <ActivityIndicator size="small" color={BrandColors.WHITE} />
-          ) : (
-            <>
-              <Text style={styles.nextButtonText}>
-                {wizard.isLastStep ? "Submit Application" : "Continue"}
-              </Text>
-              <Ionicons
-                name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
-                size={18}
-                color={BrandColors.WHITE}
-              />
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
+          {renderActiveStep()}
+        </KeyboardAwareScrollView>
+
+        {/* Sticky Bottom Navigation with Orange Theme */}
+        <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
+          <TouchableOpacity
+            style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
+            onPress={handleNext}
+            disabled={isSubmitting}
+            activeOpacity={0.8}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color={BrandColors.WHITE} />
+            ) : (
+              <>
+                <Text style={styles.nextButtonText}>
+                  {wizard.isLastStep ? "Submit Application" : "Continue"}
+                </Text>
+                <Ionicons
+                  name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
+                  size={18}
+                  color={BrandColors.WHITE}
+                />
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
 
       {/* Universal Draft Modal on Back Navigation / Gesture */}
       <UniversalDraftModal

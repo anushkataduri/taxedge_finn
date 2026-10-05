@@ -1,8 +1,10 @@
 import React from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
 import { LoanBankingFormData } from "../../../types/loans.types";
+import { useIfscLookup } from "../../../hooks/useIfscLookup";
+import { ifscService } from "../../../../gst/services/ifscService";
 import { styles } from "./HomeLoanBankingStep.styles";
 
 export interface HomeLoanBankingStepProps {
@@ -24,6 +26,29 @@ export const HomeLoanBankingStep: React.FC<HomeLoanBankingStepProps> = ({
   errors = {},
   hasExistingLoans = false,
 }) => {
+  const ifsc = useIfscLookup({
+    trigger: "validFormat",
+    errorMessage: "Unable to fetch bank details. Please verify the IFSC code.",
+    onResolved: (details) => {
+      onChange("primaryBankName", details.bank);
+      if (details.branch) {
+        onChange("branchName" as any, details.branch);
+      }
+    },
+  });
+
+  const handleIfscChange = (text: string) => {
+    const cleaned = ifsc.handleIfscChange(text);
+    onChange("ifscCode", cleaned);
+
+    if (data.primaryBankName && !ifscService.isValidFormat(cleaned)) {
+      onChange("primaryBankName", "");
+      onChange("branchName" as any, "");
+    }
+  };
+
+  const displayIfscError = errors.ifscCode || ifsc.error;
+
   return (
     <View style={styles.container}>
       {/* 1. Disbursement & Operating Bank Account */}
@@ -42,13 +67,50 @@ export const HomeLoanBankingStep: React.FC<HomeLoanBankingStepProps> = ({
           Specify the account for loan disbursement and setting up auto-debit EMI repayments.
         </Text>
 
+        {/* Bank IFSC Code */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>
+            Bank IFSC Code <Text style={styles.requiredStar}>*</Text>
+          </Text>
+          <TextInput
+            style={[styles.input, displayIfscError && styles.inputError]}
+            placeholder="e.g. SBIN0001234"
+            placeholderTextColor="#94A3B8"
+            autoCapitalize="characters"
+            maxLength={11}
+            value={data.ifscCode}
+            onChangeText={handleIfscChange}
+          />
+          <Text style={styles.helperText}>11-digit alphanumeric bank IFSC code</Text>
+
+          {ifsc.isLoading && (
+            <View style={styles.ifscLoadingRow}>
+              <ActivityIndicator size="small" color="#F97316" />
+              <Text style={styles.helperText}>Verifying IFSC with RBI directory...</Text>
+            </View>
+          )}
+
+          {data.branchName && (
+            <View style={styles.ifscSuccessBox}>
+              <Text style={styles.ifscSuccessText}>
+                Branch: {data.branchName}
+              </Text>
+            </View>
+          )}
+
+          {displayIfscError && (
+            <Text style={styles.errorText}>{displayIfscError}</Text>
+          )}
+        </View>
+
+        {/* Bank Name (Auto-populated) */}
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>
             Bank Name <Text style={styles.requiredStar}>*</Text>
           </Text>
           <TextInput
             style={[styles.input, errors.primaryBankName && styles.inputError]}
-            placeholder="Enter primary bank name (e.g. State Bank of India / HDFC)"
+            placeholder="Automatically populated from IFSC"
             placeholderTextColor="#94A3B8"
             value={data.primaryBankName}
             onChangeText={(text) => onChange("primaryBankName", text)}
@@ -58,6 +120,7 @@ export const HomeLoanBankingStep: React.FC<HomeLoanBankingStepProps> = ({
           )}
         </View>
 
+        {/* Bank Account Number */}
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>
             Bank Account Number <Text style={styles.requiredStar}>*</Text>
@@ -68,29 +131,10 @@ export const HomeLoanBankingStep: React.FC<HomeLoanBankingStepProps> = ({
             placeholderTextColor="#94A3B8"
             keyboardType="number-pad"
             value={data.accountNumber}
-            onChangeText={(text) => onChange("accountNumber", text)}
+            onChangeText={(text) => onChange("accountNumber", text.replace(/[^0-9]/g, ""))}
           />
           {errors.accountNumber && (
             <Text style={styles.errorText}>{errors.accountNumber}</Text>
-          )}
-        </View>
-
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Bank IFSC Code <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, errors.ifscCode && styles.inputError]}
-            placeholder="Enter 11-digit IFSC code (e.g. SBIN0001234)"
-            placeholderTextColor="#94A3B8"
-            autoCapitalize="characters"
-            maxLength={11}
-            value={data.ifscCode}
-            onChangeText={(text) => onChange("ifscCode", text.toUpperCase())}
-          />
-          <Text style={styles.helperText}>11-digit alphanumeric bank IFSC code</Text>
-          {errors.ifscCode && (
-            <Text style={styles.errorText}>{errors.ifscCode}</Text>
           )}
         </View>
       </View>
@@ -131,7 +175,7 @@ export const HomeLoanBankingStep: React.FC<HomeLoanBankingStepProps> = ({
               placeholderTextColor="#94A3B8"
               keyboardType="numeric"
               value={data.existingLoanOutstanding || ""}
-              onChangeText={(text) => onChange("existingLoanOutstanding", text)}
+              onChangeText={(text) => onChange("existingLoanOutstanding", text.replace(/[^0-9]/g, ""))}
             />
           </View>
         </View>
@@ -204,7 +248,7 @@ export const HomeLoanBankingStep: React.FC<HomeLoanBankingStepProps> = ({
                 keyboardType="number-pad"
                 maxLength={15}
                 value={data.itrAckNumber || ""}
-                onChangeText={(text) => onChange("itrAckNumber", text)}
+                onChangeText={(text) => onChange("itrAckNumber", text.replace(/[^0-9]/g, ""))}
               />
               {errors.itrAckNumber && (
                 <Text style={styles.errorText}>{errors.itrAckNumber}</Text>
@@ -219,7 +263,7 @@ export const HomeLoanBankingStep: React.FC<HomeLoanBankingStepProps> = ({
                 placeholderTextColor="#94A3B8"
                 keyboardType="numeric"
                 value={data.grossTotalIncome || ""}
-                onChangeText={(text) => onChange("grossTotalIncome", text)}
+                onChangeText={(text) => onChange("grossTotalIncome", text.replace(/[^0-9]/g, ""))}
               />
             </View>
           </>

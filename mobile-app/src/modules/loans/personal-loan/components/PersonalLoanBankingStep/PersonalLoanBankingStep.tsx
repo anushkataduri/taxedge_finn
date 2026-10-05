@@ -2,15 +2,14 @@ import React from "react";
 import { View, Text, TextInput, ActivityIndicator } from "react-native";
 import { LoanBankingFormData } from "../../../types/loans.types";
 import { useIfscLookup } from "../../../hooks/useIfscLookup";
+import { ifscService } from "../../../../gst/services/ifscService";
 import { styles } from "./PersonalLoanBankingStep.styles";
 
 export interface PersonalLoanBankingStepProps {
   data: LoanBankingFormData;
-  onChange: <K extends keyof LoanBankingFormData>(field: K, value: LoanBankingFormData[K]) => void;
+  onChange: (field: keyof LoanBankingFormData, value: any) => void;
   errors?: Record<string, string>;
 }
-
-const IFSC_LOADER_COLOR = "#F97316";
 
 export const PersonalLoanBankingStep: React.FC<PersonalLoanBankingStepProps> = ({
   data,
@@ -19,7 +18,7 @@ export const PersonalLoanBankingStep: React.FC<PersonalLoanBankingStepProps> = (
 }) => {
   const ifsc = useIfscLookup({
     trigger: "validFormat",
-    errorMessage: "Invalid IFSC code. Please check branch details.",
+    errorMessage: "Unable to fetch bank details. Please verify the IFSC code.",
     onResolved: (details) => {
       onChange("primaryBankName", details.bank);
       onChange("branchName", details.branch);
@@ -27,12 +26,19 @@ export const PersonalLoanBankingStep: React.FC<PersonalLoanBankingStepProps> = (
     },
   });
 
-  // Every edit un-verifies the code; a successful lookup re-verifies it via onResolved.
-  const handleIfscChange = (value: string) => {
-    onChange("ifscCode", ifsc.handleIfscChange(value));
-    onChange("branchName", "");
-    onChange("isIfscVerified", false);
+  const handleIfscChange = (text: string) => {
+    const cleaned = ifsc.handleIfscChange(text);
+    onChange("ifscCode", cleaned);
+
+    // Clear old bank data when IFSC changes
+    if (data.primaryBankName && !ifscService.isValidFormat(cleaned)) {
+      onChange("primaryBankName", "");
+      onChange("branchName", "");
+      onChange("isIfscVerified", false);
+    }
   };
+
+  const displayIfscError = errors.ifscCode || ifsc.error;
 
   return (
     <View style={styles.container}>
@@ -41,14 +47,50 @@ export const PersonalLoanBankingStep: React.FC<PersonalLoanBankingStepProps> = (
         Provide the account where the approved loan should be disbursed.
       </Text>
 
-      {/* Primary Bank Name */}
+      {/* IFSC Code */}
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>
-          Primary Operating Bank Name <Text style={styles.requiredStar}>*</Text>
+          Bank IFSC Code <Text style={styles.requiredStar}>*</Text>
+        </Text>
+        <TextInput
+          style={[styles.input, displayIfscError && styles.inputError]}
+          placeholder="e.g. SBIN0001234"
+          placeholderTextColor="#94A3B8"
+          autoCapitalize="characters"
+          maxLength={11}
+          value={data.ifscCode}
+          onChangeText={handleIfscChange}
+        />
+        <Text style={styles.helperText}>11-digit alphanumeric bank IFSC code</Text>
+
+        {ifsc.isLoading && (
+          <View style={styles.ifscLoadingRow}>
+            <ActivityIndicator size="small" color="#F97316" />
+            <Text style={styles.helperText}>Verifying IFSC with RBI directory...</Text>
+          </View>
+        )}
+
+        {data.branchName && (
+          <View style={styles.ifscSuccessBox}>
+            <Text style={styles.ifscSuccessText}>
+              Branch: {data.branchName}
+            </Text>
+          </View>
+        )}
+
+        {displayIfscError && (
+          <Text style={styles.errorText}>{displayIfscError}</Text>
+        )}
+      </View>
+
+      {/* Primary Bank Name (Automatically populated) */}
+      <View style={styles.fieldGroup}>
+        <Text style={styles.label}>
+          Bank Name <Text style={styles.requiredStar}>*</Text>
         </Text>
         <TextInput
           style={[styles.input, errors.primaryBankName && styles.inputError]}
-          placeholder="e.g. HDFC Bank / State Bank of India"
+          placeholder="Automatically populated from IFSC"
           placeholderTextColor="#94A3B8"
           value={data.primaryBankName}
           onChangeText={(text) => onChange("primaryBankName", text)}
@@ -69,43 +111,10 @@ export const PersonalLoanBankingStep: React.FC<PersonalLoanBankingStepProps> = (
           placeholderTextColor="#94A3B8"
           keyboardType="number-pad"
           value={data.accountNumber}
-          onChangeText={(text) => onChange("accountNumber", text)}
+          onChangeText={(text) => onChange("accountNumber", text.replace(/[^0-9]/g, ""))}
         />
         {errors.accountNumber && (
           <Text style={styles.errorText}>{errors.accountNumber}</Text>
-        )}
-      </View>
-
-      {/* IFSC Code */}
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>
-          Bank IFSC Code <Text style={styles.requiredStar}>*</Text>
-        </Text>
-        <TextInput
-          style={[styles.input, errors.ifscCode && styles.inputError]}
-          placeholder="e.g. HDFC0001234"
-          placeholderTextColor="#94A3B8"
-          autoCapitalize="characters"
-          maxLength={11}
-          value={data.ifscCode}
-          onChangeText={handleIfscChange}
-        />
-        <Text style={styles.helperText}>11-digit alphanumeric bank code</Text>
-        {ifsc.isLoading && (
-          <View style={styles.ifscLoadingRow}>
-            <ActivityIndicator size="small" color={IFSC_LOADER_COLOR} />
-            <Text style={styles.helperText}>Verifying IFSC...</Text>
-          </View>
-        )}
-        {data.branchName && data.isIfscVerified && (
-          <View style={styles.ifscSuccessBox}>
-            <Text style={styles.ifscSuccessText}>
-              {data.primaryBankName} • {data.branchName}
-            </Text>
-          </View>
-        )}
-        {(errors.ifscCode || ifsc.error) && (
-          <Text style={styles.errorText}>{errors.ifscCode || ifsc.error}</Text>
         )}
       </View>
     </View>
