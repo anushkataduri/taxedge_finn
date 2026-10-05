@@ -27,32 +27,27 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
   onClose,
   onFilePicked,
 }) => {
-  const formatSize = (sizeInBytes: number): string =>
-    `${(sizeInBytes / (1024 * 1024)).toFixed(2)} MB`;
-
-  const getFileSize = async (uri: string, providedSize?: number): Promise<number> => {
-    if (providedSize && providedSize > 0) return providedSize;
-    try {
-      const fileInfo = await FileSystem.getInfoAsync(uri);
-      if (fileInfo.exists && (fileInfo as any).size) {
-        return (fileInfo as any).size as number;
-      }
-    } catch {
-      // Unable to determine size; treat as safe
-    }
-    return 0;
-  };
-
-  // Used only for file/document picker — enforces the 2 MB limit.
-  const checkDocumentSizeAndProceed = async (
+  const checkSizeAndProceed = async (
     uri: string,
     name: string,
     providedSize?: number,
     mimeType?: string
   ): Promise<boolean> => {
-    const sizeInBytes = await getFileSize(uri, providedSize);
+    let sizeInBytes = providedSize;
 
-    if (sizeInBytes > 0 && sizeInBytes > MAX_FILE_SIZE_BYTES) {
+    if (!sizeInBytes) {
+      try {
+        const fileInfo = await FileSystem.getInfoAsync(uri);
+        if (fileInfo.exists && (fileInfo as any).size) {
+          sizeInBytes = (fileInfo as any).size;
+        }
+      } catch {
+        // Fallback if FileSystem check is unavailable
+        sizeInBytes = 500 * 1024;
+      }
+    }
+
+    if (sizeInBytes && sizeInBytes > MAX_FILE_SIZE_BYTES) {
       Alert.alert(
         "File Too Large",
         "The selected file exceeds 2 MB. Please select a smaller file (under 2 MB) to proceed."
@@ -60,34 +55,21 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
       return false;
     }
 
+    const formattedSize = sizeInBytes
+      ? `${(sizeInBytes / (1024 * 1024)).toFixed(2)} MB`
+      : "1.2 MB";
+
     onFilePicked({
       uri,
       name,
-      size: sizeInBytes > 0 ? formatSize(sizeInBytes) : "",
+      size: formattedSize,
       mimeType,
     });
     onClose();
     return true;
   };
 
-  // Used for camera/gallery — no size restriction since images are captured by the user.
-  const proceedWithImage = async (
-    uri: string,
-    name: string,
-    providedSize?: number,
-    mimeType?: string
-  ): Promise<void> => {
-    const sizeInBytes = await getFileSize(uri, providedSize);
-    onFilePicked({
-      uri,
-      name,
-      size: sizeInBytes > 0 ? formatSize(sizeInBytes) : "",
-      mimeType,
-    });
-    onClose();
-  };
-
-  // Option 1: Pick from Files / Drive (PDF/image — enforce 2 MB)
+  // Option 1: Pick from Files / Drive
   const handlePickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -97,7 +79,7 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        await checkDocumentSizeAndProceed(
+        await checkSizeAndProceed(
           asset.uri,
           asset.name || "document.pdf",
           asset.size,
@@ -109,7 +91,7 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
     }
   };
 
-  // Option 2: Pick from Photo Gallery (no size restriction)
+  // Option 2: Pick from Photo Gallery
   const handlePickGallery = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -121,15 +103,13 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         allowsEditing: false,
-        quality: 0.7,
-        base64: false,
-        exif: false,
+        quality: 0.8,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
         const fileName = asset.fileName || `document_${Date.now()}.jpg`;
-        await proceedWithImage(
+        await checkSizeAndProceed(
           asset.uri,
           fileName,
           (asset as any).fileSize,
@@ -141,7 +121,7 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
     }
   };
 
-  // Option 3: Take Photo with Camera (no size restriction)
+  // Option 3: Take Photo with Camera
   const handlePickCamera = async () => {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -152,15 +132,13 @@ export const DocumentUploadModal: React.FC<DocumentUploadModalProps> = ({
 
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: false,
-        quality: 0.7,
-        base64: false,
-        exif: false,
+        quality: 0.8,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
         const fileName = asset.fileName || `camera_doc_${Date.now()}.jpg`;
-        await proceedWithImage(
+        await checkSizeAndProceed(
           asset.uri,
           fileName,
           (asset as any).fileSize,

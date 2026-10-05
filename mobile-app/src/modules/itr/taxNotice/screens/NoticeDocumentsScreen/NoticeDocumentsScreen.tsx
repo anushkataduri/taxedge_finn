@@ -346,15 +346,14 @@ export const NoticeDocumentsScreen: React.FC = () => {
         {/* Remarks Input */}
         <View style={styles.remarksSection}>
           <Text style={styles.remarksLabel}>Remarks / Special Instructions (Optional)</Text>
-          <TextInput
+          <TextInput maxLength={500}
             style={styles.remarksInput}
             placeholder="Add any additional context, transaction details, or explanation for our Tax Executive..."
             placeholderTextColor="#94A3B8"
             multiline
             numberOfLines={3}
-            maxLength={500}
             value={remarks}
-            onChangeText={setRemarks}
+                  onChangeText={setRemarks}
           />
           <Text style={styles.charCounter}>{remarks.length}/500</Text>
         </View>

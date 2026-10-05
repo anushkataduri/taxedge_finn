@@ -35,11 +35,6 @@ export function getDefaultBaseUrl(): string {
 }
 
 export async function getActiveBaseUrl(): Promise<string> {
-  const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
-  if (envUrl) {
-    return envUrl.replace(/\/$/, "");
-  }
-
   try {
     const saved = await AsyncStorage.getItem(STORAGE_KEY_SERVER_URL);
     if (saved && saved.trim()) {
@@ -50,6 +45,11 @@ export async function getActiveBaseUrl(): Promise<string> {
       return clean;
     }
   } catch {}
+
+  const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+  if (envUrl) {
+    return envUrl.replace(/\/$/, "");
+  }
 
   return getDefaultBaseUrl().replace(/\/$/, "");
 }

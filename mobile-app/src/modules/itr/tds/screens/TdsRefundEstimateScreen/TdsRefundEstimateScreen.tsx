@@ -55,7 +55,10 @@ export const TdsRefundEstimateScreen: React.FC = () => {
           if (backendApp.bank) finalForm.bank = { ...finalForm.bank, ...backendApp.bank };
           if (backendApp.income) finalForm.income = { ...finalForm.income, ...backendApp.income };
           if (backendApp.documents && backendApp.documents.length > 0) {
-            finalDocs = backendApp.documents as any;
+            const hasBackendUploaded = backendApp.documents.some((d: any) => d.status === 'uploaded' || d.status === 'verified');
+            if (hasBackendUploaded) {
+              finalDocs = backendApp.documents as any;
+            }
           }
         }
       } catch (err) {
@@ -127,7 +130,7 @@ export const TdsRefundEstimateScreen: React.FC = () => {
     }
   };
 
-  const uploadedDocs = documents.filter((d) => d.status === "uploaded" && d.fileUri);
+  const uploadedDocs = documents.filter((d) => (d.status === "uploaded" || d.status === "verified") || !!d.fileUri || !!d.fileName);
 
   const maskAccount = (num: string) => {
     if (!num || num.length < 4) return "••••";
@@ -140,13 +143,7 @@ export const TdsRefundEstimateScreen: React.FC = () => {
 
       {/* Screen Header */}
       <View style={[styles.headerBar, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Ionicons name="chevron-back" size={20} color={BrandColors.PRIMARY_BLUE_DARK} />
-        </TouchableOpacity>
+        <View style={{ width: 38, height: 38 }} />
 
         <View style={styles.headerTitleGroup}>
           <Text style={styles.headerTitle}>Review Application</Text>

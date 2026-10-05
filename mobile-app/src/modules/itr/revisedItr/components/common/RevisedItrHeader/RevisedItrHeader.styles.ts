@@ -54,4 +54,20 @@ export const styles = StyleSheet.create({
   rightSpacer: {
     width: 38,
   },
+  draftButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#FEF0E6",
+    borderWidth: 1,
+    borderColor: "#FDBA74",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  draftButtonText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#EA580C",
+  },
 });

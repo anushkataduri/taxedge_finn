@@ -114,6 +114,26 @@ export const Step3RegimeAndDeductions: React.FC<Step3RegimeAndDeductionsProps> =
     });
   };
 
+
+  const handleProceed = () => {
+    if (regime === "old") {
+      const hasDeductions = 
+        Object.values(deductions.sec80c).some(val => Number(val) > 0) || 
+        Object.values(deductions.sec80d).some(val => typeof val === "string" && Number(val) > 0) ||
+        Number(deductions.sec24b) > 0 ||
+        deductions.otherDeductionsList.length > 0;
+      
+      if (!hasDeductions) {
+        Alert.alert(
+          "No Deductions Entered",
+          "You selected the Old Tax Regime but haven't claimed any deductions. Please enter your deductions or switch to the New Tax Regime (which is usually more beneficial if you have no deductions)."
+        );
+        return;
+      }
+    }
+    onContinue();
+  };
+
   return (
     <View style={styles.container}>
       {/* 1. Transparent Side-by-Side Regime Comparison */}
@@ -412,7 +432,7 @@ export const Step3RegimeAndDeductions: React.FC<Step3RegimeAndDeductionsProps> =
       )}
 
       {/* Continue Button */}
-      <TouchableOpacity activeOpacity={0.85} style={styles.continueButton} onPress={onContinue}>
+      <TouchableOpacity activeOpacity={0.85} style={styles.continueButton} onPress={handleProceed}>
         <Text style={styles.continueButtonText}>{isEditing ? "Update and Continue" : "Confirm & Continue to Documents"}</Text>
         <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
       </TouchableOpacity>

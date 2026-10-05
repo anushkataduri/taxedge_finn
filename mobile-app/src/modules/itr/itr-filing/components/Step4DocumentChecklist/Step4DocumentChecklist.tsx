@@ -1,3 +1,4 @@
+import { SharedItrDocumentCard } from "@/modules/itr/components/documents/SharedItrDocumentCard/SharedItrDocumentCard";
 import React, { useState } from "react";
 import {
   View,
@@ -84,106 +85,27 @@ export const Step4DocumentChecklist: React.FC<Step4DocumentChecklistProps> = ({ 
   };
 
   const renderDocCard = (doc: ItrDocumentItem) => {
-    const isUploaded = Boolean(doc.fileUri);
-    const isVerified = doc.isProfileVerified;
-
     return (
-      <View
+      <SharedItrDocumentCard
         key={doc.id}
-        style={[
-          styles.docCard,
-          isUploaded ? styles.docCardUploaded : null,
-          isVerified ? styles.docCardVerified : null,
-        ]}
-      >
-        <View style={styles.docTopRow}>
-          <View
-            style={[
-              styles.docIconBox,
-              isUploaded ? styles.docIconBoxDone : null,
-              isVerified ? styles.docIconBoxVerified : null,
-            ]}
-          >
-            <Ionicons
-              name={(doc.iconName as any) || "document-text-outline"}
-              size={20}
-              color={isUploaded ? "#059669" : isVerified ? "#166534" : "#083B75"}
-            />
-          </View>
-
-          <View style={styles.docInfoCol}>
-            <View style={styles.docTitleRow}>
-              <View style={styles.docTitleLeft}>
-                <Text style={styles.docName}>{doc.name}</Text>
-                {doc.required && <Text style={styles.requiredAsterisk}>*</Text>}
-              </View>
-              {isVerified && (
-                <View style={styles.verifiedBadge}>
-                  <Ionicons name="shield-checkmark" size={10} color="#166534" />
-                  <Text style={styles.verifiedBadgeText}>Verified</Text>
-                </View>
-              )}
-            </View>
-
-            <Text style={styles.docSubtitle}>
-              {doc.profileVerifiedLabel || doc.subtitle}
-            </Text>
-
-            {isUploaded && doc.fileName && (
-              <View style={styles.metaRow}>
-                <Ionicons name="checkmark-circle" size={13} color="#059669" />
-                <Text style={styles.uploadedFileName} numberOfLines={1}>
-                  {doc.fileName} ({doc.fileSize || "< 2 MB"})
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* Action Buttons */}
-        {!isVerified && (
-          <View style={styles.docActionsRow}>
-            {isUploaded ? (
-              <>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  style={styles.viewBtn}
-                  onPress={() => setPreviewDoc(doc)}
-                >
-                  <Ionicons name="eye-outline" size={15} color="#083B75" />
-                  <Text style={styles.viewBtnText}>View</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  style={styles.changeBtn}
-                  onPress={() => handleUploadClick(doc)}
-                >
-                  <Ionicons name="swap-horizontal-outline" size={15} color={BrandColors.PRIMARY_ORANGE} />
-                  <Text style={styles.changeBtnText}>Change</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  style={styles.removeBtn}
-                  onPress={() => handleRemoveDoc(doc.id)}
-                >
-                  <Ionicons name="trash-outline" size={15} color="#DC2626" />
-                </TouchableOpacity>
-              </>
-            ) : (
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={styles.uploadBtn}
-                onPress={() => handleUploadClick(doc)}
-              >
-                <Ionicons name="cloud-upload-outline" size={15} color="#083B75" />
-                <Text style={styles.uploadBtnText}>Upload File</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-      </View>
+        item={{
+          id: doc.id,
+          title: doc.name,
+          subtitle: doc.profileVerifiedLabel || doc.subtitle,
+          isMandatory: doc.required,
+          status: doc.fileUri ? "uploaded" : "not_uploaded",
+          fileUri: doc.fileUri,
+          fileName: doc.fileName,
+          fileSize: doc.fileSize,
+          iconType: doc.iconName || "business_income",
+        }}
+        onUploadSuccess={(id: string, fileInfo: any) => {
+          onUpdateDocument(id, fileInfo);
+        }}
+        onRemove={(id: string) => {
+          onUpdateDocument(id, { uri: "", name: "", size: "" });
+        }}
+      />
     );
   };
 

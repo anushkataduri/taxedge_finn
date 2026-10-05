@@ -25,16 +25,40 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
   const maxStepReached = useRevisedProgressStore((s) => s.maxStepReached);
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
-    acknowledgementNumber?: string;
-    assessmentYear?: string;
-    revisionReason?: string;
-    otherReasonText?: string;
-  }>();
+      acknowledgementNumber?: string;
+      assessmentYear?: string;
+      revisionReason?: string;
+      otherReasonText?: string;
+      revisedDetails?: string;
+    }>();
 
   const reason = params.revisionReason || "missed_income";
   const originalValues: RevisedFormFields = DEFAULT_REVISED_FORM_FIELDS;
 
-  const [form, setForm] = useState<RevisedFormFields>(DEFAULT_REVISED_FORM_FIELDS);
+  const storeFormData = useRevisedProgressStore((s) => s.formData);
+  const setStoreFormData = useRevisedProgressStore((s) => s.setFormData);
+  
+  const getInitialForm = () => {
+    if (params.revisedDetails) {
+      try {
+        return JSON.parse(params.revisedDetails);
+      } catch (e) {}
+    }
+    return storeFormData || DEFAULT_REVISED_FORM_FIELDS;
+  };
+  
+  const [form, setForm] = useState<RevisedFormFields>(getInitialForm());
+  
+  React.useEffect(() => {
+    if (!storeFormData) {
+      setStoreFormData(DEFAULT_REVISED_FORM_FIELDS);
+    }
+  }, []);
+  
+  // Update store when form changes
+  React.useEffect(() => {
+    setStoreFormData(form);
+  }, [form]);
   const [errors, setErrors] = useState<Partial<Record<keyof RevisedFormFields, string>>>({});
 
   const parseNum = (str: string): number => {
@@ -104,12 +128,25 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
   const handleContinue = () => {
     if (!validate()) return;
 
+    if (maxStepReached >= 3) {
+      router.push({
+        pathname: "/service/revised-itr-review" as any,
+        params: {
+          acknowledgementNumber: params.acknowledgementNumber,
+          assessmentYear: params.assessmentYear || "AY 2025—26",
+          revisionReason: params.revisionReason,
+            revisedDetails: JSON.stringify(form),
+          }
+        });
+        return;
+      }
+
     // Navigate to Screen 4: Upload Supporting Documents
     router.push({
       pathname: "/service/revised-itr-documents" as any,
       params: {
         acknowledgementNumber: params.acknowledgementNumber,
-        assessmentYear: params.assessmentYear || "AY 2025–26",
+        assessmentYear: params.assessmentYear || "AY 2025—26",
         revisionReason: params.revisionReason,
         revisedDetails: JSON.stringify(form),
       },
@@ -160,10 +197,11 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
               value={form.salaryBusinessIncome}
               originalValue={`₹${originalValues.salaryBusinessIncome}`}
               changeValue={getChange(originalValues.salaryBusinessIncome, form.salaryBusinessIncome)}
-              onChangeText={(val) => handleChange("salaryBusinessIncome", val)}
+              onChangeText={(val) => handleChange("salaryBusinessIncome", val.replace(/[^0-9]/g, ""))}
+                maxLength={12}
+                keyboardType="numeric"
               isMandatory
               placeholder="Enter revised income"
-              keyboardType="numeric"
               error={errors.salaryBusinessIncome}
             />
 
@@ -172,9 +210,10 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
               value={form.otherIncome}
               originalValue={`₹${originalValues.otherIncome}`}
               changeValue={getChange(originalValues.otherIncome, form.otherIncome)}
-              onChangeText={(val) => handleChange("otherIncome", val)}
+              onChangeText={(val) => handleChange("otherIncome", val.replace(/[^0-9]/g, ""))}
+                maxLength={12}
+                keyboardType="numeric"
               placeholder="Enter revised income"
-              keyboardType="numeric"
               error={errors.otherIncome}
             />
           </View>
@@ -192,9 +231,10 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
               value={form.sec80c}
               originalValue={`₹${originalValues.sec80c}`}
               changeValue={getChange(originalValues.sec80c, form.sec80c)}
-              onChangeText={(val) => handleChange("sec80c", val)}
+              onChangeText={(val) => handleChange("sec80c", val.replace(/[^0-9]/g, ""))}
+                maxLength={12}
+                keyboardType="numeric"
               placeholder="Enter amount"
-              keyboardType="numeric"
             />
 
             <RevisedFormField
@@ -202,9 +242,10 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
               value={form.sec80d}
               originalValue={`₹${originalValues.sec80d}`}
               changeValue={getChange(originalValues.sec80d, form.sec80d)}
-              onChangeText={(val) => handleChange("sec80d", val)}
+              onChangeText={(val) => handleChange("sec80d", val.replace(/[^0-9]/g, ""))}
+                maxLength={12}
+                keyboardType="numeric"
               placeholder="Enter amount"
-              keyboardType="numeric"
             />
 
             <RevisedFormField
@@ -212,9 +253,10 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
               value={form.homeLoanInterest}
               originalValue={`₹${originalValues.homeLoanInterest}`}
               changeValue={getChange(originalValues.homeLoanInterest, form.homeLoanInterest)}
-              onChangeText={(val) => handleChange("homeLoanInterest", val)}
+              onChangeText={(val) => handleChange("homeLoanInterest", val.replace(/[^0-9]/g, ""))}
+                maxLength={12}
+                keyboardType="numeric"
               placeholder="Enter amount"
-              keyboardType="numeric"
             />
           </View>
         )}
@@ -228,10 +270,10 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
 
             <RevisedFormField
               label="Bank account for refund"
-                maxLength={18}
               value={form.bankAccount}
               originalValue={originalValues.bankAccount}
               onChangeText={(val) => handleChange("bankAccount", val)}
+                maxLength={18}
               isMandatory
               placeholder="Enter bank account number"
               error={errors.bankAccount}
@@ -242,8 +284,8 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
               value={form.ifsc}
               originalValue={originalValues.ifsc}
               onChangeText={(val) => handleChange("ifsc", val.toUpperCase())}
+                maxLength={11}
               isMandatory
-              maxLength={11}
               autoCapitalize="characters"
               placeholder="Enter 11-digit IFSC"
               error={errors.ifsc}
@@ -259,10 +301,11 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
               value={form.taxableIncome}
               originalValue={`₹${originalValues.taxableIncome}`}
               changeValue={getChange(originalValues.taxableIncome, form.taxableIncome)}
-              onChangeText={(val) => handleChange("taxableIncome", val)}
+              onChangeText={(val) => handleChange("taxableIncome", val.replace(/[^0-9]/g, ""))}
+                maxLength={12}
+                keyboardType="numeric"
               isMandatory
               placeholder="Enter taxable income"
-              keyboardType="numeric"
               error={errors.taxableIncome}
             />
           </View>

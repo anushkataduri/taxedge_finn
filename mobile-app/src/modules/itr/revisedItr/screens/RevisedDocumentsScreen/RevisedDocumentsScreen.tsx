@@ -14,6 +14,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { DocumentPreviewModal } from "../../../itr-filing/components/DocumentPreviewModal/DocumentPreviewModal";
+import { SharedItrDocumentCard } from "@/modules/itr/components/documents/SharedItrDocumentCard/SharedItrDocumentCard";
 import { DocumentUploadBottomSheet } from "@/modules/itr/tds/components/upload/DocumentUploadBottomSheet/DocumentUploadBottomSheet";
 import { RevisedItrHeader } from "../../components/common";
 import { REVISED_SUPPORTING_DOCUMENTS } from "../../mock/revisedItrData";
@@ -39,8 +40,11 @@ export const RevisedDocumentsScreen: React.FC = () => {
 
   const assessmentYear = params.assessmentYear || "AY 2025–26";
 
-  const [documents, setDocuments] = useState<RevisedDocumentItem[]>(() =>
-    REVISED_SUPPORTING_DOCUMENTS.map((doc) =>
+  const storeDocuments = useRevisedProgressStore((s) => s.documents);
+  const setStoreDocuments = useRevisedProgressStore((s) => s.setDocuments);
+
+  const [documents, setDocumentsState] = useState<RevisedDocumentItem[]>(() =>
+    storeDocuments || REVISED_SUPPORTING_DOCUMENTS.map((doc) =>
       doc.id === "doc-3"
         ? {
             ...doc,
@@ -49,6 +53,20 @@ export const RevisedDocumentsScreen: React.FC = () => {
         : doc
     )
   );
+
+  const setDocuments = (val: React.SetStateAction<RevisedDocumentItem[]>) => {
+    setDocumentsState((prev) => {
+      const next = typeof val === 'function' ? val(prev) : val;
+      setStoreDocuments(next);
+      return next;
+    });
+  };
+
+  React.useEffect(() => {
+    if (!storeDocuments) {
+      setStoreDocuments(documents);
+    }
+  }, []);
 
   const isDocRequired = (docId: string, reason?: string): boolean => {
     if (docId === "doc-1" || docId === "doc-2") return true;
@@ -201,63 +219,51 @@ export const RevisedDocumentsScreen: React.FC = () => {
   const additionalDocs = documents.filter((d) => !isDocRequired(d.id, params.revisionReason));
 
   const renderDocCard = (item: RevisedDocumentItem, isRequired: boolean) => {
-    const isUploaded = item.status === "uploaded" || !!item.fileUri;
-
     return (
-      <View key={item.id} style={styles.docCard}>
-        {isUploaded ? (
-          <View style={styles.uploadedBox}>
-            <View style={styles.fileMetaRow}>
-              <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
-              <Text style={styles.fileNameText} numberOfLines={1}>
-                {item.fileName || item.title}
-              </Text>
-              <Text style={styles.fileSizeText}>{item.fileSize || "2.1 MB"}</Text>
-            </View>
-            <View style={styles.actionsRow}>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => setPreviewDoc(item)}
-                style={styles.actionBtn}
-              >
-                <Text style={styles.actionBtnText}>View</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => setSelectedDocForUpload(item)}
-                style={styles.actionBtn}
-              >
-                <Text style={styles.actionBtnText}>Change</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => handleDeleteDocument(item.id)}
-                style={[styles.actionBtn, styles.actionBtnDelete]}
-              >
-                <Text style={styles.deleteBtnText}>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.docRow}>
-            <View style={styles.docInfo}>
-              <Text style={styles.docTitle}>{item.title}</Text>
-              <Text style={isRequired ? styles.requiredBadgeText : styles.optionalBadgeText}>
-                {isRequired ? "Required" : "Optional"}
-              </Text>
-            </View>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setSelectedDocForUpload(item)}
-              style={styles.uploadButton}
-            >
-              <Text style={styles.uploadButtonText}>Upload</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
+      <SharedItrDocumentCard
+        key={item.id}
+        item={{
+          id: item.id,
+          title: item.title,
+          subtitle: item.subtitle,
+          isMandatory: isRequired,
+          status: item.status,
+          fileUri: item.fileUri,
+          fileName: item.fileName,
+          fileSize: item.fileSize,
+          iconType: "business_income",
+        }}
+        onUploadSuccess={(id, fileInfo) => {
+          setDocuments((prev) =>
+            prev.map((d) =>
+              d.id === id
+                ? {
+                    ...d,
+                    status: "uploaded",
+                    fileUri: fileInfo.uri,
+                    fileName: fileInfo.name,
+                    fileSize: fileInfo.size,
+                  }
+                : d
+            )
+          );
+        }}
+        onRemove={(id) => {
+          setDocuments((prev) =>
+            prev.map((d) =>
+              d.id === id
+                ? {
+                    ...d,
+                    status: "not_uploaded",
+                    fileUri: undefined,
+                    fileName: undefined,
+                    fileSize: undefined,
+                  }
+                : d
+            )
+          );
+        }}
+      />
     );
   };
 
@@ -265,10 +271,8 @@ export const RevisedDocumentsScreen: React.FC = () => {
     <View style={[styles.container, getContainerInsetsStyle(insets.top)]}>
       <FocusAwareStatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Screen Header */}
       <RevisedItrHeader subtitle="Documents & Submission" />
 
-      {/* Main Content */}
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
@@ -339,16 +343,7 @@ export const RevisedDocumentsScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Unified Document Upload Bottom Sheet */}
-      <DocumentUploadBottomSheet
-        visible={!!selectedDocForUpload}
-        documentTitle={selectedDocForUpload?.title || "Document"}
-        maxSizeBytesText="10 MB"
-        onClose={() => setSelectedDocForUpload(null)}
-        onPickFiles={handlePickFiles}
-        onPickGallery={handlePickGallery}
-        onTakePhoto={handlePickCamera}
-      />
+      
     </View>
   );
 };

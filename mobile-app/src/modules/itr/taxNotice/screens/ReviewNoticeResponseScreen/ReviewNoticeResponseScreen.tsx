@@ -140,7 +140,7 @@ Meera Iyer, Tax Executive`;
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Screen Header */}
-      <TaxNoticeHeader subtitle="Review Response" />
+      <TaxNoticeHeader subtitle="Review Response" hideBackButton />
 
       {/* Main Content */}
       <ScrollView

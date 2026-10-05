@@ -83,14 +83,6 @@ export class ApiClient {
 
   async loadCustomBaseUrl(): Promise<string> {
     try {
-      const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
-      if (envUrl) {
-        this.setBaseUrl(envUrl);
-        this.baseUrlLoaded = true;
-        await AsyncStorage.setItem(STORAGE_KEY_SERVER_URL, this.baseUrl);
-        return this.baseUrl;
-      }
-
       const saved = await AsyncStorage.getItem(STORAGE_KEY_SERVER_URL);
       if (saved && saved.trim()) {
         let clean = saved.trim();
@@ -99,6 +91,16 @@ export class ApiClient {
           await AsyncStorage.setItem(STORAGE_KEY_SERVER_URL, clean);
         }
         this.setBaseUrl(clean);
+        this.baseUrlLoaded = true;
+        return this.baseUrl;
+      }
+
+      const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+      if (envUrl) {
+        this.setBaseUrl(envUrl);
+        this.baseUrlLoaded = true;
+        await AsyncStorage.setItem(STORAGE_KEY_SERVER_URL, this.baseUrl);
+        return this.baseUrl;
       }
     } catch { }
     this.baseUrlLoaded = true;

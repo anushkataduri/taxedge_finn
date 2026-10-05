@@ -219,13 +219,17 @@ export const ItrFilingScreen: React.FC = () => {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <FocusAwareStatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <View style={styles.categoryHeader}>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={styles.headerLeftBtn}
-            onPress={handleBack}
-          >
-            <Ionicons name="chevron-back" size={20} color="#0F172A" />
-          </TouchableOpacity>
+          {currentStep === 4 ? (
+            <View style={{ width: 38, height: 38 }} />
+          ) : (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.headerLeftBtn}
+              onPress={handleBack}
+            >
+              <Ionicons name="chevron-back" size={20} color="#0F172A" />
+            </TouchableOpacity>
+          )}
           <Text style={styles.categoryHeaderTitle}>ITR Filing</Text>
           <TouchableOpacity
             activeOpacity={0.7}
@@ -294,7 +298,7 @@ export const ItrFilingScreen: React.FC = () => {
             priorItrNotice={formData.priorItrNotice}
             onUpdatePriorItrNotice={setPriorItrNotice}
             onImportPriorItrData={importPriorItrData}
-            onContinue={() => setStep(1)}
+            onContinue={() => maxStepReached >= 4 ? setStep(4) : setStep(1)}
           />
         )}
 
@@ -311,7 +315,7 @@ export const ItrFilingScreen: React.FC = () => {
             onUpdateBusiness={setIncomeBusiness}
             onUpdateCapitalGains={setIncomeCapitalGains}
             onUpdateOtherSources={setIncomeOtherSources}
-            onContinue={() => setStep(2)}
+            onContinue={() => maxStepReached >= 4 ? setStep(4) : setStep(2)}
           />
         )}
 
@@ -324,7 +328,7 @@ export const ItrFilingScreen: React.FC = () => {
             onChangeDeductions={setDeductions}
             calculation={formData.calculation}
             assessmentYear={formData.personalInfo.assessmentYear}
-            onContinue={() => setStep(3)}
+            onContinue={() => maxStepReached >= 4 ? setStep(4) : setStep(3)}
           />
         )}
 

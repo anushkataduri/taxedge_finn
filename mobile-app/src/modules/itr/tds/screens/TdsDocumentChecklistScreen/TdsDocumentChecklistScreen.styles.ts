@@ -66,7 +66,7 @@ export const styles = StyleSheet.create({
     width: 38,
   },
   scrollContent: {
-    paddingHorizontal: 0,
+    paddingHorizontal: Spacing.base,
     paddingTop: 8,
   },
   bottomBar: {
