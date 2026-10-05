@@ -1,8 +1,7 @@
 import React, { useRef, useCallback } from "react";
-import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { View, ScrollView, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { ProjectFinanceSuccessModal } from "../../components";
 import { ProjectFinanceStepRenderer } from "./ProjectFinanceStepRenderer";
@@ -15,23 +14,12 @@ import {
   validateStep7,
 } from "../../utils/step5To7Validators";
 import { useLoanWizard } from "../../../hooks/useLoanWizard";
-import { LoanStepIndicator } from "../../../components/LoanStepIndicator";
+import { LoanProgressHeader, LOAN_PROGRESS_CONFIG } from "@/shared/components/LoanProgressHeader";
+import { LoanNavigation } from "@/shared/components/LoanNavigation";
 import { getBottomBarPadding, getSafeAreaTopPadding } from "../../../styles/loanScreenLayout.styles";
 import { styles } from "./ProjectFinanceScreen.styles";
 
-const STEP_TITLES = [
-  "Applicant & Project",
-  "Location, Land & Technical",
-  "Cost & Funding Details",
-  "Market & Financials",
-  "Loan Requirement & Repayment",
-  "Security & Compliance",
-  "Documents, Review & Submit",
-] as const;
-
-/** Minimum bottom padding of the sticky action bar on this screen. */
-const BOTTOM_BAR_MIN_PADDING = 14;
-const CONTINUE_ICON_COLOR = "#FFFFFF";
+const STEP_TITLES = LOAN_PROGRESS_CONFIG.projectFinance.steps;
 
 export const ProjectFinanceScreen: React.FC = () => {
   const router = useRouter();
@@ -138,13 +126,12 @@ export const ProjectFinanceScreen: React.FC = () => {
 
   return (
     <View style={[styles.safeArea, getSafeAreaTopPadding(insets.top)]}>
-      {/* Top header with back button, step title and progress bar */}
-      <LoanStepIndicator
-        variant="linear"
-        title="Project Finance"
-        subtitle={STEP_TITLES[currentStepIndex]}
-        currentStepIndex={currentStepIndex}
+      {/* Unified Loan Progress Header */}
+      <LoanProgressHeader
+        title={LOAN_PROGRESS_CONFIG.projectFinance.title}
+        currentStep={currentStepIndex + 1}
         totalSteps={STEP_TITLES.length}
+        subtitle={STEP_TITLES[currentStepIndex]}
         onBack={wizard.handleBack}
       />
 
@@ -163,18 +150,14 @@ export const ProjectFinanceScreen: React.FC = () => {
         </ScrollView>
 
         {/* Sticky Bottom Action Bar */}
-        <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom, BOTTOM_BAR_MIN_PADDING)]}>
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={handleNextOrSubmit}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.continueButtonText}>
-              {wizard.isLastStep ? "Submit Application" : "Save & Continue"}
-            </Text>
-            <Ionicons name="arrow-forward" size={18} color={CONTINUE_ICON_COLOR} />
-          </TouchableOpacity>
-        </View>
+        <LoanNavigation
+          onBack={wizard.handleBack}
+          onNext={handleNextOrSubmit}
+          isFirstStep={wizard.isFirstStep}
+          isLastStep={wizard.isLastStep}
+          nextText={wizard.isLastStep ? "Submit Application" : "Save & Continue"}
+          containerStyle={getBottomBarPadding(insets.bottom, 14)}
+        />
       </View>
 
       {/* Success Modal */}

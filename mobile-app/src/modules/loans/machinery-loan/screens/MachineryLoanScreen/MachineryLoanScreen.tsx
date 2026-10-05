@@ -1,16 +1,11 @@
 import React, { useState, useRef, useCallback } from "react";
 import {
   View,
-  Text,
-  TouchableOpacity,
   ScrollView,
   Alert,
-  ActivityIndicator,
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { BrandColors } from "../../../../../shared/theme";
 import { useAuthStore } from "../../../../authentication/store/authStore";
 import { useApplicationStore } from "../../../../../store/applicationStore";
 import { loansApi } from "../../../services/loansApi";
@@ -27,7 +22,8 @@ import {
 import { useLoanWizard } from "../../../hooks/useLoanWizard";
 import { useLoanDocuments } from "../../../hooks/useLoanDocuments";
 import { getMissingRequiredDocuments } from "../../../documents/loanDocumentEngine";
-import { LoanStepIndicator } from "../../../components/LoanStepIndicator";
+import { LoanProgressHeader, LOAN_PROGRESS_CONFIG } from "@/shared/components/LoanProgressHeader";
+import { LoanNavigation } from "@/shared/components/LoanNavigation";
 import { getBottomBarPadding, getSafeAreaTopPadding } from "../../../styles/loanScreenLayout.styles";
 import {
   MachineryLoanFinancialsStep,
@@ -38,7 +34,7 @@ import {
 } from "../../components";
 import { styles } from "./MachineryLoanScreen.styles";
 
-const STEPS = ["Loan Details", "Business Details", "Banking", "Documents & Review"] as const;
+const STEPS = LOAN_PROGRESS_CONFIG.machinery.steps;
 
 export const MachineryLoanScreen: React.FC = () => {
   const router = useRouter();
@@ -213,7 +209,7 @@ export const MachineryLoanScreen: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const draft: Partial<LoanApplicationDraft> = {
+      const draftPayload: Partial<LoanApplicationDraft> = {
         loanType: "Machinery Loan",
         loanTypeId: "machinery-loan",
         customerProfile: customer || undefined,
@@ -223,7 +219,7 @@ export const MachineryLoanScreen: React.FC = () => {
         documents,
       };
 
-      const response = await loansApi.applyLoan(draft);
+      const response = await loansApi.applyLoan(draftPayload);
       const appId = response.applicationId || `MCH-2026-${Math.floor(10000 + Math.random() * 90000)}`;
 
       // Create & store application into store so it appears in My Applications
@@ -299,48 +295,32 @@ export const MachineryLoanScreen: React.FC = () => {
           />
         );
       case 3:
+        return <MachineryLoanDocumentsStep loanDocuments={loanDocuments} />;
+      case 4:
       default:
         return (
-          <>
-            <MachineryLoanDocumentsStep loanDocuments={loanDocuments} />
-            <View style={styles.documentsReviewSpacer} />
-            <MachineryLoanReviewStep
-              loanDetails={loanDetails}
-              businessDetails={businessDetails}
-              bankingDetails={bankingDetails}
-              documents={documents}
-              isConsentChecked={isConsentChecked}
-              onConsentToggle={setIsConsentChecked}
-              onGoToStep={wizard.goToStep}
-            />
-          </>
+          <MachineryLoanReviewStep
+            loanDetails={loanDetails}
+            businessDetails={businessDetails}
+            bankingDetails={bankingDetails}
+            documents={documents}
+            isConsentChecked={isConsentChecked}
+            onConsentToggle={setIsConsentChecked}
+            onGoToStep={wizard.goToStep}
+          />
         );
     }
   };
 
   return (
     <View style={[styles.safeArea, getSafeAreaTopPadding(insets.top)]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={wizard.handleBack}>
-            <Ionicons name="arrow-back" size={24} color={BrandColors.TEXT_PRIMARY} />
-          </TouchableOpacity>
-          <View>
-            <Text style={styles.headerTitle}>Machinery Loan</Text>
-            <Text style={styles.headerSubtitle}>
-              Step {wizard.stepNumber} of {STEPS.length} • {STEPS[currentStepIndex]}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Step Progress Stepper */}
-      <LoanStepIndicator
-        variant="numbered"
-        steps={STEPS}
-        currentStepIndex={currentStepIndex}
-        onStepPress={wizard.goToStep}
+      {/* Unified Progress Header */}
+      <LoanProgressHeader
+        title={LOAN_PROGRESS_CONFIG.machinery.title}
+        currentStep={currentStepIndex + 1}
+        totalSteps={STEPS.length}
+        subtitle={STEPS[currentStepIndex]}
+        onBack={wizard.handleBack}
       />
 
       {/* Scrollable Step Content */}
@@ -354,36 +334,14 @@ export const MachineryLoanScreen: React.FC = () => {
       </ScrollView>
 
       {/* Sticky Bottom Actions */}
-      <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={wizard.handleBack}
-          disabled={isSubmitting}
-        >
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
-          onPress={handleNext}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator size="small" color={BrandColors.WHITE} />
-          ) : (
-            <>
-              <Text style={styles.nextButtonText}>
-                {wizard.isLastStep ? "Submit Application" : "Continue"}
-              </Text>
-              <Ionicons
-                name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
-                size={18}
-                color={BrandColors.WHITE}
-              />
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
+      <LoanNavigation
+        onBack={wizard.handleBack}
+        onNext={handleNext}
+        isFirstStep={wizard.isFirstStep}
+        isLastStep={wizard.isLastStep}
+        isSubmitting={isSubmitting}
+        containerStyle={getBottomBarPadding(insets.bottom)}
+      />
     </View>
   );
 };

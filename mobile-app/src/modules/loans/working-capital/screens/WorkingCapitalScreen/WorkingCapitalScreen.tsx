@@ -1,16 +1,11 @@
 import React, { useState, useRef, useMemo, useCallback } from "react";
 import {
   View,
-  Text,
-  TouchableOpacity,
   ScrollView,
   Alert,
-  ActivityIndicator,
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { BrandColors } from "../../../../../shared/theme";
 import { useAuthStore } from "../../../../authentication/store/authStore";
 import { loansApi } from "../../../services/loansApi";
 import { BUSINESS_DOCUMENTS_TEMPLATE } from "../../../mock/loanServices";
@@ -34,7 +29,8 @@ import { useLoanWizard } from "../../../hooks/useLoanWizard";
 import { useLoanDocuments } from "../../../hooks/useLoanDocuments";
 import { useLoanDraft } from "../../../hooks/useLoanDraft";
 import { LOAN_DRAFT_STORAGE_KEYS } from "../../../constants/loanDraftKeys";
-import { LoanStepIndicator } from "../../../components/LoanStepIndicator";
+import { LoanProgressHeader, LOAN_PROGRESS_CONFIG } from "@/shared/components/LoanProgressHeader";
+import { LoanNavigation } from "@/shared/components/LoanNavigation";
 import { getBottomBarPadding, getSafeAreaTopPadding } from "../../../styles/loanScreenLayout.styles";
 import {
   WorkingCapitalFinancialsStep,
@@ -45,7 +41,7 @@ import {
 } from "../../components";
 import { styles } from "./WorkingCapitalScreen.styles";
 
-const STEPS = ["Financials", "Business & Banking", "Documents", "Review"] as const;
+const STEPS = LOAN_PROGRESS_CONFIG.workingCapital.steps;
 /** Upload limit of the document picker this flow used before (2 MB). */
 const WORKING_CAPITAL_MAX_FILE_SIZE_MB = 2;
 
@@ -328,12 +324,11 @@ export const WorkingCapitalScreen: React.FC = () => {
   return (
     <View style={[styles.safeArea, getSafeAreaTopPadding(insets.top)]}>
       {/* Header with back, step title and progress bar */}
-      <LoanStepIndicator
-        variant="linear"
-        title="Working Capital"
-        subtitle={STEPS[currentStepIndex]}
-        currentStepIndex={currentStepIndex}
+      <LoanProgressHeader
+        title={LOAN_PROGRESS_CONFIG.workingCapital.title}
+        currentStep={currentStepIndex + 1}
         totalSteps={STEPS.length}
+        subtitle={STEPS[currentStepIndex]}
         onBack={openDraftModal}
       />
 
@@ -348,34 +343,14 @@ export const WorkingCapitalScreen: React.FC = () => {
       </ScrollView>
 
       {/* Sticky Bottom Actions */}
-      <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
-        {wizard.isFirstStep ? null : (
-          <TouchableOpacity style={styles.backButton} onPress={wizard.handleBack} disabled={isSubmitting}>
-            <Text style={styles.backButtonText}>Back</Text>
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity
-          style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
-          onPress={handleNext}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator size="small" color={BrandColors.WHITE} />
-          ) : (
-            <>
-              <Text style={styles.nextButtonText}>
-                {wizard.isLastStep ? "Submit Application" : "Continue"}
-              </Text>
-              <Ionicons
-                name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
-                size={18}
-                color={BrandColors.WHITE}
-              />
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
+      <LoanNavigation
+        onBack={wizard.handleBack}
+        onNext={handleNext}
+        isFirstStep={wizard.isFirstStep}
+        isLastStep={wizard.isLastStep}
+        isSubmitting={isSubmitting}
+        containerStyle={getBottomBarPadding(insets.bottom)}
+      />
 
       {/* Universal Draft Guard Modal */}
       <UniversalDraftModal

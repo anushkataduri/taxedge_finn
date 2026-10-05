@@ -1,25 +1,29 @@
 import React from "react";
-import { View } from "react-native";
-import { styles } from "./WorkingCapitalStepIndicator.styles";
+import { LoanProgressHeader } from "@/shared/components/LoanProgressHeader";
 
 export interface WorkingCapitalStepIndicatorProps {
-  steps: string[];
+  title?: string;
+  steps: readonly string[];
   currentStepIndex: number;
   onStepPress?: (index: number) => void;
+  onBack?: () => void;
 }
 
 export const WorkingCapitalStepIndicator: React.FC<WorkingCapitalStepIndicatorProps> = ({
+  title = "Working Capital Loan",
   steps,
   currentStepIndex,
+  onBack,
 }) => {
-  const progressPercent = `${((currentStepIndex + 1) / steps.length) * 100}%`;
-
   return (
-    <View style={styles.progressBarTrack}>
-      <View style={[styles.progressBarFill, { width: progressPercent as any }]} />
-    </View>
+    <LoanProgressHeader
+      title={title}
+      currentStep={currentStepIndex + 1}
+      totalSteps={steps.length}
+      subtitle={steps[currentStepIndex] || ""}
+      onBack={onBack}
+    />
   );
 };
 
 export default WorkingCapitalStepIndicator;
-
