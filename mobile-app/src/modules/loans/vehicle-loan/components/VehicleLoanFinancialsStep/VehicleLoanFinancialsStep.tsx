@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
 import { VehicleLoanDetailsFormData } from "../../types/vehicleLoan.types";
+import { LoanAmountInput, type LoanAmountPreset } from "../../../components/LoanAmountInput";
 import { styles } from "./VehicleLoanFinancialsStep.styles";
 import {
   VEHICLE_PURPOSES,
@@ -19,6 +20,7 @@ export interface VehicleLoanFinancialsStepProps {
   onChange: (field: keyof VehicleLoanDetailsFormData, value: any) => void;
   errors?: Record<string, string>;
 }
+
 
 export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps> = ({
   data,
@@ -94,34 +96,15 @@ export const VehicleLoanFinancialsStep: React.FC<VehicleLoanFinancialsStepProps>
         </View>
         <Text style={styles.cardDescription}>Enter your required loan amount or select one of the quick presets below.</Text>
 
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Amount (₹) <Text style={styles.requiredStar}>*</Text></Text>
-          <TextInput
-            style={[styles.input, errors.requiredAmount && styles.inputError]}
-            placeholder="Enter required loan amount (₹)"
-            placeholderTextColor="#94A3B8"
-            keyboardType="numeric"
-            value={data.requiredAmount}
-            onChangeText={(text) => onChange("requiredAmount", text)}
-          />
-          {errors.requiredAmount && <Text style={styles.errorText}>{errors.requiredAmount}</Text>}
-
-          <View style={styles.chipRow}>
-            {AMOUNT_PRESETS.map((item) => {
-              const isSelected = Boolean(data.requiredAmount) && data.requiredAmount === item.value;
-              return (
-                <TouchableOpacity
-                  key={item.value}
-                  activeOpacity={0.7}
-                  onPress={() => onChange("requiredAmount", item.value)}
-                  style={[styles.chip, isSelected && styles.chipActive]}
-                >
-                  <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>{item.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
+        <LoanAmountInput
+          label="Amount (₹)"
+          required
+          placeholder="Enter required loan amount (₹)"
+          value={data.requiredAmount}
+          onChange={(value) => onChange("requiredAmount", value)}
+          presets={AMOUNT_PRESETS}
+          error={errors.requiredAmount}
+        />
       </View>
 
       {/* 2. Vehicle Category & Purpose Card */}

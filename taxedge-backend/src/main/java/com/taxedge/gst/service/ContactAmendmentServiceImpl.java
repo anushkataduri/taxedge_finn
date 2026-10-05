@@ -7,7 +7,7 @@ import com.taxedge.gst.exception.ResourceNotFoundException;
 import com.taxedge.gst.repository.BusinessRepository;
 import com.taxedge.gst.repository.ContactAmendmentRepository;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,17 +16,18 @@ import java.io.IOException;
 import java.util.Base64;
 
 @Service
+@RequiredArgsConstructor
 public class ContactAmendmentServiceImpl implements ContactAmendmentService {
 
-    @Autowired
-    private BusinessRepository businessRepository;
-    @Autowired
-    private ContactAmendmentRepository contactAmendmentRepository;
+    private final BusinessRepository businessRepository;
+    private final ContactAmendmentRepository contactAmendmentRepository;
 
     private Business resolveBusiness(String gstId) {
+        if (gstId == null || gstId.trim().isEmpty()) {
+            throw new ResourceNotFoundException("GST ID must not be empty");
+        }
         return businessRepository.findById(gstId)
-                .orElseGet(() -> businessRepository.findAll().stream().findFirst()
-                        .orElseThrow(() -> new ResourceNotFoundException("No registered business found in the system.")));
+                .orElseThrow(() -> new ResourceNotFoundException("No registered business found for GST ID: " + gstId));
     }
 
     @Override

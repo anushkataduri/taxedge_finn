@@ -1,5 +1,9 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, type ViewStyle } from "react-native";
 import { BrandColors, Typography } from "../../../../../shared/theme";
+
+export const getIconBoxBackground = (color?: string): ViewStyle => ({
+  backgroundColor: color || "#F1F5F9",
+});
 
 export const styles = StyleSheet.create({
   container: {
@@ -45,6 +49,14 @@ export const styles = StyleSheet.create({
     backgroundColor: "#E2E8F0",
     borderRadius: 3,
     overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    backgroundColor: BrandColors.PRIMARY_BLUE,
+    borderRadius: 3,
+  },
+  progressBarFillComplete: {
+    backgroundColor: BrandColors.PRIMARY_ORANGE,
   },
   categoryContainer: {
     marginBottom: 18,

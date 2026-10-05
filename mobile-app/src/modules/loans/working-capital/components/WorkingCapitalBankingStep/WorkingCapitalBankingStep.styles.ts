@@ -160,4 +160,10 @@ export const styles = StyleSheet.create({
     color: "#16A34A",
     fontWeight: "600",
   },
+  itrHeaderIcon: {
+    marginRight: 6,
+  },
+  itrAckGroup: {
+    marginBottom: 4,
+  },
 });

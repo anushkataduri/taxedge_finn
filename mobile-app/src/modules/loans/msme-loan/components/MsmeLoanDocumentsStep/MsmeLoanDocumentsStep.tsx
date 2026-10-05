@@ -1,25 +1,17 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Modal } from "react-native";
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
-import {
-  LoanDocumentItem,
-  LoanDocumentCategory,
-} from "../../../types/loans.types";
-import {
-  pickLoanImageFromGallery,
-  pickLoanImageFromCamera,
-} from "../../../services/documentUploadHelper";
-import { styles } from "./MsmeLoanDocumentsStep.styles";
+import { DocumentUploadBottomSheet } from "../../../../../shared/components/DocumentUploadBottomSheet";
+import type { LoanDocumentCategory } from "../../../types/loans.types";
+import type { LoanDocuments } from "../../../hooks/useLoanDocuments";
+import { getDocumentIconName } from "../../../utils/documentIcon";
+import { getProgressWidth } from "../../../styles/loanScreenLayout.styles";
+import { styles, getIconBoxBackground, MSME_DOC_SUCCESS_COLOR } from "./MsmeLoanDocumentsStep.styles";
 
 export interface MsmeLoanDocumentsStepProps {
-  documents: LoanDocumentItem[];
-  onDocumentUploaded: (
-    docId: string,
-    fileUri: string,
-    fileName: string,
-    fileSize: string
-  ) => void;
+  /** Document checklist state from `useLoanDocuments`, owned by the screen. */
+  loanDocuments: LoanDocuments;
 }
 
 const CATEGORIES: LoanDocumentCategory[] = [
@@ -29,57 +21,9 @@ const CATEGORIES: LoanDocumentCategory[] = [
   "Collateral & Others",
 ];
 
-export const MsmeLoanDocumentsStep: React.FC<MsmeLoanDocumentsStepProps> = ({
-  documents,
-  onDocumentUploaded,
-}) => {
-  const [activeDocId, setActiveDocId] = useState<string | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
-
-  const totalRequired = documents.filter((d) => d.required).length;
-  const uploadedRequired = documents.filter(
-    (d) => d.required && Boolean(d.fileUri)
-  ).length;
-  const progressPercent =
-    totalRequired > 0
-      ? Math.round((uploadedRequired / totalRequired) * 100)
-      : 100;
-
-  const handleOpenUploadSheet = (docId: string) => {
-    setActiveDocId(docId);
-    setModalVisible(true);
-  };
-
-  const handlePickGallery = async () => {
-    setModalVisible(false);
-    if (!activeDocId) return;
-    const file = await pickLoanImageFromGallery();
-    if (file) {
-      onDocumentUploaded(activeDocId, file.uri, file.name, file.size);
-    }
-  };
-
-  const handlePickCamera = async () => {
-    setModalVisible(false);
-    if (!activeDocId) return;
-    const file = await pickLoanImageFromCamera();
-    if (file) {
-      onDocumentUploaded(activeDocId, file.uri, file.name, file.size);
-    }
-  };
-
-  const handleMockPdf = () => {
-    setModalVisible(false);
-    if (!activeDocId) return;
-    const doc = documents.find((d) => d.id === activeDocId);
-    const mockName = `${doc?.name.replace(/\s+/g, "_") || "msme_udyam_doc"}.pdf`;
-    onDocumentUploaded(
-      activeDocId,
-      `file:///mock/storage/${mockName}`,
-      mockName,
-      "1.8 MB"
-    );
-  };
+export const MsmeLoanDocumentsStep: React.FC<MsmeLoanDocumentsStepProps> = ({ loanDocuments }) => {
+  const { documents, progress, openUpload, uploadSheetProps } = loanDocuments;
+  const { uploadedRequired, totalRequired, requiredPercent } = progress;
 
   return (
     <View style={styles.container}>
@@ -93,18 +37,16 @@ export const MsmeLoanDocumentsStep: React.FC<MsmeLoanDocumentsStepProps> = ({
         <View style={styles.progressHeader}>
           <Text style={styles.progressTitle}>Mandatory Document Progress</Text>
           <Text style={styles.progressCount}>
-            {uploadedRequired} of {totalRequired} ({progressPercent}%)
+            {uploadedRequired} of {totalRequired} ({requiredPercent}%)
           </Text>
         </View>
         <View style={styles.progressBarTrack}>
           <View
-            style={{
-              height: "100%",
-              width: `${progressPercent}%`,
-              backgroundColor:
-                progressPercent === 100 ? "#16A34A" : BrandColors.PRIMARY_BLUE,
-              borderRadius: 3,
-            }}
+            style={[
+              styles.progressBarFill,
+              requiredPercent === 100 && styles.progressBarFillComplete,
+              getProgressWidth(requiredPercent),
+            ]}
           />
         </View>
       </View>
@@ -121,22 +63,11 @@ export const MsmeLoanDocumentsStep: React.FC<MsmeLoanDocumentsStepProps> = ({
               const isUploaded = Boolean(doc.fileUri);
 
               return (
-                <View
-                  key={doc.id}
-                  style={[
-                    styles.docCard,
-                    isUploaded && styles.docCardUploaded,
-                  ]}
-                >
+                <View key={doc.id} style={[styles.docCard, isUploaded && styles.docCardUploaded]}>
                   <View style={styles.docLeft}>
-                    <View
-                      style={[
-                        styles.iconBox,
-                        { backgroundColor: doc.iconBg || "#F1F5F9" },
-                      ]}
-                    >
+                    <View style={[styles.iconBox, getIconBoxBackground(doc.iconBg)]}>
                       <Ionicons
-                        name={(doc.iconName as any) || "document-text"}
+                        name={getDocumentIconName(doc.iconName)}
                         size={20}
                         color={doc.iconColor || BrandColors.PRIMARY_BLUE}
                       />
@@ -162,17 +93,11 @@ export const MsmeLoanDocumentsStep: React.FC<MsmeLoanDocumentsStepProps> = ({
 
                       {isUploaded && (
                         <View style={styles.fileMetaRow}>
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={14}
-                            color="#16A34A"
-                          />
+                          <Ionicons name="checkmark-circle" size={14} color={MSME_DOC_SUCCESS_COLOR} />
                           <Text style={styles.fileNameText} numberOfLines={1}>
                             {doc.fileName || "Uploaded"}
                           </Text>
-                          <Text style={styles.fileSizeText}>
-                            ({doc.fileSize || "1.8 MB"})
-                          </Text>
+                          <Text style={styles.fileSizeText}>({doc.fileSize || "1.8 MB"})</Text>
                         </View>
                       )}
                     </View>
@@ -181,23 +106,19 @@ export const MsmeLoanDocumentsStep: React.FC<MsmeLoanDocumentsStepProps> = ({
                   {isUploaded ? (
                     <TouchableOpacity
                       activeOpacity={0.7}
-                      onPress={() => handleOpenUploadSheet(doc.id)}
+                      onPress={() => openUpload(doc.id)}
                       style={styles.replaceButton}
                     >
-                      <Ionicons name="refresh" size={14} color="#16A34A" />
+                      <Ionicons name="refresh" size={14} color={MSME_DOC_SUCCESS_COLOR} />
                       <Text style={styles.replaceButtonText}>Replace</Text>
                     </TouchableOpacity>
                   ) : (
                     <TouchableOpacity
                       activeOpacity={0.7}
-                      onPress={() => handleOpenUploadSheet(doc.id)}
+                      onPress={() => openUpload(doc.id)}
                       style={styles.uploadButton}
                     >
-                      <Ionicons
-                        name="cloud-upload-outline"
-                        size={14}
-                        color={BrandColors.PRIMARY_BLUE}
-                      />
+                      <Ionicons name="cloud-upload-outline" size={14} color={BrandColors.PRIMARY_BLUE} />
                       <Text style={styles.uploadButtonText}>Upload</Text>
                     </TouchableOpacity>
                   )}
@@ -208,64 +129,7 @@ export const MsmeLoanDocumentsStep: React.FC<MsmeLoanDocumentsStepProps> = ({
         );
       })}
 
-      {/* Upload Modal */}
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setModalVisible(false)}
-        >
-          <View style={styles.sheetContent}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Select Upload Method</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={22} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.sheetOption}
-              onPress={handlePickCamera}
-            >
-              <Ionicons
-                name="camera-outline"
-                size={22}
-                color={BrandColors.PRIMARY_BLUE}
-              />
-              <Text style={styles.sheetOptionText}>Take Photo with Camera</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.sheetOption}
-              onPress={handlePickGallery}
-            >
-              <Ionicons
-                name="images-outline"
-                size={22}
-                color={BrandColors.PRIMARY_BLUE}
-              />
-              <Text style={styles.sheetOptionText}>Choose from Gallery</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.sheetOption}
-              onPress={handleMockPdf}
-            >
-              <Ionicons
-                name="document-attach-outline"
-                size={22}
-                color={BrandColors.PRIMARY_BLUE}
-              />
-              <Text style={styles.sheetOptionText}>Attach MSME PDF Document</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      <DocumentUploadBottomSheet {...uploadSheetProps} />
     </View>
   );
 };

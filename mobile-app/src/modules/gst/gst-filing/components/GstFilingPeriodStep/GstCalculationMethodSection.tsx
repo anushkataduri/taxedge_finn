@@ -6,7 +6,7 @@ import {
   formatIndianNumberInput,
   toRawNumericString,
 } from "@/shared/formatters/currencyFormatter";
-import { styles } from "./style";
+import { styles } from "@/modules/gst/gst-filing/components/GstFilingPeriodStep/GstFilingPeriodStep.styles";
 
 interface GstCalculationMethodSectionProps {
   calculationMethod?: "ca_assisted" | "manual_estimates";

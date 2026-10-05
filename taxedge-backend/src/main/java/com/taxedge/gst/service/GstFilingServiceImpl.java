@@ -7,6 +7,8 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.taxedge.customer.entity.Customer;
+import com.taxedge.customer.repository.CustomerRepository;
 import com.taxedge.gst.dto.GstFilingDto;
 import com.taxedge.gst.entity.GstFiling;
 import com.taxedge.gst.enums.FilingType;
@@ -15,210 +17,131 @@ import com.taxedge.gst.exception.ResourceNotFoundException;
 import com.taxedge.gst.helper.RandomNumberGenerator;
 import com.taxedge.gst.repository.GstFilingRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class GstFilingServiceImpl implements GstFilingService {
 
-    @Autowired
-    private GstFilingRepository gstFilingRepository;
+	
+	private  final GstFilingRepository gstFilingRepository;
 
-    @Autowired
-    private ModelMapper modelMapper;
+	
+	private final  CustomerRepository customerRepository;
 
-    @Override
-    public String createFiling(GstFilingDto gstFilingDto) {
+	@Autowired
+	private ModelMapper modelMapper;
 
-        validateFiling(gstFilingDto);
+	@Override
+	public String createFiling(GstFilingDto gstFilingDto) {
 
-        GstFiling filing =
-                modelMapper.map(
-                        gstFilingDto,
-                        GstFiling.class);
+		validateFiling(gstFilingDto);
 
-        filing.setId(
-                RandomNumberGenerator.generateFilingId());
+		Customer customer = customerRepository.findById(gstFilingDto.getCustomerId()).orElseThrow(
+				() -> new ResourceNotFoundException("Customer not found with ID: " + gstFilingDto.getCustomerId()));
 
-        filing.setGstin(
-                gstFilingDto.getGstin());
-        filing.setCreatedAt(
-                LocalDateTime.now());
+		GstFiling filing = modelMapper.map(gstFilingDto, GstFiling.class);
 
-        gstFilingRepository.save(filing);
+		filing.setCustomer(customer);
 
-        return "GST filing created successfully";
-    }
+		filing.setGstfilingId(RandomNumberGenerator.generateFilingId());
 
-    @Override
-    public List<GstFiling> getFilingsByGstin(
-            String gstin) {
+		filing.setCreatedAt(LocalDateTime.now());
 
-        return gstFilingRepository.findByGstin(gstin);
-    }
+		gstFilingRepository.save(filing);
 
-    @Override
-    public String updateFiling(
-            String id,
-            GstFilingDto gstFilingDto) {
+		return "GST filing created successfully. Filing ID: " + filing.getGstfilingId();
+	}
 
-        GstFiling filing =
-                gstFilingRepository.findById(id)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "GST filing not found with id: "
-                                                + id));
+	@Override
+	public GstFiling getFilingById(String id) {
+	    return gstFilingRepository.findById(id)
+	            .orElseThrow(() -> new ResourceNotFoundException(
+	                    "GST filing not found with ID: " + id));
+	}
 
-        if (!filing.getGstin()
-                .equals(gstFilingDto.getGstin())) {
+	@Override
+	public String updateFiling(String id, GstFilingDto gstFilingDto) {
 
-            throw new ResourceNotFoundException(
-                    "GST filing does not belong to GSTIN: "
-                            + gstFilingDto.getGstin());
-        }
+	    GstFiling filing = gstFilingRepository.findById(id)
+	            .orElseThrow(() -> new ResourceNotFoundException(
+	                    "GST filing not found with ID: " + id));
 
-        validateFiling(gstFilingDto);
+	    if (!filing.getGstin().equals(gstFilingDto.getGstin())) {
+	        throw new ResourceNotFoundException(
+	                "GST filing does not belong to GSTIN: " + gstFilingDto.getGstin());
+	    }
 
-        modelMapper.typeMap(
-                GstFilingDto.class,
-                GstFiling.class)
-                .addMappings(mapper ->
-                        mapper.skip(GstFiling::setId));
+	    validateFiling(gstFilingDto);
 
-        modelMapper.map(
-                gstFilingDto,
-                filing);
+	    modelMapper.typeMap(GstFilingDto.class, GstFiling.class)
+	            .addMappings(mapper -> {
+	                mapper.skip(GstFiling::setGstfilingId);
+	                mapper.skip(GstFiling::setCustomer);
+	            });
 
-        filing.setId(id);
+	    modelMapper.map(gstFilingDto, filing);
 
-        filing.setGstin(
-                gstFilingDto.getGstin());
+	    gstFilingRepository.save(filing);
 
-        gstFilingRepository.save(filing);
+	    return "GST filing updated successfully";
+	}
 
-        return "GST filing updated successfully";
-    }
+	@Override
+	public String deleteFiling(String id) {
 
-    @Override
-    public String deleteFiling(String id) {
+		GstFiling filing = gstFilingRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("GST filing not found with ID: " + id));
 
-        GstFiling filing =
-                gstFilingRepository.findById(id)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "GST filing not found with id: "
-                                                + id));
+		gstFilingRepository.delete(filing);
 
-        gstFilingRepository.delete(filing);
+		return "GST filing deleted successfully";
+	}
 
-        return "GST filing deleted successfully";
-    }
+	private void validateFiling(GstFilingDto dto) {
 
-    private void validateFiling(
-            GstFilingDto dto) {
+		if (dto.getGstin() == null || dto.getGstin().trim().isEmpty() || dto.getCustomerId() == null
+				|| dto.getCustomerId().trim().isEmpty() || dto.getFinancialYear() == null
+				|| dto.getFinancialYear().trim().isEmpty() || dto.getFilingPeriod() == null
+				|| dto.getFilingPeriod().trim().isEmpty() || dto.getFilingFrequency() == null
+				|| dto.getReturnType() == null || dto.getFilingType() == null) {
 
-        if (dto.getGstin() == null ||
-                dto.getGstin().trim().isEmpty()) {
+			throw new IllegalArgumentException("All mandatory fields are required for GST filing");
+		}
 
-            throw new IllegalArgumentException(
-                    "GSTIN is required");
-        }
+		if (dto.getFilingType() == FilingType.NIL_RETURN) {
 
-        if (dto.getFinancialYear() == null ||
-                dto.getFinancialYear().trim().isEmpty()) {
+			dto.setTaxCalculationMethod(null);
+			dto.setEstimatedTaxableSales(null);
+			dto.setEstimatedTaxablePurchases(null);
+			dto.setEstimatedEligibleItc(null);
 
-            throw new IllegalArgumentException(
-                    "Financial year is required");
-        }
+			return;
+		}
 
-        if (dto.getFilingPeriod() == null ||
-                dto.getFilingPeriod().trim().isEmpty()) {
+		if (dto.getFilingType() == FilingType.REGULAR) {
 
-            throw new IllegalArgumentException(
-                    "Filing period is required");
-        }
+			if (dto.getTaxCalculationMethod() == null) {
 
-        if (dto.getFilingFrequency() == null) {
+				throw new IllegalArgumentException("Tax calculation method is required for regular filing");
+			}
 
-            throw new IllegalArgumentException(
-                    "Filing frequency is required");
-        }
+			if (dto.getTaxCalculationMethod() == TaxCalculationMethod.ESTIMATION_FIGURES) {
 
-        if (dto.getReturnType() == null) {
+				if (dto.getEstimatedTaxableSales() == null || dto.getEstimatedTaxablePurchases() == null
+						|| dto.getEstimatedEligibleItc() == null) {
 
-            throw new IllegalArgumentException(
-                    "Return type is required");
-        }
+					throw new IllegalArgumentException(
+							"Estimated taxable sales, estimated taxable purchases and estimated eligible ITC are required");
+				}
+			}
 
-        if (dto.getFilingType() == null) {
+			else if (dto.getTaxCalculationMethod() == TaxCalculationMethod.TAXEDGE_CA_CALCULATION) {
 
-            throw new IllegalArgumentException(
-                    "Filing type is required");
-        }
-
-        if (dto.getFilingType() ==
-                FilingType.NIL_RETURN) {
-
-            dto.setTaxCalculationMethod(null);
-            dto.setEstimatedTaxableSales(null);
-            dto.setEstimatedTaxablePurchases(null);
-            dto.setEstimatedEligibleItc(null);
-
-            return;
-        }
-
-        if (dto.getFilingType() ==
-                FilingType.REGULAR) {
-
-            if (dto.getTaxCalculationMethod() == null) {
-
-                throw new IllegalArgumentException(
-                        "Tax calculation method is required for regular filing");
-            }
-
-            if (dto.getTaxCalculationMethod() ==
-                    TaxCalculationMethod.ESTIMATION_FIGURES) {
-
-                if (dto.getEstimatedTaxableSales() == null) {
-
-                    throw new IllegalArgumentException(
-                            "Estimated taxable sales is required");
-                }
-
-                if (dto.getEstimatedTaxablePurchases() == null) {
-
-                    throw new IllegalArgumentException(
-                            "Estimated taxable purchases is required");
-                }
-
-                if (dto.getEstimatedEligibleItc() == null) {
-
-                    throw new IllegalArgumentException(
-                            "Estimated eligible ITC is required");
-                }
-
-                if (dto.getEstimatedTaxableSales() < 0) {
-
-                    throw new IllegalArgumentException(
-                            "Estimated taxable sales cannot be negative");
-                }
-
-                if (dto.getEstimatedTaxablePurchases() < 0) {
-
-                    throw new IllegalArgumentException(
-                            "Estimated taxable purchases cannot be negative");
-                }
-
-                if (dto.getEstimatedEligibleItc() < 0) {
-
-                    throw new IllegalArgumentException(
-                            "Estimated eligible ITC cannot be negative");
-                }
-
-            } else if (dto.getTaxCalculationMethod() ==
-                    TaxCalculationMethod.TAXEDGE_CA_CALCULATION) {
-
-                dto.setEstimatedTaxableSales(null);
-                dto.setEstimatedTaxablePurchases(null);
-                dto.setEstimatedEligibleItc(null);
-            }
-        }
-    }
+				dto.setEstimatedTaxableSales(null);
+				dto.setEstimatedTaxablePurchases(null);
+				dto.setEstimatedEligibleItc(null);
+			}
+		}
+	}
 }

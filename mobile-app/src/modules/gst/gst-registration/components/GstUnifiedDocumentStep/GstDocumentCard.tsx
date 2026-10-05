@@ -45,6 +45,7 @@ export const GstDocumentCard: React.FC<CardProps> = ({
     status === "processing" || status === "uploading" || isUploading;
 
   const renderBadge = () => {
+    if (status === "idle") return null;
     const badgeStyle =
       status === "uploaded"
         ? styles.statusUploaded
@@ -253,7 +254,7 @@ export const GstDocumentCard: React.FC<CardProps> = ({
             onPress={() => onReplace(doc.id)}
           >
             <Ionicons name="cloud-upload-outline" size={16} color="#FFFFFF" />
-            <Text style={styles.uploadBtnPrimaryText}>Add Document</Text>
+            <Text style={styles.uploadBtnPrimaryText}>Upload</Text>
           </TouchableOpacity>
         </View>
       ) : null}

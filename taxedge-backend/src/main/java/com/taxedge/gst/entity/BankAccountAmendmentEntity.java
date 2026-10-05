@@ -37,7 +37,7 @@ public class BankAccountAmendmentEntity {
     @Column(name = "new_account_type", nullable = false)
     private AccountType newAccountType;
 
-    @Column(name = "image_data", columnDefinition = "LONGTEXT")
+    @Column(name = "image_data", columnDefinition = "TEXT")
     private String imageData;
 
     @Column(name = "created_at")

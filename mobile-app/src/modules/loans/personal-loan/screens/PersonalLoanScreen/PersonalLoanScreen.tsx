@@ -10,7 +10,7 @@ import {
   Keyboard,
   Platform,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
@@ -22,17 +22,22 @@ import { useServiceDraft } from "../../../../../shared/hooks/useServiceDraft";
 import {
   LoanDetailsFormData,
   LoanBankingFormData,
-  LoanDocumentItem,
   LoanApplicationDraft,
 } from "../../../types/loans.types";
 import {
   validateLoanDetails,
   validateLoanBanking,
-  validateLoanDocuments,
 } from "../../../validation/loansSchema";
+import { useLoanWizard } from "../../../hooks/useLoanWizard";
+import { useLoanDocuments } from "../../../hooks/useLoanDocuments";
+import { LoanStepIndicator } from "../../../components/LoanStepIndicator";
+import { LoanCustomerCard } from "../../../components/LoanCustomerCard";
 import {
-  PersonalLoanStepIndicator,
-  PersonalLoanCustomerCard,
+  getBottomBarPadding,
+  getKeyboardAwareScrollPadding,
+  getSafeAreaTopPadding,
+} from "../../../styles/loanScreenLayout.styles";
+import {
   PersonalLoanFinancialsStep,
   PersonalLoanBankingStep,
   PersonalLoanDocumentsStep,
@@ -40,10 +45,12 @@ import {
 } from "../../components";
 import { styles } from "./PersonalLoanScreen.styles";
 
-const STEPS = ["Financials", "Banking", "Documents", "Review"];
+const STEPS = ["Financials", "Banking", "Documents", "Review"] as const;
 const PERSONAL_LOAN_DOCUMENTS_TEMPLATE = INDIVIDUAL_DOCUMENTS_TEMPLATE.filter((doc) =>
   ["pan", "aadhaar", "bank-statements", "salary-slips", "address-proof", "photograph"].includes(doc.id)
 );
+/** Statements and salary slips can only be attached as files (no gallery/camera). */
+const FILE_ONLY_DOCUMENT_IDS = ["bank-statements", "salary-slips"] as const;
 
 const INITIAL_LOAN_DETAILS: LoanDetailsFormData = {
   loanType: "Personal Loan",
@@ -60,6 +67,13 @@ const INITIAL_BANKING_DETAILS: LoanBankingFormData = {
   primaryBankName: "",
   accountNumber: "",
   ifscCode: "",
+};
+
+/** Scroll offsets that bring focused Financials fields into view. */
+const FIELD_SCROLL_OFFSETS: Record<string, number> = {
+  requiredAmount: 80,
+  purpose: 220,
+  monthlyIncomeOrTurnover: 520,
 };
 
 export const PersonalLoanScreen: React.FC = () => {
@@ -85,41 +99,46 @@ export const PersonalLoanScreen: React.FC = () => {
   }, []);
 
   const handleInputFocus = (field: string) => {
-    const offsets: Record<string, number> = {
-      requiredAmount: 80,
-      purpose: 220,
-      monthlyIncomeOrTurnover: 520,
-    };
-    scrollViewRef.current?.scrollTo({
-      y: offsets[field] || 0,
-      animated: true,
-    });
+    scrollViewRef.current?.scrollTo({ y: FIELD_SCROLL_OFFSETS[field] || 0, animated: true });
   };
+
+  const scrollToTop = useCallback(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
 
   const customer = useAuthStore((s) => s.customer);
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConsentChecked, setIsConsentChecked] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Form State
   const [loanDetails, setLoanDetails] = useState<LoanDetailsFormData>(INITIAL_LOAN_DETAILS);
   const [bankingDetails, setBankingDetails] = useState<LoanBankingFormData>(INITIAL_BANKING_DETAILS);
 
-  const [documents, setDocuments] = useState<LoanDocumentItem[]>(() =>
-    JSON.parse(JSON.stringify(PERSONAL_LOAN_DOCUMENTS_TEMPLATE))
-  );
+  const loanDocuments = useLoanDocuments({
+    template: PERSONAL_LOAN_DOCUMENTS_TEMPLATE,
+    scrollRef: scrollViewRef,
+    fileOnlyDocumentIds: FILE_ONLY_DOCUMENT_IDS,
+  });
+  const { documents } = loanDocuments;
+
+  const wizard = useLoanWizard({
+    totalSteps: STEPS.length,
+    validateStep: (stepIndex) => validateStep(stepIndex),
+    onExitFromFirstStep: () => (isFormDirty() ? openDraftModal() : router.back()),
+    onStepChange: scrollToTop,
+  });
+  const { currentStepIndex } = wizard;
 
   const isFormDirty = useCallback(() => {
     return Boolean(
       loanDetails.requiredAmount.trim() ||
         loanDetails.purpose.trim() ||
         loanDetails.preferredTenureMonths ||
-      loanDetails.hasExistingLoans ||
-      loanDetails.existingEmi.trim() ||
+        loanDetails.hasExistingLoans ||
+        loanDetails.existingEmi.trim() ||
         loanDetails.monthlyIncomeOrTurnover.trim() ||
-      loanDetails.employmentType !== INITIAL_LOAN_DETAILS.employmentType ||
+        loanDetails.employmentType !== INITIAL_LOAN_DETAILS.employmentType ||
         bankingDetails.primaryBankName.trim() ||
         bankingDetails.accountNumber.trim() ||
         bankingDetails.ifscCode.trim() ||
@@ -143,91 +162,48 @@ export const PersonalLoanScreen: React.FC = () => {
     onRestore: (saved) => {
       if (saved.loanDetails) setLoanDetails(saved.loanDetails);
       if (saved.bankingDetails) setBankingDetails(saved.bankingDetails);
-      if (saved.documents) setDocuments(saved.documents);
+      if (saved.documents) loanDocuments.setDocuments(saved.documents);
       if (typeof saved.currentStepIndex === "number") {
-        setCurrentStepIndex(saved.currentStepIndex);
+        wizard.goToStep(saved.currentStepIndex);
       }
     },
     isSubmitted: isSubmitting,
   });
 
-  const handleDetailsChange = (field: keyof LoanDetailsFormData, value: any) => {
+  const clearFieldError = (field: string) => {
+    if (!errors[field]) return;
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const handleDetailsChange = <K extends keyof LoanDetailsFormData>(field: K, value: LoanDetailsFormData[K]) => {
     setLoanDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field);
   };
 
-  const handleBankingChange = (
-    field: keyof LoanBankingFormData,
-    value: any
-  ) => {
+  const handleBankingChange = <K extends keyof LoanBankingFormData>(field: K, value: LoanBankingFormData[K]) => {
     setBankingDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field);
   };
 
-  const handleDocumentUploaded = (
-    docId: string,
-    fileUri: string,
-    fileName: string,
-    fileSize: string
-  ) => {
-    setDocuments((prev) =>
-      prev.map((d) =>
-        d.id === docId
-          ? {
-              ...d,
-              fileUri,
-              fileName,
-              fileSize,
-              uploadedAt: new Date().toISOString(),
-            }
-          : d
-      )
-    );
-  };
-
-  const handleDocumentRemoved = (docId: string) => {
-    setDocuments((prev) =>
-      prev.map((document) =>
-        document.id === docId
-          ? {
-              ...document,
-              fileUri: undefined,
-              fileName: undefined,
-              fileSize: undefined,
-              uploadedAt: undefined,
-            }
-          : document
-      )
-    );
-  };
-
-  const validateCurrentStep = (): boolean => {
-    if (currentStepIndex === 0) {
+  function validateStep(stepIndex: number): boolean {
+    if (stepIndex === 0) {
       const errs = validateLoanDetails(loanDetails, { requireExistingEmi: false });
       setErrors(errs);
       return Object.keys(errs).length === 0;
     }
 
-    if (currentStepIndex === 1) {
+    if (stepIndex === 1) {
       const errs = validateLoanBanking(bankingDetails);
       setErrors(errs);
       return Object.keys(errs).length === 0;
     }
 
-    if (currentStepIndex === 2) {
-      const { isValid, missingDocs } = validateLoanDocuments(documents);
+    if (stepIndex === 2) {
+      const { isValid, missingDocs } = loanDocuments.validateDocuments();
       if (!isValid) {
         Alert.alert(
           "Mandatory Documents Required",
@@ -239,29 +215,15 @@ export const PersonalLoanScreen: React.FC = () => {
     }
 
     return true;
-  };
+  }
 
   const handleNext = () => {
-    if (!validateCurrentStep()) {
+    if (!wizard.isLastStep) {
+      wizard.goToNextStep();
       return;
     }
-
-    if (currentStepIndex < STEPS.length - 1) {
-      setCurrentStepIndex((prev) => prev + 1);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    } else {
+    if (validateStep(currentStepIndex)) {
       handleSubmitApplication();
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex((prev) => prev - 1);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    } else if (isFormDirty()) {
-      openDraftModal();
-    } else {
-      router.back();
     }
   };
 
@@ -288,19 +250,11 @@ export const PersonalLoanScreen: React.FC = () => {
       const response = await loansApi.applyLoan(draft);
       markSubmitted();
       await clearDraft();
+      const statusRoute: Href = `/service/loan-status?id=${response.applicationId}&loanType=Personal+Loan&amount=${response.amount}`;
       Alert.alert(
         "Personal Loan Submitted",
         `Your application (Ref: ${response.referenceNumber}) has been submitted. Our credit team will verify your dossier shortly.`,
-        [
-          {
-            text: "Track Status",
-            onPress: () => {
-              router.replace(
-                `/service/loan-status?id=${response.applicationId}&loanType=Personal+Loan&amount=${response.amount}` as any
-              );
-            },
-          },
-        ]
+        [{ text: "Track Status", onPress: () => router.replace(statusRoute) }]
       );
     } catch {
       Alert.alert("Submission Error", "Failed to submit application. Try again.");
@@ -314,7 +268,14 @@ export const PersonalLoanScreen: React.FC = () => {
       case 0:
         return (
           <>
-            <PersonalLoanCustomerCard profile={customer || undefined} />
+            <LoanCustomerCard
+              profile={customer || undefined}
+              labels={{
+                infoText:
+                  "Personal details are securely fetched from your customer profile table. Manual re-entry is skipped.",
+              }}
+              verifiedIconColor={BrandColors.PRIMARY_ORANGE}
+            />
             <PersonalLoanFinancialsStep
               data={loanDetails}
               onChange={handleDetailsChange}
@@ -332,14 +293,7 @@ export const PersonalLoanScreen: React.FC = () => {
           />
         );
       case 2:
-        return (
-          <PersonalLoanDocumentsStep
-            documents={documents}
-            onDocumentUploaded={handleDocumentUploaded}
-            onDocumentRemoved={handleDocumentRemoved}
-            scrollRef={scrollViewRef}
-          />
-        );
+        return <PersonalLoanDocumentsStep loanDocuments={loanDocuments} />;
       case 3:
       default:
         return (
@@ -350,29 +304,24 @@ export const PersonalLoanScreen: React.FC = () => {
             profile={customer || undefined}
             isConsentChecked={isConsentChecked}
             onConsentToggle={setIsConsentChecked}
-            onGoToStep={(stepIdx) => {
-              setCurrentStepIndex(stepIdx);
-              scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-            }}
+            onGoToStep={wizard.goToStep}
           />
         );
     }
   };
 
-  const isFinalStep = currentStepIndex === STEPS.length - 1;
-
   return (
-    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
+    <View style={[styles.safeArea, getSafeAreaTopPadding(insets.top)]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={handleBack}>
-            <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <TouchableOpacity onPress={wizard.handleBack}>
+            <Ionicons name="arrow-back" size={24} color={BrandColors.TEXT_PRIMARY} />
           </TouchableOpacity>
           <View>
             <Text style={styles.headerTitle}>Personal Loan</Text>
             <Text style={styles.headerSubtitle}>
-              Step {currentStepIndex + 1} of {STEPS.length} • {STEPS[currentStepIndex]}
+              Step {wizard.stepNumber} of {STEPS.length} • {STEPS[currentStepIndex]}
             </Text>
           </View>
         </View>
@@ -381,14 +330,11 @@ export const PersonalLoanScreen: React.FC = () => {
       </View>
 
       {/* Step Progress Stepper */}
-      <PersonalLoanStepIndicator
+      <LoanStepIndicator
+        variant="numbered"
         steps={STEPS}
         currentStepIndex={currentStepIndex}
-        onStepPress={(idx) => {
-          if (idx <= currentStepIndex) {
-            setCurrentStepIndex(idx);
-          }
-        }}
+        onStepPress={wizard.goToStep}
       />
 
       <KeyboardAvoidingView
@@ -402,7 +348,7 @@ export const PersonalLoanScreen: React.FC = () => {
           style={styles.scrollView}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: Math.max(keyboardHeight + 96, insets.bottom + 40) },
+            getKeyboardAwareScrollPadding(keyboardHeight, insets.bottom),
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -413,42 +359,35 @@ export const PersonalLoanScreen: React.FC = () => {
         </ScrollView>
 
         {/* Sticky Bottom Actions */}
-        <View
-          style={[
-            styles.bottomBar,
-            { paddingBottom: Math.max(insets.bottom, 12) },
-          ]}
-        >
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBack}
-          disabled={isSubmitting}
-        >
-          <Text style={styles.backButtonText}>
-            Back
-          </Text>
-        </TouchableOpacity>
+        <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={wizard.handleBack}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
-          onPress={handleNext}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator size="small" color={BrandColors.WHITE} />
-          ) : (
-            <>
-              <Text style={styles.nextButtonText}>
-                {isFinalStep ? "Submit Application" : "Continue"}
-              </Text>
-              <Ionicons
-                name={isFinalStep ? "shield-checkmark" : "arrow-forward"}
-                size={18}
-                color={BrandColors.WHITE}
-              />
-            </>
-          )}
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
+            onPress={handleNext}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color={BrandColors.WHITE} />
+            ) : (
+              <>
+                <Text style={styles.nextButtonText}>
+                  {wizard.isLastStep ? "Submit Application" : "Continue"}
+                </Text>
+                <Ionicons
+                  name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
+                  size={18}
+                  color={BrandColors.WHITE}
+                />
+              </>
+            )}
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
 

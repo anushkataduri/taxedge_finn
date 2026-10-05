@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { LoanBankingFormData } from "../../../types/loans.types";
-import { ifscService } from "../../../../gst/services/ifscService";
+import { useIfscLookup } from "../../../hooks/useIfscLookup";
 import { styles } from "./WorkingCapitalBankingStep.styles";
 
 export interface WorkingCapitalBankingStepProps {
@@ -24,30 +24,14 @@ export const WorkingCapitalBankingStep: React.FC<WorkingCapitalBankingStepProps>
   errors = {},
   hasExistingLoans = false,
 }) => {
-  const [isIfscLoading, setIsIfscLoading] = useState(false);
-  const [ifscError, setIfscError] = useState<string | null>(null);
-  const [branchName, setBranchName] = useState<string>("");
+  const ifsc = useIfscLookup({
+    trigger: "length",
+    onResolved: (details) => onChange("primaryBankName", details.bank),
+  });
+  const { isLoading: isIfscLoading, error: ifscError, branchName } = ifsc;
 
-  const handleIfscChange = async (text: string) => {
-    const cleaned = text.toUpperCase().replace(/[^A-Z0-9]/g, "");
-    onChange("ifscCode", cleaned);
-
-    if (cleaned.length === 11) {
-      setIsIfscLoading(true);
-      setIfscError(null);
-      try {
-        const details = await ifscService.lookup(cleaned);
-        onChange("primaryBankName", details.bank);
-        setBranchName(details.branch);
-      } catch (err: any) {
-        setIfscError(err?.message || "Invalid IFSC Code");
-      } finally {
-        setIsIfscLoading(false);
-      }
-    } else {
-      setIfscError(null);
-      if (branchName) setBranchName("");
-    }
+  const handleIfscChange = (text: string) => {
+    onChange("ifscCode", ifsc.handleIfscChange(text));
   };
 
   return (
@@ -163,7 +147,7 @@ export const WorkingCapitalBankingStep: React.FC<WorkingCapitalBankingStepProps>
       {/* ITR Details Sub-card */}
       <View style={styles.itrBox}>
         <View style={styles.itrHeaderRow}>
-          <Ionicons name="sparkles-outline" size={18} color="#EA580C" style={{ marginRight: 6 }} />
+          <Ionicons name="sparkles-outline" size={18} color="#EA580C" style={styles.itrHeaderIcon} />
           <Text style={styles.itrBoxTitle}>Business Tax Audit & ITR Records</Text>
         </View>
 
@@ -196,7 +180,7 @@ export const WorkingCapitalBankingStep: React.FC<WorkingCapitalBankingStepProps>
         </View>
 
         {data.itrFilingStatus === "Filed" && (
-          <View style={{ marginBottom: 4 }}>
+          <View style={styles.itrAckGroup}>
             <Text style={styles.label}>
               ITR Acknowledgement Number (15 Digits){" "}
               <Text style={styles.optionalTag}>(Optional)</Text>

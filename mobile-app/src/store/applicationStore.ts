@@ -316,6 +316,7 @@ export interface ApplicationState {
     paymentAmount: number,
     initialPaymentStatus?: PaymentStatus,
     skipNotification?: boolean,
+    customId?: string,
   ) => string;
   uploadDocument: (appId: string, docName: string, fileUri: string) => void;
   addChatMessage: (appId: string, sender: ChatSender, text: string) => void;
@@ -668,10 +669,23 @@ export const useApplicationStore = create<ApplicationState>((set) => ({
     paymentAmount,
     initialPaymentStatus,
     skipNotification,
+    customId,
   ) => {
-    const randomNum = Math.floor(10000 + Math.random() * 90000);
-    const prefix = category.substring(0, 4).toUpperCase();
-    const appId = `${prefix}-2026-${randomNum}`;
+    const cleanCustomId = customId && String(customId).trim();
+    const formDataGstId =
+      ((formData as any)?.gstId && String((formData as any).gstId).trim()) ||
+      ((formData as any)?.createdGstId && String((formData as any).createdGstId).trim());
+
+    // Prefer backend ID directly without generating mock ID in frontend
+    const backendId =
+      (cleanCustomId && !/^GST-2026-\d+/i.test(cleanCustomId) ? cleanCustomId : "") ||
+      (formDataGstId && !/^GST-2026-\d+/i.test(formDataGstId) ? formDataGstId : "") ||
+      cleanCustomId ||
+      undefined;
+
+    const appId =
+      backendId ||
+      `${category.substring(0, 4).toUpperCase()}-2026-${Math.floor(10000 + Math.random() * 90000)}`;
     const assignedExecutive = "";
 
     const newApp: Application = {

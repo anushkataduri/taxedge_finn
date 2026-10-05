@@ -10,6 +10,7 @@ export interface GstRegistrationDraft {
   state: string;
   city: string;
   pincode: string;
+  [key: string]: unknown;
 }
 
 export interface GstFilingDraft {
@@ -18,4 +19,5 @@ export interface GstFilingDraft {
   returnType: string;
   financialYear: string;
   period: string;
+  [key: string]: unknown;
 }

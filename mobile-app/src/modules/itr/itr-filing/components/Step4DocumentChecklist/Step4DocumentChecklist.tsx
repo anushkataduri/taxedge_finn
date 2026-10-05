@@ -16,12 +16,13 @@ import { DocumentPreviewModal } from "../DocumentPreviewModal/DocumentPreviewMod
 import { styles, getProgressBarFill } from "./Step4DocumentChecklist.styles";
 
 interface Step4DocumentChecklistProps {
+  isEditing?: boolean;
   documents: ItrDocumentItem[];
   onUpdateDocument: (docId: string, fileInfo: UploadedFileInfo | null) => void;
   onContinue: () => void;
 }
 
-export const Step4DocumentChecklist: React.FC<Step4DocumentChecklistProps> = ({
+export const Step4DocumentChecklist: React.FC<Step4DocumentChecklistProps> = ({ isEditing, 
   documents,
   onUpdateDocument,
   onContinue,
@@ -259,7 +260,7 @@ export const Step4DocumentChecklist: React.FC<Step4DocumentChecklistProps> = ({
         style={styles.continueButton}
         onPress={handleContinuePress}
       >
-        <Text style={styles.continueButtonText}>Review Return Summary</Text>
+        <Text style={styles.continueButtonText}>{isEditing ? "Update and Continue" : "Confirm & Continue to Review"}</Text>
         <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
       </TouchableOpacity>
 

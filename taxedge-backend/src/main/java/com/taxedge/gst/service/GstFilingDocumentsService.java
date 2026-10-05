@@ -1,7 +1,6 @@
 package com.taxedge.gst.service;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
@@ -9,14 +8,19 @@ import com.taxedge.gst.dto.GstFilingDocumentsDto;
 
 public interface GstFilingDocumentsService {
 
-	String uploadDocument(String filingId, String documentType, MultipartFile file)
-	        throws IOException;
+	String uploadDocuments(String gstfilingId, MultipartFile salesInvoice, MultipartFile purchaseInvoices,
+			MultipartFile gstr2bItcStatement, MultipartFile creditNotes, MultipartFile debitNotes,
+			MultipartFile eInvoiceData, MultipartFile eWayBillData, MultipartFile expenseInvoicesAndVouchers,
+			MultipartFile bankStatement, MultipartFile previousGstReturns, MultipartFile previousFilingAcknowledgement,
+			MultipartFile otherSupportingDocuments) throws IOException;
 
-	List<GstFilingDocumentsDto> getDocuments(String filingId);
+	GstFilingDocumentsDto getDocuments(String gstfilingId);
 
-	String updateDocument(String filingId, Long id, MultipartFile file)
-	        throws IOException;
+	String updateDocuments(String gstfilingId, MultipartFile salesInvoice, MultipartFile purchaseInvoices,
+			MultipartFile gstr2bItcStatement, MultipartFile creditNotes, MultipartFile debitNotes,
+			MultipartFile eInvoiceData, MultipartFile eWayBillData, MultipartFile expenseInvoicesAndVouchers,
+			MultipartFile bankStatement, MultipartFile previousGstReturns, MultipartFile previousFilingAcknowledgement,
+			MultipartFile otherSupportingDocuments) throws IOException;
 
-	String deleteDocument(String filingId, Long id);
-
+	String deleteDocuments(String gstfilingId);
 }

@@ -1,75 +1,3 @@
-////package com.taxedge.gst.dto;
-////
-////import java.time.LocalDate;
-////
-////import com.taxedge.gst.enums.ComplianceRequestType;
-////
-////import lombok.Data;
-////
-////@Data
-////public class GstComplianceDto {
-////
-////    private Long id;
-////
-////    private String gstId;
-////
-////    private String financialYear;
-////
-////    private ComplianceRequestType requestType;
-////
-////    private String gstr2bNumber;
-////
-////    private String reconciliationFile1;
-////
-////    private String reconciliationFile2;
-////
-////    private String noticeNumber;
-////
-////    private LocalDate noticeIssueDate;
-////
-////    private LocalDate replyDueDate;
-////
-////    private String noticeFile;
-////
-////    private String message;
-////}
-//
-//package com.taxedge.gst.dto;
-//
-//import java.time.LocalDate;
-//
-//import com.taxedge.gst.enums.ComplianceRequestType;
-//
-//import lombok.Data;
-//
-//@Data
-//public class GstComplianceDto {
-//
-//   // private Long id;
-//
-//    private String gstId;
-//
-//    private String financialYear;
-//
-//    private ComplianceRequestType requestType;
-//
-//    private String gstr2bNumber;
-//
-//    private String reconciliationFile1;
-//
-//    private String reconciliationFile2;
-//
-//    private String noticeNumber;
-//
-//    private LocalDate noticeIssueDate;
-//
-//    private LocalDate replyDueDate;
-//
-//    private String noticeFile;
-//
-//    private String message;
-//}
-
 package com.taxedge.gst.dto;
 
 import java.time.LocalDate;
@@ -81,19 +9,27 @@ import lombok.Data;
 @Data
 public class GstComplianceDto {
 
-    private String gstin;
+	private String gstin;
 
-    private String financialYear;
+	private String customerId;
 
-    private ComplianceRequestType requestType;
+	private String financialYear;
 
-    private String gstr2bNumber;
+	private ComplianceRequestType requestType;
 
-    private String noticeNumber;
+	private String gstr2bNumber;
 
-    private LocalDate noticeIssueDate;
+	private String reconciliationFile1;
 
-    private LocalDate replyDueDate;
+	private String reconciliationFile2;
 
-    private String message;
+	private String noticeNumber;
+
+	private LocalDate noticeIssueDate;
+
+	private LocalDate replyDueDate;
+
+	private String noticeFile;
+
+	private String message;
 }

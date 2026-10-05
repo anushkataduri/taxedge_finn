@@ -1,9 +1,3 @@
-/**
- * Component: ComplianceHeader
- * Migrated from internal StyleSheet to external styles module.
- * Uses shared design tokens from src/shared/theme.ts.
- */
-
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
@@ -19,14 +13,16 @@ import {
   getTitleThemeStyle,
   getInfoCardThemeStyle,
   getInfoTextThemeStyle,
-} from "./ComplianceHeader.styles";
+} from "@/modules/gst/gst-compliance/components/ComplianceHeader/ComplianceHeader.styles";
 
 export interface ComplianceHeaderProps {
+  title?: string;
   onBackPress?: () => void;
   showProgressLine?: boolean;
 }
 
 export const ComplianceHeader: React.FC<ComplianceHeaderProps> = ({
+  title = "GST Compliance",
   onBackPress,
   showProgressLine = true,
 }) => {
@@ -60,7 +56,7 @@ export const ComplianceHeader: React.FC<ComplianceHeaderProps> = ({
         </TouchableOpacity>
 
         <Text style={[styles.titleText, getTitleThemeStyle(isDark)]}>
-          GST Compliance
+          {title}
         </Text>
 
         <View style={styles.placeholderBox} />

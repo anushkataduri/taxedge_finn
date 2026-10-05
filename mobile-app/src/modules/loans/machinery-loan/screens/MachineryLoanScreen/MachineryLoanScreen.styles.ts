@@ -93,4 +93,7 @@ export const styles = StyleSheet.create({
     fontWeight: "700",
     color: BrandColors.WHITE,
   },
+  documentsReviewSpacer: {
+    height: 24,
+  },
 });

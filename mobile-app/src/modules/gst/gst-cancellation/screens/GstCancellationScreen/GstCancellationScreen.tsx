@@ -11,7 +11,12 @@ import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
 import { GstValidators } from "@/modules/gst/utils/gstValidators";
 import { pickImageFromCamera } from "@/modules/gst/utils/imageUploadHelper";
-import { styles, CANCELLATION_REASONS, ACCEPTED_PROOFS } from "./GstCancellationScreen.styles";
+import {
+  styles,
+  CANCELLATION_REASONS,
+  ACCEPTED_PROOFS,
+  getHeaderBarStyle,
+} from "./GstCancellationScreen.styles";
 import { useApplicationStore } from "@/store/applicationStore";
 import { gstCancellationApi } from "@/modules/gst/services/gstCancellationApi";
 import { GstCancellationSuccess } from "../../components/GstCancellationSuccess";
@@ -43,6 +48,8 @@ export default function GstCancellationScreen() {
   const [reviewDeclared, setReviewDeclared] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ arn: string; date: string; appId: string } | null>(null);
+  // Edit Mode: true when navigating from Review → Edit
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const set = (k: keyof Form, v: any) => setForm(p => ({ ...p, [k]: v }));
   const clear = (k: string) => setErrors(p => { const n = { ...p }; delete n[k]; return n; });
@@ -143,24 +150,54 @@ export default function GstCancellationScreen() {
     }
   };
 
-  const handleBackPress = () => router.back();
+  const handleBackPress = () => {
+    if (isEditMode) {
+      // In Edit Mode: back returns to Review without changes
+      setIsEditMode(false);
+      setStep("REVIEW");
+      return;
+    }
+    router.back();
+  };
   const toggleProofsOpen = () => setProofsOpen(p => !p);
   const toggleDeclaration = () => {
     set("isFinalReturnDeclared", !form.isFinalReturnDeclared);
     clear("declaration");
   };
   const handleReviewPress = () => {
-    if (validate()) setStep("REVIEW");
+    if (!validate()) return;
+
+    if (isEditMode) {
+      // TODO (Backend Blocker): PUT /api/v1/gst/cancellation/update/{cancellationId} not yet implemented.
+      // When available, call the PUT endpoint here before navigating back to Review.
+      // For now: local state already holds the updated form — navigate back to Review directly.
+      setIsEditMode(false);
+      setStep("REVIEW");
+      return;
+    }
+
+    setStep("REVIEW");
+  };
+
+  /** Navigate from Review → Edit for a given section */
+  const handleEditFromReview = () => {
+    setIsEditMode(true);
+    setErrors({});
+    setStep("FORM");
   };
 
   const renderChoiceButton = (key: "isVoluntaryUnderOneYear" | "areAllReturnsFiled", value: boolean) => (
     <TouchableOpacity
       key={String(value)}
-      style={[styles.selectBox, { flex: 1, alignItems: "center", justifyContent: "center" }, form[key] === value && { borderColor: BrandColors.PRIMARY_BLUE, backgroundColor: "#F0F9FF" }]}
+      style={[
+        styles.selectBox,
+        styles.selectBoxChoice,
+        form[key] === value && styles.selectBoxChoiceSelected,
+      ]}
       activeOpacity={0.7}
       onPress={() => { set(key, value); clear(key); }}
     >
-      <Text style={[styles.selectText, form[key] === value && { color: BrandColors.PRIMARY_BLUE, fontWeight: "600" }]}>
+      <Text style={[styles.selectText, form[key] === value && styles.selectTextSelected]}>
         {value ? "Yes" : "No"}
       </Text>
     </TouchableOpacity>
@@ -222,12 +259,14 @@ export default function GstCancellationScreen() {
 
   const renderReviewButton = () => (
     <TouchableOpacity style={styles.actionOrangeBtn} activeOpacity={0.85} onPress={handleReviewPress}>
-      <Text style={styles.actionOrangeBtnText}>Review Cancellation</Text>
+      <Text style={styles.actionOrangeBtnText}>
+        {isEditMode ? "Update & Review" : "Review Cancellation"}
+      </Text>
     </TouchableOpacity>
   );
 
   const renderHeader = () => (
-    <View style={[styles.headerBar, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
+    <View style={[styles.headerBar, getHeaderBarStyle(insets.top)]}>
       <TouchableOpacity activeOpacity={0.7} onPress={handleBackPress} style={styles.backButton}>
         <Ionicons name="chevron-back" size={20} color={BrandColors.TEXT_PRIMARY} />
       </TouchableOpacity>
@@ -260,7 +299,7 @@ export default function GstCancellationScreen() {
   );
 
   if (step === "SUCCESS" && result) return <GstCancellationSuccess submissionResult={result} gstin={form.gstin} cancellationDate={form.cancellationDate} />;
-  if (step === "REVIEW") return <GstCancellationReview formData={form} isReviewDeclared={reviewDeclared} setIsReviewDeclared={setReviewDeclared} isSubmitting={submitting} handleSubmitCancellation={submit} onBack={() => setStep("FORM")} />;
+  if (step === "REVIEW") return <GstCancellationReview formData={form} isReviewDeclared={reviewDeclared} setIsReviewDeclared={setReviewDeclared} isSubmitting={submitting} handleSubmitCancellation={submit} onBack={() => setStep("FORM")} onEdit={handleEditFromReview} />;
 
   return (
     <View style={styles.root}>

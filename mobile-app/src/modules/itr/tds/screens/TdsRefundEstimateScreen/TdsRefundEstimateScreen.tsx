@@ -21,6 +21,7 @@ import { tdsDraftService, INITIAL_TDS_FORM_DATA } from "../../services/tdsDraftS
 import { tdsCalculationService } from "../../services/tdsCalculationService";
 import { tdsApiService } from "../../services/tdsApiService";
 import { TaxCalculationBreakdownCard } from "../../components/estimate/TaxCalculationBreakdownCard";
+import { useTdsProgressStore } from "../../store/tdsProgressStore";
 import { styles } from "./TdsRefundEstimateScreen.styles";
 
 export const TdsRefundEstimateScreen: React.FC = () => {
@@ -33,6 +34,8 @@ export const TdsRefundEstimateScreen: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    useTdsProgressStore.getState().setMaxStepReached(3);
+
     let isMounted = true;
     (async () => {
       const savedForm = await tdsDraftService.getFormDraft();

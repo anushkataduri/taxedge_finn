@@ -7,17 +7,18 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
-import { GstBusinessFormData } from "../GstBusinessStep/GstBusinessStep";
-import { DocumentItem } from "../GstUnifiedDocumentStep/GstUnifiedDocumentStep";
+import { GstBusinessFormData } from "@/modules/gst/gst-registration/components/GstBusinessStep/GstBusinessStep";
+import { DocumentItem } from "@/modules/gst/gst-registration/components/GstUnifiedDocumentStep/GstUnifiedDocumentStep";
+import { DocumentPreviewModal } from "@/modules/gst/gst-registration/components/GstUnifiedDocumentStep/GstDocumentModals";
 import { styles, getDocProgressFillStyle } from "./GstReviewStep.styles";
-import { DocumentPreviewModal } from "../GstUnifiedDocumentStep/GstDocumentModals";
 
 interface GstReviewStepProps {
   businessData: GstBusinessFormData;
   documents: DocumentItem[];
-  onEditStep: (stepIndex: number) => void;
+  onEditStep: (stepIndex: number, sectionName?: string) => void;
   declared: boolean;
   onToggleDeclaration: () => void;
+  isFetching?: boolean;
 }
 
 const ReviewRow = ({
@@ -46,11 +47,25 @@ export const GstReviewStep: React.FC<GstReviewStepProps> = ({
   onEditStep,
   declared,
   onToggleDeclaration,
+  isFetching = false,
 }) => {
   const [previewDoc, setPreviewDoc] = useState<DocumentItem | null>(null);
   const uploadedDocs = documents.filter((d) => Boolean(d.fileUri));
   const progressPercent =
     documents.length > 0 ? (uploadedDocs.length / documents.length) * 100 : 0;
+
+  if (isFetching && !businessData.legalName) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingTitle}>
+          Retrieving Application Data
+        </Text>
+        <Text style={styles.loadingSubtitle}>
+          Fetching saved details from database...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -58,7 +73,7 @@ export const GstReviewStep: React.FC<GstReviewStepProps> = ({
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Business Details</Text>
-          <TouchableOpacity onPress={() => onEditStep(0)} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => onEditStep(0, "business")} activeOpacity={0.7}>
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
         </View>
@@ -104,7 +119,7 @@ export const GstReviewStep: React.FC<GstReviewStepProps> = ({
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Bank Details</Text>
-          <TouchableOpacity onPress={() => onEditStep(0)} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => onEditStep(0, "bank")} activeOpacity={0.7}>
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
         </View>
@@ -131,7 +146,7 @@ export const GstReviewStep: React.FC<GstReviewStepProps> = ({
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Authorised Signatory</Text>
-          <TouchableOpacity onPress={() => onEditStep(0)} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => onEditStep(0, "signatory")} activeOpacity={0.7}>
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
         </View>
@@ -155,7 +170,7 @@ export const GstReviewStep: React.FC<GstReviewStepProps> = ({
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Uploaded Documents</Text>
-          <TouchableOpacity onPress={() => onEditStep(1)} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => onEditStep(1, "documents")} activeOpacity={0.7}>
             <Text style={styles.docCountText}>
               {uploadedDocs.length}/{documents.length} Uploaded
             </Text>
@@ -225,7 +240,7 @@ export const GstReviewStep: React.FC<GstReviewStepProps> = ({
         onClose={() => setPreviewDoc(null)}
         onReplace={() => {
           setPreviewDoc(null);
-          onEditStep(1);
+          onEditStep(1, "documents");
         }}
         isUploading={false}
       />

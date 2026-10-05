@@ -12,7 +12,7 @@ import {
   TextInput,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { styles, getMethodIconBoxStyle } from "./GstPaymentMethodStep.styles";
+import { styles, getMethodIconBoxStyle } from "@/modules/gst/gst-filing/components/payment/GstPaymentMethodStep/GstPaymentMethodStep.styles";
 
 const PAYMENT_METHODS = [
   { id: "upi", title: "UPI", subtitle: "Pay via Google Pay, PhonePe, Paytm, BHIM", iconName: "phone-portrait", iconBg: "#DCFCE7", iconColor: "#16A34A" },

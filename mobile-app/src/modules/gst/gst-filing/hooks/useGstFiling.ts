@@ -1,66 +1,51 @@
-import { useState, useEffect, useCallback } from "react";
+/**
+ * Custom Hook: useGstFiling
+ * Manages the multi-step GST Filing workflow, state synchronization,
+ * REST API persistence, drafts, and step progression.
+ */
+
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { GstValidators } from "@/modules/gst/utils/gstValidators";
-import { FilingDocItem } from "../components/GstFilingDocumentsStep/GstFilingDocumentsStep";
 import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
 import { useApplicationStore } from "@/store/applicationStore";
 import { gstApi } from "@/modules/gst/services/gstApi";
-import { useGstFilingForm } from "./useGstFilingForm";
+import { useGstFilingForm } from "@/modules/gst/gst-filing/hooks/useGstFilingForm";
+import { useGstFilingRestore } from "@/modules/gst/gst-filing/hooks/useGstFilingRestore";
+import {
+  mapDtoToPeriodData,
+  mapDtoToFilingDocuments,
+  resolveTargetFilingId,
+} from "@/modules/gst/gst-filing/hooks/gstFilingHelpers";
+import {
+  submitPeriodStep,
+  submitDocumentsStep,
+  submitReviewStep,
+  promptPayLaterSubmission,
+} from "@/modules/gst/gst-filing/hooks/gstFilingStepHandlers";
 
-function mapDocNameToEnum(name: string): string {
-  if (name.includes("Sales Invoices")) return "SALES_INVOICE";
-  if (name.includes("Purchase Invoices")) return "PURCHASE_INVOICES";
-  if (name.includes("GSTR-2B")) return "GSTR_2B_ITC_STATEMENT";
-  if (name.includes("Credit Notes")) return "CREDIT_NOTES";
-  if (name.includes("Debit Notes")) return "DEBIT_NOTES";
-  if (name.includes("E-Invoice")) return "E_INVOICE_DATA";
-  if (name.includes("E-Way Bill")) return "E_WAY_BILL_DATA";
-  if (name.includes("Expense Invoices")) return "EXPENSE_INVOICES_AND_VOUCHERS";
-  if (name.includes("Bank Statement")) return "BANK_STATEMENT";
-  if (name.includes("Previous GST Returns")) return "PREVIOUS_GST_RETURNS";
-  if (name.includes("Previous Filing Acknowledgement"))
-    return "PREVIOUS_FILING_ACKNOWLEDGEMENT";
-  return "OTHER_SUPPORTING_DOCUMENTS";
-}
-
-function buildFilingPayload(periodData: any, isManualEstimatesOnly = false) {
-  const freq = periodData.periodType?.toUpperCase().replace(" ", "_");
-  const rawReturn = periodData.filingType?.split(" ")[0].replace("-", "_");
-  const isNil = periodData.filingNature === "Nil Return";
-  const isEstimates =
-    isManualEstimatesOnly || periodData.calculationMethod === "manual_estimates";
-
-  return {
-    gstin: periodData.gstin,
-    financialYear: periodData.financialYear?.replace("FY ", "") || "2025-26",
-    filingPeriod: periodData.filingPeriod || periodData.filingMonth,
-    filingFrequency: freq === "ANNUAL" ? "ANNUAL_FINANCIAL_YEAR" : freq,
-    returnType: rawReturn,
-    filingType: isNil ? "NIL_RETURN" : "REGULAR",
-    taxCalculationMethod: isEstimates
-      ? "ESTIMATION_FIGURES"
-      : "TAXEDGE_CA_CALCULATION",
-    estimatedTaxableSales: isEstimates
-      ? Number(periodData.taxableSales || periodData.turnover || 0)
-      : null,
-    estimatedTaxablePurchases: isEstimates
-      ? Number(periodData.taxablePurchases || 0)
-      : null,
-    estimatedEligibleItc: isEstimates
-      ? Number(periodData.eligibleItc || 0)
-      : null,
-  };
-}
+export { mapDtoToPeriodData, mapDtoToFilingDocuments };
 
 export function useGstFiling() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ appId?: string; step?: string }>();
+  const params = useLocalSearchParams<{
+    appId?: string;
+    step?: string;
+    filingId?: string;
+    id?: string;
+  }>();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [filingId, setFilingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdAppId, setCreatedAppId] = useState("");
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  const handleEditStep = useCallback((stepIndex: number) => {
+    setIsEditMode(true);
+    setCurrentStep(stepIndex);
+  }, []);
 
   const {
     periodData,
@@ -83,12 +68,8 @@ export function useGstFiling() {
 
   // Store access
   const gstFilingDraft = useApplicationStore((state) => state.gstFilingDraft);
-  const saveGstFilingDraft = useApplicationStore(
-    (state) => state.saveGstFilingDraft,
-  );
-  const clearGstFilingDraft = useApplicationStore(
-    (state) => state.clearGstFilingDraft,
-  );
+  const saveGstFilingDraft = useApplicationStore((state) => state.saveGstFilingDraft);
+  const clearGstFilingDraft = useApplicationStore((state) => state.clearGstFilingDraft);
 
   // Universal Draft Guard Hook
   const {
@@ -113,6 +94,7 @@ export function useGstFiling() {
         stepIndex: currentStep,
         periodData,
         documents,
+        createdFilingId: filingId || undefined,
         updatedAt: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -126,103 +108,129 @@ export function useGstFiling() {
   });
 
   // Restore existing application or draft on mount
+  useGstFilingRestore({
+    params,
+    setFilingId,
+    setCreatedAppId,
+    setCurrentStep,
+    setPeriodData,
+    setDocuments,
+  });
+
+  const [isFetchingReview, setIsFetchingReview] = useState<boolean>(false);
+  const lastFetchedReviewIdRef = useRef<string | null>(null);
+  const periodDataRef = useRef(periodData);
+  periodDataRef.current = periodData;
+  const filingIdRef = useRef(filingId);
+  filingIdRef.current = filingId;
+
+  const filingGstinRef = useRef<string | null>(null);
+
+  // Bind filingId to its associated GSTIN
   useEffect(() => {
-    const restoreTimer = setTimeout(() => {
-      if (params.appId) {
-        const existingApp = useApplicationStore
-          .getState()
-          .applications.find((a) => a.id === params.appId);
-        if (existingApp) {
-          setCreatedAppId(existingApp.id);
-          const fData = (existingApp.formData || {}) as Record<string, any>;
+    if (filingId && periodData.gstin) {
+      filingGstinRef.current = periodData.gstin.trim().toUpperCase();
+    }
+  }, [filingId, periodData.gstin]);
+
+  // If user modifies GSTIN, ensure previous filing ID belonging to other GSTIN is reset
+  useEffect(() => {
+    const clean = periodData.gstin ? periodData.gstin.trim().toUpperCase() : "";
+    if (clean && filingGstinRef.current && clean !== filingGstinRef.current) {
+      console.log(`[Filing] GSTIN changed from ${filingGstinRef.current} to ${clean}. Resetting session.`);
+      setFilingId(null);
+      filingGstinRef.current = null;
+    }
+  }, [periodData.gstin]);
+
+  const getTargetFilingId = useCallback(
+    (explicitId?: string): string => {
+      const applications = useApplicationStore.getState().applications;
+      const currentGstin = periodDataRef.current?.gstin;
+      return resolveTargetFilingId(
+        [
+          explicitId,
+          filingIdRef.current,
+          (gstFilingDraft as any)?.createdFilingId,
+          (periodDataRef.current as any)?.filingId,
+          (periodDataRef.current as any)?.gstfilingId,
+          params.filingId,
+          params.id,
+          params.appId?.startsWith("FIL") ? params.appId : undefined,
+        ],
+        applications,
+        currentGstin,
+      );
+    },
+    [gstFilingDraft, params.appId, params.filingId, params.id],
+  );
+
+  // Fetch persisted filing data from backend
+  const fetchFilingDetails = useCallback(
+    async (idToFetch?: string) => {
+      let targetId = getTargetFilingId(idToFetch);
+
+      if (!targetId && periodDataRef.current.gstin) {
+        try {
+          const filings = await gstApi.fetchFilings(periodDataRef.current.gstin);
+          if (filings && filings.length > 0) {
+            const sorted = [...filings].sort(
+              (a, b) =>
+                new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+            );
+            const latest = sorted[sorted.length - 1];
+            targetId = latest.gstfilingId || latest.id || "";
+          }
+        } catch (fetchErr) {
+          console.debug("[FilingDetails] Could not fetch filings by GSTIN:", fetchErr);
+        }
+      }
+
+      if (!targetId) return;
+
+      setIsFetchingReview(true);
+      try {
+        const dbFiling = await gstApi.getFilingById(targetId);
+        if (dbFiling) {
+          const mapped = mapDtoToPeriodData(dbFiling);
           setPeriodData((prev) => ({
             ...prev,
-            gstin: fData.gstin || prev.gstin,
-            businessName:
-              fData.businessName ||
-              fData.tradeName ||
-              fData.applicantName ||
-              prev.businessName,
-            tradeName: fData.tradeName || fData.businessName || prev.tradeName,
-            taxpayerScheme: fData.taxpayerScheme || prev.taxpayerScheme,
-            filingNature: fData.filingNature || prev.filingNature,
-            financialYear: fData.financialYear || prev.financialYear,
-            filingPeriod:
-              fData.filingPeriod || fData.filingMonth || prev.filingPeriod,
-            filingMonth:
-              fData.filingMonth || fData.filingPeriod || prev.filingMonth,
-            filingType: fData.filingType || prev.filingType,
-            filingFrequency: fData.filingFrequency || prev.periodType,
-            periodType: fData.filingFrequency || prev.periodType,
-            taxableSales: fData.turnover || prev.taxableSales,
-            turnover: fData.turnover || prev.turnover,
-            eligibleItc: fData.eligibleItc || prev.eligibleItc,
+            ...mapped,
+            filingId: targetId,
           }));
-
-          if (
-            Array.isArray(existingApp.documents) &&
-            existingApp.documents.length > 0
-          ) {
-            const syncPrevDocs = (
-              docs: readonly FilingDocItem[],
-              appDocs: readonly any[],
-              idx = 0,
-              acc: FilingDocItem[] = [],
-            ): FilingDocItem[] => {
-              if (idx >= docs.length) return acc;
-              const initDoc = docs[idx];
-              const matched = appDocs.find(
-                (d) =>
-                  d.name?.toLowerCase() === initDoc.name?.toLowerCase() ||
-                  (d as any).id === initDoc.id,
-              );
-              acc.push(
-                matched && matched.status === "Uploaded"
-                  ? {
-                      ...initDoc,
-                      fileUri:
-                        matched.fileUri ||
-                        "https://taxedge.in/docs/" + initDoc.id,
-                      fileName: matched.name,
-                    }
-                  : initDoc,
-              );
-              return syncPrevDocs(docs, appDocs, idx + 1, acc);
-            };
-
-            setDocuments((prevDocs) =>
-              syncPrevDocs(prevDocs, existingApp.documents),
-            );
-          }
-
-          if (params.step) {
-            const stepNum = parseInt(params.step, 10);
-            if (!isNaN(stepNum)) setCurrentStep(stepNum);
-          } else {
-            setCurrentStep(2);
-          }
-          return;
+          setFilingId(targetId);
         }
+      } catch (err: any) {
+        console.warn("Could not retrieve GST filing details from DB:", err?.message || err);
       }
 
-      if (gstFilingDraft) {
-        if (gstFilingDraft.periodData) {
-          setPeriodData((prev) => ({ ...prev, ...gstFilingDraft.periodData }));
+      try {
+        const dbDocs = await gstApi.getFilingDocuments(targetId);
+        if (dbDocs) {
+          setDocuments((prev) => mapDtoToFilingDocuments(dbDocs, prev));
         }
-        if (gstFilingDraft.documents && gstFilingDraft.documents.length > 0) {
-          setDocuments(gstFilingDraft.documents as FilingDocItem[]);
-        }
-        if (
-          typeof gstFilingDraft.stepIndex === "number" &&
-          gstFilingDraft.stepIndex < 4
-        ) {
-          setCurrentStep(gstFilingDraft.stepIndex);
-        }
+      } catch (docErr: any) {
+        console.log(`[DB-FETCH] No documents found in DB for filing ID: ${targetId}`);
+      } finally {
+        setIsFetchingReview(false);
       }
-    }, 0);
+    },
+    [getTargetFilingId, setPeriodData, setDocuments],
+  );
 
-    return () => clearTimeout(restoreTimer);
-  }, [gstFilingDraft, params.appId, params.step, setDocuments, setPeriodData]);
+  // Automatically retrieve from database when entering Review step (currentStep === 2)
+  useEffect(() => {
+    if (currentStep === 2) {
+      const activeId = getTargetFilingId();
+      if (activeId && lastFetchedReviewIdRef.current === activeId) {
+        return;
+      }
+      lastFetchedReviewIdRef.current = activeId || "fetched";
+      fetchFilingDetails(activeId);
+    } else {
+      lastFetchedReviewIdRef.current = null;
+    }
+  }, [currentStep, fetchFilingDetails, getTargetFilingId]);
 
   const getScreenTitle = useCallback(() => {
     switch (currentStep) {
@@ -244,6 +252,9 @@ export function useGstFiling() {
   }, [currentStep]);
 
   const getButtonText = useCallback(() => {
+    if (isEditMode && (currentStep === 0 || currentStep === 1)) {
+      return "Update & Review";
+    }
     switch (currentStep) {
       case 0:
         return "Continue to Documents";
@@ -256,7 +267,7 @@ export function useGstFiling() {
       default:
         return "";
     }
-  }, [currentStep]);
+  }, [currentStep, isEditMode]);
 
   const validatePaymentStep = useCallback((): boolean => {
     if (selectedMethod === "upi") {
@@ -274,6 +285,11 @@ export function useGstFiling() {
   }, [selectedMethod, upiId]);
 
   const handleBack = useCallback(() => {
+    if (isEditMode) {
+      setIsEditMode(false);
+      setCurrentStep(2);
+      return;
+    }
     if (currentStep === 6 || currentStep === 4) {
       router.back();
     } else if (currentStep === 5) {
@@ -283,168 +299,62 @@ export function useGstFiling() {
     } else {
       router.back();
     }
-  }, [currentStep, router]);
+  }, [currentStep, router, isEditMode]);
 
   const handleContinue = useCallback(async () => {
     if (currentStep === 0) {
       if (!validatePeriodStep()) return;
+      await submitPeriodStep({
+        periodData,
+        targetFilingId: getTargetFilingId(),
+        isEditMode,
+        setFilingId,
+        setCurrentStep,
+        setIsEditMode,
+        setIsSubmitting,
+      });
+      return;
+    }
 
-      setIsSubmitting(true);
-      try {
-        const payload = buildFilingPayload(periodData);
+    if (currentStep === 1) {
+      await submitDocumentsStep({
+        targetFilingId: getTargetFilingId(),
+        periodData,
+        documents,
+        isEditMode,
+        setFilingId,
+        setDocuments,
+        setCurrentStep,
+        setIsEditMode,
+        setIsSubmitting,
+      });
+      return;
+    }
 
-        if (filingId) {
-          await gstApi.updateFiling(filingId, payload);
-          setCurrentStep(1);
-        } else {
-          await gstApi.createFiling(payload);
-          const filings = await gstApi.fetchFilings(periodData.gstin);
-          if (filings && filings.length > 0) {
-            const sortedFilings = [...filings].sort(
-              (a, b) =>
-                new Date(a.createdAt).getTime() -
-                new Date(b.createdAt).getTime(),
-            );
-            const latest = sortedFilings[sortedFilings.length - 1];
-            setFilingId(latest.id);
-          }
-          setCurrentStep(1);
-        }
-      } catch (err: any) {
-        Alert.alert(
-          "Filing Notice",
-          err?.message || "Failed to initialize filing session. Please try again.",
-        );
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else if (currentStep === 1) {
-      if (!filingId) {
-        Alert.alert("Notice", "Filing session not found. Please re-check period details.");
-        setCurrentStep(0);
-        return;
-      }
-      setIsSubmitting(true);
-      try {
-        const docsToUpload = documents.filter(
-          (d) => d.fileUri && !(d as any).uploadedToBackend,
-        );
-        const uploadRecursively = async (
-          list: readonly FilingDocItem[],
-          idx = 0,
-        ): Promise<void> => {
-          if (idx >= list.length) return;
-          const doc = list[idx];
-          const enumType = mapDocNameToEnum(doc.name);
-          await gstApi.uploadFilingDocument(
-            filingId,
-            enumType,
-            doc.fileUri!,
-            doc.fileName || "doc.jpg",
-          );
-          (doc as any).uploadedToBackend = true;
-          return uploadRecursively(list, idx + 1);
-        };
-        await uploadRecursively(docsToUpload);
-        setDocuments([...documents]);
-        setCurrentStep(2);
-      } catch (uploadErr: any) {
-        Alert.alert(
-          "Notice",
-          uploadErr?.message || "Documents upload incomplete. Proceeding to review.",
-        );
-        setCurrentStep(2);
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else if (currentStep === 2) {
-      if (missingDocsCount > 0) {
-        Alert.alert(
-          "Documents Missing",
-          `You have ${missingDocsCount} missing required document(s). Please upload all required documents before submitting your return.`,
-          [
-            { text: "Cancel", style: "cancel" },
-            { text: "Upload Now", onPress: () => setCurrentStep(1) },
-          ],
-        );
-        return;
-      }
+    if (currentStep === 2) {
+      await submitReviewStep({
+        missingDocsCount,
+        filingId,
+        periodData,
+        setCurrentStep,
+        setIsSubmitting,
+      });
+      return;
+    }
 
-      if (filingId && periodData.calculationMethod === "manual_estimates") {
-        setIsSubmitting(true);
-        try {
-          const payload = buildFilingPayload(periodData, true);
-          await gstApi.updateFiling(filingId, payload);
-        } catch {
-          // Continue gracefully
-        } finally {
-          setIsSubmitting(false);
-        }
-      }
-      setCurrentStep(3);
-    } else if (currentStep === 3) {
+    if (currentStep === 3) {
       if (!validatePaymentStep()) return;
       setIsSubmitting(true);
-
-      Alert.alert(
-        "Payment Gateway Unavailable",
-        "Online payment processing is currently unavailable on this system. Would you like to submit your filing request for CA review and complete payment later?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-            onPress: () => setIsSubmitting(false),
-          },
-          {
-            text: "Submit (Pay Later)",
-            onPress: () => {
-              const periodLabel =
-                periodData.filingPeriod ||
-                periodData.filingMonth ||
-                "Current Period";
-              const newAppId = useApplicationStore.getState().createApplication(
-                "gst-filing",
-                `GST Filing (${periodLabel})`,
-                "GST",
-                {
-                  gstin: periodData.gstin,
-                  businessName:
-                    periodData.tradeName ||
-                    periodData.businessName ||
-                    "Registered Business",
-                  filingPeriod: periodLabel,
-                  filingType: periodData.filingType || "GSTR-1",
-                  filingNature: periodData.filingNature || "Regular Return",
-                  financialYear: periodData.financialYear || "FY 2025-26",
-                  paymentStatus: "Payment Pending",
-                  paymentMethod: selectedMethod.toUpperCase(),
-                  filingId: filingId || undefined,
-                  taxableSales: periodData.taxableSales || "0",
-                  eligibleItc: periodData.eligibleItc || "0",
-                },
-                (() => {
-                  const extractUploadedNames = (
-                    list: readonly FilingDocItem[],
-                    idx = 0,
-                    acc: string[] = [],
-                  ): string[] => {
-                    if (idx >= list.length) return acc;
-                    const d = list[idx];
-                    if (d.fileUri) acc.push(d.name);
-                    return extractUploadedNames(list, idx + 1, acc);
-                  };
-                  return extractUploadedNames(documents);
-                })(),
-                0,
-              );
-              setCreatedAppId(newAppId);
-              clearGstFilingDraft();
-              setIsSubmitting(false);
-              setCurrentStep(6);
-            },
-          },
-        ],
-      );
+      promptPayLaterSubmission({
+        periodData,
+        selectedMethod,
+        filingId,
+        documents,
+        setCreatedAppId,
+        clearGstFilingDraft,
+        setIsSubmitting,
+        setCurrentStep,
+      });
     }
   }, [
     currentStep,
@@ -457,6 +367,8 @@ export function useGstFiling() {
     selectedMethod,
     setDocuments,
     clearGstFilingDraft,
+    isEditMode,
+    getTargetFilingId,
   ]);
 
   return {
@@ -475,6 +387,7 @@ export function useGstFiling() {
     upiError,
     setUpiError,
     createdAppId,
+    filingId,
     showDraftModal,
     handleSaveAndExit,
     handleDiscardAndExit,
@@ -487,5 +400,9 @@ export function useGstFiling() {
     requiredDocs,
     missingDocsCount,
     uploadedDocsCount,
+    isEditMode,
+    handleEditStep,
+    isFetchingReview,
+    fetchFilingDetails,
   };
 }

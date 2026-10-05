@@ -1,4 +1,4 @@
-import { FilingDocItem } from "../../config/gstFilingDocumentsConfig";
+import { FilingDocItem } from "@/modules/gst/gst-filing/config/gstFilingDocumentsConfig";
 
 export const FILING_DOC_CATEGORIES: readonly FilingDocItem["category"][] = [
   "Sales & Outward Supplies",

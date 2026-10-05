@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { getInitialFormData } from "./itrInitialState";
+import { recalculateItrForm } from "./itrStoreHelpers";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthStore } from "@/store/authStore";
 import { useApplicationStore } from "@/store/applicationStore";
@@ -27,20 +29,17 @@ import { determineApplicableItrForm } from "../itr-filing/engine/itrFormEngine";
 import { calculateItrTax } from "../itr-filing/engine/itrTaxCalculator";
 import { generateDynamicDocumentChecklist } from "../itr-filing/engine/itrDocumentEngine";
 import { getCurrentAssessmentYear } from "../taxRules";
-
 export interface ItrDraftState {
   id: string;
   stepIndex: number;
   formData: ItrFilingFormData;
   updatedAt: string;
 }
-
 interface ITRState {
   currentStep: number;
+  maxStepReached: number;
   setStep: (step: number) => void;
-
   formData: ItrFilingFormData;
-
   // Specific Step updaters
   setCategory: (category: ItrCategoryType) => void;
   setPersonalInfo: (info: Partial<ItrPersonalInfo>) => void;
@@ -66,7 +65,6 @@ interface ITRState {
   setDeclarationAccepted: (accepted: boolean) => void;
   updateDocument: (docId: string, fileInfo: any) => void;
   updateGstReconciliation: (data: Partial<GstReconciliationSummary>) => void;
-
   // Draft handling
   itrDraft: ItrDraftState | null;
   saveItrDraft: () => void;
@@ -75,225 +73,14 @@ interface ITRState {
   resetForm: () => void;
   fetchAndPopulateUserProfile: () => Promise<void>;
 }
-
-const getInitialFormData = (): ItrFilingFormData => {
-  // 1. Pull user profile from authStore
-  const authState = useAuthStore.getState();
-  const customer = authState.customer;
-  const user = authState.authenticatedUser;
-
-  // 2. Pull GST draft data if available from applicationStore
-  const gstDraft = useApplicationStore.getState().gstDraft;
-  const gstBusiness = gstDraft?.businessData || {};
-
-  const personalInfo: ItrPersonalInfo = {
-    pan: customer?.pan || (user as any)?.pan || "",
-    aadhaar: customer?.aadhaar || (user as any)?.aadhaar || "",
-    name: customer?.name || user?.name || "",
-    dob: customer?.dob || (user as any)?.dob || "",
-    gender: customer?.gender || (user as any)?.gender || "Male",
-    fatherSpouseName: customer?.fatherSpouseName || "",
-    address: customer?.address || customer?.addressLine1 || (user as any)?.address || "",
-    city: customer?.city || (user as any)?.city || "",
-    state: customer?.state || (user as any)?.state || "",
-    pincode: customer?.pincode || (user as any)?.pincode || "",
-    mobile: customer?.mobile || user?.mobileNumber || "",
-    email: customer?.email || user?.email || "",
-    residentialStatus: "Resident",
-    residentialStatusConfirmed: true,
-    assessmentYear: getCurrentAssessmentYear(),
-    filingType: "139_1_original",
-    filingTypeSuggested: "139_1_original",
-    isAutoVerified: Boolean(customer?.pan || (user as any)?.pan),
-  };
-
-  const initialBankAccounts: ItrSelectableBank[] = [];
-
-  const bankDetails: ItrBankDetails = {
-    bankName: "",
-    accountNumber: "",
-    confirmAccountNumber: "",
-    ifscCode: "",
-    accountType: "Savings",
-    isPrimaryRefund: false,
-    validationStatus: "Pending",
-  };
-
-  const priorItrNotice: ItrPriorFilingAndNotice = {
-    hasPreviousItr: false,
-    previousAckNumber: "",
-    previousAssessmentYear: "",
-    previousItrForm: undefined,
-    previousFiledDate: "",
-    importedIncomeDetails: false,
-    importedDeductions: false,
-    importedLosses: false,
-    importedBankDetails: false,
-    importedFilingDetails: false,
-    hasCarriedForwardLosses: false,
-    carriedForwardLossesDetails: "",
-    hasTaxNotice: false,
-    noticeSection: "",
-    noticeDetails: "",
-  };
-
-  const hasGst = Boolean(gstBusiness.gstin || gstBusiness.businessName);
-
-  const gstReconciliation: GstReconciliationSummary = {
-    gstin: gstBusiness.gstin || "",
-    legalName: gstBusiness.businessName || "",
-    tradeName: gstBusiness.tradeName || "",
-    businessActivity: "",
-    registrationDate: "",
-    gstr1Turnover: Number(gstBusiness.annualTurnover || 0),
-    gstr3bTurnover: Number(gstBusiness.annualTurnover || 0),
-    booksTurnover: Number(gstBusiness.annualTurnover || 0),
-    proposedItrTurnover: Number(gstBusiness.annualTurnover || 0),
-    variance: 0,
-    hasVariance: false,
-    varianceExplanation: "",
-  };
-
-  const registeredAccountType = customer?.customerType || "Individual";
-  const isCorporate =
-    registeredAccountType === "Private Limited" ||
-    registeredAccountType === "Public Limited" ||
-    registeredAccountType === "LLP" ||
-    registeredAccountType === "Partnership";
-  let initialCategory: ItrCategoryType = (isCorporate ? "business" : "salaried") as ItrCategoryType;
-
-  const incomeSources = {
-    salary: {
-      enabled: initialCategory === "salaried",
-      employerName: "",
-      grossSalary: "",
-      allowances: "",
-      tdsDeducted: "",
-      source: "USER_DECLARED" as const,
-      isVerified: false,
-    },
-    houseProperty: {
-      enabled: initialCategory === "rental",
-      propertyType: "self_occupied" as const,
-      annualRentReceived: "",
-      municipalTaxesPaid: "",
-      homeLoanInterest: "",
-      source: "USER_DECLARED" as const,
-    },
-    business: {
-      enabled: initialCategory === "business" || initialCategory === "professional" || initialCategory === "freelancer",
-      businessType: "presumptive_44ad" as const,
-      businessName: gstBusiness.businessName || "",
-      gstin: gstBusiness.gstin || "",
-      businessActivity: "",
-      grossTurnover: gstBusiness.annualTurnover ? String(gstBusiness.annualTurnover) : "",
-      declaredProfit: "",
-      source: hasGst ? ("GST_FILING" as const) : ("USER_DECLARED" as const),
-      hasGstActivity: hasGst,
-      gstr1Turnover: "",
-      gstr3bTurnover: "",
-      gstReconciliationRequired: false,
-    },
-    capitalGains: {
-      enabled: initialCategory === "capital_gains" || initialCategory === "trader_investor",
-      hasEquityMf: false,
-      hasFnoIntraday: initialCategory === "trader_investor",
-      hasPropertyAssets: false,
-      hasCryptoVda: false,
-      shortTermGains: "",
-      longTermGains: "",
-      brokerName: "",
-      totalTransactions: 0,
-      source: "USER_DECLARED" as const,
-      statementUploaded: false,
-    },
-    otherSources: {
-      enabled: false,
-      savingsInterest: "",
-      fdInterest: "",
-      dividendIncome: "",
-      familyPension: "",
-      otherIncome: "",
-      source: "USER_DECLARED" as const,
-    },
-  };
-
-  const deductions: ItrStructuredDeductions = {
-    sec80c: {
-      epf: "",
-      ppf: "",
-      lic: "",
-      elss: "",
-      tuitionFees: "",
-      housingPrincipal: "",
-      other80c: "",
-    },
-    sec80d: {
-      selfSpouseChildren: "",
-      parents: "",
-      isParentSeniorCitizen: false,
-    },
-    sec24b: "",
-    sec80e: "",
-    otherDeductionsList: [],
-  };
-
-  const taxesPaid: TaxesPaidDetails = {
-    advanceTax: "",
-    advanceTaxChallanBsr: "",
-    advanceTaxDate: "",
-    selfAssessmentTax: "",
-  };
-
-  const calculation = calculateItrTax(
-    incomeSources,
-    deductions,
-    taxesPaid,
-    "new",
-    personalInfo.assessmentYear
-  );
-
-  const determinedForm = determineApplicableItrForm(
-    incomeSources,
-    personalInfo.residentialStatus,
-    calculation.grossTotalIncome,
-    personalInfo.assessmentYear
-  );
-
-  const documents = generateDynamicDocumentChecklist(
-    incomeSources,
-    priorItrNotice,
-    deductions,
-    taxesPaid,
-    "new",
-    personalInfo
-  );
-
-  return {
-    personalInfo,
-    bankDetails,
-    bankAccountsList: initialBankAccounts,
-    priorItrNotice,
-    incomeSources,
-    determinedForm,
-    regime: "new",
-    deductions,
-    taxesPaid,
-    documents,
-    calculation,
-    gstReconciliation,
-    declarationAccepted: false,
-    category: initialCategory,
-    accountType: registeredAccountType,
-  };
-};
-
 export const useITRStore = create<ITRState>((set, get) => ({
   currentStep: 0,
-  setStep: (currentStep) => set({ currentStep }),
-
+  maxStepReached: 0,
+    setStep: (step) => set((state) => ({
+    currentStep: step,
+    maxStepReached: Math.max(state.maxStepReached, step)
+  })),
   formData: getInitialFormData(),
-
   setCategory: (category: ItrCategoryType) =>
     set((state) => {
       const prevSources = state.formData.incomeSources;
@@ -304,144 +91,32 @@ export const useITRStore = create<ITRState>((set, get) => ({
         capitalGains: { ...prevSources.capitalGains, enabled: false },
         otherSources: { ...prevSources.otherSources, enabled: false },
       };
-
-      if (category === "salaried") {
-        newSources.salary = {
-          ...newSources.salary,
-          enabled: true,
-        };
-      } else if (category === "business") {
-        newSources.business = {
-          ...newSources.business,
-          enabled: true,
-          businessType: "presumptive_44ad",
-        };
-      } else if (category === "professional") {
-        newSources.business = {
-          ...newSources.business,
-          enabled: true,
-          businessType: "presumptive_44ada",
-        };
-      } else if (category === "freelancer") {
-        newSources.business = {
-          ...newSources.business,
-          enabled: true,
-          businessType: "presumptive_44ada",
-        };
-      } else if (category === "trader_investor") {
-        newSources.capitalGains = {
-          ...newSources.capitalGains,
-          enabled: true,
-          hasFnoIntraday: true,
-        };
-      } else if (category === "rental") {
-        newSources.houseProperty = {
-          ...newSources.houseProperty,
-          enabled: true,
-          propertyType: "let_out",
-        };
-      } else if (category === "capital_gains") {
-        newSources.capitalGains = {
-          ...newSources.capitalGains,
-          enabled: true,
-        };
-      } else if (category === "multiple") {
-        newSources = {
-          ...prevSources,
-          salary: { ...prevSources.salary, enabled: true },
-          business: { ...prevSources.business, enabled: true },
-        };
-      }
-
-      const ay = state.formData.personalInfo.assessmentYear;
-      const calculation = calculateItrTax(
-        newSources,
-        state.formData.deductions,
-        state.formData.taxesPaid,
-        state.formData.regime,
-        ay
-      );
-
-      const determinedForm = determineApplicableItrForm(
-        newSources,
-        state.formData.personalInfo.residentialStatus,
-        calculation.grossTotalIncome,
-        ay
-      );
-
-      const documents = generateDynamicDocumentChecklist(
-        newSources,
-        state.formData.priorItrNotice,
-        state.formData.deductions,
-        state.formData.taxesPaid,
-        state.formData.regime,
-        state.formData.personalInfo,
-        state.formData.documents
-      );
-
-      return {
-        formData: {
-          ...state.formData,
+      if (category === "salaried") newSources.salary.enabled = true;
+    else if (category === "business") { newSources.business.enabled = true; newSources.business.businessType = "presumptive_44ad"; }
+    else if (category === "professional" || category === "freelancer") { newSources.business.enabled = true; newSources.business.businessType = "presumptive_44ada"; }
+    else if (category === "trader_investor") { newSources.capitalGains.enabled = true; newSources.capitalGains.hasFnoIntraday = true; }
+    else if (category === "rental") { newSources.houseProperty.enabled = true; newSources.houseProperty.propertyType = "let_out"; }
+    else if (category === "capital_gains") { newSources.capitalGains.enabled = true; }
+    else if (category === "multiple") { newSources.salary.enabled = true; newSources.business.enabled = true; }
+      return { formData: recalculateItrForm({ ...state.formData,
           category,
-          incomeSources: newSources,
-          calculation,
-          determinedForm,
-          documents,
-        },
-      };
+          incomeSources: newSources, }) };
     }),
-
   setPersonalInfo: (info) =>
     set((state) => {
       const personalInfo = { ...state.formData.personalInfo, ...info };
-      const ay = personalInfo.assessmentYear;
-
-      const calculation = calculateItrTax(
-        state.formData.incomeSources,
-        state.formData.deductions,
-        state.formData.taxesPaid,
-        state.formData.regime,
-        ay
-      );
-
-      const determinedForm = determineApplicableItrForm(
-        state.formData.incomeSources,
-        personalInfo.residentialStatus,
-        calculation.grossTotalIncome,
-        ay
-      );
-
-      const documents = generateDynamicDocumentChecklist(
-        state.formData.incomeSources,
-        state.formData.priorItrNotice,
-        state.formData.deductions,
-        state.formData.taxesPaid,
-        state.formData.regime,
-        personalInfo,
-        state.formData.documents
-      );
-
-      return {
-        formData: {
-          ...state.formData,
+      return { formData: recalculateItrForm({ ...state.formData,
           personalInfo,
-          determinedForm,
-          calculation,
-          documents,
-        },
-      };
+           }) };
     }),
-
   selectRefundBank: (bankId) =>
     set((state) => {
       const updatedAccounts = state.formData.bankAccountsList.map((bank) => ({
         ...bank,
         isPrimaryRefund: bank.id === bankId,
       }));
-
       const selected = updatedAccounts.find((b) => b.id === bankId);
       if (!selected) return state;
-
       return {
         formData: {
           ...state.formData,
@@ -458,7 +133,6 @@ export const useITRStore = create<ITRState>((set, get) => ({
         },
       };
     }),
-
   addBankAccount: (newBank) =>
     set((state) => {
       const updatedList = [...state.formData.bankAccountsList, newBank];
@@ -469,7 +143,6 @@ export const useITRStore = create<ITRState>((set, get) => ({
         },
       };
     }),
-
   setBankDetails: (details) =>
     set((state) => ({
       formData: {
@@ -477,7 +150,6 @@ export const useITRStore = create<ITRState>((set, get) => ({
         bankDetails: { ...state.formData.bankDetails, ...details },
       },
     })),
-
   setPriorItrNotice: (data) =>
     set((state) => {
       const priorItrNotice = { ...state.formData.priorItrNotice, ...data };
@@ -498,7 +170,6 @@ export const useITRStore = create<ITRState>((set, get) => ({
         },
       };
     }),
-
   importPriorItrData: (selectedKeys) =>
     set((state) => {
       const prior = state.formData.priorItrNotice;
@@ -516,49 +187,13 @@ export const useITRStore = create<ITRState>((set, get) => ({
         },
       };
     }),
-
   setIncomeSalary: (data) =>
     set((state) => {
       const salary = { ...state.formData.incomeSources.salary, ...data };
       const incomeSources = { ...state.formData.incomeSources, salary };
-      const ay = state.formData.personalInfo.assessmentYear;
-
-      const calculation = calculateItrTax(
-        incomeSources,
-        state.formData.deductions,
-        state.formData.taxesPaid,
-        state.formData.regime,
-        ay
-      );
-
-      const determinedForm = determineApplicableItrForm(
-        incomeSources,
-        state.formData.personalInfo.residentialStatus,
-        calculation.grossTotalIncome,
-        ay
-      );
-
-      const documents = generateDynamicDocumentChecklist(
-        incomeSources,
-        state.formData.priorItrNotice,
-        state.formData.deductions,
-        state.formData.taxesPaid,
-        state.formData.regime,
-        state.formData.personalInfo,
-        state.formData.documents
-      );
-
-      return {
-        formData: {
-          ...state.formData,
-          incomeSources,
-          calculation,
-          determinedForm,
-          documents,
-        },
-      };
+      return { formData: recalculateItrForm({ ...state.formData,
+          incomeSources, }) };
     }),
-
   setIncomeHouseProperty: (data) =>
     set((state) => {
       const houseProperty = {
@@ -566,86 +201,16 @@ export const useITRStore = create<ITRState>((set, get) => ({
         ...data,
       };
       const incomeSources = { ...state.formData.incomeSources, houseProperty };
-      const ay = state.formData.personalInfo.assessmentYear;
-
-      const calculation = calculateItrTax(
-        incomeSources,
-        state.formData.deductions,
-        state.formData.taxesPaid,
-        state.formData.regime,
-        ay
-      );
-
-      const determinedForm = determineApplicableItrForm(
-        incomeSources,
-        state.formData.personalInfo.residentialStatus,
-        calculation.grossTotalIncome,
-        ay
-      );
-
-      const documents = generateDynamicDocumentChecklist(
-        incomeSources,
-        state.formData.priorItrNotice,
-        state.formData.deductions,
-        state.formData.taxesPaid,
-        state.formData.regime,
-        state.formData.personalInfo,
-        state.formData.documents
-      );
-
-      return {
-        formData: {
-          ...state.formData,
-          incomeSources,
-          calculation,
-          determinedForm,
-          documents,
-        },
-      };
+      return { formData: recalculateItrForm({ ...state.formData,
+          incomeSources, }) };
     }),
-
   setIncomeBusiness: (data) =>
     set((state) => {
       const business = { ...state.formData.incomeSources.business, ...data };
       const incomeSources = { ...state.formData.incomeSources, business };
-      const ay = state.formData.personalInfo.assessmentYear;
-
-      const calculation = calculateItrTax(
-        incomeSources,
-        state.formData.deductions,
-        state.formData.taxesPaid,
-        state.formData.regime,
-        ay
-      );
-
-      const determinedForm = determineApplicableItrForm(
-        incomeSources,
-        state.formData.personalInfo.residentialStatus,
-        calculation.grossTotalIncome,
-        ay
-      );
-
-      const documents = generateDynamicDocumentChecklist(
-        incomeSources,
-        state.formData.priorItrNotice,
-        state.formData.deductions,
-        state.formData.taxesPaid,
-        state.formData.regime,
-        state.formData.personalInfo,
-        state.formData.documents
-      );
-
-      return {
-        formData: {
-          ...state.formData,
-          incomeSources,
-          calculation,
-          determinedForm,
-          documents,
-        },
-      };
+      return { formData: recalculateItrForm({ ...state.formData,
+          incomeSources, }) };
     }),
-
   setIncomeCapitalGains: (data) =>
     set((state) => {
       const capitalGains = {
@@ -653,44 +218,9 @@ export const useITRStore = create<ITRState>((set, get) => ({
         ...data,
       };
       const incomeSources = { ...state.formData.incomeSources, capitalGains };
-      const ay = state.formData.personalInfo.assessmentYear;
-
-      const calculation = calculateItrTax(
-        incomeSources,
-        state.formData.deductions,
-        state.formData.taxesPaid,
-        state.formData.regime,
-        ay
-      );
-
-      const determinedForm = determineApplicableItrForm(
-        incomeSources,
-        state.formData.personalInfo.residentialStatus,
-        calculation.grossTotalIncome,
-        ay
-      );
-
-      const documents = generateDynamicDocumentChecklist(
-        incomeSources,
-        state.formData.priorItrNotice,
-        state.formData.deductions,
-        state.formData.taxesPaid,
-        state.formData.regime,
-        state.formData.personalInfo,
-        state.formData.documents
-      );
-
-      return {
-        formData: {
-          ...state.formData,
-          incomeSources,
-          calculation,
-          determinedForm,
-          documents,
-        },
-      };
+      return { formData: recalculateItrForm({ ...state.formData,
+          incomeSources, }) };
     }),
-
   setIncomeOtherSources: (data) =>
     set((state) => {
       const otherSources = {
@@ -698,62 +228,11 @@ export const useITRStore = create<ITRState>((set, get) => ({
         ...data,
       };
       const incomeSources = { ...state.formData.incomeSources, otherSources };
-      const ay = state.formData.personalInfo.assessmentYear;
-
-      const calculation = calculateItrTax(
-        incomeSources,
-        state.formData.deductions,
-        state.formData.taxesPaid,
-        state.formData.regime,
-        ay
-      );
-
-      const determinedForm = determineApplicableItrForm(
-        incomeSources,
-        state.formData.personalInfo.residentialStatus,
-        calculation.grossTotalIncome,
-        ay
-      );
-
-      return {
-        formData: {
-          ...state.formData,
-          incomeSources,
-          calculation,
-          determinedForm,
-        },
-      };
+      return { formData: recalculateItrForm({ ...state.formData, incomeSources }) };
     }),
-
-  setRegime: (regime) =>
+    setRegime: (regime) =>
     set((state) => {
-      const ay = state.formData.personalInfo.assessmentYear;
-      const calculation = calculateItrTax(
-        state.formData.incomeSources,
-        state.formData.deductions,
-        state.formData.taxesPaid,
-        regime,
-        ay
-      );
-
-      const documents = generateDynamicDocumentChecklist(
-        state.formData.incomeSources,
-        state.formData.priorItrNotice,
-        state.formData.deductions,
-        state.formData.taxesPaid,
-        regime,
-        state.formData.personalInfo,
-        state.formData.documents
-      );
-
-      return {
-        formData: {
-          ...state.formData,
-          regime,
-          calculation,
-          documents,
-        },
-      };
+      return { formData: recalculateItrForm({ ...state.formData, regime }) };
     }),
 
   setDeductions: (deductionsPartial) =>
@@ -763,7 +242,6 @@ export const useITRStore = create<ITRState>((set, get) => ({
         ...deductionsPartial,
       };
       const ay = state.formData.personalInfo.assessmentYear;
-
       const calculation = calculateItrTax(
         state.formData.incomeSources,
         deductions,
@@ -771,7 +249,6 @@ export const useITRStore = create<ITRState>((set, get) => ({
         state.formData.regime,
         ay
       );
-
       const documents = generateDynamicDocumentChecklist(
         state.formData.incomeSources,
         state.formData.priorItrNotice,
@@ -781,7 +258,6 @@ export const useITRStore = create<ITRState>((set, get) => ({
         state.formData.personalInfo,
         state.formData.documents
       );
-
       return {
         formData: {
           ...state.formData,
@@ -791,12 +267,10 @@ export const useITRStore = create<ITRState>((set, get) => ({
         },
       };
     }),
-
   setTaxesPaid: (taxesPartial) =>
     set((state) => {
       const taxesPaid = { ...state.formData.taxesPaid, ...taxesPartial };
       const ay = state.formData.personalInfo.assessmentYear;
-
       const calculation = calculateItrTax(
         state.formData.incomeSources,
         state.formData.deductions,
@@ -804,7 +278,6 @@ export const useITRStore = create<ITRState>((set, get) => ({
         state.formData.regime,
         ay
       );
-
       const documents = generateDynamicDocumentChecklist(
         state.formData.incomeSources,
         state.formData.priorItrNotice,
@@ -814,7 +287,6 @@ export const useITRStore = create<ITRState>((set, get) => ({
         state.formData.personalInfo,
         state.formData.documents
       );
-
       return {
         formData: {
           ...state.formData,
@@ -824,12 +296,10 @@ export const useITRStore = create<ITRState>((set, get) => ({
         },
       };
     }),
-
   setDeclarationAccepted: (declarationAccepted) =>
     set((state) => ({
       formData: { ...state.formData, declarationAccepted },
     })),
-
   updateDocument: (docId, fileInfo) =>
     set((state) => {
       const updatedDocs = state.formData.documents.map((doc) => {
@@ -853,7 +323,6 @@ export const useITRStore = create<ITRState>((set, get) => ({
           uploadedAt: new Date().toISOString(),
         };
       });
-
       return {
         formData: {
           ...state.formData,
@@ -861,7 +330,6 @@ export const useITRStore = create<ITRState>((set, get) => ({
         },
       };
     }),
-
   updateGstReconciliation: (gstData) =>
     set((state) => {
       const existing = state.formData.gstReconciliation;
@@ -876,9 +344,7 @@ export const useITRStore = create<ITRState>((set, get) => ({
         },
       };
     }),
-
   itrDraft: null,
-
   saveItrDraft: () => {
     const { currentStep, formData } = get();
     const draft: ItrDraftState = {
@@ -888,7 +354,6 @@ export const useITRStore = create<ITRState>((set, get) => ({
       updatedAt: new Date().toISOString(),
     };
     set({ itrDraft: draft });
-
     const authState = useAuthStore.getState();
     const mobile =
       authState.customer?.mobile ||
@@ -911,7 +376,6 @@ export const useITRStore = create<ITRState>((set, get) => ({
       })
     ).catch(() => {});
   },
-
   restoreItrDraft: async () => {
     try {
       const authState = useAuthStore.getState();
@@ -922,23 +386,19 @@ export const useITRStore = create<ITRState>((set, get) => ({
         "user";
       const clean = String(mobile).replace(/\D/g, "") || "user";
       const raw = await AsyncStorage.getItem(`@taxedge_draft_${clean}_itr-filing`);
-
       let draftData: any = null;
       if (raw) {
         draftData = JSON.parse(raw);
       } else {
         draftData = get().itrDraft;
       }
-
       if (!draftData) return false;
-
       const restoredStep =
         typeof draftData.stepIndex === "number"
           ? draftData.stepIndex
           : typeof draftData.step === "number"
             ? draftData.step
             : 0;
-
       const restoredFormData = draftData.formData || draftData.filingData;
       if (restoredFormData) {
         set({
@@ -961,7 +421,6 @@ export const useITRStore = create<ITRState>((set, get) => ({
       return false;
     }
   },
-
   clearItrDraft: () => {
     set({ itrDraft: null });
     const authState = useAuthStore.getState();
@@ -974,14 +433,13 @@ export const useITRStore = create<ITRState>((set, get) => ({
     removeDraftFromIndex(clean, "itr-filing");
     AsyncStorage.removeItem(`@taxedge_draft_${clean}_itr-filing`).catch(() => {});
   },
-
   resetForm: () =>
     set({
       currentStep: 0,
+  maxStepReached: 0,
       formData: getInitialFormData(),
       itrDraft: null,
     }),
-
   fetchAndPopulateUserProfile: async () => {
     try {
       const profile = authStorage.getUser() as any;
@@ -996,7 +454,6 @@ export const useITRStore = create<ITRState>((set, get) => ({
         const city = profile.city || "";
         const userState = profile.state || "";
         const pincode = profile.pincode || profile.pinCode || "";
-
         set((prev) => ({
           formData: {
             ...prev.formData,

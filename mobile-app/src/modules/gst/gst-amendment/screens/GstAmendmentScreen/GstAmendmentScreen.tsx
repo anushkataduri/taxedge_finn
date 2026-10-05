@@ -67,6 +67,8 @@ export function GstAmendmentScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [isProofsExpanded, setIsProofsExpanded] = useState(false);
+  // Edit Mode: true when navigating from Review → Edit
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const [pickerModal, setPickerModal] = useState<PickerModalState>({
     isOpen: false,
@@ -80,6 +82,7 @@ export function GstAmendmentScreen() {
   const registeredDetails = useGstAmendmentDetails(targetGstId, selectedSectionId);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsProofsExpanded(false);
   }, [selectedSectionId, currentStep]);
 
@@ -205,7 +208,26 @@ export function GstAmendmentScreen() {
     }
 
     setErrors({});
+
+    if (isEditMode) {
+      // TODO (Backend Blocker): PUT /api/v1/gst/amendment/<section>/{gstId} not yet implemented.
+      // When available, call the PUT endpoint here before navigating back to Review.
+      // For now: local state already holds the updated formData — navigate back to Review directly.
+      setIsEditMode(false);
+      setCurrentStep("REVIEW");
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      return;
+    }
+
     setCurrentStep("REVIEW");
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  /** Navigate from Review → Edit for a given section */
+  const handleEditFromReview = () => {
+    setIsEditMode(true);
+    setErrors({});
+    setCurrentStep("EDIT");
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   };
 
@@ -278,7 +300,16 @@ export function GstAmendmentScreen() {
           isProofsExpanded={isProofsExpanded}
           insets={insets}
           scrollViewRef={scrollViewRef}
-          onBack={() => setCurrentStep("LANDING")}
+          onBack={() => {
+            if (isEditMode) {
+              // In Edit Mode: back returns to Review without saving
+              setIsEditMode(false);
+              setCurrentStep("REVIEW");
+              scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+            } else {
+              setCurrentStep("LANDING");
+            }
+          }}
           onUpdateField={updateFormField}
           onClearError={clearError}
           onOpenPicker={openPickerModal}
@@ -287,6 +318,7 @@ export function GstAmendmentScreen() {
           onDeleteDoc={() => setSupportingDoc(null)}
           onToggleExpandProofs={() => setIsProofsExpanded((prev) => !prev)}
           onReviewChanges={handleReviewChanges}
+          isEditMode={isEditMode}
         />
       )}
 
@@ -300,7 +332,16 @@ export function GstAmendmentScreen() {
           isProofsExpanded={isProofsExpanded}
           insets={insets}
           scrollViewRef={scrollViewRef}
-          onBack={() => setCurrentStep("LANDING")}
+          onBack={() => {
+            if (isEditMode) {
+              // In Edit Mode: back returns to Review without saving
+              setIsEditMode(false);
+              setCurrentStep("REVIEW");
+              scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+            } else {
+              setCurrentStep("LANDING");
+            }
+          }}
           onUpdateField={updateFormField}
           onClearError={clearError}
           onOpenPicker={openPickerModal}
@@ -309,6 +350,7 @@ export function GstAmendmentScreen() {
           onDeleteDoc={() => setSupportingDoc(null)}
           onToggleExpandProofs={() => setIsProofsExpanded((prev) => !prev)}
           onReviewChanges={handleReviewChanges}
+          isEditMode={isEditMode}
         />
       )}
 
@@ -323,7 +365,7 @@ export function GstAmendmentScreen() {
           isSubmitting={isSubmitting}
           insets={insets}
           scrollViewRef={scrollViewRef}
-          onEdit={() => setCurrentStep("EDIT")}
+          onEdit={handleEditFromReview}
           onSubmit={handleSubmitAmendment}
         />
       )}

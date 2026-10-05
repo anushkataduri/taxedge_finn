@@ -21,7 +21,7 @@ import {
   getEmptyCircleThemeStyle,
   getCancelBtnThemeStyle,
   getCancelTextThemeStyle,
-} from "./BottomSheetSelector.styles";
+} from "@/modules/gst/gst-compliance/components/BottomSheetSelector/BottomSheetSelector.styles";
 
 export interface SelectorOption {
   label: string;

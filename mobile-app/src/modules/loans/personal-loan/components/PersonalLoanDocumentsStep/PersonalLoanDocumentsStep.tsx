@@ -1,25 +1,17 @@
-import React, { useRef } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
 import { DocumentUploadBottomSheet } from "../../../../../shared/components/DocumentUploadBottomSheet";
-import { useDocumentUploadHelper } from "../../../../../shared/hooks/useDocumentUploadHelper";
-import {
-  LoanDocumentItem,
-  LoanDocumentCategory,
-} from "../../../types/loans.types";
-import { styles } from "./PersonalLoanDocumentsStep.styles";
+import type { LoanDocumentCategory } from "../../../types/loans.types";
+import type { LoanDocuments } from "../../../hooks/useLoanDocuments";
+import { getDocumentIconName } from "../../../utils/documentIcon";
+import { getProgressWidth } from "../../../styles/loanScreenLayout.styles";
+import { styles, getIconBoxBackground } from "./PersonalLoanDocumentsStep.styles";
 
 export interface PersonalLoanDocumentsStepProps {
-  documents: LoanDocumentItem[];
-  onDocumentUploaded: (
-    docId: string,
-    fileUri: string,
-    fileName: string,
-    fileSize: string
-  ) => void;
-  onDocumentRemoved: (docId: string) => void;
-  scrollRef?: React.RefObject<ScrollView | null>;
+  /** Document checklist state from `useLoanDocuments`, owned by the screen. */
+  loanDocuments: LoanDocuments;
 }
 
 const CATEGORIES: LoanDocumentCategory[] = [
@@ -29,36 +21,12 @@ const CATEGORIES: LoanDocumentCategory[] = [
   "Collateral & Others",
 ];
 
-export const PersonalLoanDocumentsStep: React.FC<PersonalLoanDocumentsStepProps> = ({
-  documents,
-  onDocumentUploaded,
-  onDocumentRemoved,
-  scrollRef,
-}) => {
-  const documentPositions = useRef<Record<string, number>>({});
-  const uploadHelper = useDocumentUploadHelper({
-    scrollRef,
-    onSuccess: (file, docId) => {
-      if (!docId) return;
-      const size = file.size
-        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-        : "2.4 MB";
-      onDocumentUploaded(docId, file.uri, file.name, size);
-    },
-  });
+const REMOVE_ICON_COLOR = "#DC2626";
 
-  const totalRequired = documents.filter((d) => d.required).length;
-  const uploadedRequired = documents.filter(
-    (d) => d.required && Boolean(d.fileUri)
-  ).length;
-  const progressPercent =
-    totalRequired > 0
-      ? Math.round((uploadedRequired / totalRequired) * 100)
-      : 100;
-
-  const handleOpenUploadSheet = (docId: string, title: string) => {
-    uploadHelper.openUploadSheet(docId, title, documentPositions.current[docId]);
-  };
+export const PersonalLoanDocumentsStep: React.FC<PersonalLoanDocumentsStepProps> = ({ loanDocuments }) => {
+  const { documents, progress, openUpload, removeDocument, registerDocumentPosition, uploadSheetProps } =
+    loanDocuments;
+  const { uploadedRequired, totalRequired, requiredPercent } = progress;
 
   return (
     <View style={styles.container}>
@@ -72,18 +40,16 @@ export const PersonalLoanDocumentsStep: React.FC<PersonalLoanDocumentsStepProps>
         <View style={styles.progressHeader}>
           <Text style={styles.progressTitle}>Mandatory Document Progress</Text>
           <Text style={styles.progressCount}>
-            {uploadedRequired} of {totalRequired} ({progressPercent}%)
+            {uploadedRequired} of {totalRequired} ({requiredPercent}%)
           </Text>
         </View>
         <View style={styles.progressBarTrack}>
           <View
-            style={{
-              height: "100%",
-              width: `${progressPercent}%`,
-              backgroundColor:
-                progressPercent === 100 ? BrandColors.PRIMARY_ORANGE : BrandColors.PRIMARY_BLUE,
-              borderRadius: 3,
-            }}
+            style={[
+              styles.progressBarFill,
+              requiredPercent === 100 && styles.progressBarFillComplete,
+              getProgressWidth(requiredPercent),
+            ]}
           />
         </View>
       </View>
@@ -102,23 +68,13 @@ export const PersonalLoanDocumentsStep: React.FC<PersonalLoanDocumentsStepProps>
               return (
                 <View
                   key={doc.id}
-                  onLayout={(event) => {
-                    documentPositions.current[doc.id] = event.nativeEvent.layout.y;
-                  }}
-                  style={[
-                    styles.docCard,
-                    isUploaded && styles.docCardUploaded,
-                  ]}
+                  onLayout={(event) => registerDocumentPosition(doc.id, event.nativeEvent.layout.y)}
+                  style={[styles.docCard, isUploaded && styles.docCardUploaded]}
                 >
                   <View style={styles.docLeft}>
-                    <View
-                      style={[
-                        styles.iconBox,
-                        { backgroundColor: doc.iconBg || "#F1F5F9" },
-                      ]}
-                    >
+                    <View style={[styles.iconBox, getIconBoxBackground(doc.iconBg)]}>
                       <Ionicons
-                        name={(doc.iconName as any) || "document-text"}
+                        name={getDocumentIconName(doc.iconName)}
                         size={20}
                         color={doc.iconColor || BrandColors.PRIMARY_BLUE}
                       />
@@ -144,17 +100,11 @@ export const PersonalLoanDocumentsStep: React.FC<PersonalLoanDocumentsStepProps>
 
                       {isUploaded && (
                         <View style={styles.fileMetaRow}>
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={14}
-                            color={BrandColors.PRIMARY_ORANGE}
-                          />
+                          <Ionicons name="checkmark-circle" size={14} color={BrandColors.PRIMARY_ORANGE} />
                           <Text style={styles.fileNameText} numberOfLines={1}>
                             {doc.fileName || "Uploaded"}
                           </Text>
-                          <Text style={styles.fileSizeText}>
-                            ({doc.fileSize || "1.2 MB"})
-                          </Text>
+                          <Text style={styles.fileSizeText}>({doc.fileSize || "1.2 MB"})</Text>
                         </View>
                       )}
                     </View>
@@ -164,7 +114,7 @@ export const PersonalLoanDocumentsStep: React.FC<PersonalLoanDocumentsStepProps>
                     <View style={styles.uploadActions}>
                       <TouchableOpacity
                         activeOpacity={0.7}
-                        onPress={() => handleOpenUploadSheet(doc.id, doc.name)}
+                        onPress={() => openUpload(doc.id)}
                         style={styles.replaceButton}
                       >
                         <Ionicons name="refresh" size={14} color={BrandColors.PRIMARY_ORANGE} />
@@ -172,23 +122,19 @@ export const PersonalLoanDocumentsStep: React.FC<PersonalLoanDocumentsStepProps>
                       </TouchableOpacity>
                       <TouchableOpacity
                         activeOpacity={0.7}
-                        onPress={() => onDocumentRemoved(doc.id)}
+                        onPress={() => removeDocument(doc.id)}
                         style={styles.removeButton}
                       >
-                        <Ionicons name="trash-outline" size={14} color="#DC2626" />
+                        <Ionicons name="trash-outline" size={14} color={REMOVE_ICON_COLOR} />
                       </TouchableOpacity>
                     </View>
                   ) : (
                     <TouchableOpacity
                       activeOpacity={0.7}
-                      onPress={() => handleOpenUploadSheet(doc.id, doc.name)}
+                      onPress={() => openUpload(doc.id)}
                       style={styles.uploadButton}
                     >
-                      <Ionicons
-                        name="cloud-upload-outline"
-                        size={14}
-                        color={BrandColors.PRIMARY_BLUE}
-                      />
+                      <Ionicons name="cloud-upload-outline" size={14} color={BrandColors.PRIMARY_BLUE} />
                       <Text style={styles.uploadButtonText}>Upload</Text>
                     </TouchableOpacity>
                   )}
@@ -199,17 +145,7 @@ export const PersonalLoanDocumentsStep: React.FC<PersonalLoanDocumentsStepProps>
         );
       })}
 
-      <DocumentUploadBottomSheet
-        visible={uploadHelper.isSheetVisible}
-        documentTitle={uploadHelper.currentDocTitle}
-        maxSizeBytesText="10 MB"
-        onClose={uploadHelper.closeUploadSheet}
-        onPickFiles={uploadHelper.pickFiles}
-        onPickGallery={uploadHelper.pickGallery}
-        onTakePhoto={uploadHelper.takePhoto}
-        allowGallery={!['bank-statements', 'salary-slips'].includes(uploadHelper.activeDocKey || '')}
-        allowCamera={!['bank-statements', 'salary-slips'].includes(uploadHelper.activeDocKey || '')}
-      />
+      <DocumentUploadBottomSheet {...uploadSheetProps} />
     </View>
   );
 };

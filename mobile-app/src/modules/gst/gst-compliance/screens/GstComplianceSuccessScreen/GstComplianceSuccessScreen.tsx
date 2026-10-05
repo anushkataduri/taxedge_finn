@@ -6,12 +6,12 @@ import {
   ScrollView,
   Animated,
   Alert,
+  BackHandler,
 } from "react-native";
 import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import * as Sharing from "expo-sharing";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { BrandColors } from "@/shared/theme";
 import {
@@ -21,12 +21,16 @@ import {
   getSubtitleThemeStyle,
   getRefCardThemeStyle,
   getRefLabelThemeStyle,
+  getRefValueThemeStyle,
+  getCopyBtnThemeStyle,
   getDividerThemeStyle,
+  getMetaLabelThemeStyle,
+  getMetaValueThemeStyle,
   getNextStepsCardThemeStyle,
   getStepTextThemeStyle,
   getBottomBarThemeStyle,
   getSecondaryBtnThemeStyle,
-} from "./GstComplianceSuccessScreen.styles";
+} from "@/modules/gst/gst-compliance/screens/GstComplianceSuccessScreen/GstComplianceSuccessScreen.styles";
 
 export function GstComplianceSuccessScreen() {
   const router = useRouter();
@@ -71,10 +75,17 @@ export function GstComplianceSuccessScreen() {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [scaleAnim, opacityAnim, cardSlideAnim]);
+
+  const handleGoDashboard = () => {
+    router.replace("/(main)/home" as any);
+  };
+
+  const handleTrackRequest = () => {
+    router.replace("/(main)/applications" as any);
+  };
 
   useEffect(() => {
-    const { BackHandler } = require("react-native");
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
       handleGoDashboard();
       return true;
@@ -86,25 +97,11 @@ export function GstComplianceSuccessScreen() {
     Alert.alert("Reference ID Copied", `Reference ID ${refId} has been copied.`);
   };
 
-  const handleGoDashboard = () => {
-    router.replace("/(main)/home" as any);
-  };
-
-  const handleTrackRequest = () => {
-    router.replace("/(main)/applications" as any);
-  };
+  const paddingTop = Math.max(insets.top, 20);
+  const paddingBottom = Math.max(insets.bottom, 20);
 
   return (
-    <View
-      style={[
-        styles.root,
-        {
-          backgroundColor: isDark ? "#0F172A" : "#F8FAFC",
-          paddingTop: Math.max(insets.top, 20),
-          paddingBottom: Math.max(insets.bottom, 20),
-        },
-      ]}
-    >
+    <View style={[styles.root, getRootThemeStyle(isDark, paddingTop, paddingBottom)]}>
       <FocusAwareStatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -139,21 +136,11 @@ export function GstComplianceSuccessScreen() {
             },
           ]}
         >
-          <Text
-            style={[
-              styles.successTitle,
-              { color: isDark ? "#F8FAFC" : "#0F172A" },
-            ]}
-          >
+          <Text style={[styles.successTitle, getTitleThemeStyle(isDark)]}>
             Request Submitted Successfully
           </Text>
 
-          <Text
-            style={[
-              styles.successSubtitle,
-              { color: isDark ? "#94A3B8" : "#64748B" },
-            ]}
-          >
+          <Text style={[styles.successSubtitle, getSubtitleThemeStyle(isDark)]}>
             Your GST Compliance request has been submitted successfully.
             Our CA team will review your documents and contact you shortly.
           </Text>
@@ -163,9 +150,8 @@ export function GstComplianceSuccessScreen() {
         <Animated.View
           style={[
             styles.refCard,
+            getRefCardThemeStyle(isDark),
             {
-              backgroundColor: isDark ? "#1E293B" : "#FFFFFF",
-              borderColor: isDark ? "#334155" : "#E2E8F0",
               transform: [{ translateY: cardSlideAnim }],
               opacity: opacityAnim,
             },
@@ -173,20 +159,10 @@ export function GstComplianceSuccessScreen() {
         >
           <View style={styles.refRow}>
             <View>
-              <Text
-                style={[
-                  styles.refLabel,
-                  { color: isDark ? "#94A3B8" : "#64748B" },
-                ]}
-              >
+              <Text style={[styles.refLabel, getRefLabelThemeStyle(isDark)]}>
                 Reference ID
               </Text>
-              <Text
-                style={[
-                  styles.refValue,
-                  { color: BrandColors.PRIMARY_BLUE_ACCENT },
-                ]}
-              >
+              <Text style={[styles.refValue, getRefValueThemeStyle()]}>
                 {refId}
               </Text>
             </View>
@@ -194,12 +170,7 @@ export function GstComplianceSuccessScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               onPress={handleCopyRef}
-              style={[
-                styles.copyButton,
-                {
-                  backgroundColor: isDark ? "#334155" : "#EAF1FE",
-                },
-              ]}
+              style={[styles.copyButton, getCopyBtnThemeStyle(isDark)]}
             >
               <Ionicons
                 name="copy-outline"
@@ -217,96 +188,46 @@ export function GstComplianceSuccessScreen() {
             </TouchableOpacity>
           </View>
 
-          <View
-            style={[
-              styles.divider,
-              { backgroundColor: isDark ? "#334155" : "#F1F5F9" },
-            ]}
-          />
+          <View style={[styles.divider, getDividerThemeStyle(isDark)]} />
 
           {/* Key Details Grid */}
           <View style={styles.gridRow}>
             <View style={styles.gridItem}>
-              <Text
-                style={[
-                  styles.metaLabel,
-                  { color: isDark ? "#64748B" : "#94A3B8" },
-                ]}
-              >
+              <Text style={[styles.metaLabel, getMetaLabelThemeStyle(isDark)]}>
                 Submitted On
               </Text>
-              <Text
-                style={[
-                  styles.metaValue,
-                  { color: isDark ? "#F1F5F9" : "#1E293B" },
-                ]}
-              >
+              <Text style={[styles.metaValue, getMetaValueThemeStyle(isDark, false)]}>
                 {submittedAt}
               </Text>
             </View>
 
             <View style={styles.gridItem}>
-              <Text
-                style={[
-                  styles.metaLabel,
-                  { color: isDark ? "#64748B" : "#94A3B8" },
-                ]}
-              >
+              <Text style={[styles.metaLabel, getMetaLabelThemeStyle(isDark)]}>
                 Estimated Response
               </Text>
-              <Text
-                style={[
-                  styles.metaValue,
-                  { color: isDark ? "#38BDF8" : "#083B75" },
-                ]}
-              >
+              <Text style={[styles.metaValue, getMetaValueThemeStyle(isDark, true)]}>
                 {estimatedResponse}
               </Text>
             </View>
           </View>
 
-          <View
-            style={[
-              styles.divider,
-              { backgroundColor: isDark ? "#334155" : "#F1F5F9" },
-            ]}
-          />
+          <View style={[styles.divider, getDividerThemeStyle(isDark)]} />
 
           <View style={styles.gridRow}>
             <View style={styles.gridItem}>
-              <Text
-                style={[
-                  styles.metaLabel,
-                  { color: isDark ? "#64748B" : "#94A3B8" },
-                ]}
-              >
+              <Text style={[styles.metaLabel, getMetaLabelThemeStyle(isDark)]}>
                 Request Type
               </Text>
-              <Text
-                style={[
-                  styles.metaValue,
-                  { color: isDark ? "#F1F5F9" : "#1E293B" },
-                ]}
-              >
+              <Text style={[styles.metaValue, getMetaValueThemeStyle(isDark, false)]}>
                 {requestType}
               </Text>
             </View>
 
             <View style={styles.gridItem}>
-              <Text
-                style={[
-                  styles.metaLabel,
-                  { color: isDark ? "#64748B" : "#94A3B8" },
-                ]}
-              >
+              <Text style={[styles.metaLabel, getMetaLabelThemeStyle(isDark)]}>
                 GSTIN
               </Text>
-              <Text
-                style={[
-                  styles.metaValue,
-                  { color: isDark ? "#F1F5F9" : "#1E293B" },
-                ]}
-              >
+              <Text style={[styles.metaValue, getMetaValueThemeStyle(isDark, false)]}>
                 {gstin}
               </Text>
             </View>
@@ -317,43 +238,27 @@ export function GstComplianceSuccessScreen() {
         <Animated.View
           style={[
             styles.nextStepsCard,
+            getNextStepsCardThemeStyle(isDark),
             {
-              backgroundColor: isDark ? "#1E293B" : "#FFFFFF",
-              borderColor: isDark ? "#334155" : "#E2E8F0",
               transform: [{ translateY: cardSlideAnim }],
               opacity: opacityAnim,
             },
           ]}
         >
-          <Text
-            style={[
-              styles.nextStepsTitle,
-              { color: isDark ? "#F8FAFC" : "#0F172A" },
-            ]}
-          >
+          <Text style={[styles.nextStepsTitle, getTitleThemeStyle(isDark)]}>
             What happens next?
           </Text>
 
           <View style={styles.stepItem}>
             <View style={styles.stepDot} />
-            <Text
-              style={[
-                styles.stepText,
-                { color: isDark ? "#CBD5E1" : "#475569" },
-              ]}
-            >
+            <Text style={[styles.stepText, getStepTextThemeStyle(isDark)]}>
               A certified Chartered Accountant will review your uploaded registers and notice details.
             </Text>
           </View>
 
           <View style={styles.stepItem}>
             <View style={styles.stepDot} />
-            <Text
-              style={[
-                styles.stepText,
-                { color: isDark ? "#CBD5E1" : "#475569" },
-              ]}
-            >
+            <Text style={[styles.stepText, getStepTextThemeStyle(isDark)]}>
               You will receive an update in your TaxEdge Notifications and WhatsApp within 24 hours.
             </Text>
           </View>
@@ -361,7 +266,7 @@ export function GstComplianceSuccessScreen() {
       </ScrollView>
 
       {/* Action Buttons */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, getBottomBarThemeStyle(isDark, paddingBottom)]}>
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleTrackRequest}
@@ -374,25 +279,14 @@ export function GstComplianceSuccessScreen() {
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={handleGoDashboard}
-          style={[
-            styles.secondaryBtn,
-            {
-              backgroundColor: isDark ? "#1E293B" : "#FFFFFF",
-              borderColor: isDark ? "#334155" : "#CBD5E1",
-            },
-          ]}
+          style={[styles.secondaryBtn, getSecondaryBtnThemeStyle(isDark)]}
         >
           <Ionicons
             name="home-outline"
             size={18}
             color={isDark ? "#F8FAFC" : "#0F172A"}
           />
-          <Text
-            style={[
-              styles.secondaryBtnText,
-              { color: isDark ? "#F8FAFC" : "#0F172A" },
-            ]}
-          >
+          <Text style={[styles.secondaryBtnText, getTitleThemeStyle(isDark)]}>
             Go to Dashboard
           </Text>
         </TouchableOpacity>
@@ -402,4 +296,3 @@ export function GstComplianceSuccessScreen() {
 }
 
 export default GstComplianceSuccessScreen;
-

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Modal, ScrollView } from "reac
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { LoanDetailsFormData, LoanEmploymentType } from "../../../types/loans.types";
 import { BrandColors } from "../../../../../shared/theme";
+import { LoanAmountInput, type LoanAmountPreset } from "../../../components/LoanAmountInput";
 import { styles } from "./BusinessLoanFinancialsStep.styles";
 
 export interface BusinessLoanFinancialsStepProps {
@@ -17,7 +18,7 @@ const EMPLOYMENT_PROFILES: LoanEmploymentType[] = [
   "Business Owner",
 ];
 
-const AMOUNT_PRESETS = [
+const AMOUNT_PRESETS: readonly LoanAmountPreset[] = [
   { label: "₹5 Lakhs", value: "500000" },
   { label: "₹10 Lakhs", value: "1000000" },
   { label: "₹25 Lakhs", value: "2500000" },
@@ -76,7 +77,7 @@ export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProp
 }) => {
   const [isPurposeModalOpen, setIsPurposeModalOpen] = useState(false);
   const [customPurpose, setCustomPurpose] = useState(
-    data.purpose && !COMMON_PURPOSES.includes(data.purpose as any)
+    data.purpose && !COMMON_PURPOSES.includes(data.purpose)
       ? data.purpose
       : ""
   );
@@ -135,7 +136,7 @@ export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProp
 
   const isOthersSelected =
     data.purpose === "Others" ||
-    (Boolean(data.purpose) && !COMMON_PURPOSES.includes(data.purpose as any));
+    (Boolean(data.purpose) && !COMMON_PURPOSES.includes(data.purpose));
 
   const handleSelectPurpose = (purpose: string) => {
     setIsPurposeModalOpen(false);
@@ -200,33 +201,13 @@ export const BusinessLoanFinancialsStep: React.FC<BusinessLoanFinancialsStepProp
           </View>
         </View>
 
-        <TextInput
-          style={[styles.input, errors.requiredAmount && styles.inputError]}
+        <LoanAmountInput
           placeholder="Enter your required amount"
-          placeholderTextColor="#94A3B8"
-          keyboardType="numeric"
           value={data.requiredAmount}
-          onChangeText={(text) => onChange("requiredAmount", text.replace(/[^0-9]/g, ""))}
+          onChange={(value) => onChange("requiredAmount", value)}
+          presets={AMOUNT_PRESETS}
+          error={errors.requiredAmount}
         />
-
-        <View style={styles.chipRow}>
-          {AMOUNT_PRESETS.map((item) => {
-            const isSelected = data.requiredAmount === item.value;
-            return (
-              <TouchableOpacity
-                key={item.value}
-                activeOpacity={0.7}
-                onPress={() => onChange("requiredAmount", item.value)}
-                style={[styles.chip, isSelected && styles.chipActive]}
-              >
-                <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-        {errors.requiredAmount && <Text style={styles.errorText}>{errors.requiredAmount}</Text>}
       </View>
 
       {/* 3. Purpose of Loan */}

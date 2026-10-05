@@ -8,7 +8,11 @@ import {
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
-import { styles } from "../screens/GstAmendmentScreen/GstAmendmentScreen.styles";
+import {
+  styles,
+  getHeaderBarStyle,
+  getBottomBarStyle,
+} from "../screens/GstAmendmentScreen/GstAmendmentScreen.styles";
 import {
   AmendmentSectionConfig,
   AmendmentFormData,
@@ -37,6 +41,7 @@ interface GstCoreAmendmentEditProps {
   onDeleteDoc: () => void;
   onToggleExpandProofs: () => void;
   onReviewChanges: () => void;
+  isEditMode?: boolean;
 }
 
 export const GstCoreAmendmentEdit: React.FC<GstCoreAmendmentEditProps> = ({
@@ -57,6 +62,7 @@ export const GstCoreAmendmentEdit: React.FC<GstCoreAmendmentEditProps> = ({
   onDeleteDoc,
   onToggleExpandProofs,
   onReviewChanges,
+  isEditMode = false,
 }) => {
   const sectionId = selectedSection.id;
 
@@ -65,7 +71,7 @@ export const GstCoreAmendmentEdit: React.FC<GstCoreAmendmentEditProps> = ({
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
 
       {/* Header */}
-      <View style={[styles.headerBar, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.headerBar, getHeaderBarStyle(insets.top)]}>
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={onBack}
@@ -310,13 +316,15 @@ export const GstCoreAmendmentEdit: React.FC<GstCoreAmendmentEditProps> = ({
       </ScrollView>
 
       {/* FIXED BOTTOM ACTION AREA */}
-      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      <View style={[styles.bottomBar, getBottomBarStyle(insets.bottom)]}>
         <TouchableOpacity
           style={styles.primaryBtn}
           activeOpacity={0.85}
           onPress={onReviewChanges}
         >
-          <Text style={styles.primaryBtnText}>Review Changes</Text>
+          <Text style={styles.primaryBtnText}>
+            {isEditMode ? "Update & Review" : "Review Changes"}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

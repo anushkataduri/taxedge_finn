@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { LoanDetailsFormData, LoanEmploymentType } from "../../../types/loans.types";
+import { LoanAmountInput, type LoanAmountPreset } from "../../../components/LoanAmountInput";
 import { styles } from "./WorkingCapitalFinancialsStep.styles";
 
 export interface WorkingCapitalFinancialsStepProps {
@@ -10,11 +11,6 @@ export interface WorkingCapitalFinancialsStepProps {
     value: LoanDetailsFormData[K]
   ) => void;
   errors?: Record<string, string>;
-}
-
-export interface AmountPreset {
-  label: string;
-  value: string;
 }
 
 const WC_PURPOSES: readonly string[] = [
@@ -33,7 +29,7 @@ const WC_FACILITIES: readonly string[] = [
   "Invoice / Bill Discounting",
 ];
 
-const AMOUNT_PRESETS: readonly AmountPreset[] = [
+const AMOUNT_PRESETS: readonly LoanAmountPreset[] = [
   { label: "₹10 Lakhs", value: "1000000" },
   { label: "₹25 Lakhs", value: "2500000" },
   { label: "₹50 Lakhs", value: "5000000" },
@@ -67,21 +63,6 @@ export const WorkingCapitalFinancialsStep: React.FC<WorkingCapitalFinancialsStep
 
   const handleEmiChange = (text: string) => {
     onChange("existingEmi", text);
-  };
-
-  const renderAmountChip = (item: AmountPreset) => {
-    const isSelected = data.requiredAmount === item.value;
-    return (
-      <TouchableOpacity
-        key={item.value}
-        onPress={() => handleAmountChange(item.value)}
-        style={[styles.chip, isSelected && styles.chipActive]}
-      >
-        <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
-          {item.label}
-        </Text>
-      </TouchableOpacity>
-    );
   };
 
   const renderPurposeChip = (purpose: string) => {
@@ -119,25 +100,15 @@ export const WorkingCapitalFinancialsStep: React.FC<WorkingCapitalFinancialsStep
       {/* Card 1: Credit Limit / Loan Amount */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Required Credit Limit</Text>
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Required Credit Limit / Loan Amount (₹) <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, errors.requiredAmount && styles.inputError]}
-            placeholder="Enter required credit limit (₹)"
-            placeholderTextColor="#94A3B8"
-            keyboardType="numeric"
-            value={data.requiredAmount}
-            onChangeText={handleAmountChange}
-          />
-          <View style={styles.chipRow}>
-            {AMOUNT_PRESETS.map(renderAmountChip)}
-          </View>
-          {errors.requiredAmount && (
-            <Text style={styles.errorText}>{errors.requiredAmount}</Text>
-          )}
-        </View>
+        <LoanAmountInput
+          label="Required Credit Limit / Loan Amount (₹)"
+          required
+          placeholder="Enter required credit limit (₹)"
+          value={data.requiredAmount}
+          onChange={handleAmountChange}
+          presets={AMOUNT_PRESETS}
+          error={errors.requiredAmount}
+        />
       </View>
 
       {/* Card 2: Credit Purpose */}

@@ -8,7 +8,11 @@ import {
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
-import { styles } from "../screens/GstAmendmentScreen/GstAmendmentScreen.styles";
+import {
+  styles,
+  getHeaderBarStyle,
+  getBottomBarStyle,
+} from "../screens/GstAmendmentScreen/GstAmendmentScreen.styles";
 import {
   AmendmentSectionConfig,
   AmendmentFormData,
@@ -49,7 +53,7 @@ export const GstAmendmentReview: React.FC<GstAmendmentReviewProps> = ({
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
 
       {/* Header */}
-      <View style={[styles.headerBar, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.headerBar, getHeaderBarStyle(insets.top)]}>
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={onEdit}
@@ -67,7 +71,7 @@ export const GstAmendmentReview: React.FC<GstAmendmentReviewProps> = ({
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 24 }]}
+        contentContainerStyle={[styles.scrollContent, styles.scrollContentReview]}
         showsVerticalScrollIndicator={false}
       >
         {/* Metadata Card */}
@@ -245,7 +249,18 @@ export const GstAmendmentReview: React.FC<GstAmendmentReviewProps> = ({
 
         {/* Supporting Documents Card */}
         <View style={styles.reviewDocsCard}>
-          <Text style={styles.reviewDocsTitle}>Supporting documents</Text>
+          <View style={styles.requestedCardHeaderRow}>
+            <Text style={styles.reviewDocsTitle}>Supporting documents</Text>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={onEdit}
+              style={styles.editOptionBtn}
+            >
+              <Ionicons name="create-outline" size={15} color={BrandColors.PRIMARY_ORANGE} />
+              <Text style={styles.editOptionText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.reviewMetaDivider} />
           {supportingDoc ? (
             <View style={styles.reviewDocRow}>
               <Text style={styles.reviewDocName} numberOfLines={1}>
@@ -274,9 +289,9 @@ export const GstAmendmentReview: React.FC<GstAmendmentReviewProps> = ({
       </ScrollView>
 
       {/* FIXED BOTTOM ACTION AREA */}
-      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      <View style={[styles.bottomBar, getBottomBarStyle(insets.bottom)]}>
         <TouchableOpacity
-          style={[styles.primaryBtn, (!declared || isSubmitting) && { opacity: 0.65 }]}
+          style={[styles.primaryBtn, (!declared || isSubmitting) && styles.primaryBtnDisabled]}
           activeOpacity={0.85}
           onPress={onSubmit}
           disabled={isSubmitting || !declared}

@@ -253,5 +253,21 @@ export const styles = StyleSheet.create({
     marginBottom: 4,
     textTransform: "uppercase",
   },
+  tenureGroupHeader: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#64748B",
+    marginTop: 14,
+    marginBottom: 4,
+    textTransform: "uppercase",
+  },
+  tenureGroupHeaderFirst: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#64748B",
+    marginTop: 8,
+    marginBottom: 4,
+    textTransform: "uppercase",
+  },
 });
 

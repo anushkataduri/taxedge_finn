@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from "react";
-import { View, Text, Alert, Platform } from "react-native";
+import { View, Text, Alert } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
 import { useDocumentUploadHelper } from "@/shared/hooks/useDocumentUploadHelper";
@@ -94,6 +94,12 @@ export const INITIAL_DOCUMENTS: DocumentItem[] = [
 
 const ADDRESS_PROOF_PLACEHOLDER = "Electricity Bill / Rental Agreement";
 
+const DOCUMENT_CATEGORIES: readonly (DocumentItem["category"])[] = [
+  "Identity Proof",
+  "Business Proof",
+  "Financial & Signatory",
+] as const;
+
 interface Props {
   documents: DocumentItem[];
   onUpdateDocument: (docId: string, patch: Partial<DocumentItem>) => void;
@@ -115,7 +121,7 @@ export const GstUnifiedDocumentStep: React.FC<Props> = ({
 
   const uploadHelper = useDocumentUploadHelper({
     maxSizeMB: 10,
-    allowsEditing: Platform.OS === "android",
+    allowsEditing: false,
     onProcessingStart: (docKey) => {
       if (docKey) onUpdateDocument(docKey, { uploadStatus: "processing" });
     },
@@ -127,27 +133,31 @@ export const GstUnifiedDocumentStep: React.FC<Props> = ({
       Alert.alert("Error", msg);
     },
     onSuccess: (file, docKey) => {
-      if (!docKey) return;
-      const doc = documents.find((d) => d.id === docKey);
-      const isPdf = isPdfDocument({
-        mimeType: file.mimeType,
-        fileName: file.name,
-        fileUri: file.uri,
-      });
-      const baseName = (doc?.name || "Document").replace(/[\s/]/g, "_");
-      onUpdateDocument(docKey, {
-        fileUri: file.uri,
-        fileName: file.name || `${baseName}.${isPdf ? "pdf" : "jpg"}`,
-        fileSize: file.size ? formatFileSize(file.size) : undefined,
-        mimeType: file.mimeType || (isPdf ? "application/pdf" : "image/jpeg"),
-        uploadedAt: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        uploadStatus: undefined,
-        uploadError: undefined,
-        canRetry: undefined,
-      });
+      try {
+        if (!docKey) return;
+        const doc = documents.find((d) => d.id === docKey);
+        const isPdf = isPdfDocument({
+          mimeType: file.mimeType,
+          fileName: file.name,
+          fileUri: file.uri,
+        });
+        const baseName = (doc?.name || "Document").replace(/[\s/]/g, "_");
+        onUpdateDocument(docKey, {
+          fileUri: file.uri,
+          fileName: file.name || `${baseName}.${isPdf ? "pdf" : "jpg"}`,
+          fileSize: file.size ? formatFileSize(file.size) : undefined,
+          mimeType: file.mimeType || (isPdf ? "application/pdf" : "image/jpeg"),
+          uploadedAt: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          uploadStatus: undefined,
+          uploadError: undefined,
+          canRetry: undefined,
+        });
+      } catch (err) {
+        console.error("Error handling upload success:", err);
+      }
     },
   });
 
@@ -159,48 +169,35 @@ export const GstUnifiedDocumentStep: React.FC<Props> = ({
   const totalCount = documents.length;
   const progressPercent =
     totalCount > 0 ? (selectedCount / totalCount) * 100 : 0;
-  const categories: Array<DocumentItem["category"]> = [
-    "Identity Proof",
-    "Business Proof",
-    "Financial & Signatory",
-  ];
 
   const handleOpenUpload = (docId: string) => {
     try {
-      isUploading &&
-        (() => {
-          throw new Error("SILENT_ABORT");
-        })();
+      if (isUploading) return;
       const targetDoc = documents.find((d) => d.id === docId);
+      if (!targetDoc) return;
 
-      targetDoc?.id === "address-proof" &&
-        targetDoc.subtitle === ADDRESS_PROOF_PLACEHOLDER &&
-        (() => {
-          throw new Error("ADDRESS_PROOF_REQUIRED");
-        })();
+      if (
+        targetDoc.id === "address-proof" &&
+        targetDoc.subtitle === ADDRESS_PROOF_PLACEHOLDER
+      ) {
+        Alert.alert(
+          "Select Document Type",
+          "Please select the type of address proof first.",
+          [{ text: "OK", onPress: () => setShowAddressProofModal(true) }],
+        );
+        return;
+      }
 
-      uploadHelper.openUploadSheet(docId, targetDoc?.name || "Document");
-    } catch (err: any) {
-      const errorMap: Record<string, () => void> = {
-        SILENT_ABORT: () => {},
-        ADDRESS_PROOF_REQUIRED: () => {
-          Alert.alert(
-            "Select Document Type",
-            "Please select the type of address proof first.",
-            [{ text: "OK", onPress: () => setShowAddressProofModal(true) }],
-          );
-        },
-      };
-      errorMap[err.message]?.();
+      uploadHelper.openUploadSheet(docId, targetDoc.name || "Document");
+    } catch (err: unknown) {
+      console.error("Error initiating document upload:", err);
+      Alert.alert("Upload Error", "Unable to open document picker.");
     }
   };
 
   const handleRemoveDoc = (docId: string) => {
     try {
-      isUploading &&
-        (() => {
-          throw new Error("SILENT_ABORT");
-        })();
+      if (isUploading) return;
       Alert.alert(
         "Remove Document",
         "Are you sure you want to remove this document?",
@@ -210,23 +207,29 @@ export const GstUnifiedDocumentStep: React.FC<Props> = ({
             text: "Remove",
             style: "destructive",
             onPress: () => {
-              onUpdateDocument(docId, {
-                fileUri: undefined,
-                fileName: undefined,
-                fileSize: undefined,
-                mimeType: undefined,
-                uploadedAt: undefined,
-                uploadStatus: undefined,
-                uploadError: undefined,
-                canRetry: undefined,
-              });
-              previewDocId === docId && setPreviewDocId(null);
+              try {
+                onUpdateDocument(docId, {
+                  fileUri: undefined,
+                  fileName: undefined,
+                  fileSize: undefined,
+                  mimeType: undefined,
+                  uploadedAt: undefined,
+                  uploadStatus: undefined,
+                  uploadError: undefined,
+                  canRetry: undefined,
+                });
+                if (previewDocId === docId) {
+                  setPreviewDocId(null);
+                }
+              } catch (e) {
+                console.error("Failed to remove document:", e);
+              }
             },
           },
         ],
       );
-    } catch (err: any) {
-      // SILENT_ABORT does nothing
+    } catch (err: unknown) {
+      console.error("Error removing document:", err);
     }
   };
 
@@ -262,7 +265,7 @@ export const GstUnifiedDocumentStep: React.FC<Props> = ({
         )}
       </View>
 
-      {categories.map((category) => {
+      {DOCUMENT_CATEGORIES.map((category) => {
         const categoryDocs = documents.filter(
           (doc) => doc.category === category,
         );

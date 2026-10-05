@@ -4,21 +4,25 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
 import {
   LoanDetailsFormData,
+  LoanApplicantFormData,
   LoanPropertyFormData,
-  LoanBusinessFormData,
-  LoanBankingFormData,
+  LoanOwnershipFormData,
   LoanDocumentItem,
-  CustomerProfileSummary,
 } from "../../../types/loans.types";
+import { formatReviewAmountDigits, formatTenureEquivalent } from "../../../utils/loanFormatting";
+import { maskPan as maskPanBase, maskMobile } from "../../../utils/maskingUtils";
 import { styles } from "./PropertyLoanReviewStep.styles";
+
+/** Property Loan review shows the first five PAN characters and the last one. */
+const maskPan = (pan?: string): string => maskPanBase(pan, { visibleStart: 5, visibleEnd: 1 });
+const formatCurrency = formatReviewAmountDigits;
 
 export interface PropertyLoanReviewStepProps {
   loanDetails: LoanDetailsFormData;
-  propertyDetails?: LoanPropertyFormData;
-  businessDetails: LoanBusinessFormData;
-  bankingDetails: LoanBankingFormData;
+  applicantDetails: LoanApplicantFormData;
+  propertyDetails: LoanPropertyFormData;
+  ownershipDetails: LoanOwnershipFormData;
   documents: LoanDocumentItem[];
-  profile?: Partial<CustomerProfileSummary>;
   isConsentChecked: boolean;
   onConsentToggle: (checked: boolean) => void;
   onGoToStep: (stepIndex: number) => void;
@@ -26,27 +30,20 @@ export interface PropertyLoanReviewStepProps {
 
 export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
   loanDetails,
+  applicantDetails,
   propertyDetails,
-  businessDetails,
-  bankingDetails,
+  ownershipDetails,
   documents,
-  profile,
   isConsentChecked,
   onConsentToggle,
   onGoToStep,
 }) => {
-  const formatCurrency = (val?: string | number) => {
-    const num = Number((val || "").toString().replace(/[^0-9]/g, ""));
-    if (!val || isNaN(num)) return "₹0";
-    return "₹" + num.toLocaleString("en-IN");
-  };
-
-  const maskAcc = (acc?: string) => {
-    if (!acc || acc.length < 5) return acc || "—";
-    return `XXXXXX${acc.slice(-4)}`;
-  };
-
   const uploadedDocs = documents.filter((d) => Boolean(d.fileUri));
+  const hasExistingLoan = Boolean(
+    ownershipDetails.currentLender ||
+      (ownershipDetails.outstandingLoanAmount &&
+        ownershipDetails.outstandingLoanAmount !== "0")
+  );
 
   return (
     <View style={styles.container}>
@@ -55,33 +52,7 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
         Double-check your loan against property terms, title details, and financial papers.
       </Text>
 
-      {/* Applicant Card */}
-      <View style={styles.summaryCard}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Applicant Information</Text>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <Ionicons name="checkmark-circle" size={14} color="#16A34A" />
-            <Text style={{ fontSize: 11, fontWeight: "600", color: "#16A34A" }}>
-              Verified Profile
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.row}>
-          <Text style={styles.label}>Applicant Name</Text>
-          <Text style={styles.value}>{profile?.name || "Client Name"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Mobile</Text>
-          <Text style={styles.value}>{profile?.mobile || "—"}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>PAN</Text>
-          <Text style={styles.value}>{profile?.pan || "—"}</Text>
-        </View>
-      </View>
-
-      {/* Loan Facility Card */}
+      {/* 1. Loan Requirement Card */}
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Loan Requirement</Text>
@@ -92,7 +63,7 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
             <Ionicons
               name="create-outline"
               size={14}
-              color={BrandColors.PRIMARY_BLUE}
+              color={BrandColors.PRIMARY_ORANGE}
             />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
@@ -105,60 +76,86 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
           </Text>
         </View>
         <View style={styles.row}>
-          <Text style={styles.label}>Loan Purpose</Text>
-          <Text style={styles.value}>{loanDetails.purpose || "—"}</Text>
+          <Text style={styles.label}>Loan Type</Text>
+          <Text style={styles.value}>
+            {loanDetails.customPurpose || loanDetails.purpose || "—"}
+          </Text>
         </View>
         <View style={styles.row}>
-          <Text style={styles.label}>Tenure</Text>
+          <Text style={styles.label}>Preferred Tenure</Text>
           <Text style={styles.value}>
-            {loanDetails.preferredTenureMonths} Months ({Math.round(Number(loanDetails.preferredTenureMonths) / 12)} Years)
+            {loanDetails.preferredTenureMonths
+              ? formatTenureEquivalent(loanDetails.preferredTenureMonths)
+              : "—"}
+          </Text>
+        </View>
+        {loanDetails.employmentType ? (
+          <View style={styles.row}>
+            <Text style={styles.label}>Employment Type</Text>
+            <Text style={styles.value}>{loanDetails.employmentType}</Text>
+          </View>
+        ) : null}
+      </View>
+
+      {/* 2. Applicant & Income Profile Card */}
+      <View style={styles.summaryCard}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Applicant & Income Profile</Text>
+          <TouchableOpacity
+            style={styles.editAction}
+            onPress={() => onGoToStep(1)}
+          >
+            <Ionicons
+              name="create-outline"
+              size={14}
+              color={BrandColors.PRIMARY_ORANGE}
+            />
+            <Text style={styles.editText}>Edit</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Applicant Full Name</Text>
+          <Text style={styles.value}>{applicantDetails.fullName || "—"}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>PAN</Text>
+          <Text style={styles.value}>{maskPan(applicantDetails.pan)}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Mobile</Text>
+          <Text style={styles.value}>{maskMobile(applicantDetails.mobile)}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Date of Birth</Text>
+          <Text style={styles.value}>{applicantDetails.dob || "—"}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Employment / Sector</Text>
+          <Text style={styles.value}>
+            {applicantDetails.employerName
+              ? `${applicantDetails.employerName} (${applicantDetails.employerCategory || "Salaried"})`
+              : applicantDetails.employerCategory || "—"}
+          </Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Declared Annual Income</Text>
+          <Text style={styles.highlightValue}>
+            {formatCurrency(applicantDetails.annualIncome)}
+          </Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Current Address</Text>
+          <Text style={styles.value} numberOfLines={2}>
+            {applicantDetails.currentAddress || "—"}
           </Text>
         </View>
       </View>
 
-      {/* Property Details Card */}
-      {propertyDetails ? (
-        <View style={styles.summaryCard}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Property & Asset Details</Text>
-            <TouchableOpacity
-              style={styles.editAction}
-              onPress={() => onGoToStep(1)}
-            >
-              <Ionicons
-                name="create-outline"
-                size={14}
-                color={BrandColors.PRIMARY_BLUE}
-              />
-              <Text style={styles.editText}>Edit</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.row}>
-            <Text style={styles.label}>Property Type</Text>
-            <Text style={styles.value}>{propertyDetails.propertyType || "—"}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Ownership</Text>
-            <Text style={styles.value}>{propertyDetails.ownershipType || "—"}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Market Valuation</Text>
-            <Text style={styles.highlightValue}>
-              {formatCurrency(propertyDetails.estimatedMarketValue)}
-            </Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Location</Text>
-            <Text style={styles.value}>{propertyDetails.propertyAddress || "—"}</Text>
-          </View>
-        </View>
-      ) : null}
-
-      {/* Entity Details Card */}
+      {/* 3. Property & Asset Details Card */}
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Entity & Commercial Profile</Text>
+          <Text style={styles.cardTitle}>Property & Asset Details</Text>
           <TouchableOpacity
             style={styles.editAction}
             onPress={() => onGoToStep(2)}
@@ -166,32 +163,62 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
             <Ionicons
               name="create-outline"
               size={14}
-              color={BrandColors.PRIMARY_BLUE}
+              color={BrandColors.PRIMARY_ORANGE}
             />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.row}>
-          <Text style={styles.label}>Entity Name</Text>
-          <Text style={styles.value}>{businessDetails.businessName || "—"}</Text>
+          <Text style={styles.label}>Property Type</Text>
+          <Text style={styles.value}>
+            {propertyDetails.propertyType || "—"}
+            {propertyDetails.propertySubType ? ` • ${propertyDetails.propertySubType}` : ""}
+          </Text>
         </View>
-        {businessDetails.gstin ? (
-          <View style={styles.row}>
-            <Text style={styles.label}>GSTIN</Text>
-            <Text style={styles.value}>{businessDetails.gstin}</Text>
-          </View>
-        ) : null}
         <View style={styles.row}>
-          <Text style={styles.label}>Annual Inflows</Text>
-          <Text style={styles.value}>{formatCurrency(businessDetails.annualTurnover)}</Text>
+          <Text style={styles.label}>Construction & Usage</Text>
+          <Text style={styles.value}>
+            {propertyDetails.constructionStatus || "—"}
+            {propertyDetails.currentUsage ? ` (${propertyDetails.currentUsage})` : ""}
+          </Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Area</Text>
+          <Text style={styles.value}>
+            {propertyDetails.area ? `${propertyDetails.area} sq. ft.` : "—"}
+            {propertyDetails.areaType ? ` (${propertyDetails.areaType})` : ""}
+          </Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Property Age</Text>
+          <Text style={styles.value}>{propertyDetails.propertyAge || "—"}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Approving Authority</Text>
+          <Text style={styles.value}>{propertyDetails.approvingAuthority || "—"}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Estimated Market Valuation</Text>
+          <Text style={styles.highlightValue}>
+            {formatCurrency(propertyDetails.estimatedMarketValue)}
+          </Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Location / Address</Text>
+          <Text style={styles.value} numberOfLines={2}>
+            {propertyDetails.propertyAddress || "—"}
+            {propertyDetails.city ? `, ${propertyDetails.city}` : ""}
+            {propertyDetails.state ? `, ${propertyDetails.state}` : ""}
+            {propertyDetails.pincode ? ` - ${propertyDetails.pincode}` : ""}
+          </Text>
         </View>
       </View>
 
-      {/* Banking Card */}
+      {/* 4. Ownership & Existing Loan Details Card */}
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Disbursement Bank Account</Text>
+          <Text style={styles.cardTitle}>Ownership & Security Details</Text>
           <TouchableOpacity
             style={styles.editAction}
             onPress={() => onGoToStep(3)}
@@ -199,29 +226,57 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
             <Ionicons
               name="create-outline"
               size={14}
-              color={BrandColors.PRIMARY_BLUE}
+              color={BrandColors.PRIMARY_ORANGE}
             />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.row}>
-          <Text style={styles.label}>Bank</Text>
+          <Text style={styles.label}>Ownership Type</Text>
+          <Text style={styles.value}>{ownershipDetails.ownershipType || "—"}</Text>
+        </View>
+        {ownershipDetails.ownershipType === "Joint Ownership" ? (
+          <>
+            <View style={styles.row}>
+              <Text style={styles.label}>Co-owner Name</Text>
+              <Text style={styles.value}>
+                {ownershipDetails.coOwnerFullName || "—"}
+              </Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Relationship</Text>
+              <Text style={styles.value}>
+                {ownershipDetails.coOwnerRelationship || "—"}
+              </Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Co-owner PAN</Text>
+              <Text style={styles.value}>
+                {maskPan(ownershipDetails.coOwnerPan)}
+              </Text>
+            </View>
+          </>
+        ) : null}
+        <View style={styles.row}>
+          <Text style={styles.label}>Existing Property Loan</Text>
           <Text style={styles.value}>
-            {bankingDetails.primaryBankName || "—"}
+            {hasExistingLoan
+              ? `${ownershipDetails.currentLender || "Lender on File"} (${ownershipDetails.existingLoanType || "LAP"})`
+              : "None / Unencumbered"}
           </Text>
         </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Account Number</Text>
-          <Text style={styles.value}>{maskAcc(bankingDetails.accountNumber)}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>IFSC Code</Text>
-          <Text style={styles.value}>{bankingDetails.ifscCode || "—"}</Text>
-        </View>
+        {hasExistingLoan && ownershipDetails.outstandingLoanAmount ? (
+          <View style={styles.row}>
+            <Text style={styles.label}>Outstanding Balance</Text>
+            <Text style={styles.value}>
+              {formatCurrency(ownershipDetails.outstandingLoanAmount)}
+            </Text>
+          </View>
+        ) : null}
       </View>
 
-      {/* Uploaded Records Card */}
+      {/* 5. Uploaded Records Card */}
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Uploaded Records</Text>
@@ -232,7 +287,7 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
             <Ionicons
               name="create-outline"
               size={14}
-              color={BrandColors.PRIMARY_BLUE}
+              color={BrandColors.PRIMARY_ORANGE}
             />
             <Text style={styles.editText}>Manage</Text>
           </TouchableOpacity>
@@ -246,7 +301,7 @@ export const PropertyLoanReviewStep: React.FC<PropertyLoanReviewStepProps> = ({
             </View>
           ))}
           {uploadedDocs.length === 0 && (
-            <Text style={[styles.label, { fontStyle: "italic" }]}>
+            <Text style={styles.emptyDocsText}>
               No documents uploaded yet.
             </Text>
           )}

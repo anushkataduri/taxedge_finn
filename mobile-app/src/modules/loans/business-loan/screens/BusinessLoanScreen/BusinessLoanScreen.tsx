@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
@@ -18,17 +18,18 @@ import {
   LoanDetailsFormData,
   LoanBusinessFormData,
   LoanBankingFormData,
-  LoanDocumentItem,
   LoanApplicationDraft,
 } from "../../../types/loans.types";
 import {
   validateLoanDetails,
   validateLoanBusiness,
   validateLoanBanking,
-  validateLoanDocuments,
 } from "../../../validation/loansSchema";
+import { useLoanWizard } from "../../../hooks/useLoanWizard";
+import { useLoanDocuments } from "../../../hooks/useLoanDocuments";
+import { LoanStepIndicator } from "../../../components/LoanStepIndicator";
+import { getBottomBarPadding, getSafeAreaTopPadding } from "../../../styles/loanScreenLayout.styles";
 import {
-  BusinessLoanStepIndicator,
   BusinessLoanFinancialsStep,
   BusinessLoanBusinessStep,
   BusinessLoanBankingStep,
@@ -37,7 +38,25 @@ import {
 } from "../../components";
 import { styles } from "./BusinessLoanScreen.styles";
 
-const STEPS = ["Loan & Applicant", "Business", "Banking", "Documents", "Review"];
+const STEPS = ["Loan & Applicant", "Business", "Banking", "Documents", "Review"] as const;
+/** Upload limit of the pickers this flow used before (5 MB, Office files included). */
+const BUSINESS_LOAN_MAX_FILE_SIZE_MB = 5;
+const SUBMISSION_FALLBACK_MESSAGE =
+  "Failed to lodge application. Please check your network connection and try again.";
+
+/** Server message of an HTTP-style error (`response.data.message`), else the error's own message. */
+const getSubmissionErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) return SUBMISSION_FALLBACK_MESSAGE;
+  const response = "response" in error ? error.response : undefined;
+  const data =
+    typeof response === "object" && response !== null && "data" in response ? response.data : undefined;
+  const serverMessage =
+    typeof data === "object" && data !== null && "message" in data && typeof data.message === "string"
+      ? data.message
+      : "";
+  const ownMessage = "message" in error && typeof error.message === "string" ? error.message : "";
+  return serverMessage || ownMessage || SUBMISSION_FALLBACK_MESSAGE;
+};
 
 export const BusinessLoanScreen: React.FC = () => {
   const router = useRouter();
@@ -46,7 +65,6 @@ export const BusinessLoanScreen: React.FC = () => {
 
   const customer = useAuthStore((s) => s.customer);
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConsentChecked, setIsConsentChecked] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -90,127 +108,79 @@ export const BusinessLoanScreen: React.FC = () => {
     grossTotalIncome: "",
   });
 
-  // Step 4: Documents
-  const [documents, setDocuments] = useState<LoanDocumentItem[]>(() =>
-    JSON.parse(JSON.stringify(BUSINESS_DOCUMENTS_TEMPLATE))
-  );
+  // Step 4: Documents — PDF, images, Word and Excel, 5 MB per file on every picker.
+  const loanDocuments = useLoanDocuments({
+    template: BUSINESS_DOCUMENTS_TEMPLATE,
+    fileTypes: "withOfficeDocuments",
+    maxSizeMB: BUSINESS_LOAN_MAX_FILE_SIZE_MB,
+    enforceSizeLimitOnOfficeFiles: true,
+  });
+  const { documents } = loanDocuments;
 
-  const handleDetailsChange = <K extends keyof LoanDetailsFormData>(
-    field: K,
-    value: LoanDetailsFormData[K]
-  ) => {
+  const scrollToTop = useCallback(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
+  const wizard = useLoanWizard({
+    totalSteps: STEPS.length,
+    validateStep: (stepIndex) => validateStep(stepIndex),
+    onExitFromFirstStep: () => router.back(),
+    onStepChange: scrollToTop,
+  });
+  const { currentStepIndex } = wizard;
+
+  const clearFieldError = (field: string) => {
+    if (!errors[field]) return;
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const handleDetailsChange = <K extends keyof LoanDetailsFormData>(field: K, value: LoanDetailsFormData[K]) => {
     setLoanDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field);
   };
 
-  const handleBusinessChange = <K extends keyof LoanBusinessFormData>(
-    field: K,
-    value: LoanBusinessFormData[K]
-  ) => {
+  const handleBusinessChange = <K extends keyof LoanBusinessFormData>(field: K, value: LoanBusinessFormData[K]) => {
     setBusinessDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field);
   };
 
-  const handleBankingChange = (
-    field: keyof LoanBankingFormData,
-    value: string
-  ) => {
+  const handleBankingChange = <K extends keyof LoanBankingFormData>(field: K, value: LoanBankingFormData[K]) => {
     setBankingDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field);
   };
 
-  const handleDocumentUploaded = (
-    docId: string,
-    fileUri: string,
-    fileName: string,
-    fileSize: string
-  ) => {
-    setDocuments((prev) =>
-      prev.map((d) => {
-        const targetId = docId.replace(/^doc-/, "");
-        const itemCleanId = d.id.replace(/^doc-/, "");
-        if (d.id === docId || itemCleanId === targetId) {
-          return {
-            ...d,
-            fileUri,
-            fileName,
-            fileSize,
-            uploadedAt: new Date().toISOString(),
-          };
-        }
-        return d;
-      })
-    );
+  /** Shows the step's field errors plus an alert; returns false so the wizard stays put. */
+  const rejectStep = (stepErrors: Record<string, string>, message: string): false => {
+    setErrors(stepErrors);
+    Alert.alert("Required Fields Missing", message);
+    return false;
   };
 
-  const handleDocumentDeleted = (docId: string) => {
-    setDocuments((prev) =>
-      prev.map((d) => {
-        const targetId = docId.replace(/^doc-/, "");
-        const itemCleanId = d.id.replace(/^doc-/, "");
-        if (d.id === docId || itemCleanId === targetId) {
-          const nextDoc = { ...d };
-          delete nextDoc.fileUri;
-          delete nextDoc.fileName;
-          delete nextDoc.fileSize;
-          delete nextDoc.uploadedAt;
-          return nextDoc;
-        }
-        return d;
-      })
-    );
-  };
-
-  const validateCurrentStep = (): boolean => {
-    if (currentStepIndex === 0) {
+  function validateStep(stepIndex: number): boolean {
+    if (stepIndex === 0) {
       const step1Errors = validateLoanDetails(loanDetails, { requireExistingEmi: false });
       if (Object.keys(step1Errors).length > 0) {
-        setErrors(step1Errors);
-        Alert.alert(
-          "Required Fields Missing",
-          "Please fill in all required fields in Step 1 before proceeding."
-        );
-        return false;
+        return rejectStep(step1Errors, "Please fill in all required fields in Step 1 before proceeding.");
       }
-    } else if (currentStepIndex === 1) {
+    } else if (stepIndex === 1) {
       const step2Errors = validateLoanBusiness(businessDetails);
       if (Object.keys(step2Errors).length > 0) {
-        setErrors(step2Errors);
-        Alert.alert(
-          "Required Fields Missing",
-          "Please fill in all required fields in Step 2 before proceeding."
-        );
-        return false;
+        return rejectStep(step2Errors, "Please fill in all required fields in Step 2 before proceeding.");
       }
-    } else if (currentStepIndex === 2) {
+    } else if (stepIndex === 2) {
       const step3Errors = validateLoanBanking(bankingDetails);
       if (Object.keys(step3Errors).length > 0) {
-        setErrors(step3Errors);
-        Alert.alert(
-          "Required Fields Missing",
+        return rejectStep(
+          step3Errors,
           "Please fill in all required banking details (Bank Name, Account Number, IFSC) in Step 3 before proceeding."
         );
-        return false;
       }
-    } else if (currentStepIndex === 3) {
+    } else if (stepIndex === 3) {
+      // Business Loan only requires at least one uploaded document to reach the review.
       const uploadedDocs = documents.filter((d) => d.fileUri && d.fileUri.trim() !== "");
       if (uploadedDocs.length === 0) {
         Alert.alert(
@@ -222,27 +192,15 @@ export const BusinessLoanScreen: React.FC = () => {
     }
     setErrors({});
     return true;
-  };
+  }
 
   const handleNext = () => {
-    if (!validateCurrentStep()) {
+    if (!wizard.isLastStep) {
+      wizard.goToNextStep();
       return;
     }
-
-    if (currentStepIndex < STEPS.length - 1) {
-      setCurrentStepIndex((prev) => prev + 1);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    } else {
+    if (validateStep(currentStepIndex)) {
       handleSubmitApplication();
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex((prev) => prev - 1);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    } else {
-      router.back();
     }
   };
 
@@ -275,20 +233,16 @@ export const BusinessLoanScreen: React.FC = () => {
           {
             text: "Track Status",
             onPress: () => {
-              const statusUrl = `/service/loan-status?id=${encodeURIComponent(
+              const statusUrl: Href = `/service/loan-status?id=${encodeURIComponent(
                 response.applicationId
               )}&loanType=${encodeURIComponent("Business Loan")}`;
-              router.replace(statusUrl as any);
+              router.replace(statusUrl);
             },
           },
         ]
       );
-    } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to lodge application. Please check your network connection and try again.";
-      Alert.alert("Submission Error", errorMessage);
+    } catch (error) {
+      Alert.alert("Submission Error", getSubmissionErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -322,13 +276,7 @@ export const BusinessLoanScreen: React.FC = () => {
           />
         );
       case 3:
-        return (
-          <BusinessLoanDocumentsStep
-            documents={documents}
-            onDocumentUploaded={handleDocumentUploaded}
-            onDocumentDeleted={handleDocumentDeleted}
-          />
-        );
+        return <BusinessLoanDocumentsStep loanDocuments={loanDocuments} />;
       case 4:
       default:
         return (
@@ -340,25 +288,22 @@ export const BusinessLoanScreen: React.FC = () => {
             profile={customer || undefined}
             isConsentChecked={isConsentChecked}
             onConsentToggle={setIsConsentChecked}
-            onGoToStep={(stepIdx) => {
-              setCurrentStepIndex(stepIdx);
-              scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-            }}
+            onGoToStep={wizard.goToStep}
           />
         );
     }
   };
 
-  const isFinalStep = currentStepIndex === STEPS.length - 1;
-
   return (
-    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
+    <View style={[styles.safeArea, getSafeAreaTopPadding(insets.top)]}>
       {/* Header with Step X of 5 & Orange Linear Progress Bar */}
-      <BusinessLoanStepIndicator
+      <LoanStepIndicator
+        variant="linear"
+        title="Business Loan"
+        subtitle={STEPS[currentStepIndex]}
         currentStepIndex={currentStepIndex}
         totalSteps={STEPS.length}
-        stepTitle={STEPS[currentStepIndex]}
-        onBack={handleBack}
+        onBack={wizard.handleBack}
         onSettings={() =>
           Alert.alert(
             "Business Loan Assistance",
@@ -378,12 +323,7 @@ export const BusinessLoanScreen: React.FC = () => {
       </ScrollView>
 
       {/* Sticky Bottom Actions */}
-      <View
-        style={[
-          styles.bottomBar,
-          { paddingBottom: Math.max(insets.bottom, 12) },
-        ]}
-      >
+      <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
         <TouchableOpacity
           style={[styles.continueBtn, isSubmitting && styles.continueBtnDisabled]}
           onPress={handleNext}
@@ -395,10 +335,10 @@ export const BusinessLoanScreen: React.FC = () => {
           ) : (
             <>
               <Text style={styles.continueBtnText}>
-                {isFinalStep ? "Submit Application" : "Continue"}
+                {wizard.isLastStep ? "Submit Application" : "Continue"}
               </Text>
               <Ionicons
-                name={isFinalStep ? "shield-checkmark" : "arrow-forward"}
+                name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
                 size={18}
                 color={BrandColors.WHITE}
               />

@@ -17,24 +17,11 @@ import {
   MAX_FILE_SIZE_BYTES,
 } from "@/modules/gst/utils/gstValidation";
 import { UploadedDocInfo } from "@/modules/gst/validation/complianceSchema";
+import { styles } from "@/modules/gst/gst-compliance/components/FileUploadCard/FileUploadCard.styles";
 import {
-  styles,
-  getCardContainerStyle,
-  getUploadingTextStyle,
-  getProgressBarTrackStyle,
-  getProgressBarFillStyle,
-  getIconWrapStyle,
-  getFileNameTextStyle,
-  getFileSizeTextStyle,
-  getSecondaryButtonStyle,
-  getSecondaryButtonTextStyle,
-  getDeleteButtonStyle,
-  getDeleteButtonTextStyle,
-  getTitleTextStyle,
-  getBadgeStyle,
-  getBadgeTextStyle,
-  getCameraSecondaryButtonTextStyle,
-} from "./FileUploadCard.styles";
+  FileUploadSourceModal,
+  FileUploadPreviewModal,
+} from "@/modules/gst/gst-compliance/components/FileUploadCard/FileUploadModals";
 
 export interface FileUploadCardProps {
   title: string;
@@ -51,6 +38,7 @@ export interface FileUploadCardProps {
 
 export const FileUploadCard: React.FC<FileUploadCardProps> = ({
   title,
+  description,
   required = false,
   allowedExtensions,
   supportedFormatsText = "PDF, JPG, PNG, XLS, XLSX, CSV",
@@ -63,6 +51,8 @@ export const FileUploadCard: React.FC<FileUploadCardProps> = ({
   const { isDark } = useTheme();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [sourceModalVisible, setSourceModalVisible] = useState(false);
+  const [previewModalVisible, setPreviewModalVisible] = useState(false);
 
   const getMimeTypes = (): string[] => {
     const mimes: string[] = [];
@@ -110,7 +100,8 @@ export const FileUploadCard: React.FC<FileUploadCardProps> = ({
     }, 70);
   };
 
-  const handlePickFile = async () => {
+  const handlePickDocument = async () => {
+    setSourceModalVisible(false);
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: getMimeTypes(),
@@ -150,17 +141,18 @@ export const FileUploadCard: React.FC<FileUploadCardProps> = ({
         });
       }
     } catch {
-      Alert.alert("Upload Error", "Could not select file. Please try again.");
+      Alert.alert("Upload Error", "Could not select document. Please try again.");
     }
   };
 
   const handleTakePhoto = async () => {
+    setSourceModalVisible(false);
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
           "Permission Required",
-          "Camera access is required to take photos of your document."
+          "Camera access is required to capture your document."
         );
         return;
       }
@@ -208,9 +200,7 @@ export const FileUploadCard: React.FC<FileUploadCardProps> = ({
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            onDocChange(null);
-          },
+          onPress: () => onDocChange(null),
         },
       ]
     );
@@ -224,169 +214,213 @@ export const FileUploadCard: React.FC<FileUploadCardProps> = ({
       lower.endsWith(".xlsx") ||
       lower.endsWith(".csv")
     ) {
-      return "grid-outline";
+      return "grid";
     }
     if (
       lower.endsWith(".jpg") ||
       lower.endsWith(".jpeg") ||
-      lower.endsWith(".png")
+      lower.endsWith(".png") ||
+      lower.endsWith(".webp")
     ) {
-      return "image-outline";
+      return "image";
     }
     return "document-outline";
   };
 
+  const isUploaded = Boolean(uploadedDoc);
+
   return (
-    <View style={[styles.cardContainer, getCardContainerStyle(isDark, Boolean(error))]}>
-      {/* Uploading State */}
+    <View
+      style={[
+        styles.cardContainer,
+        isUploaded
+          ? isDark
+            ? styles.cardContainerDarkUploaded
+            : styles.cardContainerUploaded
+          : isDark
+          ? styles.cardContainerDarkEmpty
+          : styles.cardContainerEmpty,
+        Boolean(error) && styles.cardContainerError,
+      ]}
+    >
+      {/* Uploading Progress */}
       {isUploading ? (
         <View style={styles.uploadingBox}>
           <View style={styles.uploadingHeader}>
-            <Text style={[styles.uploadingText, getUploadingTextStyle(isDark)]}>
-              Uploading Document...
-            </Text>
-            <Text style={styles.uploadingPercent}>
-              {uploadProgress}%
-            </Text>
+            <Text style={styles.uploadingText}>Uploading Document...</Text>
+            <Text style={styles.uploadingPercent}>{uploadProgress}%</Text>
           </View>
-          <View style={[styles.progressBarTrack, getProgressBarTrackStyle(isDark)]}>
+          <View style={styles.progressBarTrack}>
             <View
-              style={[
-                styles.progressBarFill,
-                getProgressBarFillStyle(uploadProgress),
-              ]}
+              style={[styles.progressBarFill, { width: `${uploadProgress}%` }]}
             />
           </View>
         </View>
-      ) : uploadedDoc ? (
-        /* Minimal Uploaded State */
-        <View style={styles.contentContainer}>
-          {/* Top Row: Icon + Filename + ✓ Uploaded Badge */}
-          <View style={styles.topRow}>
-            <View style={styles.titleWithIcon}>
-              <View style={[styles.iconWrap, getIconWrapStyle(isDark)]}>
-                <Ionicons
-                  name={getDocIcon(uploadedDoc.name)}
-                  size={20}
-                  color={BrandColors.PRIMARY_BLUE_ACCENT}
-                />
-              </View>
-              <Text
-                style={[styles.fileNameText, getFileNameTextStyle(isDark)]}
-                numberOfLines={1}
-                ellipsizeMode="middle"
-              >
-                {uploadedDoc.name}
-              </Text>
-            </View>
-
-            <View style={styles.successBadge}>
-              <Ionicons name="checkmark-circle" size={13} color="#16A34A" />
-              <Text style={styles.successBadgeText}>Uploaded</Text>
-            </View>
-          </View>
-
-          {/* File Size */}
-          <Text style={[styles.fileSizeText, getFileSizeTextStyle(isDark)]}>
-            {uploadedDoc.sizeFormatted}
-          </Text>
-
-          {/* Action Buttons: Replace & Delete */}
-          <View style={styles.actionButtonsRow}>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={handlePickFile}
-              style={[styles.secondaryButton, getSecondaryButtonStyle(isDark)]}
-            >
-              <Ionicons
-                name="swap-horizontal"
-                size={16}
-                color={isDark ? "#E2E8F0" : "#334155"}
-              />
-              <Text style={[styles.secondaryButtonText, getSecondaryButtonTextStyle(isDark)]}>
-                Replace
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={handleDelete}
+      ) : (
+        <>
+          {/* Top Row: Icon + Title/Subtitle + Uploaded Info */}
+          <View style={styles.cardTopRow}>
+            <View
               style={[
-                styles.secondaryButton,
-                styles.deleteButton,
-                getDeleteButtonStyle(isDark),
+                styles.iconBox,
+                isUploaded ? styles.iconBoxUploaded : styles.iconBoxEmpty,
               ]}
             >
-              <Ionicons name="trash-outline" size={16} color="#DC2626" />
-              <Text style={[styles.secondaryButtonText, getDeleteButtonTextStyle()]}>
-                Delete
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : (
-        /* Minimal Empty State */
-        <View style={styles.contentContainer}>
-          {/* Top Row: Icon + Title + Required Badge */}
-          <View style={styles.topRow}>
-            <View style={styles.titleWithIcon}>
               <Ionicons
-                name="document-text-outline"
-                size={19}
-                color={BrandColors.PRIMARY_BLUE_ACCENT}
+                name={
+                  isUploaded
+                    ? getDocIcon(uploadedDoc?.name || "")
+                    : "document-text-outline"
+                }
+                size={22}
+                color={
+                  isUploaded
+                    ? "#16A34A"
+                    : BrandColors.PRIMARY_BLUE_ACCENT
+                }
               />
-              <Text style={[styles.titleText, getTitleTextStyle(isDark)]}>
-                {title}
-              </Text>
             </View>
 
-            <View style={[styles.badge, getBadgeStyle(required, isDark)]}>
-              <Text style={[styles.badgeText, getBadgeTextStyle(required, isDark)]}>
-                {required ? "Required" : "Optional"}
+            <View style={styles.textCol}>
+              <View style={styles.titleRow}>
+                <Text
+                  style={[styles.cardTitle, isDark && styles.cardTitleDark]}
+                >
+                  {title}
+                </Text>
+                {required ? <Text style={styles.star}> *</Text> : null}
+              </View>
+
+              <Text
+                style={[
+                  styles.cardSubtitle,
+                  isDark && styles.cardSubtitleDark,
+                ]}
+              >
+                {description || supportedFormatsText || "Max 20 MB · PDF, JPG, PNG, XLS"}
               </Text>
+
+              {isUploaded && uploadedDoc ? (
+                <View style={styles.uploadedInfoRow}>
+                  <Ionicons name="checkmark-circle" size={14} color="#16A34A" />
+                  <Text
+                    style={[
+                      styles.uploadedFileName,
+                      isDark && styles.uploadedFileNameDark,
+                    ]}
+                    numberOfLines={1}
+                    ellipsizeMode="middle"
+                  >
+                    {uploadedDoc.name} ({uploadedDoc.sizeFormatted})
+                  </Text>
+                </View>
+              ) : null}
             </View>
           </View>
 
-          {/* Two Action Buttons: [ 📷 Camera ]  [ ☁ Upload File ] */}
-          <View style={styles.actionButtonsRow}>
-            <TouchableOpacity
-              activeOpacity={0.75}
-              onPress={handleTakePhoto}
-              style={[styles.secondaryButton, getSecondaryButtonStyle(isDark)]}
-            >
-              <Ionicons
-                name="camera-outline"
-                size={18}
-                color={isDark ? "#F8FAFC" : "#1E293B"}
-              />
-              <Text style={[styles.secondaryButtonText, getCameraSecondaryButtonTextStyle(isDark)]}>
-                Camera
-              </Text>
-            </TouchableOpacity>
+          {/* Bottom Action Row (Image 1 Layout) */}
+          <View style={styles.bottomActionRow}>
+            {isUploaded && uploadedDoc ? (
+              <>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => setPreviewModalVisible(true)}
+                  style={[styles.viewBtn, isDark && styles.viewBtnDark]}
+                >
+                  <Ionicons
+                    name="eye-outline"
+                    size={15}
+                    color={isDark ? "#E2E8F0" : "#334155"}
+                  />
+                  <Text
+                    style={[
+                      styles.viewBtnText,
+                      isDark && styles.viewBtnTextDark,
+                    ]}
+                  >
+                    View
+                  </Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handlePickFile}
-              style={styles.primaryButton}
-            >
-              <Ionicons
-                name="cloud-upload-outline"
-                size={18}
-                color="#FFFFFF"
-              />
-              <Text style={styles.primaryButtonText}>Upload File</Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => setSourceModalVisible(true)}
+                  style={[styles.changeBtn, isDark && styles.changeBtnDark]}
+                >
+                  <Ionicons
+                    name="swap-horizontal"
+                    size={15}
+                    color={isDark ? "#FDBA74" : "#EA580C"}
+                  />
+                  <Text
+                    style={[
+                      styles.changeBtnText,
+                      isDark && styles.changeBtnTextDark,
+                    ]}
+                  >
+                    Change
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleDelete}
+                  style={[styles.deleteBtn, isDark && styles.deleteBtnDark]}
+                >
+                  <Ionicons name="trash-outline" size={15} color="#DC2626" />
+                </TouchableOpacity>
+              </>
+            ) : (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setSourceModalVisible(true)}
+                style={[styles.uploadBtn, isDark && styles.uploadBtnDark]}
+              >
+                <Ionicons
+                  name="cloud-upload-outline"
+                  size={16}
+                  color={isDark ? "#93C5FD" : "#1D4ED8"}
+                />
+                <Text
+                  style={[
+                    styles.uploadBtnText,
+                    isDark && styles.uploadBtnTextDark,
+                  ]}
+                >
+                  Upload File
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
-        </View>
+        </>
       )}
 
-      {/* Inline Error Message */}
+      {/* Validation Error */}
       {error ? (
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={14} color="#DC2626" />
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : null}
+
+      {/* Source Selection Modal (Camera vs Gallery/Files) */}
+      <FileUploadSourceModal
+        visible={sourceModalVisible}
+        isDark={isDark}
+        onClose={() => setSourceModalVisible(false)}
+        onTakePhoto={handleTakePhoto}
+        onPickDocument={handlePickDocument}
+      />
+
+      {/* Document Preview Modal */}
+      <FileUploadPreviewModal
+        visible={previewModalVisible}
+        isDark={isDark}
+        uploadedDoc={uploadedDoc}
+        onClose={() => setPreviewModalVisible(false)}
+      />
     </View>
   );
 };
+
+export default FileUploadCard;

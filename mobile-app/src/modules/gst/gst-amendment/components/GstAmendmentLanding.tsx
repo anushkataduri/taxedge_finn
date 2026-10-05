@@ -9,7 +9,12 @@ import {
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
-import { styles } from "../screens/GstAmendmentScreen/GstAmendmentScreen.styles";
+import {
+  styles,
+  getHeaderBarStyle,
+  getCardIconBoxStyle,
+  getScrollContentStyle,
+} from "../screens/GstAmendmentScreen/GstAmendmentScreen.styles";
 import { CORE_AMENDMENT_SECTIONS } from "../config/gstCoreAmendmentConfig";
 import { NON_CORE_AMENDMENT_SECTIONS } from "../config/gstNonCoreAmendmentConfig";
 
@@ -37,7 +42,7 @@ export const GstAmendmentLanding: React.FC<GstAmendmentLandingProps> = ({
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
 
       {/* Header */}
-      <View style={[styles.headerBar, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.headerBar, getHeaderBarStyle(insets.top)]}>
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={onBack}
@@ -55,7 +60,7 @@ export const GstAmendmentLanding: React.FC<GstAmendmentLandingProps> = ({
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 30 }]}
+        contentContainerStyle={[styles.scrollContent, getScrollContentStyle(insets.bottom)]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -103,7 +108,7 @@ export const GstAmendmentLanding: React.FC<GstAmendmentLandingProps> = ({
               style={styles.amendmentCard}
               onPress={() => onSelectSection(sec.id)}
             >
-              <View style={[styles.cardIconBox, { backgroundColor: sec.iconBg }]}>
+              <View style={[styles.cardIconBox, getCardIconBoxStyle(sec.iconBg)]}>
                 <Ionicons name={sec.icon} size={22} color={sec.iconColor} />
               </View>
               <View style={styles.cardContentCol}>
@@ -125,7 +130,7 @@ export const GstAmendmentLanding: React.FC<GstAmendmentLandingProps> = ({
               style={styles.amendmentCard}
               onPress={() => onSelectSection(sec.id)}
             >
-              <View style={[styles.cardIconBox, { backgroundColor: sec.iconBg }]}>
+              <View style={[styles.cardIconBox, getCardIconBoxStyle(sec.iconBg)]}>
                 <Ionicons name={sec.icon} size={22} color={sec.iconColor} />
               </View>
               <View style={styles.cardContentCol}>

@@ -2,8 +2,6 @@ package com.taxedge.gst.service;
 
 import java.io.IOException;
 import java.util.Base64;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,173 +9,207 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.taxedge.gst.dto.GstFilingDocumentsDto;
+import com.taxedge.gst.entity.GstFiling;
 import com.taxedge.gst.entity.GstFilingDocuments;
-import com.taxedge.gst.enums.GstFilingDocumentType;
 import com.taxedge.gst.exception.ResourceNotFoundException;
+import com.taxedge.gst.helper.RandomNumberGenerator;
 import com.taxedge.gst.repository.GstFilingDocumentsRepository;
 import com.taxedge.gst.repository.GstFilingRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
-public class GstFilingDocumentsServiceImpl
-        implements GstFilingDocumentsService {
+@RequiredArgsConstructor
+public class GstFilingDocumentsServiceImpl implements GstFilingDocumentsService {
 
-    @Autowired
-    private GstFilingDocumentsRepository documentsRepository;
+	
+	private final GstFilingDocumentsRepository documentsRepository;
 
-    @Autowired
-    private GstFilingRepository filingRepository;
+	
+	private final GstFilingRepository filingRepository;
 
-    @Autowired
-    private ModelMapper modelMapper;
+	@Autowired
+	private ModelMapper modelMapper;
 
-    @Override
-    public String uploadDocument(
-            String filingId,
-            String documentType,
-            MultipartFile file)
-            throws IOException {
+	@Override
+	public String uploadDocuments(String gstfilingId, MultipartFile salesInvoice, MultipartFile purchaseInvoices,
+			MultipartFile gstr2bItcStatement, MultipartFile creditNotes, MultipartFile debitNotes,
+			MultipartFile eInvoiceData, MultipartFile eWayBillData, MultipartFile expenseInvoicesAndVouchers,
+			MultipartFile bankStatement, MultipartFile previousGstReturns, MultipartFile previousFilingAcknowledgement,
+			MultipartFile otherSupportingDocuments) throws IOException {
 
-        filingRepository.findById(filingId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "GST filing not found with id: "
-                                        + filingId));
+		GstFiling filing = filingRepository.findById(gstfilingId)
+				.orElseThrow(() -> new ResourceNotFoundException("GST filing not found with ID: " + gstfilingId));
 
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "File is required");
-        }
+		if (salesInvoice == null && purchaseInvoices == null && gstr2bItcStatement == null && creditNotes == null
+				&& debitNotes == null && eInvoiceData == null && eWayBillData == null
+				&& expenseInvoicesAndVouchers == null && bankStatement == null && previousGstReturns == null
+				&& previousFilingAcknowledgement == null && otherSupportingDocuments == null) {
 
-        GstFilingDocumentType type;
+			throw new IllegalArgumentException("Please select at least one document");
+		}
 
-        try {
-            type = GstFilingDocumentType.valueOf(
-                    documentType.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(
-                    "Invalid document type: "
-                            + documentType);
-        }
+		if (documentsRepository.findByGstFiling_GstfilingId(gstfilingId).isPresent()) {
 
-        boolean alreadyExists =
-                documentsRepository
-                        .existsByFilingIdAndDocumentType(
-                                filingId,
-                                type);
+			throw new IllegalArgumentException("Documents already exist for this GST filing");
+		}
 
-        if (alreadyExists) {
-            throw new IllegalArgumentException(
-                    "Document already uploaded for: "
-                            + type);
-        }
+		GstFilingDocuments documents = new GstFilingDocuments();
 
-        GstFilingDocuments document =
-                new GstFilingDocuments();
+		documents.setGstFiling(filing);
 
-        document.setFilingId(filingId);
+		documents.setDocumentId(RandomNumberGenerator.generateDocumentId());
 
-        document.setDocumentType(type);
+		if (salesInvoice != null && !salesInvoice.isEmpty()) {
+			documents.setSalesInvoice(convertFile(salesInvoice));
+		}
 
-        document.setFileName(file.getOriginalFilename());
+		if (purchaseInvoices != null && !purchaseInvoices.isEmpty()) {
+			documents.setPurchaseInvoices(convertFile(purchaseInvoices));
+		}
 
-        document.setFileType(file.getContentType());
+		if (gstr2bItcStatement != null && !gstr2bItcStatement.isEmpty()) {
+			documents.setGstr2bItcStatement(convertFile(gstr2bItcStatement));
+		}
 
-        String base64Data =
-                Base64.getEncoder()
-                        .encodeToString(file.getBytes());
+		if (creditNotes != null && !creditNotes.isEmpty()) {
+			documents.setCreditNotes(convertFile(creditNotes));
+		}
 
-        document.setFileData(base64Data);
+		if (debitNotes != null && !debitNotes.isEmpty()) {
+			documents.setDebitNotes(convertFile(debitNotes));
+		}
 
-        documentsRepository.save(document);
+		if (eInvoiceData != null && !eInvoiceData.isEmpty()) {
+			documents.setEInvoiceData(convertFile(eInvoiceData));
+		}
 
-        return "GST filing document uploaded successfully";
-    }
+		if (eWayBillData != null && !eWayBillData.isEmpty()) {
+			documents.setEWayBillData(convertFile(eWayBillData));
+		}
 
-    @Override
-    public List<GstFilingDocumentsDto> getDocuments(
-            String filingId) {
+		if (expenseInvoicesAndVouchers != null && !expenseInvoicesAndVouchers.isEmpty()) {
+			documents.setExpenseInvoicesAndVouchers(convertFile(expenseInvoicesAndVouchers));
+		}
 
-        filingRepository.findById(filingId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "GST filing not found with id: "
-                                        + filingId));
+		if (bankStatement != null && !bankStatement.isEmpty()) {
+			documents.setBankStatement(convertFile(bankStatement));
+		}
 
-        List<GstFilingDocuments> documents =
-                documentsRepository.findByFilingId(
-                        filingId);
+		if (previousGstReturns != null && !previousGstReturns.isEmpty()) {
+			documents.setPreviousGstReturns(convertFile(previousGstReturns));
+		}
 
-        return documents.stream()
-                .map(document ->
-                        modelMapper.map(
-                                document,
-                                GstFilingDocumentsDto.class))
-                .collect(Collectors.toList());
-    }
+		if (previousFilingAcknowledgement != null && !previousFilingAcknowledgement.isEmpty()) {
+			documents.setPreviousFilingAcknowledgement(convertFile(previousFilingAcknowledgement));
+		}
 
-    @Override
-    public String updateDocument(
-            String filingId,
-            Long id,
-            MultipartFile file)
-            throws IOException {
+		if (otherSupportingDocuments != null && !otherSupportingDocuments.isEmpty()) {
+			documents.setOtherSupportingDocuments(convertFile(otherSupportingDocuments));
+		}
 
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "File is required");
-        }
+		documentsRepository.save(documents);
 
-        GstFilingDocuments document =
-                documentsRepository.findById(id)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Document not found with id: "
-                                                + id));
+		return "GST filing documents uploaded successfully. Document ID: " + documents.getDocumentId();
+	}
 
-        if (!document.getFilingId()
-                .equals(filingId)) {
+	@Override
+	public GstFilingDocumentsDto getDocuments(String gstfilingId) {
 
-            throw new ResourceNotFoundException(
-                    "Document does not belong to filingId: " + filingId);
-        }
+		GstFilingDocuments documents = documentsRepository.findByGstFiling_GstfilingId(gstfilingId).orElseThrow(
+				() -> new ResourceNotFoundException("GST filing documents not found for filing ID: " + gstfilingId));
 
-        document.setFileName(file.getOriginalFilename());
+		GstFilingDocumentsDto dto = modelMapper.map(documents, GstFilingDocumentsDto.class);
 
-        document.setFileType(file.getContentType());
+		dto.setFilingId(documents.getGstFiling().getGstfilingId());
 
-        String base64Data =
-                Base64.getEncoder()
-                        .encodeToString(file.getBytes());
+		return dto;
+	}
 
-        document.setFileData(base64Data);
+	@Override
+	public String updateDocuments(String gstfilingId, MultipartFile salesInvoice, MultipartFile purchaseInvoices,
+			MultipartFile gstr2bItcStatement, MultipartFile creditNotes, MultipartFile debitNotes,
+			MultipartFile eInvoiceData, MultipartFile eWayBillData, MultipartFile expenseInvoicesAndVouchers,
+			MultipartFile bankStatement, MultipartFile previousGstReturns, MultipartFile previousFilingAcknowledgement,
+			MultipartFile otherSupportingDocuments) throws IOException {
 
-        documentsRepository.save(document);
+		GstFilingDocuments documents = documentsRepository.findByGstFiling_GstfilingId(gstfilingId).orElseThrow(
+				() -> new ResourceNotFoundException("GST filing documents not found for filing ID: " + gstfilingId));
 
-        return "GST filing document updated successfully";
-    }
+		if (salesInvoice == null && purchaseInvoices == null && gstr2bItcStatement == null && creditNotes == null
+				&& debitNotes == null && eInvoiceData == null && eWayBillData == null
+				&& expenseInvoicesAndVouchers == null && bankStatement == null && previousGstReturns == null
+				&& previousFilingAcknowledgement == null && otherSupportingDocuments == null) {
 
-    @Override
-    public String deleteDocument(
-            String filingId,
-            Long id) {
+			throw new IllegalArgumentException("Please select at least one document");
+		}
 
-        GstFilingDocuments document =
-                documentsRepository.findById(id)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Document not found with id: "
-                                                + id));
+		if (salesInvoice != null && !salesInvoice.isEmpty()) {
+			documents.setSalesInvoice(convertFile(salesInvoice));
+		}
 
-        if (!document.getFilingId()
-                .equals(filingId)) {
+		if (purchaseInvoices != null && !purchaseInvoices.isEmpty()) {
+			documents.setPurchaseInvoices(convertFile(purchaseInvoices));
+		}
 
-            throw new ResourceNotFoundException(
-                    "Document does not belong to filingId: "
-                            + filingId);
-        }
+		if (gstr2bItcStatement != null && !gstr2bItcStatement.isEmpty()) {
+			documents.setGstr2bItcStatement(convertFile(gstr2bItcStatement));
+		}
 
-        documentsRepository.delete(document);
+		if (creditNotes != null && !creditNotes.isEmpty()) {
+			documents.setCreditNotes(convertFile(creditNotes));
+		}
 
-        return "GST filing document deleted successfully";
-    }
+		if (debitNotes != null && !debitNotes.isEmpty()) {
+			documents.setDebitNotes(convertFile(debitNotes));
+		}
+
+		if (eInvoiceData != null && !eInvoiceData.isEmpty()) {
+			documents.setEInvoiceData(convertFile(eInvoiceData));
+		}
+
+		if (eWayBillData != null && !eWayBillData.isEmpty()) {
+			documents.setEWayBillData(convertFile(eWayBillData));
+		}
+
+		if (expenseInvoicesAndVouchers != null && !expenseInvoicesAndVouchers.isEmpty()) {
+			documents.setExpenseInvoicesAndVouchers(convertFile(expenseInvoicesAndVouchers));
+		}
+
+		if (bankStatement != null && !bankStatement.isEmpty()) {
+			documents.setBankStatement(convertFile(bankStatement));
+		}
+
+		if (previousGstReturns != null && !previousGstReturns.isEmpty()) {
+			documents.setPreviousGstReturns(convertFile(previousGstReturns));
+		}
+
+		if (previousFilingAcknowledgement != null && !previousFilingAcknowledgement.isEmpty()) {
+			documents.setPreviousFilingAcknowledgement(convertFile(previousFilingAcknowledgement));
+		}
+
+		if (otherSupportingDocuments != null && !otherSupportingDocuments.isEmpty()) {
+			documents.setOtherSupportingDocuments(convertFile(otherSupportingDocuments));
+		}
+
+		documentsRepository.save(documents);
+
+		return "GST filing documents updated successfully. Document ID: " + documents.getDocumentId();
+	}
+
+	@Override
+	public String deleteDocuments(String gstfilingId) {
+
+		GstFilingDocuments documents = documentsRepository.findByGstFiling_GstfilingId(gstfilingId).orElseThrow(
+				() -> new ResourceNotFoundException("GST filing documents not found for filing ID: " + gstfilingId));
+
+		documentsRepository.delete(documents);
+
+		return "GST filing documents deleted successfully";
+	}
+
+	private String convertFile(MultipartFile file) throws IOException {
+
+		return Base64.getEncoder().encodeToString(file.getBytes());
+	}
 }

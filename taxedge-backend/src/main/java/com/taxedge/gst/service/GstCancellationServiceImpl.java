@@ -6,69 +6,65 @@ import java.util.Base64;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.taxedge.customer.entity.Customer;
+import com.taxedge.customer.repository.CustomerRepository;
 import com.taxedge.gst.dto.GstCancellationDto;
 import com.taxedge.gst.entity.GstCancellation;
 import com.taxedge.gst.exception.ResourceNotFoundException;
+import com.taxedge.gst.helper.RandomNumberGenerator;
 import com.taxedge.gst.repository.GstCancellationRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
-public class GstCancellationServiceImpl
-        implements GstCancellationService {
+@RequiredArgsConstructor
+public class GstCancellationServiceImpl implements GstCancellationService {
 
-    @Autowired
-    private GstCancellationRepository cancellationRepository;
+	
+	private final GstCancellationRepository gstCancellationRepository;
 
-    @Autowired
-    private ModelMapper modelMapper;
+	
+	private final CustomerRepository customerRepository;
 
-    @Override
-    public String createCancellation(
-            GstCancellationDto gstCancellationDto)
-            throws IOException {
+	@Autowired
+	private ModelMapper modelMapper;
 
-        if (cancellationRepository.existsById(
-                gstCancellationDto.getGstin())) {
+	@Override
+	public String createCancellation(GstCancellationDto gstCancellationDto, MultipartFile supportingProofDocument)
+			throws IOException {
 
-            throw new IllegalArgumentException(
-                    "GST cancellation already exists for GSTIN: "
-                            + gstCancellationDto.getGstin());
-        }
+		Customer customer = customerRepository.findById(gstCancellationDto.getCustomerId())
+				.orElseThrow(() -> new ResourceNotFoundException(
+						"Customer not found with ID: " + gstCancellationDto.getCustomerId()));
 
-        GstCancellation cancellation =
-                modelMapper.map(
-                        gstCancellationDto,
-                        GstCancellation.class);
+		GstCancellation gstCancellation = modelMapper.map(gstCancellationDto, GstCancellation.class);
 
-        if (gstCancellationDto.getSupportingProofDocument() != null
-                && !gstCancellationDto
-                        .getSupportingProofDocument()
-                        .isEmpty()) {
+		gstCancellation.setCustomer(customer);
 
-            String base64Data =
-                    Base64.getEncoder()
-                            .encodeToString(
-                                    gstCancellationDto
-                                            .getSupportingProofDocument()
-                                            .getBytes());
+		String cancellationId = RandomNumberGenerator.generateCancellationId();
 
-            cancellation.setSupportingProofDocument(
-                    base64Data);
-        }
+		gstCancellation.setCancellationId(cancellationId);
 
-        cancellationRepository.save(cancellation);
+		if (supportingProofDocument != null && !supportingProofDocument.isEmpty()) {
 
-        return "GST cancellation details saved successfully";
-    }
+			String base64Data = Base64.getEncoder().encodeToString(supportingProofDocument.getBytes());
 
-    @Override
-    public GstCancellation getCancellation(
-            String gstin) {
+			gstCancellation.setSupportingProofDocument(base64Data);
+		}
 
-        return cancellationRepository.findById(gstin)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "GST cancellation details not found for GSTIN: "
-                                        + gstin));
-    }
+		gstCancellationRepository.save(gstCancellation);
+
+		return "GST cancellation details registered successfully. Cancellation ID: " + cancellationId;
+	}
+
+	@Override
+	public GstCancellation getCancellation(String cancellationId) {
+
+		GstCancellation gstCancellation = gstCancellationRepository.findById(cancellationId).orElseThrow(
+				() -> new ResourceNotFoundException("GST cancellation details not found with ID: " + cancellationId));
+
+		return gstCancellation;
+	}
 }

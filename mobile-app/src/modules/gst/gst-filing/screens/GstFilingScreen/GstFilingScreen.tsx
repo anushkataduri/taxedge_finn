@@ -14,13 +14,14 @@ import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 import { KeyboardAwareScrollView } from "@/shared/components/KeyboardAwareFormLayout";
 import { useApplicationStore } from "@/store/applicationStore";
 import { applicationService } from "@/modules/applications/services/applicationService";
-import { useGstFiling } from "../../hooks/useGstFiling";
+import { gstApi } from "@/modules/gst/services/gstApi";
+import { useGstFiling } from "@/modules/gst/gst-filing/hooks/useGstFiling";
 import {
   styles,
   getHeaderBarStyle,
   getScrollContentStyle,
   getSubmitButtonStyle,
-} from "./style";
+} from "@/modules/gst/gst-filing/screens/GstFilingScreen/GstFilingScreen.styles";
 
 export const GstFilingScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -42,6 +43,7 @@ export const GstFilingScreen: React.FC = () => {
     upiError,
     setUpiError,
     createdAppId,
+    filingId,
     showDraftModal,
     handleSaveAndExit,
     handleDiscardAndExit,
@@ -54,6 +56,8 @@ export const GstFilingScreen: React.FC = () => {
     requiredDocs,
     missingDocsCount,
     uploadedDocsCount,
+    handleEditStep,
+    isFetchingReview,
   } = useGstFiling();
 
   // Scroll to top on step transition
@@ -68,6 +72,19 @@ export const GstFilingScreen: React.FC = () => {
       turnover: String(turnover),
       eligibleItc: String(itc),
     }));
+    if (filingId) {
+      gstApi
+        .updateFiling(filingId, {
+          gstin: periodData.gstin,
+          financialYear: (periodData.financialYear || "2025-26").replace(/^FY\s*/i, "").trim(),
+          filingPeriod: periodData.filingPeriod || periodData.filingMonth || "Current Period",
+          returnType: (periodData.filingType || "").includes("3B") ? "GSTR_3B" : "GSTR_1",
+          taxCalculationMethod: "ESTIMATION_FIGURES",
+          estimatedTaxableSales: turnover,
+          estimatedEligibleItc: itc,
+        })
+        .catch(() => {});
+    }
     if (createdAppId) {
       const existing = useApplicationStore
         .getState()
@@ -181,11 +198,12 @@ export const GstFilingScreen: React.FC = () => {
               periodData.taxableSales || periodData.turnover || 0
             }
             eligibleItc={periodData.eligibleItc || 0}
-            onEditFilingDetails={() => setCurrentStep(0)}
-            onEditTaxComputation={() => setCurrentStep(0)}
+            isFetching={isFetchingReview}
+            onEditFilingDetails={() => handleEditStep(0)}
+            onEditTaxComputation={() => handleEditStep(0)}
             onEditFilingFee={() => setCurrentStep(3)}
-            onEditDocuments={() => setCurrentStep(1)}
-            onReuploadDocuments={() => setCurrentStep(1)}
+            onEditDocuments={() => handleEditStep(1)}
+            onReuploadDocuments={() => handleEditStep(1)}
             onUpdateComputation={handleComputationChange}
             onApprove={handleContinue}
             onRequestChanges={() =>

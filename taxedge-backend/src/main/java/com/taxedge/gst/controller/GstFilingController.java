@@ -6,86 +6,126 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.taxedge.gst.dto.GstFilingDto;
 import com.taxedge.gst.dto.GstFilingDocumentsDto;
+import com.taxedge.gst.dto.GstFilingDto;
 import com.taxedge.gst.entity.GstFiling;
-import com.taxedge.gst.service.GstFilingService;
 import com.taxedge.gst.service.GstFilingDocumentsService;
+import com.taxedge.gst.service.GstFilingService;
 
 @RestController
 @RequestMapping("/api/v1/gst/filing")
 public class GstFilingController {
 
-    @Autowired
-    private GstFilingService gstFilingService;
+	@Autowired
+	private GstFilingService gstFilingService;
 
-    @Autowired
-    private GstFilingDocumentsService documentsService;
+	@Autowired
+	private GstFilingDocumentsService documentsService;
 
-    // ==========================================
-    // 1. GST FILING ENDPOINTS
-    // ==========================================
+	// GST FILING
 
-    @PostMapping("/create")
-    public ResponseEntity<String> createFiling(@RequestBody GstFilingDto gstFilingDto) {
-        String result = gstFilingService.createFiling(gstFilingDto);
-        return new ResponseEntity<>(result, HttpStatus.CREATED);
-    }
+	@PostMapping("/create")
+	public ResponseEntity<String> createFiling(@RequestBody GstFilingDto gstFilingDto) {
 
-    @GetMapping("/{gstin}")
-    public ResponseEntity<List<GstFiling>> getFilingsByGstin(@PathVariable String gstin) {
-        List<GstFiling> filings = gstFilingService.getFilingsByGstin(gstin);
-        return ResponseEntity.ok(filings);
-    }
+		String result = gstFilingService.createFiling(gstFilingDto);
 
-    @PutMapping("/{id}")
-    public ResponseEntity<String> updateFiling(@PathVariable String id, @RequestBody GstFilingDto gstFilingDto) {
-        String result = gstFilingService.updateFiling(id, gstFilingDto);
-        return ResponseEntity.ok(result);
-    }
+		return new ResponseEntity<>(result, HttpStatus.CREATED);
+	}
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteFiling(@PathVariable String id) {
-        String result = gstFilingService.deleteFiling(id);
-        return ResponseEntity.ok(result);
-    }
+	@GetMapping("/{id}")
+	public ResponseEntity<GstFiling> getFilingById(@PathVariable String id) {
+	    GstFiling filing = gstFilingService.getFilingById(id);
+	    return ResponseEntity.ok(filing);
+	}
 
-    // ==========================================
-    // 2. GST FILING DOCUMENTS ENDPOINTS
-    // ==========================================
+	@PutMapping("update/{id}")
+	public ResponseEntity<String> updateFiling(@PathVariable String id, @RequestBody GstFilingDto gstFilingDto) {
 
-    @PostMapping("/documents/upload")
-    public ResponseEntity<String> uploadDocument(
-            @RequestParam("filingId") String filingId,
-            @RequestParam("documentType") String documentType,
-            @RequestParam("file") MultipartFile file) throws IOException {
-        String result = documentsService.uploadDocument(filingId, documentType, file);
-        return new ResponseEntity<>(result, HttpStatus.CREATED);
-    }
+		String result = gstFilingService.updateFiling(id, gstFilingDto);
 
-    @GetMapping("/documents/{filingId}")
-    public ResponseEntity<List<GstFilingDocumentsDto>> getDocuments(@PathVariable String filingId) {
-        List<GstFilingDocumentsDto> documents = documentsService.getDocuments(filingId);
-        return ResponseEntity.ok(documents);
-    }
+		return ResponseEntity.ok(result);
+	}
 
-    @PutMapping("/documents/{filingId}/{id}")
-    public ResponseEntity<String> updateDocument(
-            @PathVariable String filingId,
-            @PathVariable Long id,
-            @RequestParam("file") MultipartFile file) throws IOException {
-        String result = documentsService.updateDocument(filingId, id, file);
-        return ResponseEntity.ok(result);
-    }
+	@DeleteMapping("/{id}")
+	public ResponseEntity<String> deleteFiling(@PathVariable String id) {
 
-    @DeleteMapping("/documents/{filingId}/{id}")
-    public ResponseEntity<String> deleteDocument(
-            @PathVariable String filingId,
-            @PathVariable Long id) {
-        String result = documentsService.deleteDocument(filingId, id);
-        return ResponseEntity.ok(result);
-    }
+		String result = gstFilingService.deleteFiling(id);
+
+		return ResponseEntity.ok(result);
+	}
+
+	// GST FILING DOCUMENTS
+
+	@PostMapping("/documents/{gstfilingId}/upload")
+	public ResponseEntity<String> uploadDocuments(@PathVariable String gstfilingId,
+			@RequestParam(value = "salesInvoice", required = false) MultipartFile salesInvoice,
+			@RequestParam(value = "purchaseInvoices", required = false) MultipartFile purchaseInvoices,
+			@RequestParam(value = "gstr2bItcStatement", required = false) MultipartFile gstr2bItcStatement,
+			@RequestParam(value = "creditNotes", required = false) MultipartFile creditNotes,
+			@RequestParam(value = "debitNotes", required = false) MultipartFile debitNotes,
+			@RequestParam(value = "eInvoiceData", required = false) MultipartFile eInvoiceData,
+			@RequestParam(value = "eWayBillData", required = false) MultipartFile eWayBillData,
+			@RequestParam(value = "expenseInvoicesAndVouchers", required = false) MultipartFile expenseInvoicesAndVouchers,
+			@RequestParam(value = "bankStatement", required = false) MultipartFile bankStatement,
+			@RequestParam(value = "previousGstReturns", required = false) MultipartFile previousGstReturns,
+			@RequestParam(value = "previousFilingAcknowledgement", required = false) MultipartFile previousFilingAcknowledgement,
+			@RequestParam(value = "otherSupportingDocuments", required = false) MultipartFile otherSupportingDocuments)
+			throws IOException {
+
+		String result = documentsService.uploadDocuments(gstfilingId, salesInvoice, purchaseInvoices,
+				gstr2bItcStatement, creditNotes, debitNotes, eInvoiceData, eWayBillData, expenseInvoicesAndVouchers,
+				bankStatement, previousGstReturns, previousFilingAcknowledgement, otherSupportingDocuments);
+
+		return new ResponseEntity<>(result, HttpStatus.CREATED);
+	}
+
+	@GetMapping("/documents/{gstfilingId}")
+	public ResponseEntity<GstFilingDocumentsDto> getDocuments(@PathVariable String gstfilingId) {
+
+		GstFilingDocumentsDto documents = documentsService.getDocuments(gstfilingId);
+
+		return ResponseEntity.ok(documents);
+	}
+
+	@PutMapping("/documents/{gstfilingId}/update")
+	public ResponseEntity<String> updateDocuments(@PathVariable String gstfilingId,
+			@RequestParam(value = "salesInvoice", required = false) MultipartFile salesInvoice,
+			@RequestParam(value = "purchaseInvoices", required = false) MultipartFile purchaseInvoices,
+			@RequestParam(value = "gstr2bItcStatement", required = false) MultipartFile gstr2bItcStatement,
+			@RequestParam(value = "creditNotes", required = false) MultipartFile creditNotes,
+			@RequestParam(value = "debitNotes", required = false) MultipartFile debitNotes,
+			@RequestParam(value = "eInvoiceData", required = false) MultipartFile eInvoiceData,
+			@RequestParam(value = "eWayBillData", required = false) MultipartFile eWayBillData,
+			@RequestParam(value = "expenseInvoicesAndVouchers", required = false) MultipartFile expenseInvoicesAndVouchers,
+			@RequestParam(value = "bankStatement", required = false) MultipartFile bankStatement,
+			@RequestParam(value = "previousGstReturns", required = false) MultipartFile previousGstReturns,
+			@RequestParam(value = "previousFilingAcknowledgement", required = false) MultipartFile previousFilingAcknowledgement,
+			@RequestParam(value = "otherSupportingDocuments", required = false) MultipartFile otherSupportingDocuments)
+			throws IOException {
+
+		String result = documentsService.updateDocuments(gstfilingId, salesInvoice, purchaseInvoices,
+				gstr2bItcStatement, creditNotes, debitNotes, eInvoiceData, eWayBillData, expenseInvoicesAndVouchers,
+				bankStatement, previousGstReturns, previousFilingAcknowledgement, otherSupportingDocuments);
+
+		return ResponseEntity.ok(result);
+	}
+
+	@DeleteMapping("/documents/{gstfilingId}")
+	public ResponseEntity<String> deleteDocuments(@PathVariable String gstfilingId) {
+
+		String result = documentsService.deleteDocuments(gstfilingId);
+
+		return ResponseEntity.ok(result);
+	}
 }

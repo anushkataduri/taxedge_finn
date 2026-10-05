@@ -1,4 +1,4 @@
-import { GstBusinessFormData } from "../components/GstBusinessStep/GstBusinessStep";
+import { GstBusinessFormData } from "@/modules/gst/gst-registration/components/GstBusinessStep/GstBusinessStep";
 
 /**
  * Normalizes input string to UPPER_SNAKE_CASE for exact matching.
@@ -68,6 +68,16 @@ const REASON_MAP: Record<string, string> = {
   INPUT_SERVICE: "INPUT_SERVICE_DISTRIBUTOR",
 };
 
+const ACCOUNT_TYPE_MAP: Record<string, string> = {
+  CURRENT: "CURRENT",
+  CURRENT_ACCOUNT: "CURRENT",
+  SAVINGS: "SAVINGS",
+  SAVINGS_ACCOUNT: "SAVINGS",
+  CASH_CREDIT: "CASH_CREDIT_OD",
+  CASH_CREDIT_OD: "CASH_CREDIT_OD",
+  OD: "CASH_CREDIT_OD",
+};
+
 /**
  * Exception-safe Date Formatter
  */
@@ -103,14 +113,20 @@ const formatBackendDate = (dateStr: string): string => {
  */
 export const mapGstRegistrationPayload = (
   businessData: GstBusinessFormData,
+  customerId?: string,
+  gstId?: string,
 ) => {
   try {
     const rawConstitution = normalizeInput(businessData.businessType);
     const rawNature = normalizeInput(businessData.natureOfBusiness);
     const rawReason = normalizeInput(businessData.reasonForRegistration);
     const rawScheme = normalizeInput(businessData.compositionScheme);
+    const resolvedCustomerId = customerId || businessData.customerId || "";
+    const resolvedGstId = gstId || businessData.gstId || "";
 
     return {
+      ...(resolvedGstId ? { gstId: resolvedGstId } : {}),
+      ...(resolvedCustomerId ? { customerId: resolvedCustomerId } : {}),
       legalName: businessData.legalName,
       tradeName: businessData.businessName,
       constitutionOfBusiness: getMappedValue(
@@ -144,7 +160,11 @@ export const mapGstRegistrationPayload = (
       ifscCode: businessData.ifscCode,
       bankName: businessData.bankName,
       branchName: businessData.branchName,
-      accountType: normalizeInput(businessData.accountType) || "CURRENT",
+      accountType: getMappedValue(
+        normalizeInput(businessData.accountType),
+        ACCOUNT_TYPE_MAP,
+        "CURRENT",
+      ),
       authorisedSignatory: businessData.signatoryName ? "YES" : "NO",
       signatoryName: businessData.signatoryName || businessData.legalName,
       signatoryPan: businessData.signatoryPan,
@@ -158,6 +178,149 @@ export const mapGstRegistrationPayload = (
     // In production, throw a standardized AppError so the UI layer's try-catch can show a toast
     throw new Error("Failed to process registration data for submission.");
   }
+};
+
+const REVERSE_CONSTITUTION_MAP: Record<string, string> = {
+  PROPRIETORSHIP: "Proprietorship",
+  PARTNERSHIP: "Partnership Firm",
+  LLP: "Limited Liability Partnership (LLP)",
+  PRIVATE_LIMITED_COMPANY: "Private Limited Company",
+  PUBLIC_LIMITED_COMPANY: "Public Limited Company",
+  HUF: "HUF",
+  SOCIETY_TRUST_CLUB: "Society / Trust / Club",
+  AOP_BOI: "AOP / BOI",
+  GOVERNMENT_DEPARTMENT: "Government Department",
+  FOREIGN_COMPANY: "Foreign Company",
+};
+
+const REVERSE_NATURE_MAP: Record<string, string> = {
+  TRADER: "Trader",
+  MANUFACTURER: "Manufacturer",
+  SERVICE_PROVIDER: "Service Provider",
+  RETAILER: "Retailer",
+  E_COMMERCE: "E-commerce",
+  WORK_CONTRACT: "Contractor / Freelancer",
+  IMPORT_EXPORT: "Exporter / Importer",
+  WARE_HOUSE_DEPOT: "Wholesaler / Distributor",
+};
+
+const REVERSE_REASON_MAP: Record<string, string> = {
+  CROSSED_TURN_OVER_THRESHOLD: "Crossed turnover threshold",
+  VOLUNTARY_REGISTRATION: "Voluntary registration",
+  INTER_STATE_SUPPLY: "Inter-state supply",
+  ECOMMERCE_OPERATOR_SELLER: "E-commerce operator / seller",
+  CASUAL_TAXABLE_PERSON: "Casual taxable person",
+  INPUT_SERVICE_DISTRIBUTOR: "Input Service Distributor",
+};
+
+const REVERSE_ACCOUNT_TYPE_MAP: Record<string, string> = {
+  CURRENT: "Current",
+  SAVINGS: "Savings",
+  CASH_CREDIT_OD: "Cash Credit / OD",
+};
+
+const REVERSE_PLACE_MAP: Record<string, string> = {
+  PRINCIPAL_PLACE_OF_BUSINESS: "Principal place of business",
+  ADDITIONAL_PLACE_OF_BUSINESS: "Additional place of business",
+};
+
+/**
+ * Reverse maps backend BusinessDto to frontend form fields.
+ */
+export const mapDtoToGstBusinessFormData = (
+  dto: any,
+): Partial<GstBusinessFormData> => {
+  if (!dto) return {};
+  const rawConst = String(dto.constitutionOfBusiness || "").toUpperCase();
+  const rawNat = String(dto.natureOfBusiness || "").toUpperCase();
+  const rawReason = String(dto.reasonForRegistration || "").toUpperCase();
+  const rawAcc = String(dto.accountType || "").toUpperCase();
+  const rawPlace = String(dto.placeOfBusiness || "").toUpperCase();
+
+  const formatUiDate = (d?: string) => {
+    if (!d) return "";
+    const p = String(d).split("-");
+    if (p.length === 3 && p[0].length === 4) {
+      return `${p[2]}-${p[1]}-${p[0]}`;
+    }
+    return d;
+  };
+
+  return {
+    gstId: dto.gstId || undefined,
+    customerId: dto.customerId || undefined,
+    legalName: dto.legalName || "",
+    businessName: dto.tradeName || "",
+    businessType: REVERSE_CONSTITUTION_MAP[rawConst] || dto.constitutionOfBusiness || "",
+    natureOfBusiness: REVERSE_NATURE_MAP[rawNat] || dto.natureOfBusiness || "",
+    placeOfBusiness: REVERSE_PLACE_MAP[rawPlace] || dto.placeOfBusiness || "Principal place of business",
+    businessStartDate: formatUiDate(dto.dateOfCommencement),
+    reasonForRegistration: REVERSE_REASON_MAP[rawReason] || dto.reasonForRegistration || "",
+    compositionScheme:
+      dto.compositionScheme === "YES_COMPOSITION_SCHEME"
+        ? "Yes - composition scheme"
+        : "No - regular scheme",
+    businessAddress: dto.businessAddress || "",
+    city: dto.city || "",
+    district: dto.district || "",
+    state: dto.state || "",
+    pinCode: dto.pinCode || "",
+    hsnCode: dto.hsnSac || "",
+    accountHolderName: dto.accountHolderName || "",
+    bankAccountNumber: dto.bankAccountNumber || "",
+    confirmBankAccountNumber: dto.bankAccountNumber || "",
+    ifscCode: dto.ifscCode || "",
+    bankName: dto.bankName || "",
+    branchName: dto.branchName || "",
+    accountType: REVERSE_ACCOUNT_TYPE_MAP[rawAcc] || dto.accountType || "Current",
+    signatoryName: dto.signatoryName || "",
+    signatoryPan: dto.signatoryPan || "",
+    signatoryDob: dto.signatoryDob || "",
+    signatoryDesignation: dto.designation || "Owner",
+    signatoryMobile: dto.signatoryMobile || "",
+    signatoryEmail: dto.signatoryEmail || "",
+  };
+};
+
+/**
+ * Maps backend DocumentsDto onto DocumentItem array
+ */
+export const mapDtoToDocuments = (
+  dto: any,
+  currentDocs: any[],
+): any[] => {
+  if (!dto || !Array.isArray(currentDocs)) return currentDocs;
+  return currentDocs.map((doc) => {
+    const key = `${doc.id} ${doc.name || ""}`.toLowerCase();
+    let fileUri = doc.fileUri;
+    let fileName = doc.fileName;
+
+    if (key.includes("pan") && dto.panCard) {
+      fileUri = fileUri || dto.panCard;
+      fileName = fileName || String(dto.panCard).split("/").pop() || "panCard";
+    } else if ((key.includes("aadhaar") || key.includes("adhar")) && dto.aadhaarCard) {
+      fileUri = fileUri || dto.aadhaarCard;
+      fileName = fileName || String(dto.aadhaarCard).split("/").pop() || "aadhaarCard";
+    } else if (key.includes("business") && dto.businessRegistrationProof) {
+      fileUri = fileUri || dto.businessRegistrationProof;
+      fileName = fileName || String(dto.businessRegistrationProof).split("/").pop() || "businessRegistrationProof";
+    } else if ((key.includes("address") || key.includes("place")) && dto.principalPlaceAddressProof) {
+      fileUri = fileUri || dto.principalPlaceAddressProof;
+      fileName = fileName || String(dto.principalPlaceAddressProof).split("/").pop() || "principalPlaceAddressProof";
+    } else if ((key.includes("bank") || key.includes("passbook") || key.includes("cheque")) && dto.bankPassbookOrCancelledCheque) {
+      fileUri = fileUri || dto.bankPassbookOrCancelledCheque;
+      fileName = fileName || String(dto.bankPassbookOrCancelledCheque).split("/").pop() || "bankPassbookOrCancelledCheque";
+    } else if (key.includes("photo") && dto.passportSizePhotograph) {
+      fileUri = fileUri || dto.passportSizePhotograph;
+      fileName = fileName || String(dto.passportSizePhotograph).split("/").pop() || "passportSizePhotograph";
+    }
+
+    return {
+      ...doc,
+      fileUri,
+      fileName,
+    };
+  });
 };
 
 /**

@@ -1,45 +1,72 @@
 package com.taxedge.gst.entity;
 
-import com.taxedge.gst.enums.GstFilingDocumentType;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "gst_filing_documents")
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class GstFilingDocuments {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@Column(name = "document_id", nullable = false, unique = true, length = 9)
+	private String documentId;
 
-    @Column(name = "filing_id", nullable = false)
-    private String filingId;
+	@OneToOne
+	@JoinColumn(name = "filing_id", nullable = false, unique = true)
+	private GstFiling gstFiling;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "document_type", nullable = false, length = 60)
-    private GstFilingDocumentType documentType;
+	@Lob
+	@Column(name = "sales_invoice", columnDefinition = "LONGTEXT")
+	private String salesInvoice;
 
-    @Column(name = "file_name", nullable = false, length = 255)
-    private String fileName;
+	@Lob
+	@Column(name = "purchase_invoices", columnDefinition = "LONGTEXT")
+	private String purchaseInvoices;
 
-    @Column(name = "file_type", nullable = false, length = 100)
-    private String fileType;
+	@Lob
+	@Column(name = "gstr2b_itc_statement", columnDefinition = "LONGTEXT")
+	private String gstr2bItcStatement;
 
-    @Column(name = "file_data", nullable = false, columnDefinition = "LONGTEXT")
-    private String fileData;
+	@Lob
+	@Column(name = "credit_notes", columnDefinition = "LONGTEXT")
+	private String creditNotes;
+
+	@Lob
+	@Column(name = "debit_notes", columnDefinition = "LONGTEXT")
+	private String debitNotes;
+
+	@Lob
+	@Column(name = "e_invoice_data", columnDefinition = "LONGTEXT")
+	private String eInvoiceData;
+
+	@Lob
+	@Column(name = "e_way_bill_data", columnDefinition = "LONGTEXT")
+	private String eWayBillData;
+
+	@Lob
+	@Column(name = "expense_invoices_and_vouchers", columnDefinition = "LONGTEXT")
+	private String expenseInvoicesAndVouchers;
+
+	@Lob
+	@Column(name = "bank_statement", columnDefinition = "LONGTEXT")
+	private String bankStatement;
+
+	@Lob
+	@Column(name = "previous_gst_returns", columnDefinition = "LONGTEXT")
+	private String previousGstReturns;
+
+	@Lob
+	@Column(name = "previous_filing_acknowledgement", columnDefinition = "LONGTEXT")
+	private String previousFilingAcknowledgement;
+
+	@Lob
+	@Column(name = "other_supporting_documents", columnDefinition = "LONGTEXT")
+	private String otherSupportingDocuments;
 }

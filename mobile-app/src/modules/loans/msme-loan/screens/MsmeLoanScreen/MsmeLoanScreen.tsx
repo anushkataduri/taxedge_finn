@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
@@ -18,18 +18,19 @@ import {
   LoanDetailsFormData,
   LoanBusinessFormData,
   LoanBankingFormData,
-  LoanDocumentItem,
   LoanApplicationDraft,
 } from "../../../types/loans.types";
 import {
   validateLoanDetails,
   validateLoanBusiness,
   validateLoanBanking,
-  validateLoanDocuments,
 } from "../../../validation/loansSchema";
+import { useLoanWizard } from "../../../hooks/useLoanWizard";
+import { useLoanDocuments } from "../../../hooks/useLoanDocuments";
+import { LoanStepIndicator } from "../../../components/LoanStepIndicator";
+import { LoanCustomerCard, type LoanCustomerCardLabels } from "../../../components/LoanCustomerCard";
+import { getBottomBarPadding, getSafeAreaTopPadding } from "../../../styles/loanScreenLayout.styles";
 import {
-  MsmeLoanStepIndicator,
-  MsmeLoanCustomerCard,
   MsmeLoanFinancialsStep,
   MsmeLoanBusinessStep,
   MsmeLoanBankingStep,
@@ -38,7 +39,15 @@ import {
 } from "../../components";
 import { styles } from "./MsmeLoanScreen.styles";
 
-const STEPS = ["Financials", "MSME Profile", "Banking", "Documents", "Review"];
+const STEPS = ["Financials", "MSME Profile", "Banking", "Documents", "Review"] as const;
+
+const MSME_CUSTOMER_CARD_LABELS: LoanCustomerCardLabels = {
+  title: "MSME Enterprise Proprietor / Partner",
+  infoText:
+    "Primary applicant details are automatically retrieved from your customer records. Manual re-entry is avoided.",
+  nameLabel: "Proprietor / Partner Name",
+  addressLabel: "Enterprise Registered Address",
+};
 
 export const MsmeLoanScreen: React.FC = () => {
   const router = useRouter();
@@ -47,7 +56,6 @@ export const MsmeLoanScreen: React.FC = () => {
 
   const customer = useAuthStore((s) => s.customer);
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConsentChecked, setIsConsentChecked] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -87,91 +95,66 @@ export const MsmeLoanScreen: React.FC = () => {
   });
 
   // Step 4: Documents
-  const [documents, setDocuments] = useState<LoanDocumentItem[]>(() =>
-    JSON.parse(JSON.stringify(BUSINESS_DOCUMENTS_TEMPLATE))
-  );
+  const loanDocuments = useLoanDocuments({ template: BUSINESS_DOCUMENTS_TEMPLATE });
+  const { documents } = loanDocuments;
 
-  const handleDetailsChange = (field: keyof LoanDetailsFormData, value: any) => {
+  const scrollToTop = useCallback(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
+  const wizard = useLoanWizard({
+    totalSteps: STEPS.length,
+    validateStep: (stepIndex) => validateStep(stepIndex),
+    onExitFromFirstStep: () => router.back(),
+    onStepChange: scrollToTop,
+  });
+  const { currentStepIndex } = wizard;
+
+  const clearFieldError = (field: string) => {
+    if (!errors[field]) return;
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const handleDetailsChange = <K extends keyof LoanDetailsFormData>(field: K, value: LoanDetailsFormData[K]) => {
     setLoanDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field);
   };
 
-  const handleBusinessChange = (
-    field: keyof LoanBusinessFormData,
-    value: any
-  ) => {
+  const handleBusinessChange = <K extends keyof LoanBusinessFormData>(field: K, value: LoanBusinessFormData[K]) => {
     setBusinessDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field);
   };
 
-  const handleBankingChange = (
-    field: keyof LoanBankingFormData,
-    value: string
-  ) => {
+  const handleBankingChange = <K extends keyof LoanBankingFormData>(field: K, value: LoanBankingFormData[K]) => {
     setBankingDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    clearFieldError(field);
   };
 
-  const handleDocumentUploaded = (
-    docId: string,
-    fileUri: string,
-    fileName: string,
-    fileSize: string
-  ) => {
-    setDocuments((prev) =>
-      prev.map((d) =>
-        d.id === docId
-          ? {
-              ...d,
-              fileUri,
-              fileName,
-              fileSize,
-              uploadedAt: new Date().toISOString(),
-            }
-          : d
-      )
-    );
-  };
-
-  const validateCurrentStep = (): boolean => {
-    if (currentStepIndex === 0) {
+  function validateStep(stepIndex: number): boolean {
+    if (stepIndex === 0) {
       const errs = validateLoanDetails(loanDetails);
       setErrors(errs);
       return Object.keys(errs).length === 0;
     }
 
-    if (currentStepIndex === 1) {
+    if (stepIndex === 1) {
       const errs = validateLoanBusiness(businessDetails);
       setErrors(errs);
       return Object.keys(errs).length === 0;
     }
 
-    if (currentStepIndex === 2) {
+    if (stepIndex === 2) {
       const errs = validateLoanBanking(bankingDetails);
       setErrors(errs);
       return Object.keys(errs).length === 0;
     }
 
-    if (currentStepIndex === 3) {
-      const { isValid, missingDocs } = validateLoanDocuments(documents);
+    if (stepIndex === 3) {
+      const { isValid, missingDocs } = loanDocuments.validateDocuments();
       if (!isValid) {
         Alert.alert(
           "Mandatory Documents Required",
@@ -183,27 +166,15 @@ export const MsmeLoanScreen: React.FC = () => {
     }
 
     return true;
-  };
+  }
 
   const handleNext = () => {
-    if (!validateCurrentStep()) {
+    if (!wizard.isLastStep) {
+      wizard.goToNextStep();
       return;
     }
-
-    if (currentStepIndex < STEPS.length - 1) {
-      setCurrentStepIndex((prev) => prev + 1);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    } else {
+    if (validateStep(currentStepIndex)) {
       handleSubmitApplication();
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex((prev) => prev - 1);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    } else {
-      router.back();
     }
   };
 
@@ -229,19 +200,11 @@ export const MsmeLoanScreen: React.FC = () => {
       };
 
       const response = await loansApi.applyLoan(draft);
+      const statusRoute: Href = `/service/loan-status?id=${response.applicationId}&loanType=MSME+Loan`;
       Alert.alert(
         "MSME Loan Application Submitted",
         `Your MSME Loan request (Ref: ${response.referenceNumber}) has been submitted successfully. Priority processing will begin shortly.`,
-        [
-          {
-            text: "Track Status",
-            onPress: () => {
-              router.replace(
-                `/service/loan-status?id=${response.applicationId}&loanType=MSME+Loan` as any
-              );
-            },
-          },
-        ]
+        [{ text: "Track Status", onPress: () => router.replace(statusRoute) }]
       );
     } catch {
       Alert.alert("Submission Error", "Failed to submit application. Please try again.");
@@ -255,7 +218,7 @@ export const MsmeLoanScreen: React.FC = () => {
       case 0:
         return (
           <>
-            <MsmeLoanCustomerCard profile={customer || undefined} />
+            <LoanCustomerCard profile={customer || undefined} labels={MSME_CUSTOMER_CARD_LABELS} />
             <MsmeLoanFinancialsStep
               data={loanDetails}
               onChange={handleDetailsChange}
@@ -281,12 +244,7 @@ export const MsmeLoanScreen: React.FC = () => {
           />
         );
       case 3:
-        return (
-          <MsmeLoanDocumentsStep
-            documents={documents}
-            onDocumentUploaded={handleDocumentUploaded}
-          />
-        );
+        return <MsmeLoanDocumentsStep loanDocuments={loanDocuments} />;
       case 4:
       default:
         return (
@@ -298,33 +256,29 @@ export const MsmeLoanScreen: React.FC = () => {
             profile={customer || undefined}
             isConsentChecked={isConsentChecked}
             onConsentToggle={setIsConsentChecked}
-            onGoToStep={(stepIdx) => {
-              setCurrentStepIndex(stepIdx);
-              scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-            }}
+            onGoToStep={wizard.goToStep}
           />
         );
     }
   };
 
-  const isFinalStep = currentStepIndex === STEPS.length - 1;
-
   return (
-    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
+    <View style={[styles.safeArea, getSafeAreaTopPadding(insets.top)]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={handleBack}>
-            <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <TouchableOpacity onPress={wizard.handleBack}>
+            <Ionicons name="arrow-back" size={24} color={BrandColors.TEXT_PRIMARY} />
           </TouchableOpacity>
           <View>
             <Text style={styles.headerTitle}>MSME Scheme Loan</Text>
             <Text style={styles.headerSubtitle}>
-              Step {currentStepIndex + 1} of {STEPS.length} • {STEPS[currentStepIndex]}
+              Step {wizard.stepNumber} of {STEPS.length} • {STEPS[currentStepIndex]}
             </Text>
           </View>
         </View>
 
+        {/* Existing confirmation only — this flow does not persist drafts. */}
         <TouchableOpacity
           style={styles.saveDraftButton}
           onPress={() => Alert.alert("Draft Saved", "MSME loan application draft saved successfully.")}
@@ -334,14 +288,11 @@ export const MsmeLoanScreen: React.FC = () => {
       </View>
 
       {/* Step Progress Stepper */}
-      <MsmeLoanStepIndicator
+      <LoanStepIndicator
+        variant="numbered"
         steps={STEPS}
         currentStepIndex={currentStepIndex}
-        onStepPress={(idx) => {
-          if (idx <= currentStepIndex) {
-            setCurrentStepIndex(idx);
-          }
-        }}
+        onStepPress={wizard.goToStep}
       />
 
       {/* Scrollable Step Content */}
@@ -355,20 +306,13 @@ export const MsmeLoanScreen: React.FC = () => {
       </ScrollView>
 
       {/* Sticky Bottom Actions */}
-      <View
-        style={[
-          styles.bottomBar,
-          { paddingBottom: Math.max(insets.bottom, 12) },
-        ]}
-      >
+      <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={handleBack}
+          onPress={wizard.handleBack}
           disabled={isSubmitting}
         >
-          <Text style={styles.backButtonText}>
-            {currentStepIndex === 0 ? "Cancel" : "Back"}
-          </Text>
+          <Text style={styles.backButtonText}>{wizard.isFirstStep ? "Cancel" : "Back"}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -381,10 +325,10 @@ export const MsmeLoanScreen: React.FC = () => {
           ) : (
             <>
               <Text style={styles.nextButtonText}>
-                {isFinalStep ? "Submit Application" : "Continue"}
+                {wizard.isLastStep ? "Submit Application" : "Continue"}
               </Text>
               <Ionicons
-                name={isFinalStep ? "shield-checkmark" : "arrow-forward"}
+                name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
                 size={18}
                 color={BrandColors.WHITE}
               />

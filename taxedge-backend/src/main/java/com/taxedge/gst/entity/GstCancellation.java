@@ -2,9 +2,13 @@ package com.taxedge.gst.entity;
 
 import java.time.LocalDate;
 
+import com.taxedge.customer.entity.Customer;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 
@@ -13,25 +17,32 @@ import lombok.Data;
 @Data
 public class GstCancellation {
 
-    @Id
-    @Column(name = "gstin", nullable = false, unique = true, length = 15)
-    private String gstin;
+	@Id
+	@Column(name = "cancellation_id", nullable = false, unique = true, length = 9)
+	private String cancellationId;
 
-    @Column(name = "reason_for_cancellation", nullable = false)
-    private String reasonForCancellation;
+	@Column(name = "gstin", nullable = false, length = 15)
+	private String gstin;
 
-    @Column(name = "date_cancellation_is_sought", nullable = false)
-    private LocalDate dateCancellationIsSought;
+	@Column(name = "reason_for_cancellation", nullable = false)
+	private String reasonForCancellation;
 
-    @Column(name = "closing_stock_and_input_tax_reversal", columnDefinition = "TEXT")
-    private String closingStockAndInputTaxReversal;
+	@Column(name = "date_cancellation_is_sought", nullable = false)
+	private LocalDate dateCancellationIsSought;
 
-    @Column(name = "pending_dues_liabilities", columnDefinition = "TEXT")
-    private String pendingDuesLiabilities;
+	@Column(name = "closing_stock_and_input_tax_reversal", columnDefinition = "TEXT")
+	private String closingStockAndInputTaxReversal;
 
-    @Column(name = "last_gstr3b_filed_arn_period")
-    private String lastGstr3bFiledArnPeriod;
+	@Column(name = "pending_dues_liabilities", columnDefinition = "TEXT")
+	private String pendingDuesLiabilities;
 
-    @Column(name = "supporting_proof_document", columnDefinition = "LONGTEXT")
-    private String supportingProofDocument;
+	@Column(name = "last_gstr3b_filed_arn_period")
+	private String lastGstr3bFiledArnPeriod;
+
+	@Column(name = "supporting_proof_document", columnDefinition = "TEXT")
+	private String supportingProofDocument;
+
+	@OneToOne
+	@JoinColumn(name = "cust_id", nullable = false, unique = true)
+	private Customer customer;
 }

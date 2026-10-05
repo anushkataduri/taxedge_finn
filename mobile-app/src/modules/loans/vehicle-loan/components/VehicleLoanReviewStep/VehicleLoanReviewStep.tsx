@@ -9,7 +9,9 @@ import {
   CustomerProfileSummary,
 } from "../../../types/loans.types";
 import { VehicleLoanDetailsFormData } from "../../types/vehicleLoan.types";
-import { DocumentPreviewModal } from "../DocumentPreviewModal";
+import { DocumentPreviewModal } from "../../../components/DocumentPreviewModal";
+import { formatReviewAmount } from "../../../utils/loanFormatting";
+import { maskAccountNumber } from "../../../utils/maskingUtils";
 import { styles } from "./VehicleLoanReviewStep.styles";
 
 export interface VehicleLoanReviewStepProps {
@@ -35,27 +37,6 @@ export const VehicleLoanReviewStep: React.FC<VehicleLoanReviewStepProps> = ({
 }) => {
   const [previewDoc, setPreviewDoc] = useState<LoanDocumentItem | null>(null);
 
-  const formatCurrency = (val?: string | number) => {
-    if (!val) return "—";
-    const str = String(val).trim();
-    if (
-      str.startsWith("₹") ||
-      str.includes("-") ||
-      str.toLowerCase().includes("below") ||
-      str.toLowerCase().includes("above")
-    ) {
-      return str;
-    }
-    const num = Number(val);
-    if (isNaN(num)) return str;
-    return "₹" + num.toLocaleString("en-IN");
-  };
-
-  const maskAcc = (acc?: string) => {
-    if (!acc || acc.length < 5) return acc || "—";
-    return `XXXXXX${acc.slice(-4)}`;
-  };
-
   const uploadedDocs = documents.filter((d) => Boolean(d.fileUri));
 
   return (
@@ -71,9 +52,9 @@ export const VehicleLoanReviewStep: React.FC<VehicleLoanReviewStepProps> = ({
             />
             <Text style={styles.cardTitle}>Borrower Profile</Text>
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <View style={styles.verifiedRow}>
             <Ionicons name="checkmark-circle" size={14} color="#16A34A" />
-            <Text style={{ fontSize: 11, fontWeight: "600", color: "#16A34A" }}>
+            <Text style={styles.verifiedText}>
               Verified Profile
             </Text>
           </View>
@@ -129,7 +110,7 @@ export const VehicleLoanReviewStep: React.FC<VehicleLoanReviewStepProps> = ({
           <View style={styles.row}>
             <Text style={styles.label}>Required Loan Amount</Text>
             <Text style={styles.highlightValue}>
-              {formatCurrency(loanDetails.requiredAmount)}
+              {formatReviewAmount(loanDetails.requiredAmount)}
             </Text>
           </View>
           <View style={styles.row}>
@@ -156,7 +137,7 @@ export const VehicleLoanReviewStep: React.FC<VehicleLoanReviewStepProps> = ({
             <View style={styles.row}>
               <Text style={styles.label}>On-Road Price / Valuation</Text>
               <Text style={styles.value}>
-                {formatCurrency(loanDetails.onRoadPrice)}
+                {formatReviewAmount(loanDetails.onRoadPrice)}
               </Text>
             </View>
           )}
@@ -164,7 +145,7 @@ export const VehicleLoanReviewStep: React.FC<VehicleLoanReviewStepProps> = ({
             <View style={styles.row}>
               <Text style={styles.label}>Down Payment / Margin</Text>
               <Text style={styles.value}>
-                {formatCurrency(loanDetails.downPayment)}
+                {formatReviewAmount(loanDetails.downPayment)}
               </Text>
             </View>
           )}
@@ -222,7 +203,7 @@ export const VehicleLoanReviewStep: React.FC<VehicleLoanReviewStepProps> = ({
             <Text style={styles.label}>Monthly In-Hand Income</Text>
             <Text style={styles.value}>
               {loanDetails.monthlyIncomeOrTurnover
-                ? formatCurrency(loanDetails.monthlyIncomeOrTurnover)
+                ? formatReviewAmount(loanDetails.monthlyIncomeOrTurnover)
                 : "Not specified"}
             </Text>
           </View>
@@ -244,7 +225,7 @@ export const VehicleLoanReviewStep: React.FC<VehicleLoanReviewStepProps> = ({
             <Text style={styles.label}>Other Ongoing EMIs</Text>
             <Text style={styles.value}>
               {loanDetails.hasExistingLoans && loanDetails.existingEmi
-                ? formatCurrency(loanDetails.existingEmi)
+                ? formatReviewAmount(loanDetails.existingEmi)
                 : "No Running EMIs"}
             </Text>
           </View>
@@ -284,7 +265,7 @@ export const VehicleLoanReviewStep: React.FC<VehicleLoanReviewStepProps> = ({
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Account Number</Text>
-            <Text style={styles.value}>{maskAcc(bankingDetails.accountNumber)}</Text>
+            <Text style={styles.value}>{maskAccountNumber(bankingDetails.accountNumber)}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>IFSC Code</Text>
@@ -302,7 +283,7 @@ export const VehicleLoanReviewStep: React.FC<VehicleLoanReviewStepProps> = ({
             <View style={styles.row}>
               <Text style={styles.label}>Declared Gross Annual Income</Text>
               <Text style={styles.value}>
-                {formatCurrency(bankingDetails.grossTotalIncome)}
+                {formatReviewAmount(bankingDetails.grossTotalIncome)}
               </Text>
             </View>
           )}

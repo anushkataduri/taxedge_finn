@@ -13,6 +13,7 @@ interface GstCancellationReviewProps {
   isSubmitting: boolean;
   handleSubmitCancellation: () => void;
   onBack: () => void;
+  onEdit: () => void;
 }
 
 export function GstCancellationReview({ 
@@ -21,7 +22,8 @@ export function GstCancellationReview({
   setIsReviewDeclared, 
   isSubmitting, 
   handleSubmitCancellation, 
-  onBack 
+  onBack,
+  onEdit,
 }: GstCancellationReviewProps) {
   const insets = useSafeAreaInsets();
   const { gstin, reason, otherReason, cancellationDate, closingStock, pendingLiabilities, lastGstr3b, supportingDoc } = formData;
@@ -60,13 +62,23 @@ export function GstCancellationReview({
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.reviewCard}>
-            <View style={styles.reviewCardHeader}>
-              <Ionicons
-                name="document-text-outline"
-                size={18}
-                color="#083B75"
-              />
-              <Text style={styles.reviewCardTitle}>Application Summary</Text>
+            <View style={styles.reviewCardEditRow}>
+              <View style={styles.reviewCardHeader}>
+                <Ionicons
+                  name="document-text-outline"
+                  size={18}
+                  color="#083B75"
+                />
+                <Text style={styles.reviewCardTitle}>Application Summary</Text>
+              </View>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={onEdit}
+                style={styles.editOptionBtn}
+              >
+                <Ionicons name="create-outline" size={15} color={BrandColors.PRIMARY_ORANGE} />
+                <Text style={styles.editOptionText}>Edit</Text>
+              </TouchableOpacity>
             </View>
             {[
               { k: "Form", v: "REG-16 (Cancellation)" },
@@ -88,11 +100,7 @@ export function GstCancellationReview({
                 {i > 0 && <View style={styles.reviewDivider} />}
                 <View style={styles.reviewRow}>
                   <Text style={styles.reviewKey}>{row.k}</Text>
-                  <Text
-                    style={[styles.reviewVal, row.c ? { color: row.c } : null]}
-                  >
-                    {row.v}
-                  </Text>
+                  <Text style={styles.reviewVal}>{row.v}</Text>
                 </View>
               </React.Fragment>
             ))}

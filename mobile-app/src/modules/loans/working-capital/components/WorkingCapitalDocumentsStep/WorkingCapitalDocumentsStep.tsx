@@ -1,27 +1,16 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, Text } from "react-native";
-import {
-  LoanDocumentItem,
-  LoanDocumentCategory,
-} from "../../../types/loans.types";
-import {
-  DocumentUploadModal,
-  UploadedFileInfo,
-} from "@/modules/itr/itr-filing/components/DocumentUploadModal/DocumentUploadModal";
-import { DocumentPreviewModal } from "@/modules/itr/itr-filing/components/DocumentPreviewModal/DocumentPreviewModal";
+import { DocumentUploadBottomSheet } from "@/shared/components/DocumentUploadBottomSheet";
 import { TdsDocumentCard } from "@/modules/itr/tds/components/upload/TdsDocumentCard/TdsDocumentCard";
 import { TdsChecklistItem } from "@/modules/itr/tds/types/checklist.types";
-import { ItrDocumentItem } from "@/modules/itr/itr-filing/types/itrFiling.types";
+import { LoanDocumentItem, LoanDocumentCategory } from "../../../types/loans.types";
+import type { LoanDocuments } from "../../../hooks/useLoanDocuments";
+import { DocumentPreviewModal } from "../../../components/DocumentPreviewModal";
 import { styles } from "./WorkingCapitalDocumentsStep.styles";
 
 export interface WorkingCapitalDocumentsStepProps {
-  documents: LoanDocumentItem[];
-  onDocumentUploaded: (
-    docId: string,
-    fileUri: string,
-    fileName: string,
-    fileSize: string
-  ) => void;
+  /** Document checklist state from `useLoanDocuments`, owned by the screen. */
+  loanDocuments: LoanDocuments;
 }
 
 const CATEGORIES: LoanDocumentCategory[] = [
@@ -45,78 +34,23 @@ const mapLoanDocToTdsChecklist = (doc: LoanDocumentItem): TdsChecklistItem => {
   };
 };
 
-const mapLoanDocToItrDoc = (doc: LoanDocumentItem): ItrDocumentItem => ({
-  id: doc.id,
-  name: doc.name,
-  subtitle: doc.subtitle || "",
-  tier: doc.required ? "REQUIRED" : "RECOMMENDED",
-  required: doc.required,
-  docGroup: "common",
-  fileUri: doc.fileUri,
-  fileName: doc.fileName || (doc.fileUri ? doc.name : undefined),
-  fileSize: doc.fileSize,
-});
+export const WorkingCapitalDocumentsStep: React.FC<WorkingCapitalDocumentsStepProps> = ({ loanDocuments }) => {
+  const { documents, openUpload, removeDocument, openPreview, uploadSheetProps, previewModalProps } =
+    loanDocuments;
 
-export const WorkingCapitalDocumentsStep: React.FC<WorkingCapitalDocumentsStepProps> = ({
-  documents,
-  onDocumentUploaded,
-}) => {
-  const [activeUploadDoc, setActiveUploadDoc] = useState<LoanDocumentItem | null>(null);
-  const [previewDoc, setPreviewDoc] = useState<LoanDocumentItem | null>(null);
-
-  const handleUploadClick = (doc: LoanDocumentItem) => {
-    setActiveUploadDoc(doc);
-  };
-
-  const handleCloseUploadModal = () => {
-    setActiveUploadDoc(null);
-  };
-
-  const handleFilePicked = (file: UploadedFileInfo) => {
-    if (!activeUploadDoc) return;
-    onDocumentUploaded(activeUploadDoc.id, file.uri, file.name, file.size);
-    handleCloseUploadModal();
-  };
-
-  const handleDeleteDocument = (docId: string) => {
-    onDocumentUploaded(docId, "", "", "");
-  };
-
-  const handleOpenPreview = (doc: LoanDocumentItem) => {
-    setPreviewDoc(doc);
-  };
-
-  const handleClosePreview = () => {
-    setPreviewDoc(null);
-  };
-
-  const handleChangeFromPreview = (itrDoc: ItrDocumentItem) => {
-    const docToUpload = documents.find((d) => d.id === itrDoc.id) || previewDoc;
-    handleClosePreview();
-    if (docToUpload) {
-      handleUploadClick(docToUpload);
-    }
-  };
-
-  const getCategoryDocs = (category: LoanDocumentCategory): LoanDocumentItem[] =>
-    documents.filter((d) => d.category === category);
-
-  const renderDocumentCard = (doc: LoanDocumentItem) => {
-    const tdsItem = mapLoanDocToTdsChecklist(doc);
-    return (
-      <TdsDocumentCard
-        key={doc.id}
-        item={tdsItem}
-        onUploadPress={() => handleUploadClick(doc)}
-        onChange={() => handleUploadClick(doc)}
-        onDelete={() => handleDeleteDocument(doc.id)}
-        onView={() => handleOpenPreview(doc)}
-      />
-    );
-  };
+  const renderDocumentCard = (doc: LoanDocumentItem) => (
+    <TdsDocumentCard
+      key={doc.id}
+      item={mapLoanDocToTdsChecklist(doc)}
+      onUploadPress={() => openUpload(doc.id)}
+      onChange={() => openUpload(doc.id)}
+      onDelete={() => removeDocument(doc.id)}
+      onView={() => openPreview(doc.id)}
+    />
+  );
 
   const renderCategorySection = (category: LoanDocumentCategory) => {
-    const categoryDocs = getCategoryDocs(category);
+    const categoryDocs = documents.filter((d) => d.category === category);
     if (categoryDocs.length === 0) return null;
 
     return (
@@ -127,37 +61,15 @@ export const WorkingCapitalDocumentsStep: React.FC<WorkingCapitalDocumentsStepPr
     );
   };
 
-  const previewItrDoc = previewDoc ? mapLoanDocToItrDoc(previewDoc) : null;
-
   return (
     <View style={styles.container}>
       {/* Categorized Document List */}
       {CATEGORIES.map(renderCategorySection)}
 
-      {/* Upload Modal */}
-      {activeUploadDoc && (
-        <DocumentUploadModal
-          visible={Boolean(activeUploadDoc)}
-          docTitle={activeUploadDoc.name}
-          onFilePicked={handleFilePicked}
-          onClose={handleCloseUploadModal}
-        />
-      )}
-
-      {/* Preview Modal */}
-      {previewDoc && (
-        <DocumentPreviewModal
-          visible={Boolean(previewDoc)}
-          document={previewItrDoc}
-          onClose={handleClosePreview}
-          onChangeFile={handleChangeFromPreview}
-        />
-      )}
+      <DocumentUploadBottomSheet {...uploadSheetProps} />
+      <DocumentPreviewModal {...previewModalProps} />
     </View>
   );
 };
 
 export default WorkingCapitalDocumentsStep;
-
-
-

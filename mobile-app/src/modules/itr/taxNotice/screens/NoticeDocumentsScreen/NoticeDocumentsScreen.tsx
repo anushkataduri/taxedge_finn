@@ -5,9 +5,10 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
+  StatusBar,
   Alert,
+  ActivityIndicator,
 } from "react-native";
-import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -18,6 +19,7 @@ import { TaxNoticeSupportingDoc } from "../../types/taxNotice.types";
 import { useApplicationStore } from "@/store/applicationStore";
 import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
+import { taxNoticeApi } from "../../../services/taxNoticeApi";
 import {
   styles,
   getContainerInsetsStyle,
@@ -35,6 +37,7 @@ export const NoticeDocumentsScreen: React.FC = () => {
     noticeDate?: string;
     responseDueDate?: string;
     noticeType?: string;
+    noticeId?: string;
     assessmentYear?: string;
   }>();
 
@@ -91,6 +94,7 @@ export const NoticeDocumentsScreen: React.FC = () => {
   });
 
   const [remarks, setRemarks] = useState(taxNoticeDraft?.remarks || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const uploadedCount = docs.filter(
     (d) => d.status === "uploaded" || !!d.fileUri
@@ -156,29 +160,109 @@ export const NoticeDocumentsScreen: React.FC = () => {
     });
   };
 
-  const handleSubmitDocuments = () => {
-    // Persist docs and navigate to Step 5: Customer Approval & Review Response
+  const handleRemoveDocument = (id: string) => {
+    const updated = docs.map((d) =>
+      d.id === id
+        ? {
+            ...d,
+            status: "not_uploaded" as const,
+            fileUri: undefined,
+            fileName: undefined,
+            fileSize: undefined,
+          }
+        : d
+    );
+    setDocs(updated);
     saveTaxNoticeDraft({
-      formData: {
-        ...(taxNoticeDraft?.formData || {}),
-        ...params,
-      },
-      documents: docs,
+      formData: { ...(taxNoticeDraft?.formData || {}), ...params },
+      documents: updated,
       remarks,
-      step: "REVIEW",
+      step: "DOCUMENTS",
       updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     });
+  };
 
-    router.push({
-      pathname: "/service/tax-notice-review" as any,
-      params: {
-        pan: params.pan || taxNoticeDraft?.formData?.pan,
-        noticeNumber: params.noticeNumber || taxNoticeDraft?.formData?.noticeNumber,
-        noticeDate: params.noticeDate || taxNoticeDraft?.formData?.noticeDate,
-        assessmentYear: assessmentYear,
-        noticeType: params.noticeType || taxNoticeDraft?.formData?.noticeType,
-      },
-    });
+  const handleSubmitDocuments = async () => {
+    const missingRequiredDocs = docs.filter((d) => d.isMandatory && d.status !== "uploaded" && !d.fileUri);
+    if (missingRequiredDocs.length > 0) {
+      Alert.alert(
+        "Missing Required Documents",
+        "Please upload all mandatory documents (marked with *) before continuing."
+      );
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const noticeId = params.noticeId as string;
+      if (!noticeId) {
+        Alert.alert("Error", "Missing Notice ID. Please restart the process.");
+        return;
+      }
+
+      // Map frontend doc IDs to Backend API request parts
+      const docKeyMap: Record<string, string> = {
+        "doc-notice": "taxNotice",
+        "doc-prev-itr": "previousItr",
+        "doc-itr-ack": "itrAcknowledgement",
+        "doc-form-16": "form1616a",
+        "doc-ais": "aisAy",
+        "doc-tis": "tis",
+        "doc-bank": "bankStatement",
+        "doc-income": "supportingIncomeDocuments",
+        "doc-expense": "supportingExpenseDocuments",
+        "doc-prev-responses": "previousTaxResponses",
+        "doc-other": "otherNoticeSpecificDocuments",
+      };
+
+      const mappedDocs: Record<string, any> = {};
+      docs.forEach((doc: any) => {
+        if (doc.status === "uploaded" && doc.fileUri) {
+          const backendKey = docKeyMap[doc.id];
+          if (backendKey) {
+            mappedDocs[backendKey] = {
+              uri: doc.fileUri,
+              name: doc.fileName || doc.id + ".pdf",
+              mimeType: doc.mimeType || "application/pdf"
+            };
+          }
+        }
+      });
+
+      if (Object.keys(mappedDocs).length > 0) {
+        await taxNoticeApi.registerDocuments(noticeId, mappedDocs);
+      }
+
+      // Save to draft for UI flow
+      saveTaxNoticeDraft({
+        formData: {
+          ...(taxNoticeDraft?.formData || {}),
+          ...params,
+        },
+        documents: docs,
+        remarks,
+        step: "REVIEW",
+        updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      });
+
+      router.push({
+        pathname: "/service/tax-notice-preview" as any,
+        params: {
+          noticeId,
+          pan: params.pan || taxNoticeDraft?.formData?.pan,
+          noticeNumber: params.noticeNumber || taxNoticeDraft?.formData?.noticeNumber,
+          noticeDate: params.noticeDate || taxNoticeDraft?.formData?.noticeDate,
+          assessmentYear: assessmentYear,
+          noticeType: params.noticeType || taxNoticeDraft?.formData?.noticeType,
+        },
+      });
+    } catch (err: any) {
+      console.error(err);
+      Alert.alert("Upload Failed", err.message || "Failed to upload documents.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getDocIcon = (id: string): keyof typeof Ionicons.glyphMap => {
@@ -212,25 +296,13 @@ export const NoticeDocumentsScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, getContainerInsetsStyle(insets.top)]}>
-      <FocusAwareStatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Screen Header */}
       <TaxNoticeHeader
         subtitle="Supporting Documents"
         onBack={openDraftModal}
-        onSaveDraft={() => {
-          saveTaxNoticeDraft({
-            formData: {
-              ...(taxNoticeDraft?.formData || {}),
-              ...params,
-            },
-            documents: docs,
-            remarks,
-            step: "DOCUMENTS",
-            updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          });
-          Alert.alert("Draft Saved", "Your documents have been saved in draft.");
-        }}
+        
       />
 
       {/* Main Content */}
@@ -267,6 +339,7 @@ export const NoticeDocumentsScreen: React.FC = () => {
             item={doc}
             iconName={getDocIcon(doc.id)}
             onUploadSuccess={handleUploadSuccess}
+              onRemove={handleRemoveDocument}
           />
         ))}
 
@@ -292,9 +365,14 @@ export const NoticeDocumentsScreen: React.FC = () => {
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleSubmitDocuments}
-          style={styles.submitButton}
+          style={[styles.submitButton, isSubmitting && { opacity: 0.7 }]}
+          disabled={isSubmitting}
         >
-          <Text style={styles.submitButtonText}>Submit Documents & Review Response</Text>
+          {isSubmitting ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <Text style={styles.submitButtonText}>Submit Documents & Review Response</Text>
+          )}
         </TouchableOpacity>
       </View>
 

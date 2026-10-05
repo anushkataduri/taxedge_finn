@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,34 +7,33 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "../../../../../shared/theme";
 import { useAuthStore } from "../../../../authentication/store/authStore";
 import { loansApi } from "../../../services/loansApi";
-import { BUSINESS_DOCUMENTS_TEMPLATE } from "../../../mock/loanServices";
+import { PROPERTY_LOAN_DOCUMENTS_TEMPLATE } from "../../../mock/loanServices";
 import {
   LoanDetailsFormData,
   LoanApplicantFormData,
   LoanPropertyFormData,
   LoanOwnershipFormData,
-  LoanBusinessFormData,
-  LoanBankingFormData,
-  LoanDocumentItem,
   LoanApplicationDraft,
 } from "../../../types/loans.types";
+import { useLoanWizard } from "../../../hooks/useLoanWizard";
+import { useLoanDocuments } from "../../../hooks/useLoanDocuments";
+import { LoanStepIndicator } from "../../../components/LoanStepIndicator";
+import { getBottomBarPadding, getSafeAreaTopPadding } from "../../../styles/loanScreenLayout.styles";
 import {
-  PropertyLoanCustomerCard,
   PropertyLoanFinancialsStep,
   PropertyLoanApplicantStep,
   PropertyLoanPropertyStep,
   PropertyLoanOwnershipStep,
-  PropertyLoanBusinessStep,
-  PropertyLoanBankingStep,
   PropertyLoanDocumentsStep,
   PropertyLoanReviewStep,
 } from "../../components";
+import { validatePropertyLoanStep } from "../../utils/propertyLoanValidators";
 import { styles } from "./PropertyLoanScreen.styles";
 
 const STEPS = [
@@ -44,10 +43,7 @@ const STEPS = [
   "Ownership",
   "Documents",
   "Review",
-];
-
-const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-const MOBILE_REGEX = /^[6-9]\d{9}$/;
+] as const;
 
 export const PropertyLoanScreen: React.FC = () => {
   const router = useRouter();
@@ -56,8 +52,8 @@ export const PropertyLoanScreen: React.FC = () => {
 
   const customer = useAuthStore((s) => s.customer);
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConsentChecked, setIsConsentChecked] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Step 1: Loan Requirement
@@ -66,10 +62,10 @@ export const PropertyLoanScreen: React.FC = () => {
     requiredAmount: "",
     purpose: "",
     preferredTenureMonths: "",
-    hasExistingLoans: undefined as any,
+    hasExistingLoans: undefined,
     existingEmi: "",
     monthlyIncomeOrTurnover: "",
-    employmentType: "" as any,
+    employmentType: undefined,
   });
 
   // Step 2: Applicant & Income Details
@@ -123,366 +119,87 @@ export const PropertyLoanScreen: React.FC = () => {
     isConfirmationChecked: false,
   });
 
-  // Business Details (Optional / Backup)
-  const [businessDetails, setBusinessDetails] = useState<LoanBusinessFormData>({
-    businessName: "",
-    businessConstitution: "",
-    gstin: "",
-    hasUdyam: false,
-    udyamRegistration: "",
-    businessVintageYears: "",
-    annualTurnover: "",
-    netProfit: "",
-    signatoryName: "",
-    signatoryDesignation: "",
+  // Step 5: Documents (no persistence; Property Loan has never kept drafts)
+  const loanDocuments = useLoanDocuments({ template: PROPERTY_LOAN_DOCUMENTS_TEMPLATE });
+  const { documents } = loanDocuments;
+
+  const scrollToTop = useCallback(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
+  const wizard = useLoanWizard({
+    totalSteps: STEPS.length,
+    validateStep: (stepIndex) => validateStep(stepIndex),
+    onExitFromFirstStep: () => router.back(),
+    onStepChange: scrollToTop,
   });
+  const { currentStepIndex } = wizard;
 
-  // Banking Details (Backup)
-  const [bankingDetails, setBankingDetails] = useState<LoanBankingFormData>({
-    primaryBankName: "",
-    accountNumber: "",
-    ifscCode: "",
-    existingLenderName: "",
-    existingLoanOutstanding: "",
-    itrFilingStatus: "Not Filed",
-    itrAckNumber: "",
-    grossTotalIncome: "",
-  });
-
-  // Documents
-  const [documents, setDocuments] = useState<LoanDocumentItem[]>(() =>
-    JSON.parse(JSON.stringify(BUSINESS_DOCUMENTS_TEMPLATE))
-  );
-
-  const handleDetailsChange = (field: keyof LoanDetailsFormData, value: any) => {
-    setLoanDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+  const clearFieldError = (field: string) => {
+    if (!errors[field]) return;
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
   };
 
-  const handleApplicantChange = (field: keyof LoanApplicantFormData, value: any) => {
-    setApplicantDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
-  };
-
-  const handlePropertyChange = (field: keyof LoanPropertyFormData, value: any) => {
-    setPropertyDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
-  };
-
-  const handleOwnershipChange = (field: keyof LoanOwnershipFormData, value: any) => {
-    setOwnershipDetails((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
-  };
-
-  const handleDocumentUploaded = (
-    docId: string,
-    fileUri: string,
-    fileName: string,
-    fileSize: string
+  const handleDetailsChange = (
+    field: keyof LoanDetailsFormData,
+    value: string | number | boolean | null
   ) => {
-    setDocuments((prev) =>
-      prev.map((d) => {
-        const targetId = docId.replace(/^doc-/, "");
-        const itemCleanId = d.id.replace(/^doc-/, "");
-        if (d.id === docId || itemCleanId === targetId) {
-          return {
-            ...d,
-            fileUri,
-            fileName,
-            fileSize,
-            uploadedAt: new Date().toISOString(),
-          };
-        }
-        return d;
-      })
-    );
+    setLoanDetails((prev) => ({ ...prev, [field]: value }));
+    clearFieldError(field);
   };
 
-  // Step Validation Logic for Steps 1, 2, 3, 4
-  const validateCurrentStep = (): boolean => {
-    const errs: Record<string, string> = {};
+  const handleApplicantChange = (
+    field: keyof LoanApplicantFormData,
+    value: string | boolean | null
+  ) => {
+    setApplicantDetails((prev) => ({ ...prev, [field]: value }));
+    clearFieldError(field);
+  };
 
-    // 1st Page Validation (Step 1: Loan Requirement)
-    if (currentStepIndex === 0) {
-      if (!loanDetails.purpose || loanDetails.purpose.trim() === "") {
-        errs.purpose = "Please select a loan purpose";
+  const handlePropertyChange = (field: keyof LoanPropertyFormData, value: string) => {
+    setPropertyDetails((prev) => ({ ...prev, [field]: value }));
+    clearFieldError(field);
+  };
+
+  const handleOwnershipChange = (field: keyof LoanOwnershipFormData, value: string | boolean) => {
+    setOwnershipDetails((prev) => ({ ...prev, [field]: value }));
+    clearFieldError(field);
+  };
+
+  // Step validation stays in the Property Loan validator
+  function validateStep(stepIndex: number): boolean {
+    const result = validatePropertyLoanStep({
+      currentStepIndex: stepIndex,
+      loanDetails,
+      applicantDetails,
+      propertyDetails,
+      ownershipDetails,
+      documents,
+    });
+
+    if (!result.isValid) {
+      setErrors(result.errors);
+      if (result.alertTitle && result.alertMessage) {
+        Alert.alert(result.alertTitle, result.alertMessage);
       }
-
-      const rawAmount = (loanDetails.requiredAmount || "").replace(/[^0-9]/g, "");
-      const amountNum = Number(rawAmount);
-      if (!loanDetails.requiredAmount || isNaN(amountNum) || amountNum <= 0) {
-        errs.requiredAmount = "Enter valid required loan amount";
-      } else if (amountNum < 10000) {
-        errs.requiredAmount = "Minimum loan amount is ₹10,000";
-      }
-
-      if (!loanDetails.preferredTenureMonths || loanDetails.preferredTenureMonths.trim() === "") {
-        errs.preferredTenureMonths = "Please select preferred tenure";
-      }
-
-      if (!loanDetails.employmentType) {
-        errs.employmentType = "Please select applicant type";
-      }
-
-      if (loanDetails.hasExistingLoans === undefined || loanDetails.hasExistingLoans === null) {
-        errs.hasExistingLoans = "Please select whether you have existing customer status";
-      }
-
-      if (Object.keys(errs).length > 0) {
-        setErrors(errs);
-        Alert.alert(
-          "Required Fields Missing",
-          "Please fill in all required fields on Step 1 before proceeding."
-        );
-        return false;
-      }
-    }
-
-    // 2nd Page Validation (Step 2: Applicant & Income)
-    else if (currentStepIndex === 1) {
-      if (!applicantDetails.fullName || applicantDetails.fullName.trim() === "") {
-        errs.fullName = "Full name is required";
-      }
-
-      const panClean = (applicantDetails.pan || "").trim().toUpperCase();
-      if (!panClean || !PAN_REGEX.test(panClean)) {
-        errs.pan = "Enter a valid 10-character PAN (e.g. ABCDE1234F)";
-      }
-
-      const mobileClean = (applicantDetails.mobile || "").trim();
-      if (!mobileClean || !MOBILE_REGEX.test(mobileClean)) {
-        errs.mobile = "Enter a valid 10-digit mobile number";
-      }
-
-      if (!applicantDetails.dob || applicantDetails.dob.trim() === "") {
-        errs.dob = "Date of birth is required";
-      }
-
-      if (!applicantDetails.currentAddress || applicantDetails.currentAddress.trim() === "") {
-        errs.currentAddress = "Current address is required";
-      }
-
-      if (!applicantDetails.gender || applicantDetails.gender.trim() === "") {
-        errs.gender = "Please select gender";
-      }
-
-      if (!applicantDetails.maritalStatus || applicantDetails.maritalStatus.trim() === "") {
-        errs.maritalStatus = "Please select marital status";
-      }
-
-      if (!applicantDetails.residenceType || applicantDetails.residenceType.trim() === "") {
-        errs.residenceType = "Please select residence type";
-      }
-
-      if (!applicantDetails.yearsAtCurrentAddress || applicantDetails.yearsAtCurrentAddress.trim() === "") {
-        errs.yearsAtCurrentAddress = "Please select years at current address";
-      }
-
-      if (!applicantDetails.employerCategory || applicantDetails.employerCategory.trim() === "") {
-        errs.employerCategory = "Please select employer category";
-      }
-
-      if (!applicantDetails.employerName || applicantDetails.employerName.trim() === "") {
-        errs.employerName = "Employer name is required";
-      }
-
-      if (!applicantDetails.totalWorkExperience || applicantDetails.totalWorkExperience.trim() === "") {
-        errs.totalWorkExperience = "Please select total work experience";
-      }
-
-      if (!applicantDetails.yearsInCurrentJob || applicantDetails.yearsInCurrentJob.trim() === "") {
-        errs.yearsInCurrentJob = "Please select years in current job";
-      }
-
-      const incomeNum = Number((applicantDetails.annualIncome || "").replace(/[^0-9]/g, ""));
-      if (!applicantDetails.annualIncome || isNaN(incomeNum) || incomeNum <= 0) {
-        errs.annualIncome = "Enter valid annual income";
-      }
-
-      if (applicantDetails.hasExistingLoans === undefined || applicantDetails.hasExistingLoans === null) {
-        errs.hasExistingLoans = "Please select whether you have existing loans";
-      }
-
-      if (Object.keys(errs).length > 0) {
-        setErrors(errs);
-        Alert.alert(
-          "Required Fields Missing",
-          "Please fill in all required applicant and income details on Step 2 before proceeding."
-        );
-        return false;
-      }
-    }
-
-    // 3rd Page Validation (Step 3: Property Details)
-    else if (currentStepIndex === 2) {
-      const pinClean = (propertyDetails.pincode || "").trim();
-      if (!pinClean || !/^\d{6}$/.test(pinClean)) {
-        errs.pincode = "Enter a valid 6-digit PIN code";
-      }
-
-      if (!propertyDetails.city || propertyDetails.city.trim() === "") {
-        errs.city = "City is required";
-      }
-
-      if (!propertyDetails.district || propertyDetails.district.trim() === "") {
-        errs.district = "District is required";
-      }
-
-      if (!propertyDetails.state || propertyDetails.state.trim() === "") {
-        errs.state = "Please select state";
-      }
-
-      if (!propertyDetails.propertyAddress || propertyDetails.propertyAddress.trim() === "") {
-        errs.propertyAddress = "Property address is required";
-      }
-
-      if (!propertyDetails.propertyType || propertyDetails.propertyType.trim() === "") {
-        errs.propertyType = "Please select property type";
-      }
-
-      if (!propertyDetails.propertySubType || propertyDetails.propertySubType.trim() === "") {
-        errs.propertySubType = "Please select property sub-type";
-      }
-
-      if (!propertyDetails.constructionStatus || propertyDetails.constructionStatus.trim() === "") {
-        errs.constructionStatus = "Please select construction status";
-      }
-
-      if (!propertyDetails.currentUsage || propertyDetails.currentUsage.trim() === "") {
-        errs.currentUsage = "Please select current usage";
-      }
-
-      if (!propertyDetails.areaType || propertyDetails.areaType.trim() === "") {
-        errs.areaType = "Please select area type";
-      }
-
-      const areaNum = Number((propertyDetails.area || "").replace(/[^0-9]/g, ""));
-      if (!propertyDetails.area || isNaN(areaNum) || areaNum <= 0) {
-        errs.area = "Enter valid area in sq. ft.";
-      }
-
-      if (!propertyDetails.propertyAge || propertyDetails.propertyAge.trim() === "") {
-        errs.propertyAge = "Please select property age";
-      }
-
-      if (!propertyDetails.approvingAuthority || propertyDetails.approvingAuthority.trim() === "") {
-        errs.approvingAuthority = "Please select approving authority";
-      }
-
-      const valNum = Number((propertyDetails.estimatedMarketValue || "").replace(/[^0-9]/g, ""));
-      if (!propertyDetails.estimatedMarketValue || isNaN(valNum) || valNum <= 0) {
-        errs.estimatedMarketValue = "Enter valid estimated market value";
-      }
-
-      if (Object.keys(errs).length > 0) {
-        setErrors(errs);
-        Alert.alert(
-          "Required Fields Missing",
-          "Please fill in all required property details on Step 3 before proceeding."
-        );
-        return false;
-      }
-    }
-
-    // 4th Page Validation (Step 4: Ownership Details)
-    else if (currentStepIndex === 3) {
-      if (!ownershipDetails.ownershipType || ownershipDetails.ownershipType.trim() === "") {
-        errs.ownershipType = "Please select ownership type";
-      }
-
-      if (ownershipDetails.ownershipType === "Joint Ownership") {
-        if (!ownershipDetails.coOwnerFullName || ownershipDetails.coOwnerFullName.trim() === "") {
-          errs.coOwnerFullName = "Co-owner full name is required";
-        }
-
-        if (!ownershipDetails.coOwnerRelationship || ownershipDetails.coOwnerRelationship.trim() === "") {
-          errs.coOwnerRelationship = "Please select relationship with co-owner";
-        }
-
-        const coPan = (ownershipDetails.coOwnerPan || "").trim().toUpperCase();
-        if (!coPan || !PAN_REGEX.test(coPan)) {
-          errs.coOwnerPan = "Enter a valid 10-character PAN for co-owner";
-        }
-
-        const coMobile = (ownershipDetails.coOwnerMobile || "").trim();
-        if (!coMobile || !MOBILE_REGEX.test(coMobile)) {
-          errs.coOwnerMobile = "Enter a valid 10-digit mobile number for co-owner";
-        }
-      }
-
-      if (!ownershipDetails.isConfirmationChecked) {
-        errs.isConfirmationChecked = "Please check the ownership confirmation declaration";
-      }
-
-      if (Object.keys(errs).length > 0) {
-        setErrors(errs);
-        Alert.alert(
-          "Required Confirmation",
-          "Please fill in all required ownership details and check the declaration on Step 4."
-        );
-        return false;
-      }
-    }
-
-    // 5th Page Validation (Step 5: Documents)
-    else if (currentStepIndex === 4) {
-      const uploadedDocs = documents.filter((d) => Boolean(d.fileUri && d.fileUri.trim() !== ""));
-      if (uploadedDocs.length === 0) {
-        Alert.alert(
-          "Document Upload Required",
-          "Please upload at least one required document on Step 5 before proceeding to Review & Submit."
-        );
-        return false;
-      }
+      return false;
     }
 
     setErrors({});
     return true;
-  };
+  }
 
   const handleNext = () => {
-    if (!validateCurrentStep()) {
+    if (!wizard.isLastStep) {
+      wizard.goToNextStep();
       return;
     }
-
-    if (currentStepIndex < STEPS.length - 1) {
-      setCurrentStepIndex((prev) => prev + 1);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    } else {
+    if (validateStep(currentStepIndex)) {
       handleSubmitApplication();
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex((prev) => prev - 1);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    } else {
-      router.back();
     }
   };
 
@@ -494,26 +211,18 @@ export const PropertyLoanScreen: React.FC = () => {
         loanTypeId: "property-loan",
         customerProfile: customer || undefined,
         loanDetails,
+        applicantDetails,
         propertyDetails,
-        businessDetails,
-        bankingDetails,
+        ownershipDetails,
         documents,
       };
 
       const response = await loansApi.applyLoan(draft);
+      const statusRoute: Href = `/service/loan-status?id=${response.applicationId}&loanType=Property+Loan`;
       Alert.alert(
         "Property Loan Submitted",
         `Your application (Ref: ${response.referenceNumber}) has been submitted. Our legal and technical valuation team will contact you shortly.`,
-        [
-          {
-            text: "Track Status",
-            onPress: () => {
-              router.replace(
-                `/service/loan-status?id=${response.applicationId}&loanType=Property+Loan` as any
-              );
-            },
-          },
-        ]
+        [{ text: "Track Status", onPress: () => router.replace(statusRoute) }]
       );
     } catch {
       Alert.alert("Submission Error", "Failed to lodge application. Please try again.");
@@ -522,20 +231,15 @@ export const PropertyLoanScreen: React.FC = () => {
     }
   };
 
-  const [isConsentChecked, setIsConsentChecked] = useState(true);
-
   const renderActiveStep = () => {
     switch (currentStepIndex) {
       case 0:
         return (
-          <>
-            <PropertyLoanCustomerCard profile={customer || undefined} />
-            <PropertyLoanFinancialsStep
-              data={loanDetails}
-              onChange={handleDetailsChange}
-              errors={errors}
-            />
-          </>
+          <PropertyLoanFinancialsStep
+            data={loanDetails}
+            onChange={handleDetailsChange}
+            errors={errors}
+          />
         );
       case 1:
         return (
@@ -562,55 +266,35 @@ export const PropertyLoanScreen: React.FC = () => {
           />
         );
       case 4:
-        return (
-          <PropertyLoanDocumentsStep
-            documents={documents}
-            onDocumentUploaded={handleDocumentUploaded}
-          />
-        );
+        return <PropertyLoanDocumentsStep loanDocuments={loanDocuments} />;
       case 5:
       default:
         return (
           <PropertyLoanReviewStep
             loanDetails={loanDetails}
+            applicantDetails={applicantDetails}
             propertyDetails={propertyDetails}
-            businessDetails={businessDetails}
-            bankingDetails={bankingDetails}
+            ownershipDetails={ownershipDetails}
             documents={documents}
             isConsentChecked={isConsentChecked}
-            onConsentToggle={(checked) => setIsConsentChecked(checked)}
-            onGoToStep={(stepIdx) => setCurrentStepIndex(stepIdx)}
+            onConsentToggle={setIsConsentChecked}
+            onGoToStep={wizard.goToStep}
           />
         );
     }
   };
 
-  const progressPercent = ((currentStepIndex + 1) / STEPS.length) * 100;
-
   return (
-    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
+    <View style={[styles.safeArea, getSafeAreaTopPadding(insets.top)]}>
       {/* Top Header */}
-      <View style={styles.headerBar}>
-        <TouchableOpacity style={styles.circularBtn} onPress={handleBack}>
-          <Ionicons name="arrow-back" size={20} color="#0F2052" />
-        </TouchableOpacity>
-
-        <View style={styles.headerCenterContent}>
-          <Text style={styles.headerTitle}>Loan Against Property</Text>
-          <Text style={styles.headerSubtitle}>
-            Step {currentStepIndex + 1} of {STEPS.length} • {STEPS[currentStepIndex]}
-          </Text>
-        </View>
-
-        <View style={styles.circularBtn} />
-      </View>
-
-      {/* Header Progress Line */}
-      <View style={styles.progressBarTrack}>
-        <View
-          style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
-        />
-      </View>
+      <LoanStepIndicator
+        variant="linear"
+        title="Property Loan"
+        subtitle={STEPS[currentStepIndex]}
+        currentStepIndex={currentStepIndex}
+        totalSteps={STEPS.length}
+        onBack={wizard.handleBack}
+      />
 
       {/* Step Content */}
       <ScrollView
@@ -624,14 +308,9 @@ export const PropertyLoanScreen: React.FC = () => {
       </ScrollView>
 
       {/* Bottom Sticky Action Bar */}
-      <View
-        style={[
-          styles.bottomBar,
-          { paddingBottom: Math.max(insets.bottom, 12) },
-        ]}
-      >
+      <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
         <TouchableOpacity
-          style={styles.continueBtn}
+          style={[styles.continueBtn, isSubmitting && styles.continueBtnDisabled]}
           onPress={handleNext}
           disabled={isSubmitting}
           activeOpacity={0.8}
@@ -639,11 +318,16 @@ export const PropertyLoanScreen: React.FC = () => {
           {isSubmitting ? (
             <ActivityIndicator color={BrandColors.WHITE} size="small" />
           ) : (
-            <Text style={styles.continueBtnText}>
-              {currentStepIndex === STEPS.length - 1
-                ? "Submit Application"
-                : "Continue"}
-            </Text>
+            <>
+              <Text style={styles.continueBtnText}>
+                {wizard.isLastStep ? "Submit Application" : "Continue"}
+              </Text>
+              <Ionicons
+                name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
+                size={18}
+                color={BrandColors.WHITE}
+              />
+            </>
           )}
         </TouchableOpacity>
       </View>

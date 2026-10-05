@@ -110,7 +110,8 @@ export interface LoanApplicantFormData {
   totalWorkExperience: string;
   yearsInCurrentJob: string;
   annualIncome: string;
-  hasExistingLoans: any;
+  /** `null` until the applicant answers the Yes/No question. */
+  hasExistingLoans: boolean | null;
 }
 
 export interface LoanPropertyFormData {

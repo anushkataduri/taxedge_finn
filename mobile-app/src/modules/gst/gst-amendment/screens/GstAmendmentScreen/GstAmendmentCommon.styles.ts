@@ -230,3 +230,28 @@ export const commonStyles = StyleSheet.create({
   gap6: { gap: 6 },
   noDocText: { color: "#94A3B8" },
 });
+
+export const getHeaderBarStyle = (topInset: number) => ({
+  paddingTop: topInset + 8,
+});
+
+export const getCardIconBoxStyle = (backgroundColor: string) => ({
+  backgroundColor,
+});
+
+export const getScrollContentStyle = (bottomInset: number, extra: number = 30) => ({
+  paddingBottom: bottomInset + extra,
+});
+
+export const getBottomBarStyle = (bottomInset: number) => ({
+  paddingBottom: Math.max(bottomInset, 12),
+});
+
+export const getSuccessHeroStyle = (topInset: number) => ({
+  paddingTop: topInset + 32,
+});
+
+export const getSuccessActionsWrapStyle = (bottomInset: number) => ({
+  paddingBottom: Math.max(bottomInset, 16),
+});
+

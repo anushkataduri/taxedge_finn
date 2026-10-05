@@ -4,70 +4,89 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.taxedge.customer.entity.Customer;
+import com.taxedge.customer.repository.CustomerRepository;
 import com.taxedge.gst.dto.BusinessDto;
 import com.taxedge.gst.entity.Business;
 import com.taxedge.gst.exception.ResourceNotFoundException;
 import com.taxedge.gst.helper.RandomNumberGenerator;
 import com.taxedge.gst.repository.BusinessRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class BusinessServiceImpl implements BusinessService {
-
-    @Autowired
-    private BusinessRepository businessRepository;
-
-    @Autowired
-    private ModelMapper modelMapper;
-//    @Override
-//    public List<Documents> getDocumentsByBusinessId(String businessId) {
-//
-//        businessRepository.findById(businessId)
-//                .orElseThrow(() ->
-//                        new ResourceNotFoundException(
-//                                "Business not found with businessId: " + businessId));
-//
-//        return documentsRepository.findByBusinessId(businessId);
-//    }
     
-    @Override
-    public String registerBusiness(BusinessDto businessDto) {
+	private final BusinessRepository businessRepository;
 
-        Business business = modelMapper.map(businessDto, Business.class);
+	private final CustomerRepository customerRepository;
 
-        String businessId = RandomNumberGenerator.generateGstId();
+	@Autowired
+	private ModelMapper modelMapper;
 
-        business.setGstId(businessId);
+	@Override
+	public String registerBusiness(BusinessDto businessDto) {
 
-        businessRepository.save(business);
+		Customer customer = customerRepository.findById(businessDto.getCustomerId()).orElseThrow(
+				() -> new ResourceNotFoundException("Customer not found with ID: " + businessDto.getCustomerId()));
 
-        return "Business details registered successfully. Business ID: " + businessId;
-    }
+		Business business = modelMapper.map(businessDto, Business.class);
 
-    @Override
-    public String updateBusiness(String gstId, BusinessDto businessDto) {
+		business.setCustomer(customer);
 
-        Business business = businessRepository.findById(gstId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Business details not found with businessId: " + gstId));
+		String gstId = RandomNumberGenerator.generateGstId();
 
-        modelMapper.map(businessDto, business);
+		business.setGstId(gstId);
 
-      //  business.setGstId(gstId);
+		businessRepository.save(business);
 
-        businessRepository.save(business);
+		return "Business details registered successfully. Business ID: " + gstId;
+	}
 
-        return "Business details updated successfully";
-    }
+	@Override
+	public BusinessDto getBusinessId(String gstId) {
 
-    @Override
-    public BusinessDto getBusinessId(String businessId) {
+		Business business = businessRepository.findById(gstId)
+				.orElseThrow(() -> new ResourceNotFoundException("Business not found with gstId: " + gstId));
 
-        Business business = businessRepository.findById(businessId)
-                .orElseGet(() -> businessRepository.findAll().stream().findFirst()
-                        .orElseThrow(() -> new ResourceNotFoundException(
-                                "Business details not found with businessId: " + businessId)));
+		BusinessDto dto = modelMapper.map(business, BusinessDto.class);
 
-        return modelMapper.map(business, BusinessDto.class);
-    }
+		if (business.getCustomer() != null) {
+			dto.setCustomerId(business.getCustomer().getCustId());
+		}
+
+		return dto;
+	}
+
+	@Override
+	public String updateBusiness(String gstId, BusinessDto businessDto) {
+
+	    Business business = businessRepository.findById(gstId)
+	            .orElseThrow(() -> new ResourceNotFoundException(
+	                    "Business not found with gstId: " + gstId));
+
+	    modelMapper.typeMap(BusinessDto.class, Business.class)
+	            .addMappings(mapper -> {
+	                mapper.skip(Business::setGstId);
+	                mapper.skip(Business::setCustomer);
+	            });
+
+	    modelMapper.map(businessDto, business);
+
+	    businessRepository.save(business);
+
+	    return "Business details updated successfully";
+	}
+
+	@Override
+	public String deleteBusiness(String gstId) {
+
+		Business business = businessRepository.findById(gstId)
+				.orElseThrow(() -> new ResourceNotFoundException("Business not found with gstId: " + gstId));
+
+		businessRepository.delete(business);
+
+		return "Business details deleted successfully";
+	}
 }

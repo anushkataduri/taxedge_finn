@@ -15,16 +15,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
 
-import { GstStepIndicator } from "../../components/GstStepIndicator/GstStepIndicator";
-import { GstBusinessStep } from "../../components/GstBusinessStep/GstBusinessStep";
-import { GstUnifiedDocumentStep } from "../../components/GstUnifiedDocumentStep/GstUnifiedDocumentStep";
-import { GstReviewStep } from "../../components/GstReviewStep/GstReviewStep";
-import { GstRegistrationPaymentStep } from "../../components/GstRegistrationPaymentStep/GstRegistrationPaymentStep";
-import { GstApplicationStatusStep } from "../../../gst-status/components/GstApplicationStatusStep/GstApplicationStatusStep";
+import { GstStepIndicator } from "@/modules/gst/gst-registration/components/GstStepIndicator/GstStepIndicator";
+import { GstBusinessStep } from "@/modules/gst/gst-registration/components/GstBusinessStep/GstBusinessStep";
+import { GstUnifiedDocumentStep } from "@/modules/gst/gst-registration/components/GstUnifiedDocumentStep/GstUnifiedDocumentStep";
+import { GstReviewStep } from "@/modules/gst/gst-registration/components/GstReviewStep/GstReviewStep";
+import { GstRegistrationPaymentStep } from "@/modules/gst/gst-registration/components/GstRegistrationPaymentStep/GstRegistrationPaymentStep";
+import { GstApplicationStatusStep } from "@/modules/gst/gst-status/components/GstApplicationStatusStep/GstApplicationStatusStep";
 import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 
-import { useGstRegistrationFlow } from "../../hooks/useGstRegistrationFlow";
-import { styles } from "./GstRegistrationScreen.styles";
+import { useGstRegistrationFlow } from "@/modules/gst/gst-registration/hooks/useGstRegistrationFlow";
+import { styles, getHeaderBarStyle } from "./GstRegistrationScreen.styles";
 
 const STEPS = ["Business", "Documents", "Review", "Payment"];
 
@@ -39,7 +39,10 @@ const getScreenTitle = (index: number) => {
   return titles[index] || titles[0];
 };
 
-const getButtonText = (index: number) => {
+const getButtonText = (index: number, isEditMode: boolean = false) => {
+  if (isEditMode && (index === 0 || index === 1)) {
+    return "Update & Review";
+  }
   const texts = [
     "Continue to Documents",
     "Continue to Review",
@@ -70,13 +73,16 @@ export const GstRegistrationScreen: React.FC = () => {
     handleContinue,
     handlePaymentSuccess,
     handleBack,
+    isEditMode,
+    handleEditStep,
+    isFetchingReview,
   } = useGstRegistrationFlow(scrollViewRef);
 
   return (
     <View style={styles.root}>
       {/* Top Header Bar */}
       <View
-        style={[styles.headerBar, { paddingTop: Math.max(insets.top, 12) + 6 }]}
+        style={[styles.headerBar, getHeaderBarStyle(insets.top)]}
       >
         <TouchableOpacity
           activeOpacity={0.7}
@@ -137,9 +143,10 @@ export const GstRegistrationScreen: React.FC = () => {
           <GstReviewStep
             businessData={businessData}
             documents={documents}
-            onEditStep={setScreenIndex}
+            onEditStep={handleEditStep}
             declared={declared}
             onToggleDeclaration={() => setDeclared((prev: boolean) => !prev)}
+            isFetching={isFetchingReview}
           />
         )}
 
@@ -159,7 +166,7 @@ export const GstRegistrationScreen: React.FC = () => {
 
         {screenIndex === 4 && (
           <GstApplicationStatusStep
-            appId={createdAppId}
+            appId={createdGstId || createdAppId || businessData.gstId}
             businessName={businessData.businessName || "Your Business"}
             appliedDate="Today"
             serviceName="GST Registration"
@@ -179,7 +186,7 @@ export const GstRegistrationScreen: React.FC = () => {
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text style={styles.submitBtnText}>
-                  {getButtonText(screenIndex)}
+                  {getButtonText(screenIndex, isEditMode)}
                 </Text>
               )}
             </TouchableOpacity>

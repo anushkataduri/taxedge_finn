@@ -6,7 +6,7 @@ interface GstStoreState {
   filingDraft: Partial<GstFilingDraft>;
   activeStep: number;
   setRegistrationDraft: (draft: Partial<GstRegistrationDraft>) => void;
-  updateRegistrationField: (field: string, value: any) => void;
+  updateRegistrationField: (field: string, value: unknown) => void;
   setFilingDraft: (draft: Partial<GstFilingDraft>) => void;
   setActiveStep: (step: number) => void;
   resetDrafts: () => void;

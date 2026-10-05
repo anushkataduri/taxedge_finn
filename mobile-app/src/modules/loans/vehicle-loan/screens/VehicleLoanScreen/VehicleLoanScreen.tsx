@@ -1,31 +1,52 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
+import React, { useState, useRef, useCallback } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
+import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { BrandColors } from "../../../../../shared/theme";
 import { useAuthStore } from "../../../../authentication/store/authStore";
 import { loansApi } from "../../../services/loansApi";
 import { VEHICLE_LOAN_DOCUMENTS_TEMPLATE } from "../../constants/vehicleLoanDocuments";
-import { vehicleLoanDraftService, VehicleLoanDraftData } from "../../services/vehicleLoanDraftService";
 import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
-import { LoanBusinessFormData, LoanBankingFormData, LoanDocumentItem, LoanApplicationDraft } from "../../../types/loans.types";
-import { VehicleLoanDetailsFormData } from "../../types/vehicleLoan.types";
-import { validateLoanDocuments } from "../../../validation/loansSchema";
 import {
-  VehicleLoanStepIndicator,
+  LoanBusinessFormData,
+  LoanBankingFormData,
+  LoanApplicationDraft,
+} from "../../../types/loans.types";
+import {
+  VehicleLoanDetailsFormData,
+  VehicleLoanDraftData,
+} from "../../types/vehicleLoan.types";
+import { useLoanWizard } from "../../../hooks/useLoanWizard";
+import { useLoanDocuments } from "../../../hooks/useLoanDocuments";
+import { useLoanDraft } from "../../../hooks/useLoanDraft";
+import { LOAN_DRAFT_STORAGE_KEYS } from "../../../constants/loanDraftKeys";
+import { LoanStepIndicator } from "../../../components/LoanStepIndicator";
+import { getBottomBarPadding, getSafeAreaTopPadding } from "../../../styles/loanScreenLayout.styles";
+import {
   VehicleLoanFinancialsStep,
   VehicleLoanEmploymentStep,
   VehicleLoanBankingStep,
   VehicleLoanDocumentsStep,
   VehicleLoanReviewStep,
 } from "../../components";
-import { styles, getSafeAreaStyle, getBottomBarStyle } from "./VehicleLoanScreen.styles";
+import { styles } from "./VehicleLoanScreen.styles";
 
-// ==========================================
-// CONSTANTS & DEFAULT STATES
-// ==========================================
-const STEPS = ["Vehicle & Loan Requirements", "Employment & Income", "Banking & ITR", "Document Dossier", "Review & Lodgement"];
+const STEPS = [
+  "Vehicle & Loan Requirements",
+  "Employment & Income",
+  "Banking & ITR",
+  "Document Dossier",
+  "Review & Lodgement",
+] as const;
 
 const INITIAL_LOAN_DETAILS: VehicleLoanDetailsFormData = {
   loanType: "Vehicle Loan",
@@ -54,44 +75,67 @@ const INITIAL_BANKING_DETAILS: LoanBankingFormData = {
   itrFilingStatus: "" as any, itrAckNumber: "", grossTotalIncome: "",
 };
 
+/** The saved draft without its timestamp, which the draft storage adds on save. */
+type VehicleLoanDraft = Omit<VehicleLoanDraftData, "savedAt">;
+
 export const VehicleLoanScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
   const customer = useAuthStore((s) => s.customer);
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConsentChecked, setIsConsentChecked] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const [loanDetails, setLoanDetails] = useState<VehicleLoanDetailsFormData>(INITIAL_LOAN_DETAILS);
-  const [businessDetails, setBusinessDetails] = useState<LoanBusinessFormData>(INITIAL_BUSINESS_DETAILS);
-  const [bankingDetails, setBankingDetails] = useState<LoanBankingFormData>(INITIAL_BANKING_DETAILS);
-  const [documents, setDocuments] = useState<LoanDocumentItem[]>(() =>
-    JSON.parse(JSON.stringify(VEHICLE_LOAN_DOCUMENTS_TEMPLATE))
-  );
+  // Form State initialized to empty & unselected
+  const [loanDetails, setLoanDetails] =
+    useState<VehicleLoanDetailsFormData>(INITIAL_LOAN_DETAILS);
+  const [businessDetails, setBusinessDetails] =
+    useState<LoanBusinessFormData>(INITIAL_BUSINESS_DETAILS);
+  const [bankingDetails, setBankingDetails] =
+    useState<LoanBankingFormData>(INITIAL_BANKING_DETAILS);
 
-  useEffect(() => {
-    vehicleLoanDraftService.loadDraft().then((savedDraft: VehicleLoanDraftData | null) => {
-      if (savedDraft) {
-        setLoanDetails(savedDraft.loanDetails);
-        setBusinessDetails(savedDraft.businessDetails);
-        setBankingDetails(savedDraft.bankingDetails);
-        setDocuments(savedDraft.documents);
-        setCurrentStepIndex(savedDraft.currentStepIndex || 0);
-      }
-    });
+  // Word/Excel files stay accepted, as in the original Files/Drive picker of this flow.
+  const loanDocuments = useLoanDocuments({
+    template: VEHICLE_LOAN_DOCUMENTS_TEMPLATE,
+    fileTypes: "withOfficeDocuments",
+  });
+  const { documents } = loanDocuments;
+
+  const scrollToTop = useCallback(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   }, []);
 
-  const resetAllFields = useCallback(() => {
+  const wizard = useLoanWizard({
+    totalSteps: STEPS.length,
+    validateStep: (stepIndex) => validateStep(stepIndex),
+    onExitFromFirstStep: () => (isFormDirty() ? openDraftModal() : router.back()),
+    onStepChange: scrollToTop,
+  });
+  const { currentStepIndex } = wizard;
+
+  // Restore saved draft on mount if exists (key "@taxedge_vehicle_loan_draft_v1")
+  const draft = useLoanDraft<VehicleLoanDraft>({
+    storageKey: LOAN_DRAFT_STORAGE_KEYS.vehicleLoan,
+    restoreOnMount: true,
+    onRestore: (savedDraft) => {
+      setLoanDetails(savedDraft.loanDetails);
+      setBusinessDetails(savedDraft.businessDetails);
+      setBankingDetails(savedDraft.bankingDetails);
+      loanDocuments.setDocuments(savedDraft.documents);
+      wizard.goToStep(savedDraft.currentStepIndex || 0);
+    },
+  });
+
+  const resetAllFields = () => {
     setLoanDetails(INITIAL_LOAN_DETAILS);
     setBusinessDetails(INITIAL_BUSINESS_DETAILS);
     setBankingDetails(INITIAL_BANKING_DETAILS);
-    setDocuments(JSON.parse(JSON.stringify(VEHICLE_LOAN_DOCUMENTS_TEMPLATE)));
-    setCurrentStepIndex(0);
+    loanDocuments.resetDocuments();
+    wizard.resetWizard();
     setErrors({});
-  }, []);
+  };
 
   const isFormDirty = useCallback((): boolean => {
     const hasAmount = Boolean(loanDetails.requiredAmount?.trim());
@@ -112,112 +156,78 @@ export const VehicleLoanScreen: React.FC = () => {
   } = useUniversalDraftGuard({
     isDirty: isFormDirty,
     onSaveDraft: () => {
-      vehicleLoanDraftService.saveDraft({
-        currentStepIndex, loanDetails, businessDetails, bankingDetails, documents, savedAt: new Date().toISOString(),
+      draft.saveDraft({
+        currentStepIndex,
+        loanDetails,
+        businessDetails,
+        bankingDetails,
+        documents,
       });
     },
     onDiscardDraft: () => {
-      vehicleLoanDraftService.clearDraft();
+      draft.clearDraft();
       resetAllFields();
     },
     isSubmitted: () => currentStepIndex >= 4 && isSubmitting,
   });
 
-  // ==========================================
-  // FIELD HANDLERS & ERROR CLEARER
-  // ==========================================
   const clearFieldError = (field: string) => {
+    if (!errors[field]) return;
     setErrors((prev) => {
-      if (!prev[field]) return prev;
       const next = { ...prev };
       delete next[field];
       return next;
     });
   };
 
-  const handleDetailsChange = (field: keyof VehicleLoanDetailsFormData, value: any) => {
+  const handleDetailsChange = <K extends keyof VehicleLoanDetailsFormData>(
+    field: K,
+    value: VehicleLoanDetailsFormData[K]
+  ) => {
     setLoanDetails((prev) => ({ ...prev, [field]: value }));
-    clearFieldError(field as string);
+    clearFieldError(field);
   };
 
-  const handleBusinessChange = (field: keyof LoanBusinessFormData, value: string) => {
+  const handleBusinessChange = <K extends keyof LoanBusinessFormData>(field: K, value: LoanBusinessFormData[K]) => {
     setBusinessDetails((prev) => ({ ...prev, [field]: value }));
-    clearFieldError(field as string);
+    clearFieldError(field);
   };
 
-  const handleBankingChange = (field: keyof LoanBankingFormData, value: string) => {
+  const handleBankingChange = <K extends keyof LoanBankingFormData>(field: K, value: LoanBankingFormData[K]) => {
     setBankingDetails((prev) => ({ ...prev, [field]: value }));
-    clearFieldError(field as string);
+    clearFieldError(field);
   };
 
-  const handleDocumentUploaded = (docId: string, fileUri: string, fileName: string, fileSize: string) => {
-    setDocuments((prev) => prev.map((d) => (d.id === docId ? { ...d, fileUri, fileName, fileSize, uploadedAt: new Date().toISOString() } : d)));
-  };
-
-  const handleDocumentDeleted = (docId: string) => {
-    setDocuments((prev) => prev.map((d) => (d.id === docId ? { ...d, fileUri: undefined, fileName: undefined, fileSize: undefined, uploadedAt: undefined } : d)));
-  };
-
-  // ==========================================
-  // STEP VALIDATION LOGIC
-  // ==========================================
-  const validateVehicleDetails = (): Record<string, string> => {
-    const errs: Record<string, string> = {};
-    const amountNum = Number(loanDetails.requiredAmount);
-    if (!loanDetails.requiredAmount || isNaN(amountNum) || amountNum < 10000) {
-      errs.requiredAmount = "Enter a valid required loan amount (minimum ₹10,000)";
-    }
-    if (!loanDetails.purpose?.trim()) {
-      errs.purpose = "Please select a vehicle category / purpose";
-    } else if (loanDetails.purpose === "Others" && !loanDetails.customPurpose?.trim()) {
-      errs.customPurpose = "Please specify custom vehicle requirement";
-    }
-    if (!loanDetails.preferredTenureMonths) errs.preferredTenureMonths = "Please select a repayment tenure";
-    if (!loanDetails.vehicleCondition) errs.vehicleCondition = "Please select vehicle condition (New or Pre-Owned)";
-    if (!loanDetails.vehicleMakeModel?.trim()) errs.vehicleMakeModel = "Please enter vehicle make and model";
-    const priceNum = Number(loanDetails.onRoadPrice);
-    if (!loanDetails.onRoadPrice || isNaN(priceNum) || priceNum <= 0) {
-      errs.onRoadPrice = "Please enter estimated on-road price / valuation";
-    }
-    return errs;
-  };
-
-  const validateEmploymentDetails = (): Record<string, string> => {
-    const errs: Record<string, string> = {};
-    if (!loanDetails.employmentType) errs.employmentType = "Please select an employment category";
-    const incomeStr = loanDetails.monthlyIncomeOrTurnover?.trim();
-    const incomeNum = Number(incomeStr);
-    if (!incomeStr || (!isNaN(incomeNum) && incomeNum <= 0)) {
-      errs.monthlyIncomeOrTurnover = "Please select or enter monthly in-hand net income";
-    }
-    if (loanDetails.hasExistingLoans) {
-      const emiNum = Number(loanDetails.existingEmi);
-      if (!loanDetails.existingEmi || isNaN(emiNum) || emiNum <= 0) {
-        errs.existingEmi = "Please specify ongoing monthly EMI obligations";
+  function validateStep(stepIndex: number): boolean {
+    if (stepIndex === 0) {
+      const errs: Record<string, string> = {};
+      const amountNum = Number(loanDetails.requiredAmount);
+      if (!loanDetails.requiredAmount || isNaN(amountNum) || amountNum < 10000) {
+        errs.requiredAmount =
+          "Enter a valid required loan amount (minimum ₹10,000)";
       }
-    }
-    if (loanDetails.employmentType === "Business Owner" && !businessDetails.businessName?.trim()) {
-      errs.businessName = "Business name is required for business owners";
-    }
-    return errs;
-  };
+      if (!loanDetails.purpose || loanDetails.purpose.trim() === "") {
+        errs.purpose = "Please select a vehicle category / purpose";
+      } else if (
+        loanDetails.purpose === "Others" &&
+        (!loanDetails.customPurpose || loanDetails.customPurpose.trim() === "")
+      ) {
+        errs.customPurpose = "Please specify custom vehicle requirement";
+      }
+      if (!loanDetails.preferredTenureMonths) {
+        errs.preferredTenureMonths = "Please select a repayment tenure";
+      }
+      if (!loanDetails.vehicleCondition) {
+        errs.vehicleCondition = "Please select vehicle condition (New or Pre-Owned)";
+      }
+      if (!loanDetails.vehicleMakeModel || loanDetails.vehicleMakeModel.trim() === "") {
+        errs.vehicleMakeModel = "Please enter vehicle make and model";
+      }
+      const priceNum = Number(loanDetails.onRoadPrice);
+      if (!loanDetails.onRoadPrice || isNaN(priceNum) || priceNum <= 0) {
+        errs.onRoadPrice = "Please enter estimated on-road price / valuation";
+      }
 
-  const validateBankingDetails = (): Record<string, string> => {
-    const errs: Record<string, string> = {};
-    if (!bankingDetails.primaryBankName?.trim()) errs.primaryBankName = "Primary operating bank name is required";
-    if (!bankingDetails.accountNumber || bankingDetails.accountNumber.trim().length < 6) {
-      errs.accountNumber = "Valid bank account number is required (min 6 digits)";
-    }
-    if (!bankingDetails.ifscCode || bankingDetails.ifscCode.trim().length < 11) {
-      errs.ifscCode = "Valid 11-digit bank IFSC code is required";
-    }
-    if (!bankingDetails.itrFilingStatus) errs.itrFilingStatus = "Please select an ITR filing status";
-    return errs;
-  };
-
-  const validateCurrentStep = (): boolean => {
-    if (currentStepIndex === 0) {
-      const errs = validateVehicleDetails();
       setErrors(errs);
       if (Object.keys(errs).length > 0) {
         Alert.alert("Required Details Missing", "Please enter loan amount, vehicle category, tenure, and vehicle details to continue.");
@@ -225,8 +235,35 @@ export const VehicleLoanScreen: React.FC = () => {
       }
       return true;
     }
-    if (currentStepIndex === 1) {
-      const errs = validateEmploymentDetails();
+
+    if (stepIndex === 1) {
+      const errs: Record<string, string> = {};
+      if (!loanDetails.employmentType) {
+        errs.employmentType = "Please select an employment category";
+      }
+      const incomeStr = loanDetails.monthlyIncomeOrTurnover?.trim();
+      const incomeNum = Number(incomeStr);
+      if (
+        !incomeStr ||
+        (!isNaN(incomeNum) && incomeNum <= 0)
+      ) {
+        errs.monthlyIncomeOrTurnover = "Please select or enter monthly in-hand net income";
+      }
+      if (loanDetails.hasExistingLoans) {
+        const emiNum = Number(loanDetails.existingEmi);
+        if (!loanDetails.existingEmi || isNaN(emiNum) || emiNum <= 0) {
+          errs.existingEmi = "Please specify ongoing monthly EMI obligations";
+        }
+      }
+
+      if (
+        loanDetails.employmentType === "Business Owner" &&
+        (!businessDetails.businessName ||
+          businessDetails.businessName.trim() === "")
+      ) {
+        errs.businessName = "Business name is required for business owners";
+      }
+
       setErrors(errs);
       if (Object.keys(errs).length > 0) {
         Alert.alert("Incomplete Profile", "Please select an employment category and enter your monthly net income to continue.");
@@ -234,8 +271,31 @@ export const VehicleLoanScreen: React.FC = () => {
       }
       return true;
     }
-    if (currentStepIndex === 2) {
-      const errs = validateBankingDetails();
+
+    if (stepIndex === 2) {
+      const errs: Record<string, string> = {};
+      if (
+        !bankingDetails.primaryBankName ||
+        bankingDetails.primaryBankName.trim() === ""
+      ) {
+        errs.primaryBankName = "Primary operating bank name is required";
+      }
+      if (
+        !bankingDetails.accountNumber ||
+        bankingDetails.accountNumber.trim().length < 6
+      ) {
+        errs.accountNumber =
+          "Valid bank account number is required (min 6 digits)";
+      }
+      if (
+        !bankingDetails.ifscCode ||
+        bankingDetails.ifscCode.trim().length < 11
+      ) {
+        errs.ifscCode = "Valid 11-digit bank IFSC code is required";
+      }
+      if (!bankingDetails.itrFilingStatus) {
+        errs.itrFilingStatus = "Please select an ITR filing status";
+      }
       setErrors(errs);
       if (Object.keys(errs).length > 0) {
         Alert.alert("Banking Details Missing", "Please enter your bank name, account number, IFSC code, and select ITR status to continue.");
@@ -243,8 +303,9 @@ export const VehicleLoanScreen: React.FC = () => {
       }
       return true;
     }
-    if (currentStepIndex === 3) {
-      const { isValid, missingDocs } = validateLoanDocuments(documents);
+
+    if (stepIndex === 3) {
+      const { isValid, missingDocs } = loanDocuments.validateDocuments();
       if (!isValid) {
         Alert.alert("Mandatory Documents Required", `Please upload all required vehicle financing documents to continue:\n\n• ${missingDocs.slice(0, 3).join("\n• ")}`);
         return false;
@@ -252,44 +313,17 @@ export const VehicleLoanScreen: React.FC = () => {
       return true;
     }
     return true;
-  };
-
-  // ==========================================
-  // NAVIGATION & SUBMISSION LOGIC
-  // ==========================================
-  const handleGoToStep = (stepIdx: number) => {
-    setCurrentStepIndex(stepIdx);
-    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-  };
+  }
 
   const handleNext = () => {
-    if (!validateCurrentStep()) return;
-    if (currentStepIndex < STEPS.length - 1) {
-      handleGoToStep(currentStepIndex + 1);
-    } else {
+    if (!wizard.isLastStep) {
+      wizard.goToNextStep();
+      return;
+    }
+    if (validateStep(currentStepIndex)) {
       handleSubmitApplication();
     }
   };
-
-  const handleBack = () => {
-    if (currentStepIndex > 0) {
-      handleGoToStep(currentStepIndex - 1);
-    } else if (isFormDirty()) {
-      openDraftModal();
-    } else {
-      router.back();
-    }
-  };
-
-  const buildApplicationPayload = (): Partial<LoanApplicationDraft> => ({
-    loanType: "Vehicle Loan",
-    loanTypeId: "vehicle-loan",
-    customerProfile: customer || undefined,
-    loanDetails: loanDetails as any,
-    businessDetails: loanDetails.employmentType !== "Salaried" ? businessDetails : undefined,
-    bankingDetails,
-    documents,
-  });
 
   const handleSubmitApplication = async () => {
     if (!isConsentChecked) {
@@ -298,11 +332,25 @@ export const VehicleLoanScreen: React.FC = () => {
     }
     setIsSubmitting(true);
     try {
-      const draft = buildApplicationPayload();
-      const response = await loansApi.applyLoan(draft);
+      const application: Partial<LoanApplicationDraft> = {
+        loanType: "Vehicle Loan",
+        loanTypeId: "vehicle-loan",
+        customerProfile: customer || undefined,
+        loanDetails,
+        businessDetails:
+          loanDetails.employmentType !== "Salaried"
+            ? businessDetails
+            : undefined,
+        bankingDetails,
+        documents,
+      };
+
+      const response = await loansApi.applyLoan(application);
       markSubmitted();
-      await vehicleLoanDraftService.clearDraft();
-      router.replace(`/service/loan-status?id=${response.applicationId}&loanType=Vehicle+Loan&isSuccess=true` as any);
+      await draft.clearDraft();
+
+      const statusRoute: Href = `/service/loan-status?id=${response.applicationId}&loanType=Vehicle+Loan&isSuccess=true`;
+      router.replace(statusRoute);
     } catch {
       Alert.alert("Submission Error", "Failed to lodge vehicle loan application. Please try again.");
     } finally {
@@ -319,7 +367,7 @@ export const VehicleLoanScreen: React.FC = () => {
       case 2:
         return <VehicleLoanBankingStep data={bankingDetails} onChange={handleBankingChange} errors={errors} hasExistingLoans={loanDetails.hasExistingLoans} />;
       case 3:
-        return <VehicleLoanDocumentsStep documents={documents} onDocumentUploaded={handleDocumentUploaded} onDocumentDeleted={handleDocumentDeleted} />;
+        return <VehicleLoanDocumentsStep loanDocuments={loanDocuments} />;
       case 4:
       default:
         return (
@@ -331,34 +379,52 @@ export const VehicleLoanScreen: React.FC = () => {
             profile={customer || undefined}
             isConsentChecked={isConsentChecked}
             onConsentToggle={setIsConsentChecked}
-            onGoToStep={handleGoToStep}
+            onGoToStep={wizard.goToStep}
           />
         );
     }
   };
 
-  const isFinalStep = currentStepIndex === STEPS.length - 1;
-
   return (
-    <View style={getSafeAreaStyle(insets.top)}>
-      <VehicleLoanStepIndicator
+    <View style={[styles.safeArea, getSafeAreaTopPadding(insets.top)]}>
+      {/* Header with Step X of 5 & Orange Linear Progress Bar */}
+      <LoanStepIndicator
+        variant="linear"
+        title="Vehicle Loan"
+        subtitle={STEPS[currentStepIndex]}
         currentStepIndex={currentStepIndex}
         totalSteps={STEPS.length}
-        stepTitle={STEPS[currentStepIndex]}
-        onBack={handleBack}
-        onSettings={() => Alert.alert("Vehicle Loan Assistance", "Need help with your vehicle loan application? Contact support@taxedge.in or your assigned auto-credit manager.")}
+        onBack={wizard.handleBack}
+        onSettings={() =>
+          Alert.alert(
+            "Vehicle Loan Assistance",
+            "Need help with your vehicle loan application? Contact support@taxedge.in or your assigned auto-credit manager."
+          )
+        }
       />
       <ScrollView ref={scrollViewRef} style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {renderActiveStep()}
       </ScrollView>
-      <View style={getBottomBarStyle(insets.bottom)}>
-        <TouchableOpacity style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]} onPress={handleNext} disabled={isSubmitting}>
+
+      {/* Sticky Bottom Navigation with Orange Theme */}
+      <View style={[styles.bottomBar, getBottomBarPadding(insets.bottom)]}>
+        <TouchableOpacity
+          style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
+          onPress={handleNext}
+          disabled={isSubmitting}
+        >
           {isSubmitting ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <ActivityIndicator size="small" color={BrandColors.WHITE} />
           ) : (
             <>
-              <Text style={styles.nextButtonText}>{isFinalStep ? "Submit Application" : "Continue"}</Text>
-              <Ionicons name={isFinalStep ? "shield-checkmark" : "arrow-forward"} size={18} color="#FFFFFF" />
+              <Text style={styles.nextButtonText}>
+                {wizard.isLastStep ? "Submit Application" : "Continue"}
+              </Text>
+              <Ionicons
+                name={wizard.isLastStep ? "shield-checkmark" : "arrow-forward"}
+                size={18}
+                color={BrandColors.WHITE}
+              />
             </>
           )}
         </TouchableOpacity>

@@ -1,5 +1,3 @@
-
-
 import { StyleSheet } from "react-native";
 import { BrandColors } from "@/shared/theme";
 
@@ -16,9 +14,55 @@ export const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 40,
+    paddingBottom: 24,
     gap: 16,
+    flexGrow: 1,
   },
+
+  // Edit Mode Notification Bar
+  editModeBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#FFF7ED",
+    borderWidth: 1,
+    borderColor: "#FDBA74",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  editModeBannerDark: {
+    backgroundColor: "#7C2D12",
+    borderColor: "#EA580C",
+  },
+  editModeBannerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  editModeBannerText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#C2410C",
+  },
+  editModeBannerTextDark: {
+    color: "#FED7AA",
+  },
+  returnToReviewBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: "#EA580C",
+  },
+  returnToReviewBtnText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+
+  // Form Section Card
   card: {
     borderRadius: 18,
     borderWidth: 1.2,
@@ -30,36 +74,41 @@ export const styles = StyleSheet.create({
     elevation: 2,
     gap: 14,
   },
+  cardLight: {
+    backgroundColor: BrandColors.WHITE,
+    borderColor: "#E2E8F0",
+  },
+  cardDark: {
+    backgroundColor: "#1E293B",
+    borderColor: "#334155",
+  },
+
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
     letterSpacing: -0.2,
     marginBottom: 4,
+    color: "#0F172A",
   },
+  sectionTitleDark: {
+    color: "#F8FAFC",
+  },
+
   fieldGroup: {
     gap: 6,
   },
   label: {
     fontSize: 14,
     fontWeight: "600",
+    color: "#334155",
+  },
+  labelDark: {
+    color: "#E2E8F0",
   },
   star: {
     color: "#EF4444",
   },
-  inputWrapper: {
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1.2,
-    paddingHorizontal: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  input: {
-    flex: 1,
-    height: "100%",
-    fontSize: 14.5,
-  },
+
   selectorBox: {
     height: 50,
     borderRadius: 12,
@@ -68,16 +117,38 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    backgroundColor: BrandColors.WHITE,
+    borderColor: "#CBD5E1",
+  },
+  selectorBoxDark: {
+    backgroundColor: "#0F172A",
+    borderColor: "#334155",
+  },
+  selectorBoxError: {
+    borderColor: "#EF4444",
   },
   selectorText: {
     fontSize: 14.5,
     fontWeight: "500",
+    color: "#0F172A",
   },
+  selectorTextDark: {
+    color: "#F8FAFC",
+  },
+  selectorPlaceholder: {
+    color: "#94A3B8",
+  },
+  selectorPlaceholderDark: {
+    color: "#64748B",
+  },
+
   errorText: {
     fontSize: 12,
     color: "#DC2626",
     fontWeight: "500",
   },
+
+  // Bottom action buttons
   submitWrapper: {
     marginTop: 8,
   },
@@ -86,11 +157,15 @@ export const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: BrandColors.PRIMARY_ORANGE,
     shadowColor: BrandColors.PRIMARY_ORANGE,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 3,
+  },
+  submitBtnDisabled: {
+    opacity: 0.75,
   },
   loadingRow: {
     flexDirection: "row",
@@ -102,6 +177,28 @@ export const styles = StyleSheet.create({
     fontWeight: "700",
     color: BrandColors.WHITE,
   },
+
+  // Step Indicator
+  stepIndicatorContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  stepIndicatorBar: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#E2E8F0",
+  },
+  stepIndicatorBarActive: {
+    backgroundColor: BrandColors.PRIMARY_ORANGE,
+  },
+  stepIndicatorBarDark: {
+    backgroundColor: "#334155",
+  },
+
+  // Modal styles
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.55)",
@@ -121,6 +218,12 @@ export const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 10,
     gap: 12,
+    backgroundColor: BrandColors.WHITE,
+    borderColor: "#E2E8F0",
+  },
+  dialogCardDark: {
+    backgroundColor: "#1E293B",
+    borderColor: "#334155",
   },
   dialogIconWrap: {
     width: 60,
@@ -131,16 +234,30 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 4,
   },
+  dialogIconWrapResume: {
+    backgroundColor: "#EAF1FE",
+  },
+  dialogIconWrapResumeDark: {
+    backgroundColor: "#0F172A",
+  },
   dialogTitle: {
     fontSize: 17,
     fontWeight: "700",
     textAlign: "center",
+    color: "#0F172A",
+  },
+  dialogTitleDark: {
+    color: "#F8FAFC",
   },
   dialogMessage: {
     fontSize: 13.5,
     lineHeight: 19,
     textAlign: "center",
     marginBottom: 8,
+    color: "#64748B",
+  },
+  dialogMessageDark: {
+    color: "#94A3B8",
   },
   dialogActionsRow: {
     flexDirection: "row",
@@ -153,10 +270,18 @@ export const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#F1F5F9",
+  },
+  dialogCancelBtnDark: {
+    backgroundColor: "#334155",
   },
   dialogCancelText: {
     fontSize: 14.5,
     fontWeight: "600",
+    color: "#475569",
+  },
+  dialogCancelTextDark: {
+    color: "#E2E8F0",
   },
   dialogConfirmBtn: {
     flex: 1,
@@ -181,45 +306,6 @@ export const styles = StyleSheet.create({
   },
 });
 
-export const getRootThemeStyle = (isDark: boolean) => ({
+export const getRootBgStyle = (isDark: boolean) => ({
   backgroundColor: isDark ? "#0F172A" : "#F8FAFC",
-});
-
-export const getCardThemeStyle = (isDark: boolean) => ({
-  backgroundColor: isDark ? "#1E293B" : BrandColors.WHITE,
-  borderColor: isDark ? "#334155" : "#E2E8F0",
-});
-
-export const getTextThemeStyle = (isDark: boolean) => ({
-  color: isDark ? "#F8FAFC" : "#0F172A",
-});
-
-export const getLabelThemeStyle = (isDark: boolean) => ({
-  color: isDark ? "#E2E8F0" : "#334155",
-});
-
-export const getInputWrapperThemeStyle = (isDark: boolean) => ({
-  backgroundColor: isDark ? "#0F172A" : "#F8FAFC",
-  borderColor: isDark ? "#334155" : "#CBD5E1",
-});
-
-export const getSubmitBtnThemeStyle = (isSubmitting: boolean) => ({
-  backgroundColor: isSubmitting ? "#CBD5E1" : BrandColors.PRIMARY_ORANGE,
-});
-
-export const getDialogCardThemeStyle = (isDark: boolean) => ({
-  backgroundColor: isDark ? "#1E293B" : BrandColors.WHITE,
-  borderColor: isDark ? "#334155" : "#E2E8F0",
-});
-
-export const getDialogMessageThemeStyle = (isDark: boolean) => ({
-  color: isDark ? "#94A3B8" : "#64748B",
-});
-
-export const getDialogCancelBtnThemeStyle = (isDark: boolean) => ({
-  backgroundColor: isDark ? "#334155" : "#F1F5F9",
-});
-
-export const getDialogCancelTextThemeStyle = (isDark: boolean) => ({
-  color: isDark ? "#E2E8F0" : "#475569",
 });

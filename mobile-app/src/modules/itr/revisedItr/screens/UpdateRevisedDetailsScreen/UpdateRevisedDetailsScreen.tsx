@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
+import { useRevisedProgressStore } from "../../store/revisedProgressStore";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RevisedItrHeader } from "../../components/common";
@@ -21,6 +22,7 @@ import {
 
 export const UpdateRevisedDetailsScreen: React.FC = () => {
   const router = useRouter();
+  const maxStepReached = useRevisedProgressStore((s) => s.maxStepReached);
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     acknowledgementNumber?: string;
@@ -226,6 +228,7 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
 
             <RevisedFormField
               label="Bank account for refund"
+                maxLength={18}
               value={form.bankAccount}
               originalValue={originalValues.bankAccount}
               onChangeText={(val) => handleChange("bankAccount", val)}
@@ -278,7 +281,7 @@ export const UpdateRevisedDetailsScreen: React.FC = () => {
           onPress={handleContinue}
           style={styles.continueButton}
         >
-          <Text style={styles.continueButtonText}>Continue</Text>
+          <Text style={styles.continueButtonText}>{maxStepReached >= 3 ? "Update and Continue" : "Continue"}</Text>
         </TouchableOpacity>
       </View>
     </View>

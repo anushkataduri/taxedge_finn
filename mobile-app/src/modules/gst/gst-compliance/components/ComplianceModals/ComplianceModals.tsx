@@ -2,14 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, Modal } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
-import {
-  styles,
-  getDialogCardThemeStyle,
-  getTextThemeStyle,
-  getDialogMessageThemeStyle,
-  getDialogCancelBtnThemeStyle,
-  getDialogCancelTextThemeStyle,
-} from "../../screens/GstComplianceScreen/GstComplianceScreen.styles";
+import { styles } from "@/modules/gst/gst-compliance/screens/GstComplianceScreen/GstComplianceScreen.styles";
 
 interface ComplianceConfirmModalProps {
   visible: boolean;
@@ -36,7 +29,7 @@ export const ComplianceConfirmModal: React.FC<ComplianceConfirmModalProps> = ({
       onRequestClose={onCancel}
     >
       <View style={styles.modalBackdrop}>
-        <View style={[styles.dialogCard, getDialogCardThemeStyle(isDark)]}>
+        <View style={[styles.dialogCard, isDark && styles.dialogCardDark]}>
           <View style={styles.dialogIconWrap}>
             <Ionicons
               name="shield-checkmark-outline"
@@ -45,11 +38,13 @@ export const ComplianceConfirmModal: React.FC<ComplianceConfirmModalProps> = ({
             />
           </View>
 
-          <Text style={[styles.dialogTitle, getTextThemeStyle(isDark)]}>
+          <Text style={[styles.dialogTitle, isDark && styles.dialogTitleDark]}>
             Submit GST Compliance Request?
           </Text>
 
-          <Text style={[styles.dialogMessage, getDialogMessageThemeStyle(isDark)]}>
+          <Text
+            style={[styles.dialogMessage, isDark && styles.dialogMessageDark]}
+          >
             Are you sure you want to submit this {requestType} request for GSTIN {gstin}? Our CA team will immediately begin processing.
           </Text>
 
@@ -57,9 +52,17 @@ export const ComplianceConfirmModal: React.FC<ComplianceConfirmModalProps> = ({
             <TouchableOpacity
               activeOpacity={0.7}
               onPress={onCancel}
-              style={[styles.dialogCancelBtn, getDialogCancelBtnThemeStyle(isDark)]}
+              style={[
+                styles.dialogCancelBtn,
+                isDark && styles.dialogCancelBtnDark,
+              ]}
             >
-              <Text style={[styles.dialogCancelText, getDialogCancelTextThemeStyle(isDark)]}>
+              <Text
+                style={[
+                  styles.dialogCancelText,
+                  isDark && styles.dialogCancelTextDark,
+                ]}
+              >
                 Cancel
               </Text>
             </TouchableOpacity>
@@ -99,11 +102,11 @@ export const ComplianceResumeModal: React.FC<ComplianceResumeModalProps> = ({
       onRequestClose={onDiscard}
     >
       <View style={styles.modalBackdrop}>
-        <View style={[styles.dialogCard, getDialogCardThemeStyle(isDark)]}>
+        <View style={[styles.dialogCard, isDark && styles.dialogCardDark]}>
           <View
             style={[
               styles.dialogIconWrap,
-              { backgroundColor: isDark ? "#0F172A" : "#EAF1FE" },
+              isDark ? styles.dialogIconWrapResumeDark : styles.dialogIconWrapResume,
             ]}
           >
             <Ionicons
@@ -113,11 +116,13 @@ export const ComplianceResumeModal: React.FC<ComplianceResumeModalProps> = ({
             />
           </View>
 
-          <Text style={[styles.dialogTitle, getTextThemeStyle(isDark)]}>
+          <Text style={[styles.dialogTitle, isDark && styles.dialogTitleDark]}>
             Resume Draft Request?
           </Text>
 
-          <Text style={[styles.dialogMessage, getDialogMessageThemeStyle(isDark)]}>
+          <Text
+            style={[styles.dialogMessage, isDark && styles.dialogMessageDark]}
+          >
             You have an unsaved GST Compliance request in progress. Would you like to resume where you left off?
           </Text>
 
@@ -125,9 +130,17 @@ export const ComplianceResumeModal: React.FC<ComplianceResumeModalProps> = ({
             <TouchableOpacity
               activeOpacity={0.7}
               onPress={onDiscard}
-              style={[styles.dialogCancelBtn, getDialogCancelBtnThemeStyle(isDark)]}
+              style={[
+                styles.dialogCancelBtn,
+                isDark && styles.dialogCancelBtnDark,
+              ]}
             >
-              <Text style={[styles.dialogCancelText, getDialogCancelTextThemeStyle(isDark)]}>
+              <Text
+                style={[
+                  styles.dialogCancelText,
+                  isDark && styles.dialogCancelTextDark,
+                ]}
+              >
                 Start Fresh
               </Text>
             </TouchableOpacity>

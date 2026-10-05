@@ -8,5 +8,7 @@ import com.taxedge.gst.entity.GstFiling;
 
 public interface GstFilingRepository extends JpaRepository<GstFiling, String> {
 
-    List<GstFiling> findByGstin(String gstin);
+	List<GstFiling> findByGstin(String gstin);
+
+	List<GstFiling> findByCustomer_CustId(String customerId);
 }

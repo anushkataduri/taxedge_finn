@@ -1,5 +1,3 @@
-
-
 import { StyleSheet } from "react-native";
 import { BrandColors } from "@/shared/theme";
 
@@ -199,8 +197,10 @@ export const styles = StyleSheet.create({
   },
 });
 
-export const getRootThemeStyle = (isDark: boolean) => ({
-  backgroundColor: isDark ? "#0F172A" : BrandColors.WHITE,
+export const getRootThemeStyle = (isDark: boolean, paddingTop: number, paddingBottom: number) => ({
+  backgroundColor: isDark ? "#0F172A" : "#F8FAFC",
+  paddingTop,
+  paddingBottom,
 });
 
 export const getTitleThemeStyle = (isDark: boolean) => ({
@@ -208,11 +208,11 @@ export const getTitleThemeStyle = (isDark: boolean) => ({
 });
 
 export const getSubtitleThemeStyle = (isDark: boolean) => ({
-  color: isDark ? "#94A3B8" : "#475569",
+  color: isDark ? "#94A3B8" : "#64748B",
 });
 
 export const getRefCardThemeStyle = (isDark: boolean) => ({
-  backgroundColor: isDark ? "#1E293B" : "#F8FAFC",
+  backgroundColor: isDark ? "#1E293B" : BrandColors.WHITE,
   borderColor: isDark ? "#334155" : "#E2E8F0",
 });
 
@@ -220,12 +220,34 @@ export const getRefLabelThemeStyle = (isDark: boolean) => ({
   color: isDark ? "#94A3B8" : "#64748B",
 });
 
+export const getRefValueThemeStyle = () => ({
+  color: BrandColors.PRIMARY_BLUE_ACCENT,
+});
+
+export const getCopyBtnThemeStyle = (isDark: boolean) => ({
+  backgroundColor: isDark ? "#334155" : "#EAF1FE",
+});
+
 export const getDividerThemeStyle = (isDark: boolean) => ({
-  backgroundColor: isDark ? "#334155" : "#E2E8F0",
+  backgroundColor: isDark ? "#334155" : "#F1F5F9",
+});
+
+export const getMetaLabelThemeStyle = (isDark: boolean) => ({
+  color: isDark ? "#64748B" : "#94A3B8",
+});
+
+export const getMetaValueThemeStyle = (isDark: boolean, isHighlight = false) => ({
+  color: isHighlight
+    ? isDark
+      ? "#38BDF8"
+      : "#083B75"
+    : isDark
+    ? "#F1F5F9"
+    : "#1E293B",
 });
 
 export const getNextStepsCardThemeStyle = (isDark: boolean) => ({
-  backgroundColor: isDark ? "#1E293B" : "#F8FAFC",
+  backgroundColor: isDark ? "#1E293B" : BrandColors.WHITE,
   borderColor: isDark ? "#334155" : "#E2E8F0",
 });
 

@@ -37,7 +37,7 @@ public class AdditionalPlaceAmendmentEntity {
     @Column(name = "nature_of_premises", nullable = false)
     private NatureOfPremises natureOfPremises;
 
-    @Column(name = "image_data", columnDefinition = "LONGTEXT")
+    @Column(name = "image_data", columnDefinition = "TEXT")
     private String imageData;
 
     @Column(name = "created_at")

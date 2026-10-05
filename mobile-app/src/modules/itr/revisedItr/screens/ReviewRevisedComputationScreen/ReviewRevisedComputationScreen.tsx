@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
+import { useRevisedProgressStore } from "../../store/revisedProgressStore";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -28,6 +29,10 @@ import { DEFAULT_REVISED_FORM_FIELDS } from "../../mock/revisedItrData";
 import { RevisedFormFields } from "../../types/revisedItr.types";
 
 export const ReviewRevisedComputationScreen: React.FC = () => {
+  React.useEffect(() => {
+    useRevisedProgressStore.getState().setMaxStepReached(3);
+  }, []);
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{

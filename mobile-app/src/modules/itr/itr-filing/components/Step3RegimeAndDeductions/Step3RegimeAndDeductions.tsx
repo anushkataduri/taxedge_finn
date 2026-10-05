@@ -20,6 +20,7 @@ import { RegimeComparisonTable } from "../../../components/RegimeComparisonTable
 import { styles } from "./Step3RegimeAndDeductions.styles";
 
 interface Step3RegimeAndDeductionsProps {
+  isEditing?: boolean;
   regime: TaxRegimeType;
   onChangeRegime: (regime: TaxRegimeType) => void;
   deductions: ItrStructuredDeductions;
@@ -29,7 +30,7 @@ interface Step3RegimeAndDeductionsProps {
   onContinue: () => void;
 }
 
-export const Step3RegimeAndDeductions: React.FC<Step3RegimeAndDeductionsProps> = ({
+export const Step3RegimeAndDeductions: React.FC<Step3RegimeAndDeductionsProps> = ({ isEditing, 
   regime,
   onChangeRegime,
   deductions,
@@ -412,7 +413,7 @@ export const Step3RegimeAndDeductions: React.FC<Step3RegimeAndDeductionsProps> =
 
       {/* Continue Button */}
       <TouchableOpacity activeOpacity={0.85} style={styles.continueButton} onPress={onContinue}>
-        <Text style={styles.continueButtonText}>Confirm & Continue to Documents</Text>
+        <Text style={styles.continueButtonText}>{isEditing ? "Update and Continue" : "Confirm & Continue to Documents"}</Text>
         <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
       </TouchableOpacity>
 

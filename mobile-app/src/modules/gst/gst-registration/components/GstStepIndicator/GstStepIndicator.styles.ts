@@ -23,7 +23,7 @@ export const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: BrandColors.CARD_BORDER,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 4,
@@ -37,7 +37,7 @@ export const styles = StyleSheet.create({
   numberText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#94A3B8",
+    color: BrandColors.TEXT_MUTED,
     fontFamily: Platform.select({ ios: "System", android: "sans-serif" }),
   },
   numberTextActive: {
@@ -46,7 +46,7 @@ export const styles = StyleSheet.create({
   labelText: {
     fontSize: 11,
     fontWeight: "500",
-    color: "#94A3B8",
+    color: BrandColors.TEXT_MUTED,
     fontFamily: Platform.select({ ios: "System", android: "sans-serif" }),
   },
   labelTextActive: {
@@ -56,7 +56,7 @@ export const styles = StyleSheet.create({
   line: {
     flex: 1,
     height: 2,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: BrandColors.BORDER,
     marginHorizontal: 4,
     marginBottom: 16,
   },
