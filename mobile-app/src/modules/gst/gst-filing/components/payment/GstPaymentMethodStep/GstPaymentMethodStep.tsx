@@ -101,7 +101,7 @@ export const GstPaymentMethodStep: React.FC<GstPaymentMethodStepProps> = ({
             style={[styles.upiInput, upiError ? styles.upiInputError : null]}
             value={upiId}
             onChangeText={onChangeUpiId}
-            placeholder="e.g. mobileNumber@upi / yourname@okhdfcbank"
+            placeholder="Enter UPI ID (e.g. name@upi)"
             placeholderTextColor="#94A3B8"
             autoCapitalize="none"
           />

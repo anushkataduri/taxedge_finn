@@ -1,4 +1,4 @@
-import { StyleSheet, ViewStyle, TextStyle } from "react-native";
+import { StyleSheet, Platform, ViewStyle, TextStyle } from "react-native";
 import { BrandColors } from "@/shared/theme";
 
 export const styles = StyleSheet.create({
@@ -6,9 +6,10 @@ export const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: "600",
-    marginBottom: 8,
+    marginBottom: 6,
+    fontFamily: Platform.select({ ios: "System", android: "sans-serif-medium" }),
   },
   star: {
     color: "#EF4444",
@@ -26,7 +27,7 @@ export const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#E0F2FE",
     alignItems: "center",
     justifyContent: "center",
   },

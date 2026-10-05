@@ -81,6 +81,33 @@ export const styles = StyleSheet.create({
       android: "sans-serif-medium",
     }),
   },
+  updateReviewBtn: {
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: BrandColors.PRIMARY_ORANGE,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: BrandColors.PRIMARY_ORANGE,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  updateReviewContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  updateReviewBtnText: {
+    fontSize: Typography.fontSize.md,
+    fontWeight: Typography.fontWeight.bold,
+    color: BrandColors.WHITE,
+    fontFamily: Platform.select({
+      ios: "System",
+      android: "sans-serif-medium",
+    }),
+  },
   scrollPaddingBottom: {
     paddingBottom: 24,
   },

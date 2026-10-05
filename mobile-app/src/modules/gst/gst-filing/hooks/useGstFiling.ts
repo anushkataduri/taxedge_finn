@@ -25,8 +25,6 @@ import {
   promptPayLaterSubmission,
 } from "@/modules/gst/gst-filing/hooks/gstFilingStepHandlers";
 
-export { mapDtoToPeriodData, mapDtoToFilingDocuments };
-
 export function useGstFiling() {
   const router = useRouter();
   const params = useLocalSearchParams<{

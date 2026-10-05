@@ -3,7 +3,7 @@
  * Refactored: Modular Monolith architecture. Strictly UI only. No inline styles.
  */
 
-import React, { useRef } from "react";
+import React, { useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
 
-import { GstStepIndicator } from "@/modules/gst/gst-registration/components/GstStepIndicator/GstStepIndicator";
+import { GstStepHeader } from "@/modules/gst/components/GstStepHeader";
 import { GstBusinessStep } from "@/modules/gst/gst-registration/components/GstBusinessStep/GstBusinessStep";
 import { GstUnifiedDocumentStep } from "@/modules/gst/gst-registration/components/GstUnifiedDocumentStep/GstUnifiedDocumentStep";
 import { GstReviewStep } from "@/modules/gst/gst-registration/components/GstReviewStep/GstReviewStep";
@@ -26,7 +26,12 @@ import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 import { useGstRegistrationFlow } from "@/modules/gst/gst-registration/hooks/useGstRegistrationFlow";
 import { styles, getHeaderBarStyle } from "./GstRegistrationScreen.styles";
 
-const STEPS = ["Business", "Documents", "Review", "Payment"];
+const STEP_LABELS = [
+  "Business Details",
+  "Upload Documents",
+  "Review Application",
+  "Payment & Filing",
+];
 
 const getScreenTitle = (index: number) => {
   const titles = [
@@ -78,30 +83,40 @@ export const GstRegistrationScreen: React.FC = () => {
     isFetchingReview,
   } = useGstRegistrationFlow(scrollViewRef);
 
+  const handleRequestScrollToSection = useCallback((_section: "bank" | "signatory", y?: number) => {
+    setTimeout(() => {
+      const targetY = typeof y === "number" && y > 0 ? y - 10 : 600;
+      scrollViewRef.current?.scrollTo({ y: targetY, animated: true });
+    }, 120);
+  }, []);
+
   return (
     <View style={styles.root}>
-      {/* Top Header Bar */}
-      <View
-        style={[styles.headerBar, getHeaderBarStyle(insets.top)]}
-      >
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={handleBack}
-          style={styles.backButton}
-        >
-          <Ionicons
-            name="chevron-back"
-            size={20}
-            color={BrandColors.TEXT_PRIMARY}
-          />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{getScreenTitle(screenIndex)}</Text>
-        <View style={styles.placeholderBox} />
-      </View>
-
-      {/* 4-Step Indicator */}
-      {screenIndex < 4 && (
-        <GstStepIndicator steps={STEPS} currentStep={screenIndex} />
+      {/* Header & Step Tracker */}
+      {screenIndex < 4 ? (
+        <GstStepHeader
+          title="GST Registration"
+          currentStep={screenIndex + 1}
+          totalSteps={4}
+          stepLabel={STEP_LABELS[screenIndex]}
+          onBack={handleBack}
+        />
+      ) : (
+        <View style={[styles.headerBar, getHeaderBarStyle(insets.top)]}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={handleBack}
+            style={styles.backButton}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={20}
+              color={BrandColors.TEXT_PRIMARY}
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Application Status</Text>
+          <View style={styles.placeholderBox} />
+        </View>
       )}
 
       {/* Main Scroll Content */}
@@ -124,6 +139,7 @@ export const GstRegistrationScreen: React.FC = () => {
             errors={businessErrors}
             onChange={handleBusinessChange}
             onBlurField={handleBusinessBlur}
+            onRequestScrollToSection={handleRequestScrollToSection}
           />
         )}
 
@@ -176,20 +192,38 @@ export const GstRegistrationScreen: React.FC = () => {
         {/* Action Button */}
         {screenIndex < 3 && (
           <View style={styles.buttonWrapper}>
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleContinue}
-              style={styles.submitBtn}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.submitBtnText}>
-                  {getButtonText(screenIndex, isEditMode)}
-                </Text>
-              )}
-            </TouchableOpacity>
+            {isEditMode ? (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleContinue}
+                style={styles.updateReviewBtn}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <View style={styles.updateReviewContent}>
+                    <Ionicons name="checkmark-circle-outline" size={19} color="#FFFFFF" />
+                    <Text style={styles.updateReviewBtnText}>Update & Review</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleContinue}
+                style={styles.submitBtn}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.submitBtnText}>
+                    {getButtonText(screenIndex)}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </ScrollView>

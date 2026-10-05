@@ -8,17 +8,16 @@ export * from "./gst-certificate";
 export * from "./gst-status";
 
 // Common components
-export * from "./components/common";
+export * from "./components";
 
 // Landing screen
 export { GstScreen } from "./screens/GstScreen/GstScreen";
 
-// Shared hooks, services, store, types, validation & navigation
+// Shared hooks, services, store, types, validation & config
 export * from "./hooks/useGST";
 export * from "./services/GstService";
 export * from "./services/gstApi";
 export * from "./store/gstStore";
 export * from "./types/gst.types";
-export * from "./types/gstTypes";
+export * from "./types/gstDocumentConfig";
 export * from "./validation/gstSchema";
-export * from "./navigation/GSTNavigator";

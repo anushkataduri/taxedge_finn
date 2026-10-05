@@ -1,7 +1,9 @@
 import React from "react";
-import { Text } from "react-native";
+import { View, Text } from "react-native";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTheme } from "@/shared/hooks/useTheme";
+import { BrandColors } from "@/shared/theme";
 import {
   ComplianceFormData,
   UploadedDocInfo,
@@ -14,7 +16,7 @@ import {
 import { FileUploadCard } from "@/modules/gst/gst-compliance/components/FileUploadCard/FileUploadCard";
 import { NativeDatePickerInput } from "@/modules/gst/gst-compliance/components/NativeDatePickerInput/NativeDatePickerInput";
 import { FloatingLabelInput } from "@/modules/gst/gst-compliance/components/FloatingLabelInput/FloatingLabelInput";
-import { styles, getSectionHeaderColor } from "@/modules/gst/gst-compliance/components/RequestTypeSection/RequestTypeSection.styles";
+import { styles } from "@/modules/gst/gst-compliance/components/RequestTypeSection/RequestTypeSection.styles";
 
 export interface RequestTypeSectionProps {
   formData: ComplianceFormData;
@@ -47,9 +49,20 @@ export const RequestTypeSection: React.FC<RequestTypeSectionProps> = ({
         exiting={FadeOutUp.duration(200)}
         style={styles.sectionContainer}
       >
-        <Text style={[styles.sectionHeader, getSectionHeaderColor(isDark)]}>
-          Reconciliation Documents
-        </Text>
+        <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionIconBox, isDark && styles.sectionIconBoxDark]}>
+              <Ionicons name="git-compare-outline" size={18} color={BrandColors.PRIMARY_ORANGE} />
+            </View>
+            <View style={styles.sectionTitleWrap}>
+              <Text style={[styles.sectionMainTitle, isDark && styles.sectionMainTitleDark]}>
+                Reconciliation Documents & Details
+              </Text>
+              <Text style={[styles.sectionSubtitle, isDark && styles.sectionSubtitleDark]}>
+                Purchase & Sales registers against GSTR-2B
+              </Text>
+            </View>
+          </View>
 
         {/* 1. Purchase Register (Required - Image 1 Card) */}
         <FileUploadCard
@@ -106,6 +119,7 @@ export const RequestTypeSection: React.FC<RequestTypeSectionProps> = ({
           cardBackground={cardBg}
           onFocusScroll={() => onScrollField?.("reconciliationRemarks")}
         />
+        </View>
       </Animated.View>
     );
   }
@@ -117,9 +131,20 @@ export const RequestTypeSection: React.FC<RequestTypeSectionProps> = ({
       exiting={FadeOutUp.duration(200)}
       style={styles.sectionContainer}
     >
-      <Text style={[styles.sectionHeader, getSectionHeaderColor(isDark)]}>
-        Notice Details & Response
-      </Text>
+      <View style={[styles.card, isDark ? styles.cardDark : styles.cardLight]}>
+        <View style={styles.sectionHeaderRow}>
+          <View style={[styles.sectionIconBox, isDark && styles.sectionIconBoxDark]}>
+            <Ionicons name="document-text-outline" size={18} color={BrandColors.PRIMARY_ORANGE} />
+          </View>
+          <View style={styles.sectionTitleWrap}>
+            <Text style={[styles.sectionMainTitle, isDark && styles.sectionMainTitleDark]}>
+              Notice Details & Documents
+            </Text>
+            <Text style={[styles.sectionSubtitle, isDark && styles.sectionSubtitleDark]}>
+              Notice numbers, critical dates & notice copy
+            </Text>
+          </View>
+        </View>
 
       {/* 1. Notice Number (Required Floating Label) */}
       <FloatingLabelInput
@@ -129,10 +154,12 @@ export const RequestTypeSection: React.FC<RequestTypeSectionProps> = ({
         required
         value={formData.noticeNumber}
         onChangeText={(text) => {
-          onUpdateField("noticeNumber", text);
-          if (text) onClearError("noticeNumber");
+          const formatted = text.replace(/[^a-zA-Z0-9\/-]/g, "").toUpperCase();
+          onUpdateField("noticeNumber", formatted);
+          if (formatted) onClearError("noticeNumber");
         }}
         autoCapitalize="characters"
+        maxLength={30}
         error={errors.noticeNumber}
         cardBackground={cardBg}
         onClear={() => {
@@ -195,6 +222,7 @@ export const RequestTypeSection: React.FC<RequestTypeSectionProps> = ({
         cardBackground={cardBg}
         onFocusScroll={() => onScrollField?.("noticeRemarks")}
       />
+      </View>
     </Animated.View>
   );
 };

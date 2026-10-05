@@ -21,10 +21,8 @@ import {
   mapDtoToDocuments,
 } from "@/modules/gst/gst-registration/utils/gstRegistrationMapper";
 import { GstBusinessFormData } from "@/modules/gst/gst-registration/components/GstBusinessStep/GstBusinessStep";
-import {
-  INITIAL_DOCUMENTS,
-  DocumentItem,
-} from "@/modules/gst/gst-registration/components/GstUnifiedDocumentStep/GstUnifiedDocumentStep";
+import { INITIAL_DOCUMENTS } from "@/modules/gst/gst-registration/components/GstUnifiedDocumentStep/GstUnifiedDocumentStep";
+import { DocumentItem } from "@/modules/gst/gst-registration/components/GstUnifiedDocumentStep/GstUnifiedDocumentStep.types";
 
 // --- CONSTANTS & HELPERS ---
 

@@ -168,16 +168,26 @@ export function ApplicationCardItem({
         },
       ]}
     >
-      <ApplicationCardAvatar category={item.category} />
+      <ApplicationCardAvatar
+        category={item.category}
+        serviceId={item.serviceId}
+        serviceName={item.serviceName}
+      />
       <View style={styles.cardContent}>
         <View style={styles.cardTopRow}>
           <Text style={[styles.appIdText, { color: idColor }]}>{displayId}</Text>
           <View style={styles.cardBadgeWithArrow}>
-            <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
-              <Text style={[styles.statusBadgeText, { color: badge.text }]}>
-                {badge.label}
-              </Text>
-            </View>
+            {isDraft ? (
+              <View style={styles.resumeBadge}>
+                <Text style={styles.resumeBadgeText}>Resume</Text>
+              </View>
+            ) : (
+              <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
+                <Text style={[styles.statusBadgeText, { color: badge.text }]}>
+                  {badge.label}
+                </Text>
+              </View>
+            )}
             <Ionicons
               name="chevron-forward"
               size={17}
@@ -195,20 +205,6 @@ export function ApplicationCardItem({
         </Text>
 
         <View style={styles.cardBottomRow}>
-          {formattedDate ? (
-            <View style={styles.dateWrap}>
-              <Ionicons name="calendar-outline" size={13.5} color="#64748B" />
-              <Text style={styles.dateText}>{formattedDate}</Text>
-            </View>
-          ) : null}
-
-          <View style={styles.metaChip}>
-            <Ionicons name="document-attach-outline" size={12} color="#64748B" />
-            <Text style={styles.metaChipText}>
-              {pendingDocsCount} pending
-            </Text>
-          </View>
-
           <View style={styles.metaChip}>
             <Ionicons name="card-outline" size={12} color="#64748B" />
             <Text style={styles.metaChipText}>
@@ -218,11 +214,15 @@ export function ApplicationCardItem({
             </Text>
           </View>
 
-          <View style={styles.cardActionTextWrap}>
-            <Text style={styles.cardActionText}>
-              {isDraft ? "Resume" : "View Details"}
-            </Text>
-          </View>
+          {formattedDate ? (
+            <View style={styles.dateWrapRight}>
+              <Ionicons name="calendar-outline" size={13} color="#64748B" />
+              <Text style={styles.dateText}>{formattedDate}</Text>
+            </View>
+          ) : null}
+        </View>
+
+
 
           {isGstAmendment && item.formData?.gstin ? (
             <View style={[styles.gstinBadge, isDark && styles.gstinBadgeDark]}>
@@ -267,7 +267,6 @@ export function ApplicationCardItem({
             </View>
           ) : null}
         </View>
-      </View>
     </TouchableOpacity>
   );
 }

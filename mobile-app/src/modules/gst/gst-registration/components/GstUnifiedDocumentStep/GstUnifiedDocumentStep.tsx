@@ -1,21 +1,15 @@
 /**
  * Component: GstUnifiedDocumentStep
- * Refactored: Extracted massive UI blocks to GstDocumentCard and GstDocumentModals.
+ * Uses the Global GstDocumentCard with Image 4 ITR Checklist styling.
  */
 
 import React, { useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
-import { useDocumentUploadHelper } from "@/shared/hooks/useDocumentUploadHelper";
-import { DocumentUploadBottomSheet } from "@/shared/components/DocumentUploadBottomSheet";
-import { formatFileSize } from "@/modules/gst/utils/gstValidation";
 import { styles, getProgressFillStyle } from "./GstUnifiedDocumentStep.styles";
-import {
-  DocumentPreviewModal,
-  AddressProofSelectModal,
-} from "./GstDocumentModals";
-import { GstDocumentCard } from "./GstDocumentCard";
+import { AddressProofSelectModal } from "./GstDocumentModals";
+import { GstDocumentCard, GstDocumentItem } from "@/modules/gst/components/GstDocumentCard";
 import {
   DocumentUploadStatus,
   DocumentDisplayStatus,
@@ -25,9 +19,6 @@ import {
   isPdfDocument,
   STATUS_LABELS,
 } from "./GstUnifiedDocumentStep.types";
-
-export type { DocumentUploadStatus, DocumentDisplayStatus, DocumentItem };
-export { isDocumentUploaded, getDocumentStatus, isPdfDocument, STATUS_LABELS };
 
 export const INITIAL_DOCUMENTS: DocumentItem[] = [
   {
@@ -110,56 +101,9 @@ interface Props {
 export const GstUnifiedDocumentStep: React.FC<Props> = ({
   documents,
   onUpdateDocument,
-  onRetryUpload,
-  isUploading = false,
 }) => {
-  const [previewDocId, setPreviewDocId] = useState<string | null>(null);
   const [showAddressProofModal, setShowAddressProofModal] = useState(false);
-  const previewDoc = previewDocId
-    ? documents.find((d) => d.id === previewDocId) || null
-    : null;
-
-  const uploadHelper = useDocumentUploadHelper({
-    maxSizeMB: 10,
-    allowsEditing: false,
-    onProcessingStart: (docKey) => {
-      if (docKey) onUpdateDocument(docKey, { uploadStatus: "processing" });
-    },
-    onCancel: (docKey) => {
-      if (docKey) onUpdateDocument(docKey, { uploadStatus: undefined });
-    },
-    onError: (msg, docKey) => {
-      if (docKey) onUpdateDocument(docKey, { uploadStatus: undefined });
-      Alert.alert("Error", msg);
-    },
-    onSuccess: (file, docKey) => {
-      try {
-        if (!docKey) return;
-        const doc = documents.find((d) => d.id === docKey);
-        const isPdf = isPdfDocument({
-          mimeType: file.mimeType,
-          fileName: file.name,
-          fileUri: file.uri,
-        });
-        const baseName = (doc?.name || "Document").replace(/[\s/]/g, "_");
-        onUpdateDocument(docKey, {
-          fileUri: file.uri,
-          fileName: file.name || `${baseName}.${isPdf ? "pdf" : "jpg"}`,
-          fileSize: file.size ? formatFileSize(file.size) : undefined,
-          mimeType: file.mimeType || (isPdf ? "application/pdf" : "image/jpeg"),
-          uploadedAt: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          uploadStatus: undefined,
-          uploadError: undefined,
-          canRetry: undefined,
-        });
-      } catch (err) {
-        console.error("Error handling upload success:", err);
-      }
-    },
-  });
+  const [addressUploadTrigger, setAddressUploadTrigger] = useState(0);
 
   const uploadedCount = documents.reduce(
     (c, d) => (isDocumentUploaded(d) ? c + 1 : c),
@@ -169,69 +113,6 @@ export const GstUnifiedDocumentStep: React.FC<Props> = ({
   const totalCount = documents.length;
   const progressPercent =
     totalCount > 0 ? (selectedCount / totalCount) * 100 : 0;
-
-  const handleOpenUpload = (docId: string) => {
-    try {
-      if (isUploading) return;
-      const targetDoc = documents.find((d) => d.id === docId);
-      if (!targetDoc) return;
-
-      if (
-        targetDoc.id === "address-proof" &&
-        targetDoc.subtitle === ADDRESS_PROOF_PLACEHOLDER
-      ) {
-        Alert.alert(
-          "Select Document Type",
-          "Please select the type of address proof first.",
-          [{ text: "OK", onPress: () => setShowAddressProofModal(true) }],
-        );
-        return;
-      }
-
-      uploadHelper.openUploadSheet(docId, targetDoc.name || "Document");
-    } catch (err: unknown) {
-      console.error("Error initiating document upload:", err);
-      Alert.alert("Upload Error", "Unable to open document picker.");
-    }
-  };
-
-  const handleRemoveDoc = (docId: string) => {
-    try {
-      if (isUploading) return;
-      Alert.alert(
-        "Remove Document",
-        "Are you sure you want to remove this document?",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Remove",
-            style: "destructive",
-            onPress: () => {
-              try {
-                onUpdateDocument(docId, {
-                  fileUri: undefined,
-                  fileName: undefined,
-                  fileSize: undefined,
-                  mimeType: undefined,
-                  uploadedAt: undefined,
-                  uploadStatus: undefined,
-                  uploadError: undefined,
-                  canRetry: undefined,
-                });
-                if (previewDocId === docId) {
-                  setPreviewDocId(null);
-                }
-              } catch (e) {
-                console.error("Failed to remove document:", e);
-              }
-            },
-          },
-        ],
-      );
-    } catch (err: unknown) {
-      console.error("Error removing document:", err);
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -276,18 +157,55 @@ export const GstUnifiedDocumentStep: React.FC<Props> = ({
               {categoryDocs.map((doc) => (
                 <GstDocumentCard
                   key={doc.id}
-                  doc={doc}
-                  status={getDocumentStatus(doc)}
-                  isUploading={isUploading}
-                  needsAddressProof={
-                    doc.id === "address-proof" &&
-                    doc.subtitle === ADDRESS_PROOF_PLACEHOLDER
+                  item={{
+                    id: doc.id,
+                    name: doc.name,
+                    subtitle: doc.subtitle,
+                    required: doc.required,
+                    fileUri: doc.fileUri,
+                    fileName: doc.fileName,
+                    fileSize: doc.fileSize,
+                    iconName: doc.iconName as any,
+                    iconBg: doc.iconBg,
+                    iconColor: doc.iconColor,
+                    category: doc.category,
+                    status: doc.fileUri ? "uploaded" : undefined,
+                    errorMessage: doc.uploadError,
+                  }}
+                  isDropdownSelector={doc.id === "address-proof"}
+                  dropdownValue={doc.subtitle}
+                  triggerUploadKey={
+                    doc.id === "address-proof" ? addressUploadTrigger : undefined
                   }
-                  onOpenAddressModal={() => setShowAddressProofModal(true)}
-                  onPreview={setPreviewDocId}
-                  onReplace={handleOpenUpload}
-                  onRemove={handleRemoveDoc}
-                  onRetry={onRetryUpload}
+                  onDropdownPress={() => setShowAddressProofModal(true)}
+                  onUploadSuccess={(id, asset) => {
+                    onUpdateDocument(id, {
+                      fileUri: asset.uri,
+                      fileName: asset.name,
+                      fileSize: asset.size,
+                      mimeType: asset.mimeType,
+                      uploadedAt: new Date().toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }),
+                      uploadStatus: undefined,
+                      uploadError: undefined,
+                    });
+                  }}
+                  onUploadError={(id, msg) => {
+                    onUpdateDocument(id, { uploadError: msg });
+                  }}
+                  onRemove={(id) => {
+                    onUpdateDocument(id, {
+                      fileUri: undefined,
+                      fileName: undefined,
+                      fileSize: undefined,
+                      mimeType: undefined,
+                      uploadedAt: undefined,
+                      uploadStatus: undefined,
+                      uploadError: undefined,
+                    });
+                  }}
                 />
               ))}
             </View>
@@ -307,29 +225,15 @@ export const GstUnifiedDocumentStep: React.FC<Props> = ({
         </Text>
       </View>
 
-      <DocumentUploadBottomSheet
-        visible={uploadHelper.isSheetVisible}
-        documentTitle={uploadHelper.currentDocTitle}
-        maxSizeText="10 MB"
-        onClose={uploadHelper.closeUploadSheet}
-        onPickFiles={uploadHelper.pickFiles}
-        onPickGallery={uploadHelper.pickGallery}
-        onTakePhoto={uploadHelper.takePhoto}
-      />
-      <DocumentPreviewModal
-        previewDoc={previewDoc}
-        isUploading={isUploading}
-        onClose={() => setPreviewDocId(null)}
-        onReplace={(id) => {
-          setPreviewDocId(null);
-          handleOpenUpload(id);
-        }}
-      />
       <AddressProofSelectModal
         visible={showAddressProofModal}
         currentValue={documents.find((d) => d.id === "address-proof")?.subtitle}
         onClose={() => setShowAddressProofModal(false)}
-        onSelect={(p) => onUpdateDocument("address-proof", { subtitle: p })}
+        onSelect={(p) => {
+          onUpdateDocument("address-proof", { subtitle: p });
+          setShowAddressProofModal(false);
+          setAddressUploadTrigger((prev) => prev + 1);
+        }}
       />
     </View>
   );

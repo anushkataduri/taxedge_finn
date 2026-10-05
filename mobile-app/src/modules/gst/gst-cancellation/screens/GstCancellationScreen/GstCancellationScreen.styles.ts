@@ -119,6 +119,10 @@ export const styles = StyleSheet.create({
     borderWidth: thin, borderColor: border, paddingHorizontal: 14,
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
   },
+  calendarIconBox: {
+    width: 28, height: 28, borderRadius: 8,
+    backgroundColor: "#E0F2FE", alignItems: "center", justifyContent: "center",
+  },
   selectText: {
     fontSize: Typography.fontSize.base,
     fontWeight: Typography.fontWeight.semiBold,
@@ -359,12 +363,52 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
   selectBoxChoiceSelected: {
-    borderColor: BrandColors.PRIMARY_BLUE,
-    backgroundColor: "#F0F9FF",
+    borderColor: BrandColors.PRIMARY_ORANGE,
+    backgroundColor: "#FFF7ED",
   },
   selectTextSelected: {
-    color: BrandColors.PRIMARY_BLUE,
-    fontWeight: "600",
+    color: BrandColors.PRIMARY_ORANGE,
+    fontWeight: "700",
+  },
+  sectionCard: {
+    backgroundColor: white,
+    borderRadius: 16,
+    padding: Spacing.base,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    gap: 14,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 2,
+  },
+  sectionIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: "#FFF7ED",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sectionTitleWrap: {
+    flex: 1,
+  },
+  sectionMainTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 1,
   },
   secondaryBtnDanger: {
     marginTop: 4,

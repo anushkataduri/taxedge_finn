@@ -1,12 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
-import {
-  pickImageAssetFromGallery,
-  pickImageAssetFromCamera,
-} from "@/modules/gst/utils/imageUploadHelper";
-import { formatFileSize } from "@/modules/gst/utils/gstValidation";
 import {
   DocumentBadgeType,
   FilingDocItem,
@@ -19,10 +14,6 @@ import {
   updateDocumentInList,
 } from "@/modules/gst/gst-filing/components/GstFilingDocumentsStep/gstDocStepUtils";
 import { RecursiveCategorySections } from "@/modules/gst/gst-filing/components/GstFilingDocumentsStep/RecursiveDocSections";
-import { GstDocumentPreviewModal } from "@/modules/gst/gst-filing/components/GstFilingDocumentsStep/GstDocumentPreviewModal";
-
-export type { DocumentBadgeType, FilingDocItem };
-export { INITIAL_FILING_DOCS };
 
 interface GstFilingDocumentsStepProps {
   documents?: FilingDocItem[];
@@ -38,7 +29,6 @@ export const GstFilingDocumentsStep: React.FC<GstFilingDocumentsStepProps> = ({
   filingNature = "Regular Return",
 }) => {
   const [internalDocs, setInternalDocs] = useState<FilingDocItem[]>(INITIAL_FILING_DOCS);
-  const [previewDoc, setPreviewDoc] = useState<FilingDocItem | null>(null);
 
   const documents = externalDocuments || internalDocs;
 
@@ -54,60 +44,32 @@ export const GstFilingDocumentsStep: React.FC<GstFilingDocumentsStepProps> = ({
   const totalCount = documents.length;
   const progressPercent = totalCount > 0 ? (uploadedCount / totalCount) * 100 : 0;
 
-  const handleUploadOption = async (docId: string, source: "gallery" | "camera") => {
-    const asset =
-      source === "camera"
-        ? await pickImageAssetFromCamera()
-        : await pickImageAssetFromGallery();
-
-    if (asset) {
-      const updatedList = updateDocumentInList(documents, docId, (doc) => ({
-        ...doc,
-        fileUri: asset.uri,
-        fileName: `${doc.name.replace(/[\s/()&]/g, "_")}.jpg`,
-        fileSize: asset.fileSize ? formatFileSize(asset.fileSize) : undefined,
-        uploadedAt: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      }));
-      setDocs(updatedList);
-    }
-  };
-
-  const handlePromptUpload = (docId: string) => {
-    Alert.alert("Upload Document", "Choose source to select document image:", [
-      { text: "Camera", onPress: () => handleUploadOption(docId, "camera") },
-      { text: "Photo Gallery", onPress: () => handleUploadOption(docId, "gallery") },
-      { text: "Cancel", style: "cancel" },
-    ]);
+  const handleUploadSuccess = (
+    docId: string,
+    asset: { uri: string; name: string; size: string }
+  ) => {
+    const updatedList = updateDocumentInList(documents, docId, (doc) => ({
+      ...doc,
+      fileUri: asset.uri,
+      fileName: asset.name,
+      fileSize: asset.size,
+      uploadedAt: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    }));
+    setDocs(updatedList);
   };
 
   const handleRemoveDoc = (docId: string) => {
-    Alert.alert(
-      "Remove Document",
-      "Are you sure you want to remove this uploaded filing document?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: () => {
-            const updated = updateDocumentInList(documents, docId, (doc) => ({
-              ...doc,
-              fileUri: undefined,
-              fileName: undefined,
-              fileSize: undefined,
-              uploadedAt: undefined,
-            }));
-            setDocs(updated);
-            if (previewDoc?.id === docId) {
-              setPreviewDoc(null);
-            }
-          },
-        },
-      ]
-    );
+    const updated = updateDocumentInList(documents, docId, (doc) => ({
+      ...doc,
+      fileUri: undefined,
+      fileName: undefined,
+      fileSize: undefined,
+      uploadedAt: undefined,
+    }));
+    setDocs(updated);
   };
 
   return (
@@ -168,9 +130,7 @@ export const GstFilingDocumentsStep: React.FC<GstFilingDocumentsStepProps> = ({
         categories={FILING_DOC_CATEGORIES}
         documents={documents}
         filingNature={filingNature}
-        onPreview={setPreviewDoc}
-        onPromptUpload={handlePromptUpload}
-        onUploadOption={handleUploadOption}
+        onUploadSuccess={handleUploadSuccess}
         onRemoveDoc={handleRemoveDoc}
       />
 
@@ -186,14 +146,6 @@ export const GstFilingDocumentsStep: React.FC<GstFilingDocumentsStepProps> = ({
           certified Chartered Accountants review your books.
         </Text>
       </View>
-
-      {/* Full-Screen Document Preview Modal */}
-      <GstDocumentPreviewModal
-        visible={Boolean(previewDoc)}
-        previewDoc={previewDoc}
-        onClose={() => setPreviewDoc(null)}
-        onPromptUpload={handlePromptUpload}
-      />
     </View>
   );
 };
