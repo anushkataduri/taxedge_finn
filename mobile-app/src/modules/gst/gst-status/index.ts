@@ -1,1 +1,2 @@
-export * from "./components/GstApplicationStatusStep/GstApplicationStatusStep";
+export * from "./components";
+export * from "./types/gstStatusTypes";

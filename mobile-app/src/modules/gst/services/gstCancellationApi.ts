@@ -2,20 +2,11 @@ import { apiClient } from "../../../core/api/apiClient";
 import { getActiveBaseUrl } from "../../../core/api/apiConfig";
 import { tokenManager } from "../../../core/authentication/tokenManager";
 import { tokenRefreshManager } from "../../../core/authentication/tokenRefreshManager";
+import type { CancellationFormData, CancellationDto } from "../gst-cancellation/types/gstCancellationTypes";
 
 const MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
 function parseDateToISO(dateStr: string): string | null {
@@ -34,12 +25,19 @@ function parseDateToISO(dateStr: string): string | null {
   return null;
 }
 
+export class GstCancellationError extends Error {
+  constructor(message: string, public readonly statusCode?: number) {
+    super(message);
+    this.name = "GstCancellationError";
+  }
+}
+
 export const gstCancellationApi = {
-  createCancellation: async (data: any) => {
+  createCancellation: async (data: CancellationFormData): Promise<string> => {
     const formData = new FormData();
 
-    // Build DTO matching the backend GstCancellationDto
-    const dto = {
+    // Build DTO matching backend GstCancellationDto
+    const dto: CancellationDto = {
       gstin: data.gstin || "29AAAAA0000A1Z5",
       reasonForCancellation:
         data.reason === "Other Valid Reason" ? data.otherReason : data.reason,
@@ -63,8 +61,8 @@ export const gstCancellationApi = {
 
     const baseUrl = apiClient.getBaseUrl() || (await getActiveBaseUrl());
     if (!baseUrl) {
-      throw new Error(
-        "Backend URL is not configured. Set the API URL before submitting GST cancellation data.",
+      throw new GstCancellationError(
+        "Backend URL is not configured. Set the API URL before submitting GST cancellation data."
       );
     }
     const url = `${baseUrl.replace(/\/$/, "")}/api/v1/gst/cancellation`;
@@ -90,20 +88,21 @@ export const gstCancellationApi = {
           resolve(xhr.responseText);
         } else {
           reject(
-            new Error(
-              "Cancellation upload failed: " +
-                xhr.status +
-                " " +
-                xhr.responseText,
-            ),
+            new GstCancellationError(
+              `Cancellation submission failed (${xhr.status}): ${xhr.responseText}`,
+              xhr.status
+            )
           );
         }
       };
 
-      xhr.onerror = () =>
-        reject(new Error("Network error during Cancellation upload"));
+      xhr.onerror = () => {
+        reject(new GstCancellationError("Network error during GST Cancellation upload"));
+      };
 
       xhr.send(formData);
     });
   },
 };
+
+export default gstCancellationApi;

@@ -57,6 +57,8 @@ export interface SubmissionResult {
   appId: string;
   sectionTitle: string;
   isCore: boolean;
+  gstin: string;
+  estCompletion: string;
 }
 
 export interface AmendmentFormData {

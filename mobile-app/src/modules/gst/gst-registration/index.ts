@@ -5,14 +5,11 @@
 
 // Screen
 export * from "./screens/GstRegistrationScreen/GstRegistrationScreen";
-export { default as GstRegistrationScreen } from "./screens/GstRegistrationScreen/GstRegistrationScreen";
 
 // Components
-export * from "./components/GstStepIndicator/GstStepIndicator";
 export * from "./components/GstBusinessStep/GstBusinessStep";
 export * from "./components/GstBusinessStep/GstFormElements";
 export * from "./components/GstUnifiedDocumentStep/GstUnifiedDocumentStep";
-export * from "./components/GstUnifiedDocumentStep/GstDocumentCard";
 export * from "./components/GstUnifiedDocumentStep/GstDocumentModals";
 export * from "./components/GstUnifiedDocumentStep/GstUnifiedDocumentStep.types";
 export * from "./components/GstReviewStep/GstReviewStep";

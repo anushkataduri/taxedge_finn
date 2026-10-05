@@ -9,6 +9,37 @@ import {
  * Follows standard Indian Government format rules for PAN, Aadhaar, GSTIN, IFSC, etc.
  */
 
+/**
+ * Exception-safe date parser supporting both DD-MM-YYYY and ISO YYYY-MM-DD formats.
+ */
+export const parseAnyDate = (value?: string | null): Date | null => {
+  if (!value) return null;
+  const clean = value.trim();
+  // 1. Try DD-MM-YYYY or DD/MM/YYYY
+  const ddmmMatch = /^(\d{2})[-/](\d{2})[-/](\d{4})$/.exec(clean);
+  if (ddmmMatch) {
+    const day = Number(ddmmMatch[1]);
+    const month = Number(ddmmMatch[2]) - 1;
+    const year = Number(ddmmMatch[3]);
+    const d = new Date(year, month, day);
+    if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+      return d;
+    }
+  }
+  // 2. Try YYYY-MM-DD or YYYY/MM/DD
+  const ymdMatch = /^(\d{4})[-/](\d{2})[-/](\d{2})$/.exec(clean);
+  if (ymdMatch) {
+    const year = Number(ymdMatch[1]);
+    const month = Number(ymdMatch[2]) - 1;
+    const day = Number(ymdMatch[3]);
+    const d = new Date(year, month, day);
+    if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+      return d;
+    }
+  }
+  return null;
+};
+
 export const GstValidators = {
   isValidBusinessName: (value: string): boolean => {
     const clean = value.trim();
@@ -168,7 +199,7 @@ export const GstValidators = {
       case "businessStartDate":
         if (!GstValidators.isNotEmpty(value, 1)) return "Business start date is required";
         {
-          const startDate = parseDDMMYYYY(value);
+          const startDate = parseAnyDate(value);
           if (!startDate) return "Enter a valid date in DD-MM-YYYY format";
           if (isFutureDate(startDate)) return "Commencement date cannot be in the future";
         }
@@ -238,7 +269,7 @@ export const GstValidators = {
         return "";
       case "signatoryDob": {
         if (!GstValidators.isNotEmpty(value, 1)) return "Date of birth is required";
-        const dob = parseDDMMYYYY(value);
+        const dob = parseAnyDate(value);
         if (!dob) return "Enter a valid date in DD-MM-YYYY format";
         if (isFutureDate(dob)) return "Date of birth cannot be in the future";
         return "";

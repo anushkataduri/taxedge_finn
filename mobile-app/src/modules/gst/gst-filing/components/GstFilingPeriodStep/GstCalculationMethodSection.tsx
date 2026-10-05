@@ -87,7 +87,7 @@ export const GstCalculationMethodSection: React.FC<GstCalculationMethodSectionPr
             </Text>
             <TextInput
               style={styles.estimateInput}
-              placeholder="e.g. 4,25,000"
+              placeholder="Enter sales amount"
               placeholderTextColor="#94A3B8"
               keyboardType="numeric"
               value={formatIndianNumberInput(taxableSales)}
@@ -103,7 +103,7 @@ export const GstCalculationMethodSection: React.FC<GstCalculationMethodSectionPr
             </Text>
             <TextInput
               style={styles.estimateInput}
-              placeholder="e.g. 2,15,000"
+              placeholder="Enter purchases amount"
               placeholderTextColor="#94A3B8"
               keyboardType="numeric"
               value={formatIndianNumberInput(taxablePurchases)}
@@ -119,7 +119,7 @@ export const GstCalculationMethodSection: React.FC<GstCalculationMethodSectionPr
             </Text>
             <TextInput
               style={styles.estimateInput}
-              placeholder="e.g. 22,500"
+              placeholder="Enter eligible ITC amount"
               placeholderTextColor="#94A3B8"
               keyboardType="numeric"
               value={formatIndianNumberInput(eligibleItc)}

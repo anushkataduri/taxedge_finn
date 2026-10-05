@@ -63,6 +63,8 @@ export interface UniversalDatePickerProps {
   containerStyle?: StyleProp<ViewStyle>;
   inputStyle?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
+  /** Optional icon tint color. Defaults to blue "#0284C7" */
+  iconColor?: string;
 }
 
 const MONTHS = [
@@ -132,6 +134,7 @@ export const UniversalDatePicker: React.FC<UniversalDatePickerProps> = ({
   containerStyle,
   inputStyle,
   textStyle,
+  iconColor: customIconColor,
 }) => {
   const { isDark } = useTheme();
   const [showPicker, setShowPicker] = useState(false);
@@ -167,19 +170,22 @@ export const UniversalDatePicker: React.FC<UniversalDatePickerProps> = ({
     setShowPicker(true);
   };
 
-  const handleNativeChange = (
-    event: DateTimePickerEvent,
+  const handleAndroidValueChange = (
+    _event: any,
     selectedDate?: Date
   ) => {
-    if (Platform.OS === "android") {
-      setShowPicker(false);
+    setShowPicker(false);
+    if (selectedDate) {
+      onChange(formatOutput(selectedDate));
     }
-    if (event.type === "set" && selectedDate) {
-      if (Platform.OS === "ios") {
-        setTempIosDate(selectedDate);
-      } else {
-        onChange(formatOutput(selectedDate));
-      }
+  };
+
+  const handleIosValueChange = (
+    _event: any,
+    selectedDate?: Date
+  ) => {
+    if (selectedDate) {
+      setTempIosDate(selectedDate);
     }
   };
 
@@ -192,7 +198,7 @@ export const UniversalDatePicker: React.FC<UniversalDatePickerProps> = ({
     setShowPicker(false);
   };
 
-  const iconColor = isDark ? "#94A3B8" : "#64748B";
+  const iconColor = customIconColor || (isDark ? "#94A3B8" : "#0284C7");
   const errorNode = error && showErrorText ? <Text style={styles.errorText}>{error}</Text> : null;
   const helperNode = helperText && !error ? <Text style={styles.helperText}>{helperText}</Text> : null;
   const labelNode = label ? (
@@ -273,7 +279,7 @@ export const UniversalDatePicker: React.FC<UniversalDatePickerProps> = ({
             <Ionicons
               name="calendar-outline"
               size={18}
-              color={error ? "#DC2626" : "#EA580C"}
+              color={error ? "#DC2626" : iconColor}
             />
           </TouchableOpacity>
         </View>
@@ -284,7 +290,7 @@ export const UniversalDatePicker: React.FC<UniversalDatePickerProps> = ({
           style={[styles.inputBox, getInputBoxThemeStyle(isDark, !!error), inputStyle]}
         >
           <View style={styles.iconBox}>
-            <Ionicons name="calendar-outline" size={17} color="#EA580C" />
+            <Ionicons name="calendar-outline" size={17} color={error ? "#DC2626" : iconColor} />
           </View>
 
           <Text
@@ -311,7 +317,8 @@ export const UniversalDatePicker: React.FC<UniversalDatePickerProps> = ({
           value={currentDate}
           mode="date"
           display="default"
-          onChange={handleNativeChange}
+          onValueChange={handleAndroidValueChange}
+          onDismiss={() => setShowPicker(false)}
           minimumDate={effectiveMinDate}
           maximumDate={maximumDate}
         />
@@ -343,7 +350,8 @@ export const UniversalDatePicker: React.FC<UniversalDatePickerProps> = ({
                 value={tempIosDate}
                 mode="date"
                 display="spinner"
-                onChange={handleNativeChange}
+                onValueChange={handleIosValueChange}
+                onDismiss={handleIosCancel}
                 minimumDate={effectiveMinDate}
                 maximumDate={maximumDate}
                 textColor={isDark ? "#F8FAFC" : "#0F172A"}

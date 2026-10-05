@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, Image, StyleSheet } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Svg, { Path, Rect } from "react-native-svg";
 import type { ServiceCategoryId } from "@/types/domain";
@@ -138,14 +138,66 @@ const AVATAR_ICON_BUILDERS: Partial<
   ),
 };
 
+const GST_SERVICE_ICONS: Record<string, any> = {
+  "gst-registration": require("../../../../assets/images/services/gst/gst_registration.png"),
+  "gst-filing": require("../../../../assets/images/services/gst/gst_filing.png"),
+  "gst-compliance": require("../../../../assets/images/services/gst/gst_compliance.png"),
+  "gst-amendment": require("../../../../assets/images/services/gst/gst_amendment.png"),
+  "gst-cancellation": require("../../../../assets/images/services/gst/gst_cancellation.png"),
+  "gst-certificate": require("../../../../assets/images/services/gst/gst_certificate.png"),
+};
+
+const localStyles = StyleSheet.create({
+  serviceIconImage: {
+    width: 32,
+    height: 32,
+  },
+  gstAvatarBox: {
+    backgroundColor: "#F0FDF4",
+  },
+});
+
+function getGstServiceIcon(serviceId?: string, serviceName?: string) {
+  if (serviceId && GST_SERVICE_ICONS[serviceId]) {
+    return GST_SERVICE_ICONS[serviceId];
+  }
+  const lower = (serviceName || "").toLowerCase();
+  if (lower.includes("registration")) return GST_SERVICE_ICONS["gst-registration"];
+  if (lower.includes("filing")) return GST_SERVICE_ICONS["gst-filing"];
+  if (lower.includes("amendment")) return GST_SERVICE_ICONS["gst-amendment"];
+  if (lower.includes("cancellation")) return GST_SERVICE_ICONS["gst-cancellation"];
+  if (lower.includes("compliance")) return GST_SERVICE_ICONS["gst-compliance"];
+  if (lower.includes("certificate")) return GST_SERVICE_ICONS["gst-certificate"];
+  return null;
+}
+
 export function ApplicationCardAvatar({
   category,
+  serviceId,
+  serviceName,
 }: {
   category: ServiceCategoryId;
+  serviceId?: string;
+  serviceName?: string;
 }) {
   const isOrange = category === "BUSINESS" || category === "LOANS";
   const bg = isOrange ? "#FFF1E8" : "#EAF2FF";
   const color = isOrange ? "#EA580C" : "#083B75";
+
+  if (category === "GST") {
+    const gstIcon = getGstServiceIcon(serviceId, serviceName);
+    if (gstIcon) {
+      return (
+        <View style={[styles.avatarBox, localStyles.gstAvatarBox]}>
+          <Image
+            source={gstIcon}
+            style={localStyles.serviceIconImage}
+            resizeMode="contain"
+          />
+        </View>
+      );
+    }
+  }
 
   const icon = AVATAR_ICON_BUILDERS[category]?.(color) ?? (
     <Ionicons name="document-text-outline" size={26} color={color} />

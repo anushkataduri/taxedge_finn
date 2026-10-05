@@ -16,12 +16,20 @@ import { useApplicationStore } from "@/store/applicationStore";
 import { applicationService } from "@/modules/applications/services/applicationService";
 import { gstApi } from "@/modules/gst/services/gstApi";
 import { useGstFiling } from "@/modules/gst/gst-filing/hooks/useGstFiling";
+import { GstStepHeader } from "@/modules/gst/components/GstStepHeader";
 import {
   styles,
   getHeaderBarStyle,
   getScrollContentStyle,
   getSubmitButtonStyle,
 } from "@/modules/gst/gst-filing/screens/GstFilingScreen/GstFilingScreen.styles";
+
+const FILING_STEP_LABELS = [
+  "Filing Period",
+  "Upload Documents",
+  "Review & Summary",
+  "Service Payment",
+];
 
 export const GstFilingScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -114,22 +122,32 @@ export const GstFilingScreen: React.FC = () => {
 
   return (
     <View style={styles.root}>
-      {/* Top Header Bar */}
-      <View style={[styles.headerBar, getHeaderBarStyle(insets.top)]}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={handleBack}
-          style={styles.backButton}
-        >
-          <Ionicons
-            name="chevron-back"
-            size={20}
-            color={BrandColors.TEXT_PRIMARY}
-          />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{getScreenTitle()}</Text>
-        <View style={styles.placeholderBox} />
-      </View>
+      {/* Top Header Bar with ITR-style step indicator */}
+      {currentStep < 4 ? (
+        <GstStepHeader
+          title="GST Filing"
+          currentStep={currentStep + 1}
+          totalSteps={4}
+          stepLabel={FILING_STEP_LABELS[currentStep] || "Filing"}
+          onBack={handleBack}
+        />
+      ) : (
+        <View style={[styles.headerBar, getHeaderBarStyle(insets.top)]}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={handleBack}
+            style={styles.backButton}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={20}
+              color={BrandColors.TEXT_PRIMARY}
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{getScreenTitle()}</Text>
+          <View style={styles.placeholderBox} />
+        </View>
+      )}
 
       {/* Main Scroll Content */}
       <KeyboardAwareScrollView

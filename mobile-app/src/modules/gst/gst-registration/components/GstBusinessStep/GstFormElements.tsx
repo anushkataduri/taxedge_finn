@@ -173,7 +173,7 @@ export const FormDatePicker: React.FC<DatePickerProps> = ({
       <Ionicons
         name="calendar-outline"
         size={18}
-        color={error ? "#DC2626" : BrandColors.PRIMARY_ORANGE}
+        color={error ? "#DC2626" : "#0284C7"}
       />
     </TouchableOpacity>
     {error ? <Text style={styles.errorText}>{error}</Text> : null}

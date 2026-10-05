@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { GstRegistrationDraft, GstFilingDraft } from "../types/gstTypes";
+import type { GstRegistrationDraft, GstFilingDraft } from "../types/gst.types";
 
 interface GstStoreState {
   registrationDraft: Partial<GstRegistrationDraft>;

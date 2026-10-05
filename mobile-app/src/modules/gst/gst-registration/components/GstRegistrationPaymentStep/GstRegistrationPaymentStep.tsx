@@ -223,7 +223,7 @@ export const GstRegistrationPaymentStep: React.FC<
               setUpiId(t);
               setUpiError("");
             }}
-            placeholder="e.g. yourname@okhdfcbank"
+            placeholder="Enter UPI ID (e.g. name@upi)"
             placeholderTextColor="#94A3B8"
             autoCapitalize="none"
             editable={!isProcessing}

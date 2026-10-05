@@ -8,9 +8,10 @@ import { filterDocsByCategory } from "@/modules/gst/gst-filing/components/GstFil
 interface RecursiveDocListProps {
   docs: readonly FilingDocItem[];
   filingNature?: "Regular Return" | "Nil Return";
-  onPreview: (doc: FilingDocItem) => void;
-  onPromptUpload: (docId: string) => void;
-  onUploadOption: (docId: string, source: "gallery" | "camera") => void;
+  onUploadSuccess: (
+    id: string,
+    asset: { uri: string; name: string; size: string }
+  ) => void;
   onRemoveDoc: (docId: string) => void;
   index?: number;
 }
@@ -18,9 +19,7 @@ interface RecursiveDocListProps {
 export const RecursiveDocList: React.FC<RecursiveDocListProps> = ({
   docs,
   filingNature,
-  onPreview,
-  onPromptUpload,
-  onUploadOption,
+  onUploadSuccess,
   onRemoveDoc,
   index = 0,
 }) => {
@@ -36,17 +35,13 @@ export const RecursiveDocList: React.FC<RecursiveDocListProps> = ({
         key={doc.id}
         doc={doc}
         filingNature={filingNature}
-        onPreview={onPreview}
-        onPromptUpload={onPromptUpload}
-        onUploadOption={onUploadOption}
+        onUploadSuccess={onUploadSuccess}
         onRemoveDoc={onRemoveDoc}
       />
       <RecursiveDocList
         docs={docs}
         filingNature={filingNature}
-        onPreview={onPreview}
-        onPromptUpload={onPromptUpload}
-        onUploadOption={onUploadOption}
+        onUploadSuccess={onUploadSuccess}
         onRemoveDoc={onRemoveDoc}
         index={index + 1}
       />
@@ -58,9 +53,10 @@ interface RecursiveCategorySectionsProps {
   categories: readonly FilingDocItem["category"][];
   documents: readonly FilingDocItem[];
   filingNature?: "Regular Return" | "Nil Return";
-  onPreview: (doc: FilingDocItem) => void;
-  onPromptUpload: (docId: string) => void;
-  onUploadOption: (docId: string, source: "gallery" | "camera") => void;
+  onUploadSuccess: (
+    id: string,
+    asset: { uri: string; name: string; size: string }
+  ) => void;
   onRemoveDoc: (docId: string) => void;
   index?: number;
 }
@@ -69,9 +65,7 @@ export const RecursiveCategorySections: React.FC<RecursiveCategorySectionsProps>
   categories,
   documents,
   filingNature,
-  onPreview,
-  onPromptUpload,
-  onUploadOption,
+  onUploadSuccess,
   onRemoveDoc,
   index = 0,
 }) => {
@@ -91,9 +85,7 @@ export const RecursiveCategorySections: React.FC<RecursiveCategorySectionsProps>
             <RecursiveDocList
               docs={categoryDocs}
               filingNature={filingNature}
-              onPreview={onPreview}
-              onPromptUpload={onPromptUpload}
-              onUploadOption={onUploadOption}
+              onUploadSuccess={onUploadSuccess}
               onRemoveDoc={onRemoveDoc}
             />
           </View>
@@ -103,9 +95,7 @@ export const RecursiveCategorySections: React.FC<RecursiveCategorySectionsProps>
         categories={categories}
         documents={documents}
         filingNature={filingNature}
-        onPreview={onPreview}
-        onPromptUpload={onPromptUpload}
-        onUploadOption={onUploadOption}
+        onUploadSuccess={onUploadSuccess}
         onRemoveDoc={onRemoveDoc}
         index={index + 1}
       />
