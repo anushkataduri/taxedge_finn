@@ -151,7 +151,6 @@ export const ProjectFinanceScreen: React.FC = () => {
 
         {/* Sticky Bottom Action Bar */}
         <LoanNavigation
-          onBack={wizard.handleBack}
           onNext={handleNextOrSubmit}
           isFirstStep={wizard.isFirstStep}
           isLastStep={wizard.isLastStep}

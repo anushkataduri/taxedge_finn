@@ -1,2 +1,3 @@
-export * from "./components";
-export * from "./screens/MsmeLoanScreen";
+export { BusinessLoanScreen, BusinessLoanScreen as MsmeLoanScreen } from "../business-loan";
+
+

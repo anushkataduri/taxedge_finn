@@ -6,7 +6,6 @@ import { TdsChecklistItem } from "@/modules/itr/tds/types/checklist.types";
 import { LoanDocumentItem, LoanDocumentCategory } from "../../../types/loans.types";
 import type { LoanDocuments } from "../../../hooks/useLoanDocuments";
 import { DocumentPreviewModal } from "../../../components/DocumentPreviewModal";
-import { getProgressWidth } from "../../../styles/loanScreenLayout.styles";
 import { styles } from "./MachineryLoanDocumentsStep.styles";
 
 export interface MachineryLoanDocumentsStepProps {
@@ -36,9 +35,8 @@ const mapLoanDocToTdsChecklist = (doc: LoanDocumentItem): TdsChecklistItem => {
 };
 
 export const MachineryLoanDocumentsStep: React.FC<MachineryLoanDocumentsStepProps> = ({ loanDocuments }) => {
-  const { documents, progress, openUpload, removeDocument, openPreview, uploadSheetProps, previewModalProps } =
+  const { documents, openUpload, removeDocument, openPreview, uploadSheetProps, previewModalProps } =
     loanDocuments;
-  const { uploadedRequired, totalRequired, requiredPercent } = progress;
 
   const renderDocumentCard = (doc: LoanDocumentItem) => (
     <TdsDocumentCard
@@ -65,30 +63,6 @@ export const MachineryLoanDocumentsStep: React.FC<MachineryLoanDocumentsStepProp
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Required Documents</Text>
-      <Text style={styles.sectionSubtitle}>
-        Upload minimum KYC, bank statement and OEM quotation to process machinery loan.
-      </Text>
-
-      {/* Progress Bar */}
-      <View style={styles.progressContainer}>
-        <View style={styles.progressHeader}>
-          <Text style={styles.progressTitle}>Required documents</Text>
-          <Text style={styles.progressCount}>
-            {uploadedRequired} / {totalRequired} ({requiredPercent}%)
-          </Text>
-        </View>
-        <View style={styles.progressBarTrack}>
-          <View
-            style={[
-              styles.progressBarFill,
-              requiredPercent === 100 && styles.progressBarFillComplete,
-              getProgressWidth(requiredPercent),
-            ]}
-          />
-        </View>
-      </View>
-
       {/* Categorized Document List */}
       {CATEGORIES.map(renderCategorySection)}
 
@@ -99,3 +73,5 @@ export const MachineryLoanDocumentsStep: React.FC<MachineryLoanDocumentsStepProp
 };
 
 export default MachineryLoanDocumentsStep;
+
+

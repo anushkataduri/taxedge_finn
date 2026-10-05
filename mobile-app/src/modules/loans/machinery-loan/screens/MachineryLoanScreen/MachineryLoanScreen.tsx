@@ -50,9 +50,9 @@ export const MachineryLoanScreen: React.FC = () => {
   // Step 1: Loan Details
   const [loanDetails, setLoanDetails] = useState<LoanDetailsFormData>({
     loanType: "Machinery Loan",
-    requiredAmount: "3000000",
-    purpose: "CNC / Automation Machinery",
-    preferredTenureMonths: "48",
+    requiredAmount: "",
+    purpose: "",
+    preferredTenureMonths: "",
     hasExistingLoans: false,
     existingEmi: "",
     monthlyIncomeOrTurnover: "",
@@ -62,12 +62,12 @@ export const MachineryLoanScreen: React.FC = () => {
   // Step 2: Business Details
   const [businessDetails, setBusinessDetails] = useState<LoanBusinessFormData>({
     businessName: "",
-    businessType: "Proprietorship",
-    businessVintageYears: "3–5 years",
+    businessType: "",
+    businessVintageYears: "",
     annualTurnover: "",
     isGstRegistered: false,
     gstin: "",
-    netProfit: "0",
+    netProfit: "",
   });
 
   // Step 3: Banking Details
@@ -335,7 +335,6 @@ export const MachineryLoanScreen: React.FC = () => {
 
       {/* Sticky Bottom Actions */}
       <LoanNavigation
-        onBack={wizard.handleBack}
         onNext={handleNext}
         isFirstStep={wizard.isFirstStep}
         isLastStep={wizard.isLastStep}
