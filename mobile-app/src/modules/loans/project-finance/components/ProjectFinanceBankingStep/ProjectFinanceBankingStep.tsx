@@ -1,6 +1,8 @@
 import React from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { LoanBankingFormData } from "../../../types/loans.types";
+import { useIfscLookup } from "../../../hooks/useIfscLookup";
 import { styles } from "./ProjectFinanceBankingStep.styles";
 
 export interface ProjectFinanceBankingStepProps {
@@ -22,6 +24,16 @@ export const ProjectFinanceBankingStep: React.FC<ProjectFinanceBankingStepProps>
   errors = {},
   hasExistingLoans = false,
 }) => {
+  const ifsc = useIfscLookup({
+    trigger: "length",
+    onResolved: (details) => onChange("primaryBankName", details.bank),
+  });
+  const { isLoading: isIfscLoading, error: ifscError, branchName } = ifsc;
+
+  const handleIfscChange = (text: string) => {
+    onChange("ifscCode", ifsc.handleIfscChange(text));
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Escrow / Project Account Details</Text>
@@ -70,17 +82,31 @@ export const ProjectFinanceBankingStep: React.FC<ProjectFinanceBankingStepProps>
           Bank IFSC Code <Text style={styles.requiredStar}>*</Text>
         </Text>
         <TextInput
-          style={[styles.input, errors.ifscCode && styles.inputError]}
+          style={[styles.input, (errors.ifscCode || ifscError) && styles.inputError]}
           placeholder="e.g. SBIN0000691"
           placeholderTextColor="#94A3B8"
           autoCapitalize="characters"
           maxLength={11}
           value={data.ifscCode}
-          onChangeText={(text) => onChange("ifscCode", text.toUpperCase())}
+          onChangeText={handleIfscChange}
         />
-        <Text style={styles.helperText}>11-digit alphanumeric bank IFSC code</Text>
-        {errors.ifscCode && (
-          <Text style={styles.errorText}>{errors.ifscCode}</Text>
+        {isIfscLoading && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
+            <ActivityIndicator size="small" color="#EA580C" />
+            <Text style={{ fontSize: 12, color: "#EA580C" }}>Fetching bank details...</Text>
+          </View>
+        )}
+        {!isIfscLoading && branchName ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
+            <Ionicons name="checkmark-circle" size={14} color="#16A34A" />
+            <Text style={{ fontSize: 12, color: "#16A34A" }}>Branch: {branchName}</Text>
+          </View>
+        ) : null}
+        {!isIfscLoading && !branchName && (
+          <Text style={styles.helperText}>11-digit bank branch IFSC code</Text>
+        )}
+        {(errors.ifscCode || ifscError) && (
+          <Text style={styles.errorText}>{errors.ifscCode || ifscError || "Unable to fetch bank details. Please verify the IFSC code."}</Text>
         )}
       </View>
 

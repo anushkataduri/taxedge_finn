@@ -74,23 +74,12 @@ const INITIAL_LOAN_DETAILS: VehicleLoanDetailsFormData = {
 };
 
 const INITIAL_BUSINESS_DETAILS: LoanBusinessFormData = {
-  businessName: "",
-  gstin: "",
-  udyamRegistration: "",
-  businessVintageYears: "",
-  annualTurnover: "",
-  netProfit: "",
+  businessName: "", gstin: "", udyamRegistration: "", businessVintageYears: "", annualTurnover: "", netProfit: "",
 };
 
 const INITIAL_BANKING_DETAILS: LoanBankingFormData = {
-  primaryBankName: "",
-  accountNumber: "",
-  ifscCode: "",
-  existingLenderName: "",
-  existingLoanOutstanding: "",
-  itrFilingStatus: "" as any,
-  itrAckNumber: "",
-  grossTotalIncome: "",
+  primaryBankName: "", accountNumber: "", ifscCode: "", existingLenderName: "", existingLoanOutstanding: "",
+  itrFilingStatus: "" as any, itrAckNumber: "", grossTotalIncome: "",
 };
 
 type VehicleLoanDraft = Omit<VehicleLoanDraftData, "savedAt">;
@@ -99,7 +88,6 @@ export const VehicleLoanScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
-
   const customer = useAuthStore((s) => s.customer);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -189,6 +177,7 @@ export const VehicleLoanScreen: React.FC = () => {
     },
   });
 
+<<<<<<< HEAD
   const {
     showDraftModal,
     openDraftModal,
@@ -196,6 +185,33 @@ export const VehicleLoanScreen: React.FC = () => {
     handleDiscardAndExit,
     handleCancel,
     markSubmitted,
+=======
+  const resetAllFields = () => {
+    setLoanDetails(INITIAL_LOAN_DETAILS);
+    setBusinessDetails(INITIAL_BUSINESS_DETAILS);
+    setBankingDetails(INITIAL_BANKING_DETAILS);
+    loanDocuments.resetDocuments();
+    wizard.resetWizard();
+    setErrors({});
+  };
+
+  const isFormDirty = useCallback((): boolean => {
+    const hasAmount = Boolean(loanDetails.requiredAmount?.trim());
+    const hasPurpose = Boolean(loanDetails.purpose?.trim());
+    const hasCondition = Boolean(loanDetails.vehicleCondition);
+    const hasMake = Boolean(loanDetails.vehicleMakeModel?.trim());
+    const hasPrice = Boolean(loanDetails.onRoadPrice?.trim());
+    const hasTenure = Boolean(loanDetails.preferredTenureMonths);
+    const hasEmp = Boolean(loanDetails.employmentType);
+    const hasIncome = Boolean(loanDetails.monthlyIncomeOrTurnover?.trim());
+    const hasBank = Boolean(bankingDetails.primaryBankName?.trim() || bankingDetails.accountNumber?.trim() || bankingDetails.ifscCode?.trim());
+    const hasDocs = documents.some((d) => Boolean(d.fileUri));
+    return hasAmount || hasPurpose || hasCondition || hasMake || hasPrice || hasTenure || hasEmp || hasIncome || hasBank || hasDocs || currentStepIndex > 0;
+  }, [loanDetails, bankingDetails, documents, currentStepIndex]);
+
+  const {
+    showDraftModal, openDraftModal, markSubmitted, handleSaveAndExit, handleDiscardAndExit, handleCancel,
+>>>>>>> anushka/main
   } = useUniversalDraftGuard({
     isDirty: isFormDirty,
     onSaveDraft: () => {
@@ -247,10 +263,7 @@ export const VehicleLoanScreen: React.FC = () => {
       const errs = validateForm(loanDetails, vehicleLoanSchemas.financials);
       setErrors(errs);
       if (Object.keys(errs).length > 0) {
-        Alert.alert(
-          "Required Details Missing",
-          "Please enter loan amount, vehicle category, tenure, and vehicle details to continue."
-        );
+        Alert.alert("Required Details Missing", "Please enter loan amount, vehicle category, tenure, and vehicle details to continue.");
         return false;
       }
       return true;
@@ -261,10 +274,7 @@ export const VehicleLoanScreen: React.FC = () => {
       const errs = validateForm(merged, vehicleLoanSchemas.employment);
       setErrors(errs);
       if (Object.keys(errs).length > 0) {
-        Alert.alert(
-          "Incomplete Profile",
-          "Please select an employment category and enter your monthly net income to continue."
-        );
+        Alert.alert("Incomplete Profile", "Please select an employment category and enter your monthly net income to continue.");
         return false;
       }
       return true;
@@ -274,10 +284,7 @@ export const VehicleLoanScreen: React.FC = () => {
       const errs = validateForm(bankingDetails, vehicleLoanSchemas.banking);
       setErrors(errs);
       if (Object.keys(errs).length > 0) {
-        Alert.alert(
-          "Banking Details Missing",
-          "Please enter your bank name, account number, IFSC code, and select ITR status to continue."
-        );
+        Alert.alert("Banking Details Missing", "Please enter your bank name, account number, IFSC code, and select ITR status to continue.");
         return false;
       }
       return true;
@@ -286,15 +293,11 @@ export const VehicleLoanScreen: React.FC = () => {
     if (stepIndex === 3) {
       const { isValid, missingDocs } = loanDocuments.validateDocuments();
       if (!isValid) {
-        Alert.alert(
-          "Mandatory Documents Required",
-          `Please upload all required vehicle financing documents to continue:\n\n• ${missingDocs.slice(0, 3).join("\n• ")}`
-        );
+        Alert.alert("Mandatory Documents Required", `Please upload all required vehicle financing documents to continue:\n\n• ${missingDocs.slice(0, 3).join("\n• ")}`);
         return false;
       }
       return true;
     }
-
     return true;
   }
 
@@ -310,13 +313,9 @@ export const VehicleLoanScreen: React.FC = () => {
 
   const handleSubmitApplication = async () => {
     if (!isConsentChecked) {
-      Alert.alert(
-        "Consent Required",
-        "Please check the authorization declaration to lodge your vehicle loan."
-      );
+      Alert.alert("Consent Required", "Please check the authorization declaration to lodge your vehicle loan.");
       return;
     }
-
     setIsSubmitting(true);
     try {
       const application: Partial<LoanApplicationDraft> = {
@@ -339,10 +338,14 @@ export const VehicleLoanScreen: React.FC = () => {
       const statusRoute: Href = `/service/loan-status?id=${response.applicationId}&loanType=Vehicle+Loan&isSuccess=true`;
       router.replace(statusRoute);
     } catch {
+<<<<<<< HEAD
       Alert.alert(
         "Submission Error",
         "Failed to submit application. Please try again."
       );
+=======
+      Alert.alert("Submission Error", "Failed to lodge vehicle loan application. Please try again.");
+>>>>>>> anushka/main
     } finally {
       setIsSubmitting(false);
     }
@@ -351,32 +354,11 @@ export const VehicleLoanScreen: React.FC = () => {
   const renderActiveStep = () => {
     switch (currentStepIndex) {
       case 0:
-        return (
-          <VehicleLoanFinancialsStep
-            data={loanDetails}
-            onChange={handleDetailsChange}
-            errors={errors}
-          />
-        );
+        return <VehicleLoanFinancialsStep data={loanDetails} onChange={handleDetailsChange} errors={errors} />;
       case 1:
-        return (
-          <VehicleLoanEmploymentStep
-            data={loanDetails}
-            onChangeDetails={handleDetailsChange}
-            businessData={businessDetails}
-            onChangeBusiness={handleBusinessChange}
-            errors={errors}
-          />
-        );
+        return <VehicleLoanEmploymentStep data={loanDetails} onChangeDetails={handleDetailsChange} businessData={businessDetails} onChangeBusiness={handleBusinessChange} errors={errors} />;
       case 2:
-        return (
-          <VehicleLoanBankingStep
-            data={bankingDetails}
-            onChange={handleBankingChange}
-            errors={errors}
-            hasExistingLoans={loanDetails.hasExistingLoans}
-          />
-        );
+        return <VehicleLoanBankingStep data={bankingDetails} onChange={handleBankingChange} errors={errors} hasExistingLoans={loanDetails.hasExistingLoans} />;
       case 3:
         return <VehicleLoanDocumentsStep loanDocuments={loanDocuments} />;
       case 4:
@@ -384,11 +366,7 @@ export const VehicleLoanScreen: React.FC = () => {
         return (
           <VehicleLoanReviewStep
             loanDetails={loanDetails}
-            businessDetails={
-              loanDetails.employmentType !== "Salaried"
-                ? businessDetails
-                : undefined
-            }
+            businessDetails={loanDetails.employmentType !== "Salaried" ? businessDetails : undefined}
             bankingDetails={bankingDetails}
             documents={documents}
             profile={customer || undefined}
@@ -417,7 +395,6 @@ export const VehicleLoanScreen: React.FC = () => {
           )
         }
       />
-
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -464,8 +441,6 @@ export const VehicleLoanScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-
-      {/* Universal Draft Modal on Back Navigation / Gesture */}
       <UniversalDraftModal
         visible={showDraftModal}
         title="Save Vehicle Loan Draft?"
