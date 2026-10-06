@@ -193,8 +193,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   icon3DImage: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
+    transform: [{ scale: 1.1 }],
   },
   detailsCol: {
     flex: 1,
