@@ -77,9 +77,33 @@ export const PropertyLoanDocumentsStep: React.FC<PropertyLoanDocumentsStepProps>
         const categoryDocs = documents.filter((d) => d.category === category);
         if (categoryDocs.length === 0) return null;
 
+        const getCategoryIcon = (cat: string) => {
+          switch (cat) {
+            case "Property & Collateral":
+              return "home";
+            case "Identity & Address":
+              return "person";
+            case "Income & Banking":
+              return "cash";
+            case "Business & Tax":
+              return "briefcase";
+            default:
+              return "document-text";
+          }
+        };
+
         return (
           <View key={category} style={styles.categoryContainer}>
-            <Text style={styles.categoryHeader}>{category}</Text>
+            <View style={styles.categoryHeaderRow}>
+              <View style={styles.categoryIconBox}>
+                <Ionicons
+                  name={getCategoryIcon(category)}
+                  size={14}
+                  color={BrandColors.PRIMARY_ORANGE || "#FF7A00"}
+                />
+              </View>
+              <Text style={styles.categoryHeader}>{category}</Text>
+            </View>
             {categoryDocs.map((doc) => {
               const isUploaded = Boolean(doc.fileUri);
 

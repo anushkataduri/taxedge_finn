@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   Modal,
   Platform,
@@ -14,11 +13,12 @@ import DateTimePicker, {
 import { BrandColors } from "../../../../../shared/theme";
 import { LoanApplicantFormData } from "../../../types/loans.types";
 import { styles } from "./PropertyLoanApplicantStep.styles";
+import { PropertyApplicantPersonalDetailsCard } from "./PropertyApplicantPersonalDetailsCard";
+import { PropertyApplicantPersonalInfoCard } from "./PropertyApplicantPersonalInfoCard";
 import {
   PropertyApplicantEmploymentCard,
   ApplicantDropdownKey,
 } from "./PropertyApplicantEmploymentCard";
-import { PropertyApplicantPersonalInfoCard } from "./PropertyApplicantPersonalInfoCard";
 import { PropertyLoanDropdownModal } from "../PropertyLoanDropdownModal";
 
 export interface PropertyLoanApplicantStepProps {
@@ -28,18 +28,14 @@ export interface PropertyLoanApplicantStepProps {
 }
 
 const GENDERS = ["Male", "Female", "Other"];
-
 const MARITAL_STATUSES = ["Single", "Married", "Divorced", "Widowed"];
-
 const RESIDENCE_TYPES = [
   "Owned by Self/Spouse",
   "Rented",
   "Owned by Parents",
   "Corporate / Company Provided",
 ];
-
 const YEARS_AT_ADDRESS = ["< 1 Year", "1-3 Years", "3-5 Years", "5+ Years"];
-
 const EMPLOYER_CATEGORIES = [
   "Salaried - MNC",
   "Salaried - Public Sector",
@@ -47,7 +43,6 @@ const EMPLOYER_CATEGORIES = [
   "Self-Employed Professional",
   "Business Owner",
 ];
-
 const TOTAL_EXPERIENCES = [
   "< 1 Year",
   "1-3 Years",
@@ -55,7 +50,6 @@ const TOTAL_EXPERIENCES = [
   "5-10 Years",
   "10+ Years",
 ];
-
 const YEARS_IN_CURRENT_JOB = ["< 1 Year", "1-3 Years", "3-5 Years", "5+ Years"];
 
 function formatDateToDDMMYYYY(date: Date): string {
@@ -158,151 +152,15 @@ export const PropertyLoanApplicantStep: React.FC<PropertyLoanApplicantStepProps>
   return (
     <View style={styles.container}>
       {/* 1. Personal Details */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Personal Details</Text>
-        <Text style={styles.sectionSubtitle}>Tell us about yourself.</Text>
-
-        {/* Full Name */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Full Name <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, errors.fullName ? styles.inputError : null]}
-            placeholder="Enter full name"
-            placeholderTextColor="#94A3B8"
-            value={data.fullName}
-            onChangeText={(text) => onChange("fullName", text)}
-          />
-          {errors.fullName ? (
-            <Text style={styles.errorText}>{errors.fullName}</Text>
-          ) : null}
-        </View>
-
-        {/* PAN */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            PAN <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, errors.pan ? styles.inputError : null]}
-            placeholder="Enter PAN (e.g. ABCDE1234F)"
-            placeholderTextColor="#94A3B8"
-            autoCapitalize="characters"
-            maxLength={10}
-            value={data.pan}
-            onChangeText={(text) => onChange("pan", text.toUpperCase())}
-          />
-          {errors.pan ? (
-            <Text style={styles.errorText}>{errors.pan}</Text>
-          ) : null}
-        </View>
-
-        {/* Mobile Number */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Mobile Number <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <View
-            style={[
-              styles.inputWithPrefix,
-              errors.mobile ? styles.inputError : null,
-            ]}
-          >
-            <View style={styles.prefixBox}>
-              <Text style={styles.prefixText}>+91</Text>
-            </View>
-            <TextInput
-              style={styles.inputFlex}
-              placeholder="Enter mobile number"
-              placeholderTextColor="#94A3B8"
-              keyboardType="number-pad"
-              maxLength={10}
-              value={data.mobile}
-              onChangeText={(text) => onChange("mobile", text.replace(/\D/g, ""))}
-            />
-          </View>
-          {errors.mobile ? (
-            <Text style={styles.errorText}>{errors.mobile}</Text>
-          ) : null}
-        </View>
-
-        {/* Date of Birth */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Date of Birth <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <TouchableOpacity
-            style={[
-              styles.inputWithIcon,
-              errors.dob ? styles.inputError : null,
-            ]}
-            onPress={() => {
-              setTempDate(parseDDMMYYYYToDate(data.dob));
-              setShowDatePicker(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <TextInput
-              style={styles.inputWithIconFlex}
-              placeholder="DD/MM/YYYY"
-              placeholderTextColor="#94A3B8"
-              value={data.dob}
-              onChangeText={(text) => onChange("dob", text)}
-            />
-            <TouchableOpacity
-              style={styles.calendarIconBtn}
-              onPress={() => {
-                setTempDate(parseDDMMYYYYToDate(data.dob));
-                setShowDatePicker(true);
-              }}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="calendar-outline"
-                size={20}
-                color={BrandColors.PRIMARY_ORANGE}
-                style={styles.inputIconRight}
-              />
-            </TouchableOpacity>
-          </TouchableOpacity>
-          {errors.dob ? (
-            <Text style={styles.errorText}>{errors.dob}</Text>
-          ) : null}
-        </View>
-
-        {/* Current Address */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Current Address <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <View
-            style={[
-              styles.inputWithIcon,
-              errors.currentAddress ? styles.inputError : null,
-            ]}
-          >
-            <Ionicons
-              name="location-outline"
-              size={18}
-              color="#64748B"
-              style={styles.inputIconLeft}
-            />
-            <TextInput
-              style={styles.inputWithIconFlex}
-              placeholder="Enter your current address"
-              placeholderTextColor="#94A3B8"
-              multiline
-              numberOfLines={2}
-              value={data.currentAddress}
-              onChangeText={(text) => onChange("currentAddress", text)}
-            />
-          </View>
-          {errors.currentAddress ? (
-            <Text style={styles.errorText}>{errors.currentAddress}</Text>
-          ) : null}
-        </View>
-      </View>
+      <PropertyApplicantPersonalDetailsCard
+        data={data}
+        onChange={onChange}
+        errors={errors}
+        onOpenDatePicker={() => {
+          setTempDate(parseDDMMYYYYToDate(data.dob));
+          setShowDatePicker(true);
+        }}
+      />
 
       {/* 2. Personal Information */}
       <PropertyApplicantPersonalInfoCard
@@ -321,60 +179,59 @@ export const PropertyLoanApplicantStep: React.FC<PropertyLoanApplicantStepProps>
 
       {/* 4. Existing Loans & Obligations */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Existing Loans & Obligations</Text>
-        <Text style={styles.sectionSubtitle}>
-          Tell us about your current loans and other monthly obligations.
-        </Text>
+        <View style={styles.cardHeader}>
+          <View style={styles.headerLeft}>
+            <View style={styles.iconBox}>
+              <Ionicons name="card" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+            </View>
+            <Text style={styles.cardTitle}>Existing Loans & Obligations</Text>
+          </View>
+        </View>
 
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>
             Do you have any existing loans? <Text style={styles.requiredStar}>*</Text>
           </Text>
-          <View
-            style={[
-              styles.toggleContainer,
-              errors.hasExistingLoans ? styles.inputError : null,
-            ]}
-          >
+          <View style={styles.twoBoxRow}>
             <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                data.hasExistingLoans === true ? styles.toggleButtonSelected : null,
-              ]}
+              activeOpacity={0.8}
               onPress={() => onChange("hasExistingLoans", true)}
-              activeOpacity={0.7}
+              style={[
+                styles.separateBox,
+                data.hasExistingLoans === true && styles.separateBoxActive,
+              ]}
             >
               <Text
                 style={[
-                  styles.toggleText,
-                  data.hasExistingLoans === true ? styles.toggleTextSelected : null,
+                  styles.separateBoxText,
+                  data.hasExistingLoans === true && styles.separateBoxTextActive,
                 ]}
               >
-                Yes
+                YES
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                data.hasExistingLoans === false ? styles.toggleButtonSelected : null,
-              ]}
+              activeOpacity={0.8}
               onPress={() => onChange("hasExistingLoans", false)}
-              activeOpacity={0.7}
+              style={[
+                styles.separateBox,
+                data.hasExistingLoans === false && styles.separateBoxActive,
+              ]}
             >
               <Text
                 style={[
-                  styles.toggleText,
-                  data.hasExistingLoans === false ? styles.toggleTextSelected : null,
+                  styles.separateBoxText,
+                  data.hasExistingLoans === false && styles.separateBoxTextActive,
                 ]}
               >
-                No
+                NO
               </Text>
             </TouchableOpacity>
           </View>
-          {errors.hasExistingLoans ? (
+          {Boolean(errors.hasExistingLoans) && (
             <Text style={styles.errorText}>{errors.hasExistingLoans}</Text>
-          ) : null}
+          )}
         </View>
       </View>
 

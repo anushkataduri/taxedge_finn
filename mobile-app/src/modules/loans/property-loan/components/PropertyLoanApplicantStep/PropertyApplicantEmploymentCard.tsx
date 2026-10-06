@@ -29,10 +29,14 @@ export const PropertyApplicantEmploymentCard: React.FC<PropertyApplicantEmployme
 }) => {
   return (
     <View style={styles.card}>
-      <Text style={styles.sectionTitle}>Employment Details</Text>
-      <Text style={styles.sectionSubtitle}>
-        Tell us about your current employment.
-      </Text>
+      <View style={styles.cardHeader}>
+        <View style={styles.headerLeft}>
+          <View style={styles.iconBox}>
+            <Ionicons name="briefcase" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+          </View>
+          <Text style={styles.cardTitle}>Employment Details</Text>
+        </View>
+      </View>
 
       {/* Employer Category */}
       <View style={styles.fieldGroup}>

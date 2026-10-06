@@ -17,10 +17,14 @@ export const PropertyOwnershipTypeCard: React.FC<PropertyOwnershipTypeCardProps>
 }) => {
   return (
     <View style={styles.card}>
-      <Text style={styles.sectionTitle}>Ownership Details</Text>
-      <Text style={styles.sectionSubtitle}>
-        Tell us about the ownership of the property.
-      </Text>
+      <View style={styles.cardHeader}>
+        <View style={styles.headerLeft}>
+          <View style={styles.iconBox}>
+            <Ionicons name="key" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+          </View>
+          <Text style={styles.cardTitle}>Ownership Details</Text>
+        </View>
+      </View>
 
       {/* Ownership Type Selection Cards */}
       <View style={styles.fieldGroup}>

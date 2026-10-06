@@ -22,12 +22,14 @@ export const PropertyCoOwnerCard: React.FC<PropertyCoOwnerCardProps> = ({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.sectionTitle}>
-        Co-owner Details (If Joint Ownership)
-      </Text>
-      <Text style={styles.sectionSubtitle}>
-        Provide details of the co-owner / co-applicant.
-      </Text>
+      <View style={styles.cardHeader}>
+        <View style={styles.headerLeft}>
+          <View style={styles.iconBox}>
+            <Ionicons name="people" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+          </View>
+          <Text style={styles.cardTitle}>Co-owner Details (If Joint Ownership)</Text>
+        </View>
+      </View>
 
       {/* Co-owner Full Name */}
       <View style={styles.fieldGroup}>

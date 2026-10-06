@@ -65,10 +65,14 @@ export const PropertyLocationCard: React.FC<PropertyLocationCardProps> = ({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.sectionTitle}>Property Location</Text>
-      <Text style={styles.sectionSubtitle}>
-        Tell us where the property is located.
-      </Text>
+      <View style={styles.cardHeader}>
+        <View style={styles.headerLeft}>
+          <View style={styles.iconBox}>
+            <Ionicons name="location" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+          </View>
+          <Text style={styles.cardTitle}>Property Location</Text>
+        </View>
+      </View>
 
       {/* PIN Code with Fetch Details */}
       <View style={styles.fieldGroup}>

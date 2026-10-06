@@ -1,7 +1,9 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { LoanDetailsFormData } from "../../../types/loans.types";
 import { Dropdown } from "@/shared/components/Dropdown";
+import { BrandColors } from "../../../../../shared/theme";
 import { styles } from "./PersonalLoanFinancialsStep.styles";
 
 export interface PersonalLoanFinancialsStepProps {
@@ -53,11 +55,19 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
         Tell us how much you need and your current repayment capacity.
       </Text>
 
-      {/* Required Amount */}
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>
-          Required Loan Amount (₹) <Text style={styles.requiredStar}>*</Text>
-        </Text>
+      {/* 1. Required Loan Amount */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.headerLeft}>
+            <View style={styles.iconBox}>
+              <Ionicons name="wallet" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+            </View>
+            <Text style={styles.cardTitle}>
+              Required Loan Amount (₹) <Text style={styles.requiredStar}>*</Text>
+            </Text>
+          </View>
+        </View>
+
         <TextInput
           style={[styles.input, errors.requiredAmount && styles.inputError]}
           placeholder="e.g. 500000"
@@ -84,11 +94,19 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
         )}
       </View>
 
-      {/* Purpose */}
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>
-          Purpose of Loan <Text style={styles.requiredStar}>*</Text>
-        </Text>
+      {/* 2. Purpose of Loan */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.headerLeft}>
+            <View style={styles.iconBox}>
+              <Ionicons name="compass" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+            </View>
+            <Text style={styles.cardTitle}>
+              Purpose of Loan <Text style={styles.requiredStar}>*</Text>
+            </Text>
+          </View>
+        </View>
+
         <TextInput
           style={[styles.input, errors.purpose && styles.inputError]}
           placeholder="Specify personal reason"
@@ -124,10 +142,21 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
         )}
       </View>
 
-      {/* Preferred Tenure Dropdown */}
-      <View style={styles.fieldGroup}>
+      {/* 3. Preferred Tenure */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.headerLeft}>
+            <View style={styles.iconBox}>
+              <Ionicons name="calendar" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+            </View>
+            <Text style={styles.cardTitle}>
+              Preferred Tenure (Months) <Text style={styles.requiredStar}>*</Text>
+            </Text>
+          </View>
+        </View>
+
         <Dropdown
-          label="Preferred Tenure (Months)"
+          label=""
           required
           placeholder="Select preferred tenure"
           options={TENURE_DROPDOWN_OPTIONS}
@@ -137,11 +166,19 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
         />
       </View>
 
-      {/* Monthly Net Salary */}
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>
-          Monthly Net In-Hand Salary (₹) <Text style={styles.requiredStar}>*</Text>
-        </Text>
+      {/* 4. Monthly Net In-Hand Salary */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.headerLeft}>
+            <View style={styles.iconBox}>
+              <Ionicons name="cash" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+            </View>
+            <Text style={styles.cardTitle}>
+              Monthly Net In-Hand Salary (₹) <Text style={styles.requiredStar}>*</Text>
+            </Text>
+          </View>
+        </View>
+
         <TextInput
           style={[
             styles.input,
@@ -159,8 +196,17 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
         )}
       </View>
 
-      {/* Existing Loans Toggle */}
-      <View style={styles.fieldGroup}>
+      {/* 5. Existing Loans Toggle */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.headerLeft}>
+            <View style={styles.iconBox}>
+              <Ionicons name="card" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+            </View>
+            <Text style={styles.cardTitle}>Existing Loan Obligations</Text>
+          </View>
+        </View>
+
         <Text style={styles.label}>Do you have any existing loans?</Text>
         <View style={styles.toggleContainer}>
           <TouchableOpacity
@@ -198,26 +244,26 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
 
-      {data.hasExistingLoans && (
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Current Total Monthly EMI (₹) <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, errors.existingEmi && styles.inputError]}
-            placeholder="e.g. 15000"
-            placeholderTextColor="#94A3B8"
-            keyboardType="numeric"
-            value={data.existingEmi}
-            onChangeText={(text) => onChange("existingEmi", text.replace(/[^0-9]/g, ""))}
-          />
-          {errors.existingEmi && (
-            <Text style={styles.errorText}>{errors.existingEmi}</Text>
-          )}
-        </View>
-      )}
+        {data.hasExistingLoans && (
+          <View style={{ marginTop: 12 }}>
+            <Text style={styles.label}>
+              Current Total Monthly EMI (₹) <Text style={styles.requiredStar}>*</Text>
+            </Text>
+            <TextInput
+              style={[styles.input, errors.existingEmi && styles.inputError]}
+              placeholder="e.g. 15000"
+              placeholderTextColor="#94A3B8"
+              keyboardType="numeric"
+              value={data.existingEmi}
+              onChangeText={(text) => onChange("existingEmi", text.replace(/[^0-9]/g, ""))}
+            />
+            {errors.existingEmi && (
+              <Text style={styles.errorText}>{errors.existingEmi}</Text>
+            )}
+          </View>
+        )}
+      </View>
     </View>
   );
 };

@@ -7,15 +7,41 @@ export const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: BrandColors.WHITE,
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 14,
     borderWidth: 1,
     borderColor: "#E2E8F0",
+    marginBottom: 10,
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
     elevation: 1,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  iconBox: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    backgroundColor: "#FEF0E6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardTitle: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: "700",
+    color: "#0F172A",
   },
   sectionTitle: {
     fontSize: Typography.fontSize.base,
@@ -141,81 +167,33 @@ export const styles = StyleSheet.create({
   inputError: {
     borderColor: "#EF4444",
   },
-  segmentedToggle: {
+  twoBoxRow: {
     flexDirection: "row",
-    borderWidth: 1,
-    borderColor: BrandColors.PRIMARY_ORANGE,
-    borderRadius: 8,
-    overflow: "hidden",
-    marginTop: 2,
-  },
-  toggleOption: {
-    flex: 1,
-    paddingVertical: 9,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: BrandColors.WHITE,
-  },
-  toggleOptionActive: {
-    backgroundColor: BrandColors.PRIMARY_ORANGE,
-  },
-  toggleOptionText: {
-    fontSize: Typography.fontSize.xs,
-    fontWeight: "600",
-    color: "#0F172A",
-  },
-  toggleOptionTextActive: {
-    color: BrandColors.WHITE,
-    fontWeight: "700",
-  },
-  emiCard: {
-    backgroundColor: "#FFF7ED",
-    borderWidth: 1,
-    borderColor: "#FFEDD5",
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 8,
-    flexDirection: "row",
-    alignItems: "center",
     gap: 10,
+    marginTop: 6,
   },
-  calcIconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: "#FFEDD5",
+  separateBox: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
     alignItems: "center",
     justifyContent: "center",
   },
-  emiContent: {
-    flex: 1,
+  separateBoxActive: {
+    backgroundColor: "#FEF0E6",
+    borderColor: BrandColors.PRIMARY_ORANGE,
   },
-  emiHeader: {
-    fontSize: 11,
+  separateBoxText: {
+    fontSize: Typography.fontSize.sm,
     fontWeight: "600",
     color: "#475569",
   },
-  emiAmountRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 4,
-    marginTop: 2,
-    marginBottom: 2,
-  },
-  emiAmount: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#0F172A",
-  },
-  emiPeriod: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#475569",
-  },
-  emiSubtitle: {
-    fontSize: 10.5,
-    color: "#64748B",
-    lineHeight: 14,
+  separateBoxTextActive: {
+    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
+    fontWeight: "700",
   },
   tenureGrid: {
     flexDirection: "row",

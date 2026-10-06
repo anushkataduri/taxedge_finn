@@ -34,6 +34,20 @@ export const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#F1F5F9",
   },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  iconBox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    backgroundColor: "#FEF0E6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   cardTitle: {
     fontSize: Typography.fontSize.sm,
     fontWeight: "700",

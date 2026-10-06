@@ -37,90 +37,29 @@ import {
   PropertyLoanReviewStep,
 } from "../../components";
 import { validatePropertyLoanStep } from "../../utils/propertyLoanValidators";
+import {
+  initialLoanDetails,
+  initialApplicantDetails,
+  initialPropertyDetails,
+  initialOwnershipDetails,
+  STEPS,
+} from "../../utils/propertyLoanInitialState";
 import { styles } from "./PropertyLoanScreen.styles";
-
-const STEPS = [
-  "Loan Requirement",
-  "Applicant & Income",
-  "Property Details",
-  "Ownership",
-  "Documents",
-  "Review",
-] as const;
 
 export const PropertyLoanScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
-
   const customer = useAuthStore((s) => s.customer);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConsentChecked, setIsConsentChecked] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Step 1: Loan Requirement
-  const [loanDetails, setLoanDetails] = useState<LoanDetailsFormData>({
-    loanType: "Property Loan",
-    requiredAmount: "",
-    purpose: "",
-    preferredTenureMonths: "",
-    hasExistingLoans: undefined,
-    existingEmi: "",
-    monthlyIncomeOrTurnover: "",
-    employmentType: undefined,
-  });
-
-  // Step 2: Applicant & Income Details
-  const [applicantDetails, setApplicantDetails] = useState<LoanApplicantFormData>({
-    fullName: "",
-    pan: "",
-    mobile: "",
-    dob: "",
-    currentAddress: "",
-    gender: "",
-    maritalStatus: "",
-    residenceType: "",
-    yearsAtCurrentAddress: "",
-    employerCategory: "",
-    employerName: "",
-    totalWorkExperience: "",
-    yearsInCurrentJob: "",
-    annualIncome: "",
-    hasExistingLoans: null,
-  });
-
-  // Step 3: Property Details
-  const [propertyDetails, setPropertyDetails] = useState<LoanPropertyFormData>({
-    pincode: "",
-    city: "",
-    district: "",
-    state: "",
-    propertyAddress: "",
-    landmark: "",
-    propertyType: "",
-    propertySubType: "",
-    constructionStatus: "",
-    currentUsage: "",
-    areaType: "",
-    area: "",
-    propertyAge: "",
-    approvingAuthority: "",
-    estimatedMarketValue: "",
-  });
-
-  // Step 4: Ownership Details
-  const [ownershipDetails, setOwnershipDetails] = useState<LoanOwnershipFormData>({
-    ownershipType: "",
-    coOwnerFullName: "",
-    coOwnerRelationship: "",
-    coOwnerPan: "",
-    coOwnerMobile: "",
-    currentLender: "",
-    existingLoanType: "",
-    outstandingLoanAmount: "",
-    isConfirmationChecked: false,
-  });
+  const [loanDetails, setLoanDetails] = useState<LoanDetailsFormData>(initialLoanDetails);
+  const [applicantDetails, setApplicantDetails] = useState<LoanApplicantFormData>(initialApplicantDetails);
+  const [propertyDetails, setPropertyDetails] = useState<LoanPropertyFormData>(initialPropertyDetails);
+  const [ownershipDetails, setOwnershipDetails] = useState<LoanOwnershipFormData>(initialOwnershipDetails);
 
   const loanDocuments = useLoanDocuments({
     template: PROPERTY_LOAN_DOCUMENTS_TEMPLATE,

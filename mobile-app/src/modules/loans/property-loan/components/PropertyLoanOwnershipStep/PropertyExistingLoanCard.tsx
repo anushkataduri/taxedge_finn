@@ -24,10 +24,14 @@ export const PropertyExistingLoanCard: React.FC<PropertyExistingLoanCardProps> =
     <>
       {/* 3. Existing Property Loan (If any) */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Existing Property Loan (If any)</Text>
-        <Text style={styles.sectionSubtitle}>
-          Tell us if there is an existing loan on this property.
-        </Text>
+        <View style={styles.cardHeader}>
+          <View style={styles.headerLeft}>
+            <View style={styles.iconBox}>
+              <Ionicons name="card" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+            </View>
+            <Text style={styles.cardTitle}>Existing Property Loan (If any)</Text>
+          </View>
+        </View>
 
         {/* Current Lender */}
         <View style={styles.fieldGroup}>
@@ -149,10 +153,14 @@ export const PropertyExistingLoanCard: React.FC<PropertyExistingLoanCardProps> =
 
       {/* 4. Ownership Confirmation */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Ownership Confirmation</Text>
-        <Text style={styles.sectionSubtitle}>
-          Please confirm the following.
-        </Text>
+        <View style={styles.cardHeader}>
+          <View style={styles.headerLeft}>
+            <View style={styles.iconBox}>
+              <Ionicons name="checkmark-circle" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+            </View>
+            <Text style={styles.cardTitle}>Ownership Confirmation</Text>
+          </View>
+        </View>
 
         <TouchableOpacity
           style={styles.checkboxRow}
