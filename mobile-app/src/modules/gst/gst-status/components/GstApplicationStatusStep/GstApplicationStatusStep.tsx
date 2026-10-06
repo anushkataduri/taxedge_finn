@@ -10,23 +10,7 @@ import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
 import { styles } from "./GstApplicationStatusStep.styles";
-
-export interface TimelineItem {
-  id: string;
-  title: string;
-  subtitle: string;
-  status: "completed" | "active" | "pending";
-}
-
-export interface GstApplicationStatusStepProps {
-  appId?: string;
-  appliedDate?: string;
-  businessName?: string;
-  serviceName?: string;
-  estCompletion?: string;
-  isFilingWorkflow?: boolean;
-  onReuploadDocuments?: () => void;
-}
+import type { TimelineItem, GstApplicationStatusStepProps } from "../../types/gstStatusTypes";
 
 const GST_REGISTRATION_TIMELINE: TimelineItem[] = [
   { id: "1", title: "Application Submitted", subtitle: "Form & documents received", status: "completed" },

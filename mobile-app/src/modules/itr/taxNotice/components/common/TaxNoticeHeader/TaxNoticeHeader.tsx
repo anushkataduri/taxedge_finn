@@ -8,12 +8,14 @@ interface TaxNoticeHeaderProps {
   subtitle: string;
   onBack?: () => void;
   onSaveDraft?: () => void;
+  hideBackButton?: boolean;
 }
 
 export const TaxNoticeHeader: React.FC<TaxNoticeHeaderProps> = ({
   subtitle,
   onBack,
   onSaveDraft,
+  hideBackButton = false,
 }) => {
   const router = useRouter();
 
@@ -27,13 +29,17 @@ export const TaxNoticeHeader: React.FC<TaxNoticeHeaderProps> = ({
 
   return (
     <View style={styles.header}>
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={handleBack}
-        style={styles.backButton}
-      >
-        <Ionicons name="chevron-back" size={20} color="#0B1F3A" />
-      </TouchableOpacity>
+      {!hideBackButton ? (
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={handleBack}
+          style={styles.backButton}
+        >
+          <Ionicons name="chevron-back" size={20} color="#0B1F3A" />
+        </TouchableOpacity>
+      ) : (
+        <View style={{ width: 38, height: 38 }} />
+      )}
 
       <View style={styles.titleGroup}>
         <Text style={styles.title}>Tax Notice Assistance</Text>

@@ -7,7 +7,18 @@ export const FILING_PERIODS = ["Monthly", "Quarterly", "Annual"] as const;
 
 export const FILING_NATURE_OPTIONS = ["Regular Return", "Nil Return"] as const;
 
-export const FINANCIAL_YEARS = generateFinancialYears(4, "FY ");
+export const FINANCIAL_YEARS = [
+  "FY 2026-27",
+  "FY 2025-26",
+  "FY 2024-25",
+  "FY 2023-24",
+  "FY 2022-23",
+  "FY 2021-22",
+  "FY 2020-21",
+  "FY 2019-20",
+  "FY 2018-19",
+  "FY 2017-18",
+];
 
 export const getFilingPeriodsForFrequency = (
   frequency: string,

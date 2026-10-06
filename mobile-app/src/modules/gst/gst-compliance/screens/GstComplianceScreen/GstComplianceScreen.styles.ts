@@ -83,15 +83,42 @@ export const styles = StyleSheet.create({
     borderColor: "#334155",
   },
 
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 6,
+  },
+  sectionIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#FFF7ED",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sectionIconBoxDark: {
+    backgroundColor: "#7C2D12",
+  },
+  sectionTitleWrap: {
+    flex: 1,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
     letterSpacing: -0.2,
-    marginBottom: 4,
     color: "#0F172A",
   },
   sectionTitleDark: {
     color: "#F8FAFC",
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 1,
+  },
+  sectionSubtitleDark: {
+    color: "#94A3B8",
   },
 
   fieldGroup: {

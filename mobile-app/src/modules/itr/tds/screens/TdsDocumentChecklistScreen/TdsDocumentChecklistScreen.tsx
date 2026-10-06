@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRouter } from "expo-router";
@@ -72,7 +73,10 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
         const tdsRefundId = await tdsDraftService.getApplicationId();
         if (tdsRefundId) {
           const backendDocs = await tdsApiService.fetchAndMapDocumentsList(tdsRefundId, documents);
-          setDocuments(backendDocs);
+          const hasBackendUploaded = backendDocs.some((d: any) => d.status === 'uploaded' || d.status === 'verified');
+          if (hasBackendUploaded) {
+            setDocuments(backendDocs);
+          }
         }
       } catch (err) {
         console.warn("[TDS Docs Screen] Error fetching backend documents:", err);
@@ -235,6 +239,7 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
 
   const handleContinue = async () => {
     if (!isMandatoryComplete) {
+      Alert.alert("Missing Documents", "Please upload all mandatory documents to proceed.");
       // Mark missing mandatory documents with inline card errors functionally - zero loops
       setDocuments((prev: any) =>
         prev.map((doc: any) =>
@@ -326,12 +331,10 @@ export const TdsDocumentChecklistScreen: React.FC = () => {
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleContinue}
-          disabled={isSaving || !isMandatoryComplete}
+          disabled={isSaving}
           style={[
             styles.continueButton,
-            isMandatoryComplete && !isSaving
-              ? styles.continueActive
-              : styles.continueDisabled,
+            !isSaving ? styles.continueActive : styles.continueDisabled,
           ]}
         >
           {isSaving ? (

@@ -275,7 +275,7 @@ export const mapDtoToGstBusinessFormData = (
     accountType: REVERSE_ACCOUNT_TYPE_MAP[rawAcc] || dto.accountType || "Current",
     signatoryName: dto.signatoryName || "",
     signatoryPan: dto.signatoryPan || "",
-    signatoryDob: dto.signatoryDob || "",
+    signatoryDob: formatUiDate(dto.signatoryDob),
     signatoryDesignation: dto.designation || "Owner",
     signatoryMobile: dto.signatoryMobile || "",
     signatoryEmail: dto.signatoryEmail || "",

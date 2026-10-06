@@ -93,8 +93,13 @@ export function validateComplianceForm(data: ComplianceFormData): {
 
   // Dynamic Validation: Notice Response
   if (data.requestType === "Notice Response") {
-    if (!data.noticeNumber.trim()) {
+    const cleanedNotice = (data.noticeNumber || "").trim().toUpperCase();
+    if (!cleanedNotice) {
       errors.noticeNumber = "Enter Notice Number";
+    } else if (cleanedNotice.length < 5) {
+      errors.noticeNumber = "Notice Number must be at least 5 characters";
+    } else if (!/^[A-Z0-9\/-]{5,30}$/.test(cleanedNotice)) {
+      errors.noticeNumber = "Invalid Notice Number (5-30 alphanumeric characters, e.g. ZA290422000001Z)";
     }
 
     if (!data.noticeIssueDate.trim()) {

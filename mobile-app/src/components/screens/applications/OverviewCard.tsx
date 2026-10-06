@@ -7,6 +7,7 @@
 
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTheme } from "@/hooks/use-theme";
 import { styles, getOverviewValColor, getOverviewSubStyle } from "@/styles/app/(main)/applications.styles";
 
@@ -31,6 +32,7 @@ interface OverviewCardProps {
   isDark: boolean;
   colors: ReturnType<typeof useTheme>;
   onSelect: (key: StatusFilterType) => void;
+  onOpenCategoryFilter?: () => void;
   cardBg: string;
   cardBorder: string;
 }
@@ -42,6 +44,7 @@ export function OverviewCard({
   isDark,
   colors,
   onSelect,
+  onOpenCategoryFilter,
   cardBg,
   cardBorder,
 }: OverviewCardProps) {
@@ -64,11 +67,14 @@ export function OverviewCard({
             )}
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() =>
-                onSelect(
-                  statusFilter === item.key && item.key !== "ALL" ? "ALL" : item.key
-                )
-              }
+              onPress={() => {
+                if (item.key === "ALL") {
+                  onSelect("ALL");
+                  onOpenCategoryFilter?.();
+                } else {
+                  onSelect(statusFilter === item.key ? "ALL" : item.key);
+                }
+              }}
               style={[
                 styles.overviewCol,
                 isSelected &&
@@ -83,6 +89,14 @@ export function OverviewCard({
               <Text style={[styles.overviewSub, getOverviewSubStyle(isSelected, isDark, colors)]}>
                 {item.label}
               </Text>
+              {item.key === "ALL" && (
+                <View style={styles.filterBadge}>
+                  <Ionicons name="filter" size={10} color="#EA580C" />
+                  <Text style={styles.filterBadgeText}>
+                    {selectedCategory === "ALL" ? "All" : selectedCategory}
+                  </Text>
+                </View>
+              )}
               <View
                 style={
                   isSelected

@@ -4,8 +4,8 @@
  * helper functions, DRY renderers, and robust exception handling (< 400 lines).
  */
 
-import React, { useState, useEffect, useCallback, memo } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import React, { useState, useEffect, useCallback, memo, useRef } from "react";
+import { View, Text, TouchableOpacity, Keyboard } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
 import { styles } from "./GstBusinessStep.styles";
@@ -114,30 +114,65 @@ const sanitizeDigits = (val: string): string => safeTransform(val, (s) => s.repl
 const sanitizeAlphanumericUpper = (val: string): string => safeTransform(val, (s) => s.replace(/[^a-zA-Z0-9]/g, "").toUpperCase());
 const sanitizeUpper = (val: string): string => safeTransform(val, (s) => s.toUpperCase());
 
-// --- FUNCTIONAL ACCORDION COMPONENT ---
+// --- FUNCTIONAL CARD & ACCORDION COMPONENTS ---
+
+interface SectionCardProps {
+  iconName: keyof typeof Ionicons.glyphMap;
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}
+
+const SectionCard: React.FC<SectionCardProps> = memo(({ iconName, title, subtitle, children }) => (
+  <View style={styles.sectionCard}>
+    <View style={styles.sectionHeader}>
+      <View style={styles.sectionIconBox}>
+        <Ionicons name={iconName} size={18} color={BrandColors.PRIMARY_ORANGE} />
+      </View>
+      <View style={styles.sectionTitleWrap}>
+        <Text style={styles.sectionMainTitle}>{title}</Text>
+        <Text style={styles.sectionSubtitle}>{subtitle}</Text>
+      </View>
+    </View>
+    {children}
+  </View>
+));
+SectionCard.displayName = "SectionCard";
 
 interface AccordionSectionProps {
   title: string;
+  subtitle?: string;
+  iconName: keyof typeof Ionicons.glyphMap;
   isExpanded: boolean;
   onToggle: () => void;
   children: React.ReactNode;
 }
 
-const AccordionSection: React.FC<AccordionSectionProps> = memo(({ title, isExpanded, onToggle, children }) => (
-  <>
-    <TouchableOpacity
-      style={styles.accordionHeader}
-      activeOpacity={0.7}
-      onPress={onToggle}
-      accessibilityRole="button"
-      accessibilityState={{ expanded: isExpanded }}
-    >
-      <Text style={styles.accordionTitle}>{title}</Text>
-      <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={BrandColors.TEXT_PRIMARY} />
-    </TouchableOpacity>
-    {isExpanded && <View style={styles.accordionContent}>{children}</View>}
-  </>
-));
+const AccordionSection: React.FC<AccordionSectionProps> = memo(
+  ({ title, subtitle, iconName, isExpanded, onToggle, children }) => (
+    <View style={styles.accordionCard}>
+      <TouchableOpacity
+        style={styles.accordionCardHeader}
+        activeOpacity={0.7}
+        onPress={onToggle}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: isExpanded }}
+      >
+        <View style={styles.sectionHeaderWrap}>
+          <View style={styles.sectionIconBox}>
+            <Ionicons name={iconName} size={18} color={BrandColors.PRIMARY_ORANGE} />
+          </View>
+          <View style={styles.sectionTitleWrap}>
+            <Text style={styles.sectionMainTitle}>{title}</Text>
+            {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
+          </View>
+        </View>
+        <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color="#64748B" />
+      </TouchableOpacity>
+      {isExpanded && <View style={styles.accordionCardContent}>{children}</View>}
+    </View>
+  )
+);
 AccordionSection.displayName = "AccordionSection";
 
 // --- PROPS INTERFACE ---
@@ -147,13 +182,22 @@ interface Props {
   onChange: (fields: Partial<GstBusinessFormData>) => void;
   onBlurField?: (field: keyof GstBusinessFormData) => void;
   errors?: FormErrors;
+  onRequestScrollToSection?: (sectionKey: "bank" | "signatory", y?: number) => void;
 }
 
 // --- MAIN COMPONENT ---
 
-export const GstBusinessStep: React.FC<Props> = ({ data, onChange, onBlurField, errors = {} }) => {
+export const GstBusinessStep: React.FC<Props> = ({
+  data,
+  onChange,
+  onBlurField,
+  errors = {},
+  onRequestScrollToSection,
+}) => {
   const [isBankExpanded, setIsBankExpanded] = useState(false);
   const [isSignatoryExpanded, setIsSignatoryExpanded] = useState(false);
+  const bankYRef = useRef(0);
+  const signatoryYRef = useRef(0);
 
   useEffect(() => {
     try {
@@ -260,21 +304,38 @@ export const GstBusinessStep: React.FC<Props> = ({ data, onChange, onBlurField, 
     [data, errors, updateField],
   );
 
-  const renderPrimaryDetails = () => (
-    <>
+  const renderBusinessIdentity = () => (
+    <SectionCard
+      iconName="storefront-outline"
+      title="Business Identity"
+      subtitle="Legal name and constitutional details"
+    >
       {renderInput("legalName", "Legal Name of Business (as per PAN) *", "Exactly as on the PAN card")}
       {renderInput("businessName", "Trade Name *", "Enter your business / trade name")}
       {renderSelect("businessType", "Constitution of Business *", "Select business type", BUSINESS_TYPES)}
       {renderSelect("natureOfBusiness", "Nature of Business *", "Select nature of business", NATURE_OF_BUSINESS)}
       {renderDatePicker("businessStartDate", "Date of Commencement of Business *")}
+    </SectionCard>
+  );
+
+  const renderRegistrationScheme = () => (
+    <SectionCard
+      iconName="ribbon-outline"
+      title="Registration & Scheme"
+      subtitle="Registration purpose and tax scheme"
+    >
       {renderSelect("reasonForRegistration", "Reason for Registration *", "Select a reason", REASONS)}
       {renderSelect("compositionScheme", "Opting for Composition Scheme? *", "Select yes or no", COMPOSITION_OPTIONS)}
-      {renderSelect("placeOfBusiness", "Place of Business *", "Select place type", PLACE_OPTIONS)}
-    </>
+    </SectionCard>
   );
 
   const renderAddressSection = () => (
-    <>
+    <SectionCard
+      iconName="location-outline"
+      title="Principal Place of Business"
+      subtitle="Registered business address & HSN details"
+    >
+      {renderSelect("placeOfBusiness", "Place of Business *", "Select place type", PLACE_OPTIONS)}
       {renderInput("businessAddress", "Business Address *", "Building, street, locality")}
       <View style={styles.row}>
         <View style={styles.halfField}>{renderInput("city", "City *", "City")}</View>
@@ -287,48 +348,78 @@ export const GstBusinessStep: React.FC<Props> = ({ data, onChange, onBlurField, 
         </View>
       </View>
       {renderInput("hsnCode", "Primary HSN / SAC Code *", "e.g. 998311", { keyboardType: "numeric", maxLength: 8, transform: sanitizeDigits })}
-    </>
+    </SectionCard>
   );
 
   const renderBankDetails = () => (
-    <AccordionSection title="Bank Details" isExpanded={isBankExpanded} onToggle={() => setIsBankExpanded((p) => !p)}>
-      {renderInput("accountHolderName", "Account Holder Name *", "As per bank records")}
-      {renderInput("bankAccountNumber", "Bank Account Number *", "Enter account number", { keyboardType: "numeric", maxLength: 18, transform: sanitizeDigits })}
-      {renderInput("confirmBankAccountNumber", "Confirm Account Number *", "Re-enter account number", { keyboardType: "numeric", maxLength: 18, transform: sanitizeDigits })}
-      {renderInput("ifscCode", "IFSC Code *", "e.g. HDFC0001234", { autoCapitalize: "characters", maxLength: 11, transform: sanitizeAlphanumericUpper })}
-      <View style={styles.row}>
-        <View style={styles.halfField}>{renderSelect("bankName", "Bank Name *", "Select", BANK_OPTIONS)}</View>
-        <View style={styles.halfField}>{renderInput("branchName", "Branch *", "Branch Name")}</View>
-      </View>
-      {renderSelect("accountType", "Account Type *", "Select account type", ACCOUNT_TYPES)}
-    </AccordionSection>
+    <View onLayout={(e) => { bankYRef.current = e.nativeEvent.layout.y; }}>
+      <AccordionSection
+        iconName="wallet-outline"
+        title="Bank Details"
+        subtitle="Account for refunds & credits"
+        isExpanded={isBankExpanded}
+        onToggle={() => {
+          const next = !isBankExpanded;
+          setIsBankExpanded(next);
+          if (next) {
+            Keyboard.dismiss();
+            onRequestScrollToSection?.("bank", bankYRef.current);
+          }
+        }}
+      >
+        {renderInput("accountHolderName", "Account Holder Name *", "As per bank records")}
+        {renderInput("bankAccountNumber", "Bank Account Number *", "Enter account number", { keyboardType: "numeric", maxLength: 18, transform: sanitizeDigits })}
+        {renderInput("confirmBankAccountNumber", "Confirm Account Number *", "Re-enter account number", { keyboardType: "numeric", maxLength: 18, transform: sanitizeDigits })}
+        {renderInput("ifscCode", "IFSC Code *", "e.g. HDFC0001234", { autoCapitalize: "characters", maxLength: 11, transform: sanitizeAlphanumericUpper })}
+        <View style={styles.row}>
+          <View style={styles.halfField}>{renderSelect("bankName", "Bank Name *", "Select", BANK_OPTIONS)}</View>
+          <View style={styles.halfField}>{renderInput("branchName", "Branch *", "Branch Name")}</View>
+        </View>
+        {renderSelect("accountType", "Account Type *", "Select account type", ACCOUNT_TYPES)}
+      </AccordionSection>
+    </View>
   );
 
   const renderSignatoryDetails = () => (
-    <AccordionSection title="Authorised Signatory" isExpanded={isSignatoryExpanded} onToggle={() => setIsSignatoryExpanded((p) => !p)}>
-      {renderInput("signatoryName", "Signatory Name *", "Full name")}
-      <View style={styles.row}>
-        <View style={styles.halfField}>
-          {renderInput("signatoryPan", "Signatory PAN *", "ABCDE1234F", { autoCapitalize: "characters", maxLength: 10, transform: sanitizeUpper })}
+    <View onLayout={(e) => { signatoryYRef.current = e.nativeEvent.layout.y; }}>
+      <AccordionSection
+        iconName="person-circle-outline"
+        title="Authorised Signatory"
+        subtitle="Primary contact & PAN verification"
+        isExpanded={isSignatoryExpanded}
+        onToggle={() => {
+          const next = !isSignatoryExpanded;
+          setIsSignatoryExpanded(next);
+          if (next) {
+            Keyboard.dismiss();
+            onRequestScrollToSection?.("signatory", signatoryYRef.current);
+          }
+        }}
+      >
+        {renderInput("signatoryName", "Signatory Name *", "Full name")}
+        <View style={styles.row}>
+          <View style={styles.halfField}>
+            {renderInput("signatoryPan", "Signatory PAN *", "ABCDE1234F", { autoCapitalize: "characters", maxLength: 10, transform: sanitizeUpper })}
+          </View>
+          <View style={styles.halfField}>{renderDatePicker("signatoryDob", "Date of Birth *")}</View>
         </View>
-        <View style={styles.halfField}>{renderDatePicker("signatoryDob", "Date of Birth *")}</View>
-      </View>
-      {renderInput("signatoryDesignation", "Designation *", "Proprietor / Director / Partner")}
-      <View style={styles.row}>
-        <View style={styles.halfField}>
-          {renderInput("signatoryMobile", "Signatory Mobile *", "10-digit", { keyboardType: "numeric", maxLength: 10, transform: sanitizeDigits })}
+        {renderInput("signatoryDesignation", "Designation *", "Proprietor / Director / Partner")}
+        <View style={styles.row}>
+          <View style={styles.halfField}>
+            {renderInput("signatoryMobile", "Signatory Mobile *", "10-digit", { keyboardType: "numeric", maxLength: 10, transform: sanitizeDigits })}
+          </View>
+          <View style={styles.halfField}>
+            {renderInput("signatoryEmail", "Signatory Email *", "email@business.com", { keyboardType: "email-address", autoCapitalize: "none" })}
+          </View>
         </View>
-        <View style={styles.halfField}>
-          {renderInput("signatoryEmail", "Signatory Email *", "email@business.com", { keyboardType: "email-address", autoCapitalize: "none" })}
-        </View>
-      </View>
-    </AccordionSection>
+      </AccordionSection>
+    </View>
   );
 
   const renderConsentSection = () => {
     const isChecked = Boolean(data?.aadhaarConsent);
     return (
-      <>
+      <View style={styles.sectionCard}>
         <View style={styles.consentRow}>
           <TouchableOpacity
             activeOpacity={0.8}
@@ -344,13 +435,14 @@ export const GstBusinessStep: React.FC<Props> = ({ data, onChange, onBlurField, 
         {errors?.aadhaarConsent ? (
           <Text style={[styles.errorText, styles.errorTextMarginBottom]}>{errors.aadhaarConsent}</Text>
         ) : null}
-      </>
+      </View>
     );
   };
 
   return (
     <View style={styles.container}>
-      {renderPrimaryDetails()}
+      {renderBusinessIdentity()}
+      {renderRegistrationScheme()}
       {renderAddressSection()}
       {renderBankDetails()}
       {renderSignatoryDetails()}

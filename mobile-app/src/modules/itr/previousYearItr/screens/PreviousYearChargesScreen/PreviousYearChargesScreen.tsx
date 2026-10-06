@@ -71,13 +71,7 @@ export const PreviousYearChargesScreen: React.FC = () => {
 
       {/* Screen Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={handleBack}
-          style={styles.backButton}
-        >
-          <Ionicons name="chevron-back" size={20} color="#0B1F3A" />
-        </TouchableOpacity>
+        <View style={{ width: 38, height: 38 }} />
 
         <View style={styles.headerTitleGroup}>
           <Text style={styles.headerTitle}>Previous Year ITR</Text>

@@ -1,15 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { View, Text, TouchableOpacity, Modal, Alert, Image } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { LoanDocumentItem } from "../../../types/loans.types";
+import { LoanDocumentItem, LoanDetailsFormData, LoanBusinessFormData } from "../../../types/loans.types";
 import type { LoanDocuments } from "../../../hooks/useLoanDocuments";
 import { DocumentUploadBottomSheet } from "../../../../../shared/components/DocumentUploadBottomSheet";
 import { BrandColors } from "../../../../../shared/theme";
+import {
+  getApplicableBusinessDocuments,
+  BusinessDocItemConfig,
+  ID_ALIASES,
+} from "../../constants/businessLoanDocuments";
 import { styles } from "./BusinessLoanDocumentsStep.styles";
 
 export interface BusinessLoanDocumentsStepProps {
   /** Document checklist state from `useLoanDocuments`, owned by the screen. */
   loanDocuments: LoanDocuments;
+  /** Step 1 loan details to evaluate conditional requirements (e.g. loan purpose). */
+  loanDetails?: LoanDetailsFormData;
+  /** Step 2 business details to evaluate constitution and GST status. */
+  businessDetails?: LoanBusinessFormData;
 }
 
 const ICON_COLORS = {
@@ -20,157 +29,11 @@ const ICON_COLORS = {
   verified: "#166534",
 } as const;
 
-/** Card ids carry a "doc-" prefix that the checklist ids do not ("doc-pan" ↔ "pan"). */
-const stripDocPrefix = (id: string): string => id.replace(/^doc-/, "");
-
-interface SingleDocCardData {
-  id: string;
-  title: string;
-  subtitle: string;
-  isRequired: boolean;
-  isOptional?: boolean;
-  iconName: keyof typeof Ionicons.glyphMap;
-  iconStyle:
-    | "iconSquareBlue"
-    | "iconSquarePurple"
-    | "iconSquareGreen"
-    | "iconSquareRed"
-    | "iconSquareOrange"
-    | "iconSquarePink";
-  iconColor: string;
-}
-
-const DOCUMENT_ITEMS_LIST: SingleDocCardData[] = [
-  {
-    id: "doc-pan",
-    title: "PAN Card",
-    subtitle: "Entity PAN card & Promoter/Director PAN card",
-    isRequired: true,
-    iconName: "document-text",
-    iconStyle: "iconSquareBlue",
-    iconColor: "#2563EB",
-  },
-  {
-    id: "doc-aadhaar",
-    title: "Aadhaar Card",
-    subtitle: "Aadhaar of all Primary Directors / Partners",
-    isRequired: true,
-    iconName: "card-outline",
-    iconStyle: "iconSquarePurple",
-    iconColor: "#7C3AED",
-  },
-  {
-    id: "doc-kyc",
-    title: "KYC of Directors / Partners",
-    subtitle: "PAN, Aadhaar, DIN and Passport photo",
-    isRequired: true,
-    iconName: "people-outline",
-    iconStyle: "iconSquareGreen",
-    iconColor: "#16A34A",
-  },
-  {
-    id: "doc-address",
-    title: "Business Address Proof",
-    subtitle: "Utility bill / Rent agreement / Property document",
-    isRequired: true,
-    iconName: "home-outline",
-    iconStyle: "iconSquareRed",
-    iconColor: "#DC2626",
-  },
-  {
-    id: "doc-bank-statements",
-    title: "Current Account Bank Statements",
-    subtitle: "Last 12 months bank statements",
-    isRequired: true,
-    iconName: "business-outline",
-    iconStyle: "iconSquareOrange",
-    iconColor: BrandColors.PRIMARY_ORANGE || "#FF7A00",
-  },
-  {
-    id: "doc-gst-cert",
-    title: "GST Certificate (REG-06)",
-    subtitle: "GST registration certificate",
-    isRequired: true,
-    iconName: "document-text-outline",
-    iconStyle: "iconSquareGreen",
-    iconColor: "#16A34A",
-  },
-  {
-    id: "doc-gst-returns",
-    title: "GST Returns (12 Months)",
-    subtitle: "Filed GSTR-3B & GSTR-1 returns for last 12 months",
-    isRequired: true,
-    iconName: "analytics-outline",
-    iconStyle: "iconSquareOrange",
-    iconColor: BrandColors.PRIMARY_ORANGE || "#FF7A00",
-  },
-  {
-    id: "doc-itr",
-    title: "Business ITR (Last 2-3 Years)",
-    subtitle: "ITR-V and computation for the last 3 assessment years",
-    isRequired: true,
-    iconName: "document-attach-outline",
-    iconStyle: "iconSquarePurple",
-    iconColor: "#7C3AED",
-  },
-  {
-    id: "doc-audited-bs",
-    title: "Audited Balance Sheet",
-    subtitle: "CA audited balance sheet for last 2-3 years",
-    isRequired: true,
-    iconName: "pie-chart-outline",
-    iconStyle: "iconSquarePink",
-    iconColor: "#DB2777",
-  },
-  {
-    id: "doc-pnl",
-    title: "Profit & Loss Statement",
-    subtitle: "CA certified P&L statement with schedules",
-    isRequired: true,
-    iconName: "bar-chart-outline",
-    iconStyle: "iconSquarePurple",
-    iconColor: "#7C3AED",
-  },
-  {
-    id: "doc-cashflow",
-    title: "Cash Flow Statement",
-    subtitle: "Cash flow statement for the latest financial year",
-    isRequired: true,
-    iconName: "document-outline",
-    iconStyle: "iconSquareBlue",
-    iconColor: "#2563EB",
-  },
-  {
-    id: "doc-udyam",
-    title: "Udyam Registration Certificate",
-    subtitle: "MSME registration certificate",
-    isRequired: false,
-    isOptional: true,
-    iconName: "briefcase-outline",
-    iconStyle: "iconSquareGreen",
-    iconColor: "#16A34A",
-  },
-  {
-    id: "doc-business-proof",
-    title: "Business Registration Proof",
-    subtitle: "Certificate of Incorporation / Business license",
-    isRequired: true,
-    iconName: "folder-open-outline",
-    iconStyle: "iconSquareOrange",
-    iconColor: BrandColors.PRIMARY_ORANGE || "#FF7A00",
-  },
-  {
-    id: "doc-expansion",
-    title: "Business Expansion Document",
-    subtitle: "Project report / Business plan / Estimated cost",
-    isRequired: true,
-    iconName: "document-attach-outline",
-    iconStyle: "iconSquareBlue",
-    iconColor: "#2563EB",
-  },
-];
-
-export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps> = ({ loanDocuments }) => {
+export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps> = ({
+  loanDocuments,
+  loanDetails,
+  businessDetails,
+}) => {
   const { documents, openUpload, removeDocument, uploadSheetProps } = loanDocuments;
   const [viewModalVisible, setViewModalVisible] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<{
@@ -180,23 +43,44 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
     size: string;
   } | null>(null);
 
+  // Dynamically compute the concise core + conditional document checklist
+  const applicableDocs = useMemo(
+    () => getApplicableBusinessDocuments({ loanDetails, businessDetails }),
+    [loanDetails, businessDetails]
+  );
+
+  const requiredDocs = useMemo(
+    () => applicableDocs.filter((doc) => doc.section === "required"),
+    [applicableDocs]
+  );
+
+  const conditionalDocs = useMemo(
+    () => applicableDocs.filter((doc) => doc.section === "conditional"),
+    [applicableDocs]
+  );
+
   const findUploadedDoc = (itemId: string): LoanDocumentItem | undefined => {
-    const cleanTargetId = stripDocPrefix(itemId);
-    return documents.find((d) => d.id === itemId || stripDocPrefix(d.id) === cleanTargetId);
+    const aliases = ID_ALIASES[itemId] || [itemId, itemId.replace(/^doc-/, ""), `doc-${itemId}`];
+    return documents.find(
+      (d) =>
+        aliases.includes(d.id) ||
+        aliases.includes(d.id.replace(/^doc-/, ""))
+    );
   };
 
-  /**
-   * Checklist id a card stores its file under. Cards with no matching checklist
-   * entry keep their own id, so — as before this refactor — their uploads are
-   * not recorded.
-   */
-  const resolveDocumentId = (itemId: string): string => findUploadedDoc(itemId)?.id ?? itemId;
+  const resolveDocumentId = (itemId: string): string => {
+    const found = findUploadedDoc(itemId);
+    if (found) return found.id;
+    const aliases = ID_ALIASES[itemId] || [itemId];
+    const matchInChecklist = documents.find((d) => aliases.includes(d.id));
+    return matchInChecklist?.id ?? itemId;
+  };
 
-  const handleOpenUploadSheet = (item: SingleDocCardData) => {
+  const handleOpenUploadSheet = (item: BusinessDocItemConfig) => {
     openUpload(resolveDocumentId(item.id), item.title);
   };
 
-  const handleView = (item: SingleDocCardData) => {
+  const handleView = (item: BusinessDocItemConfig) => {
     const docRecord = findUploadedDoc(item.id);
     if (!docRecord?.fileUri) return;
 
@@ -236,6 +120,80 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
     );
   };
 
+  const renderDocCard = (item: BusinessDocItemConfig) => {
+    const docRecord = findUploadedDoc(item.id);
+    const isUploaded = Boolean(docRecord?.fileUri && docRecord.fileUri.trim() !== "");
+
+    return (
+      <View key={item.id} style={styles.docCard}>
+        <View style={styles.docCardLeft}>
+          <View style={[styles.iconSquare, styles[item.iconStyle]]}>
+            <Ionicons name={item.iconName} size={18} color={item.iconColor} />
+          </View>
+
+          <View style={styles.docTextCol}>
+            <View style={styles.docTitleRow}>
+              <Text style={styles.docTitle}>{item.title}</Text>
+              {item.isRequired && <Text style={styles.requiredStar}>*</Text>}
+              {item.isOptional && (
+                <View style={styles.optionalBadge}>
+                  <Text style={styles.optionalText}>Optional</Text>
+                </View>
+              )}
+            </View>
+
+            <Text style={styles.docSubtitle} numberOfLines={1}>
+              {item.subtitle}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.docCardRight}>
+          {isUploaded ? (
+            <>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => handleView(item)}
+                style={styles.viewBtn}
+              >
+                <Ionicons name="eye-outline" size={13} color={ICON_COLORS.view} />
+                <Text style={styles.viewBtnText}>View</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => handleDeleteFile(item.id, item.title)}
+                style={styles.deleteBtn}
+              >
+                <Ionicons name="trash-outline" size={13} color={ICON_COLORS.delete} />
+                <Text style={styles.deleteBtnText}>Delete</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => handleOpenUploadSheet(item)}
+              style={styles.uploadBtn}
+            >
+              <Ionicons name="cloud-upload-outline" size={14} color={ICON_COLORS.accent} />
+              <Text style={styles.uploadBtnText}>Upload</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    );
+  };
+
+  const uploadedRequiredCount = requiredDocs.filter((d) => {
+    const doc = findUploadedDoc(d.id);
+    return Boolean(doc?.fileUri && doc.fileUri.trim() !== "");
+  }).length;
+
+  const uploadedConditionalCount = conditionalDocs.filter((d) => {
+    const doc = findUploadedDoc(d.id);
+    return Boolean(doc?.fileUri && doc.fileUri.trim() !== "");
+  }).length;
+
   return (
     <View style={styles.container}>
       {/* Top Header Row */}
@@ -243,82 +201,45 @@ export const BusinessLoanDocumentsStep: React.FC<BusinessLoanDocumentsStepProps>
         <View style={styles.titleCol}>
           <Text style={styles.sectionTitle}>Document Verification</Text>
           <Text style={styles.sectionSubtitle}>
-            Upload the required documents based on your business profile and loan purpose.
+            Upload required documents based on your business constitution and loan purpose.
           </Text>
         </View>
 
         <View style={styles.formatsNoticeBox}>
           <Ionicons name="information-circle-outline" size={14} color={ICON_COLORS.accent} />
           <Text style={styles.formatsNoticeText}>
-            Accepted formats: PDF, JPG, PNG{"\n"}Max file size: 5 MB per file
+            Accepted: PDF, JPG, PNG{"\n"}Max file size: 5 MB
           </Text>
         </View>
       </View>
 
-      {/* Document Items List */}
-      {DOCUMENT_ITEMS_LIST.map((item) => {
-        const docRecord = findUploadedDoc(item.id);
-        const isUploaded = Boolean(docRecord?.fileUri && docRecord.fileUri.trim() !== "");
+      {/* 1. Required Documents Section */}
+      <View style={styles.sectionDivider}>
+        <Text style={styles.sectionDividerTitle}>Required Documents</Text>
+        <View style={styles.sectionDividerBadge}>
+          <Text style={styles.sectionDividerBadgeText}>
+            {uploadedRequiredCount} / {requiredDocs.length} Completed
+          </Text>
+        </View>
+      </View>
 
-        return (
-          <View key={item.id} style={styles.docCard}>
-            <View style={styles.docCardLeft}>
-              <View style={[styles.iconSquare, styles[item.iconStyle]]}>
-                <Ionicons name={item.iconName} size={18} color={item.iconColor} />
-              </View>
+      {requiredDocs.map(renderDocCard)}
 
-              <View style={styles.docTextCol}>
-                <View style={styles.docTitleRow}>
-                  <Text style={styles.docTitle}>{item.title}</Text>
-                  {item.isRequired && <Text style={styles.requiredStar}>*</Text>}
-                  {item.isOptional && (
-                    <View style={styles.optionalBadge}>
-                      <Text style={styles.optionalText}>Optional</Text>
-                    </View>
-                  )}
-                </View>
-
-                <Text style={styles.docSubtitle} numberOfLines={1}>
-                  {item.subtitle}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.docCardRight}>
-              {isUploaded ? (
-                <>
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => handleView(item)}
-                    style={styles.viewBtn}
-                  >
-                    <Ionicons name="eye-outline" size={13} color={ICON_COLORS.view} />
-                    <Text style={styles.viewBtnText}>View</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => handleDeleteFile(item.id, item.title)}
-                    style={styles.deleteBtn}
-                  >
-                    <Ionicons name="trash-outline" size={13} color={ICON_COLORS.delete} />
-                    <Text style={styles.deleteBtnText}>Delete</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => handleOpenUploadSheet(item)}
-                  style={styles.uploadBtn}
-                >
-                  <Ionicons name="cloud-upload-outline" size={14} color={ICON_COLORS.accent} />
-                  <Text style={styles.uploadBtnText}>Upload</Text>
-                </TouchableOpacity>
-              )}
+      {/* 2. Conditional & Supporting Documents Section */}
+      {conditionalDocs.length > 0 && (
+        <>
+          <View style={styles.sectionDivider}>
+            <Text style={styles.sectionDividerTitle}>Conditional Documents</Text>
+            <View style={styles.sectionDividerBadge}>
+              <Text style={styles.sectionDividerBadgeText}>
+                {uploadedConditionalCount} / {conditionalDocs.length} Uploaded
+              </Text>
             </View>
           </View>
-        );
-      })}
+
+          {conditionalDocs.map(renderDocCard)}
+        </>
+      )}
 
       {/* Upload sheet: Files/Drive (PDF, Word, Excel), Gallery, Camera */}
       <DocumentUploadBottomSheet {...uploadSheetProps} />

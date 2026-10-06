@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { LoanDetailsFormData } from "../../../types/loans.types";
-import { LoanAmountInput, type LoanAmountPreset } from "../../../components/LoanAmountInput";
+import { Dropdown } from "@/shared/components/Dropdown";
 import { styles } from "./PersonalLoanFinancialsStep.styles";
 
 export interface PersonalLoanFinancialsStepProps {
@@ -22,17 +22,17 @@ const COMMON_PURPOSES = [
   "Other",
 ];
 
-const TENURE_OPTIONS = [
+const TENURE_DROPDOWN_OPTIONS = [
   { label: "3 Months", value: "3" },
   { label: "6 Months", value: "6" },
-  { label: "12 Mos (1 Yr)", value: "12" },
-  { label: "24 Mos (2 Yrs)", value: "24" },
-  { label: "36 Mos (3 Yrs)", value: "36" },
-  { label: "48 Mos (4 Yrs)", value: "48" },
-  { label: "60 Mos (5 Yrs)", value: "60" },
+  { label: "12 Months", value: "12" },
+  { label: "24 Months", value: "24" },
+  { label: "36 Months", value: "36" },
+  { label: "48 Months", value: "48" },
+  { label: "60 Months", value: "60" },
 ];
 
-const AMOUNT_PRESETS: readonly LoanAmountPreset[] = [
+const AMOUNT_PRESETS = [
   { label: "₹1 Lakh", value: "100000" },
   { label: "₹3 Lakhs", value: "300000" },
   { label: "₹5 Lakhs", value: "500000" },
@@ -54,16 +54,35 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
       </Text>
 
       {/* Required Amount */}
-      <LoanAmountInput
-        label="Required Loan Amount (₹)"
-        required
-        placeholder="e.g. 500000"
-        value={data.requiredAmount}
-        onChange={(value) => onChange("requiredAmount", value)}
-        onFocus={() => onInputFocus?.("requiredAmount")}
-        presets={AMOUNT_PRESETS}
-        error={errors.requiredAmount}
-      />
+      <View style={styles.fieldGroup}>
+        <Text style={styles.label}>
+          Required Loan Amount (₹) <Text style={styles.requiredStar}>*</Text>
+        </Text>
+        <TextInput
+          style={[styles.input, errors.requiredAmount && styles.inputError]}
+          placeholder="e.g. 500000"
+          placeholderTextColor="#94A3B8"
+          keyboardType="numeric"
+          value={data.requiredAmount}
+          onFocus={() => onInputFocus?.("requiredAmount")}
+          onChangeText={(text) => onChange("requiredAmount", text.replace(/[^0-9]/g, ""))}
+        />
+        <View style={styles.chipRow}>
+          {AMOUNT_PRESETS.map((item) => (
+            <TouchableOpacity
+              key={item.value}
+              onPress={() => onChange("requiredAmount", item.value)}
+              style={styles.chip}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.chipText}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {errors.requiredAmount && (
+          <Text style={styles.errorText}>{errors.requiredAmount}</Text>
+        )}
+      </View>
 
       {/* Purpose */}
       <View style={styles.fieldGroup}>
@@ -86,6 +105,7 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
                 key={purpose}
                 onPress={() => onChange("purpose", purpose)}
                 style={[styles.chip, isSelected && styles.chipActive]}
+                activeOpacity={0.7}
               >
                 <Text
                   style={[
@@ -104,36 +124,17 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
         )}
       </View>
 
-      {/* Preferred Tenure */}
+      {/* Preferred Tenure Dropdown */}
       <View style={styles.fieldGroup}>
-        <Text style={styles.label}>
-          Preferred Tenure (Months) <Text style={styles.requiredStar}>*</Text>
-        </Text>
-        <View style={styles.tenureGrid}>
-          {TENURE_OPTIONS.map((item) => {
-            const isSelected = data.preferredTenureMonths === item.value;
-            return (
-              <TouchableOpacity
-                key={item.value}
-                activeOpacity={0.7}
-                onPress={() => onChange("preferredTenureMonths", item.value)}
-                style={[styles.tenureBox, isSelected && styles.tenureBoxActive]}
-              >
-                <Text
-                  style={[
-                    styles.tenureText,
-                    isSelected && styles.tenureTextActive,
-                  ]}
-                >
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-        {errors.preferredTenureMonths && (
-          <Text style={styles.errorText}>{errors.preferredTenureMonths}</Text>
-        )}
+        <Dropdown
+          label="Preferred Tenure (Months)"
+          required
+          placeholder="Select preferred tenure"
+          options={TENURE_DROPDOWN_OPTIONS}
+          value={data.preferredTenureMonths}
+          onSelect={(val) => onChange("preferredTenureMonths", val)}
+          error={errors.preferredTenureMonths}
+        />
       </View>
 
       {/* Monthly Net Salary */}
@@ -151,7 +152,7 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
           keyboardType="numeric"
           value={data.monthlyIncomeOrTurnover}
           onFocus={() => onInputFocus?.("monthlyIncomeOrTurnover")}
-          onChangeText={(text) => onChange("monthlyIncomeOrTurnover", text)}
+          onChangeText={(text) => onChange("monthlyIncomeOrTurnover", text.replace(/[^0-9]/g, ""))}
         />
         {errors.monthlyIncomeOrTurnover && (
           <Text style={styles.errorText}>{errors.monthlyIncomeOrTurnover}</Text>
@@ -168,6 +169,7 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
               styles.toggleButton,
               !data.hasExistingLoans && styles.toggleButtonActive,
             ]}
+            activeOpacity={0.7}
           >
             <Text
               style={[
@@ -184,6 +186,7 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
               styles.toggleButton,
               data.hasExistingLoans && styles.toggleButtonActive,
             ]}
+            activeOpacity={0.7}
           >
             <Text
               style={[
@@ -197,6 +200,24 @@ export const PersonalLoanFinancialsStep: React.FC<PersonalLoanFinancialsStepProp
         </View>
       </View>
 
+      {data.hasExistingLoans && (
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>
+            Current Total Monthly EMI (₹) <Text style={styles.requiredStar}>*</Text>
+          </Text>
+          <TextInput
+            style={[styles.input, errors.existingEmi && styles.inputError]}
+            placeholder="e.g. 15000"
+            placeholderTextColor="#94A3B8"
+            keyboardType="numeric"
+            value={data.existingEmi}
+            onChangeText={(text) => onChange("existingEmi", text.replace(/[^0-9]/g, ""))}
+          />
+          {errors.existingEmi && (
+            <Text style={styles.errorText}>{errors.existingEmi}</Text>
+          )}
+        </View>
+      )}
     </View>
   );
 };

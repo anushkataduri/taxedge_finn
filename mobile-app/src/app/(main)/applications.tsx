@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -21,7 +22,14 @@ import type { Application, ServiceCategoryId } from "../../types/domain";
 import { styles } from "../../styles/app/(main)/applications.styles";
 import { ApplicationCardItem } from "@/components/screens/applications/ApplicationCardItem";
 import { OverviewCard, type StatusFilterType, type OverviewItem } from "@/components/screens/applications/OverviewCard";
-import { CategoryTabsRow } from "@/components/screens/applications/CategoryTabsRow";
+
+const CATEGORY_FILTER_OPTIONS: { id: "ALL" | ServiceCategoryId; label: string; icon: string }[] = [
+  { id: "ALL", label: "All Applications", icon: "grid-outline" },
+  { id: "GST", label: "GST Services", icon: "document-text-outline" },
+  { id: "ITR", label: "ITR & TDS", icon: "receipt-outline" },
+  { id: "LOANS", label: "Loans", icon: "cash-outline" },
+  { id: "BUSINESS", label: "Business", icon: "briefcase-outline" },
+];
 
 // ── Category & Status matchers ────────────────────────────────────────────────
 
@@ -80,9 +88,10 @@ export default function ApplicationsScreen() {
   const loadApplications = useApplicationStore((s) => s.loadApplications);
   const unreadCount     = useNotificationStore((s) => s.unreadCount);
 
-  const [refreshing,        setRefreshing]        = useState(false);
-  const [selectedCategory,  setSelectedCategory]  = useState<"ALL" | ServiceCategoryId>("ALL");
-  const [statusFilter,      setStatusFilter]      = useState<StatusFilterType>("ALL");
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<"ALL" | ServiceCategoryId>("ALL");
+  const [statusFilter, setStatusFilter] = useState<StatusFilterType>("ALL");
+  const [showCategoryFilterModal, setShowCategoryFilterModal] = useState(false);
 
   const fetchApplications = useCallback(async () => {
     try { await loadApplications(); } catch {}
@@ -152,21 +161,19 @@ export default function ApplicationsScreen() {
             <Text style={styles.headerTitle}>My Applications</Text>
             <Text style={styles.headerSubtitle}>Track all your service applications</Text>
           </View>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => router.push("/notifications")}
-            style={styles.bellButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="notifications" size={24} color="#FF5722" />
-            {unreadCount > 0 && <View style={styles.bellDotBadge} />}
-          </TouchableOpacity>
         </View>
 
-        {/* Category tabs */}
-        <CategoryTabsRow
-          selected={selectedCategory}
-          onSelect={setSelectedCategory}
+        {/* Unified Overview card floating at top header */}
+        <OverviewCard
+          items={overviewItems}
+          statusFilter={statusFilter}
+          selectedCategory={selectedCategory}
+          isDark={isDark}
+          colors={colors}
+          onSelect={setStatusFilter}
+          onOpenCategoryFilter={() => setShowCategoryFilterModal(true)}
+          cardBg={cardBg}
+          cardBorder={cardBorder}
         />
       </View>
 
@@ -185,30 +192,11 @@ export default function ApplicationsScreen() {
           />
         }
         ListHeaderComponent={
-          <>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={[styles.sectionTitle, { color: isDark ? colors.text : "#0F172A" }]}>
-                Application Overview
-              </Text>
-            </View>
-
-            <OverviewCard
-              items={overviewItems}
-              statusFilter={statusFilter}
-              selectedCategory={selectedCategory}
-              isDark={isDark}
-              colors={colors}
-              onSelect={setStatusFilter}
-              cardBg={cardBg}
-              cardBorder={cardBorder}
-            />
-
-            <View style={styles.recentHeaderRow}>
-              <Text style={[styles.sectionTitle, { color: isDark ? colors.text : "#0F172A" }]}>
-                Recent Applications
-              </Text>
-            </View>
-          </>
+          <View style={styles.recentHeaderRow}>
+            <Text style={[styles.sectionTitle, { color: isDark ? colors.text : "#0F172A" }]}>
+              Recent Applications
+            </Text>
+          </View>
         }
         ListEmptyComponent={
           isLoading && applications.length === 0 ? (
@@ -259,6 +247,65 @@ export default function ApplicationsScreen() {
           />
         )}
       />
+
+      {/* Service Category Filter Modal */}
+      <Modal
+        visible={showCategoryFilterModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCategoryFilterModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.categoryModalBackdrop}
+          activeOpacity={1}
+          onPress={() => setShowCategoryFilterModal(false)}
+        >
+          <TouchableOpacity activeOpacity={1} style={styles.categoryModalCard}>
+            <Text style={styles.categoryModalTitle}>Filter Applications</Text>
+            {CATEGORY_FILTER_OPTIONS.map((opt) => {
+              const isActive = selectedCategory === opt.id;
+              return (
+                <TouchableOpacity
+                  key={opt.id}
+                  style={[
+                    styles.categoryModalOption,
+                    isActive && styles.categoryModalOptionActive,
+                  ]}
+                  onPress={() => {
+                    setSelectedCategory(opt.id);
+                    setShowCategoryFilterModal(false);
+                  }}
+                >
+                  <View style={styles.categoryModalOptionLeft}>
+                    <Ionicons
+                      name={opt.icon as any}
+                      size={20}
+                      color={isActive ? "#EA580C" : "#64748B"}
+                    />
+                    <Text
+                      style={[
+                        styles.categoryModalOptionLabel,
+                        isActive && styles.categoryModalOptionLabelActive,
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
+                  </View>
+                  {isActive && (
+                    <Ionicons name="checkmark-circle" size={20} color="#EA580C" />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+            <TouchableOpacity
+              style={styles.categoryModalCloseBtn}
+              onPress={() => setShowCategoryFilterModal(false)}
+            >
+              <Text style={styles.categoryModalCloseText}>Close</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }

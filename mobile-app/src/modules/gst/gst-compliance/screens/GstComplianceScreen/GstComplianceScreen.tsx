@@ -18,12 +18,10 @@ import {
 } from "@/modules/gst/gst-compliance/components/BottomSheetSelector/BottomSheetSelector";
 import { RequestTypeSection } from "@/modules/gst/gst-compliance/components/RequestTypeSection/RequestTypeSection";
 import { FloatingLabelInput } from "@/modules/gst/gst-compliance/components/FloatingLabelInput/FloatingLabelInput";
-import {
-  ComplianceConfirmModal,
-  ComplianceResumeModal,
-} from "@/modules/gst/gst-compliance/components/ComplianceModals/ComplianceModals";
+import { ComplianceConfirmModal } from "@/modules/gst/gst-compliance/components/ComplianceModals/ComplianceModals";
+import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
 import { GstComplianceReviewStep } from "@/modules/gst/gst-compliance/components/GstComplianceReviewStep/GstComplianceReviewStep";
-import { useComplianceForm } from "@/modules/gst/hooks/useComplianceForm";
+import { useComplianceForm } from "@/modules/gst/gst-compliance/hooks/useComplianceForm";
 import {
   styles,
   getRootBgStyle,
@@ -62,10 +60,8 @@ export function GstComplianceScreen() {
     errors,
     isSubmitting,
     showConfirmModal,
-    showResumeModal,
     setShowConfirmModal,
-    resumeDraft,
-    discardDraft,
+    draftGuard,
     updateField,
     clearError,
     handleGstinChange,
@@ -102,28 +98,14 @@ export function GstComplianceScreen() {
 
   return (
     <View style={[styles.root, getRootBgStyle(isDark)]}>
-      {/* Top Header Bar */}
+      {/* Top Header Bar with ITR-style step indicator */}
       <ComplianceHeader
         title={currentStep === 1 ? "Review Compliance Request" : "GST Compliance"}
+        currentStep={currentStep + 1}
+        totalSteps={2}
+        stepLabel={currentStep === 1 ? "Review & Submit" : "Request Details"}
         onBackPress={handleBack}
       />
-
-      {/* Step Indicator Bar (Step 0: Form & Docs, Step 1: Review) */}
-      <View style={styles.stepIndicatorContainer}>
-        <View
-          style={[
-            styles.stepIndicatorBar,
-            styles.stepIndicatorBarActive,
-          ]}
-        />
-        <View
-          style={[
-            styles.stepIndicatorBar,
-            isDark && styles.stepIndicatorBarDark,
-            currentStep >= 1 && styles.stepIndicatorBarActive,
-          ]}
-        />
-      </View>
 
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
@@ -182,14 +164,19 @@ export function GstComplianceScreen() {
                   isDark ? styles.cardDark : styles.cardLight,
                 ]}
               >
-                <Text
-                  style={[
-                    styles.sectionTitle,
-                    isDark && styles.sectionTitleDark,
-                  ]}
-                >
-                  Business & Filing Details
-                </Text>
+                <View style={styles.sectionHeader}>
+                  <View style={[styles.sectionIconBox, isDark && styles.sectionIconBoxDark]}>
+                    <Ionicons name="document-text-outline" size={18} color={BrandColors.PRIMARY_ORANGE} />
+                  </View>
+                  <View style={styles.sectionTitleWrap}>
+                    <Text style={[styles.sectionTitle, isDark && styles.sectionTitleDark]}>
+                      Business & Filing Details
+                    </Text>
+                    <Text style={[styles.sectionSubtitle, isDark && styles.sectionSubtitleDark]}>
+                      GSTIN, Financial Year & Request Type
+                    </Text>
+                  </View>
+                </View>
 
                 {/* 1. GSTIN Floating Label */}
                 <FloatingLabelInput
@@ -389,12 +376,12 @@ export function GstComplianceScreen() {
         onConfirm={handleConfirmSubmit}
       />
 
-      {/* Resume Draft Modal */}
-      <ComplianceResumeModal
-        visible={showResumeModal}
-        isDark={isDark}
-        onDiscard={discardDraft}
-        onResume={resumeDraft}
+      {/* Universal Draft Modal */}
+      <UniversalDraftModal
+        visible={draftGuard.showDraftModal}
+        onSaveAndExit={draftGuard.handleSaveAndExit}
+        onDiscardAndExit={draftGuard.handleDiscardAndExit}
+        onCancel={draftGuard.handleCancel}
       />
     </View>
   );

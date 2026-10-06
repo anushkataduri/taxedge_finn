@@ -45,7 +45,8 @@ export const AssessmentYearDropdown: React.FC<AyDropdownProps> = ({
             placeholder="E.g., AY 2028-29"
             placeholderTextColor="#94A3B8"
             value={formData.assessmentYear}
-            onChangeText={(text) => handleFieldChange("assessmentYear", text)}
+            maxLength={10}
+              onChangeText={(text) => handleFieldChange("assessmentYear", text.toUpperCase())}
             autoFocus
           />
           <TouchableOpacity onPress={() => { setShowOtherAyInput(false); handleFieldChange("assessmentYear", ""); }}>

@@ -46,7 +46,7 @@ export const styles = StyleSheet.create({
   editText: {
     fontSize: Typography.fontSize.xs,
     fontWeight: "600",
-    color: BrandColors.PRIMARY_BLUE,
+    color: BrandColors.PRIMARY_ORANGE,
   },
   row: {
     flexDirection: "row",
@@ -67,7 +67,7 @@ export const styles = StyleSheet.create({
   highlightValue: {
     fontSize: Typography.fontSize.base,
     fontWeight: "700",
-    color: BrandColors.PRIMARY_BLUE,
+    color: BrandColors.PRIMARY_ORANGE_DARK || BrandColors.PRIMARY_ORANGE,
   },
   docsGrid: {
     flexDirection: "row",
@@ -89,7 +89,7 @@ export const styles = StyleSheet.create({
   docBadgeText: {
     fontSize: 11,
     fontWeight: "600",
-    color: BrandColors.PRIMARY_BLUE,
+    color: BrandColors.PRIMARY_ORANGE_DARK,
   },
   consentContainer: {
     flexDirection: "row",
@@ -107,13 +107,13 @@ export const styles = StyleSheet.create({
     height: 20,
     borderRadius: 4,
     borderWidth: 2,
-    borderColor: BrandColors.PRIMARY_BLUE,
+    borderColor: BrandColors.PRIMARY_ORANGE,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
   },
   checkboxActive: {
-    backgroundColor: BrandColors.PRIMARY_BLUE,
+    backgroundColor: BrandColors.PRIMARY_ORANGE,
   },
   consentText: {
     flex: 1,

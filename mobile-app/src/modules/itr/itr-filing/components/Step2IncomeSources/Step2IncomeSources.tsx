@@ -1,3 +1,4 @@
+import { Step2SalaryIncome } from "./components/Step2SalaryIncome";
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -58,10 +59,50 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({ isEditin
     if (!hasAnyIncome) {
       Alert.alert(
         "Income Source Required",
-        "Please select at least one income source to proceed.",
+        "Please select at least one income source to proceed."
       );
       return;
     }
+
+    if (sources.salary.enabled) {
+      if (!sources.salary.employerName || !sources.salary.grossSalary) {
+        Alert.alert("Salary Details Required", "Please fill in Employer Name and Gross Salary.");
+        return;
+      }
+    }
+    
+    if (sources.houseProperty.enabled) {
+      if (sources.houseProperty.propertyType === "let_out" && !sources.houseProperty.annualRentReceived) {
+        Alert.alert("House Property Details Required", "Please fill in Annual Rent Received for let out property.");
+        return;
+      }
+      if (sources.houseProperty.propertyType === "self_occupied" && !sources.houseProperty.homeLoanInterest) {
+        Alert.alert("House Property Details Required", "Please fill in Home Loan Interest for self-occupied property.");
+        return;
+      }
+    }
+
+    if (sources.business.enabled) {
+      if (!sources.business.grossTurnover) {
+        Alert.alert("Business Details Required", "Please fill in Gross Turnover for your business.");
+        return;
+      }
+    }
+
+    if (sources.capitalGains.enabled) {
+      if (!sources.capitalGains.hasEquityMf && !sources.capitalGains.hasFnoIntraday && !sources.capitalGains.hasPropertyAssets && !sources.capitalGains.hasCryptoVda) {
+        Alert.alert("Capital Gains Required", "Please select at least one type of capital gain.");
+        return;
+      }
+    }
+
+    if (sources.otherSources.enabled) {
+      if (!sources.otherSources.savingsInterest && !sources.otherSources.fdInterest && !sources.otherSources.dividendIncome && !sources.otherSources.familyPension && !sources.otherSources.otherIncome) {
+        Alert.alert("Other Sources Details Required", "Please fill in at least one other income amount.");
+        return;
+      }
+    }
+
     onContinue();
   };
 
@@ -277,169 +318,7 @@ export const Step2IncomeSources: React.FC<Step2IncomeSourcesProps> = ({ isEditin
       </View>
 
       {/* 1. Salary Income */}
-      {sources.salary.enabled && (
-        <View style={[styles.card, styles.cardActive]}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={styles.sourceHeaderRow}
-            onPress={() => onUpdateSalary({ enabled: !sources.salary.enabled })}
-          >
-            <View style={styles.sourceHeaderLeft}>
-              <View style={[styles.sourceIconBox, styles.sourceIconBoxActive]}>
-                <Ionicons
-                  name="briefcase-outline"
-                  size={20}
-                  color={BrandColors.PRIMARY_ORANGE}
-                />
-              </View>
-              <View style={styles.sourceTitleCol}>
-                <View style={styles.sourceTitleRow}>
-                  <Text style={styles.sourceTitle}>Salary Income</Text>
-                  {sources.salary.isVerified &&
-                    sources.salary.source === "FORM_16" && (
-                      <View style={styles.sourceTagVerified}>
-                        <Ionicons
-                          name="shield-checkmark"
-                          size={10}
-                          color="#166534"
-                        />
-                        <Text style={styles.sourceTagVerifiedText}>
-                          Form 16 Imported
-                        </Text>
-                      </View>
-                    )}
-                </View>
-                <Text style={styles.sourceSubtitle}>
-                  Employer Form 16, payslips, TDS credits
-                </Text>
-              </View>
-            </View>
-            <View style={styles.checkboxBtn}>
-              <Ionicons
-                name="checkbox"
-                size={22}
-                color={BrandColors.PRIMARY_ORANGE}
-              />
-            </View>
-          </TouchableOpacity>
-
-          <View style={styles.expandedForm}>
-            {/* Form 16 Import Snapshot Card */}
-            {sources.salary.isVerified &&
-              sources.salary.source === "FORM_16" &&
-              Boolean(sources.salary.employerName) && (
-                <View style={styles.form16Card}>
-                  <View style={styles.form16TopRow}>
-                    <Text style={styles.form16Title}>
-                      Detected from Form 16
-                    </Text>
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() =>
-                        Alert.alert(
-                          "Form 16 Details",
-                          `Employer: ${sources.salary.employerName}\nGross Salary: ₹${Number(sources.salary.grossSalary || 0).toLocaleString("en-IN")}\nAllowances u/s 10: ₹${Number(sources.salary.allowances || 0).toLocaleString("en-IN")}\nTDS Deducted: ₹${Number(sources.salary.tdsDeducted || 0).toLocaleString("en-IN")}`,
-                        )
-                      }
-                    >
-                      <Text style={styles.sourceSubtitle}>View Details</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  <View style={styles.form16StatsRow}>
-                    <Text style={styles.form16StatLabel}>Employer</Text>
-                    <Text style={styles.form16StatValue}>
-                      {sources.salary.employerName}
-                    </Text>
-                  </View>
-                  <View style={styles.form16StatsRow}>
-                    <Text style={styles.form16StatLabel}>
-                      TDS Deducted (Tax Credit)
-                    </Text>
-                    <Text style={styles.form16StatValue}>
-                      ₹{" "}
-                      {Number(sources.salary.tdsDeducted || 0).toLocaleString(
-                        "en-IN",
-                      )}
-                    </Text>
-                  </View>
-                </View>
-              )}
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Employer Legal Name</Text>
-              <View style={styles.inputBox}>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="e.g. Acme Technologies Ltd"
-                  placeholderTextColor="#94A3B8"
-                  value={sources.salary.employerName}
-                  onChangeText={(employerName) =>
-                    onUpdateSalary({ employerName })
-                  }
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputRow}>
-              <View style={styles.inputGroupHalf}>
-                <Text style={styles.inputLabel}>Gross Salary (Annual)</Text>
-                <View style={styles.inputBox}>
-                  <Text style={styles.currencyPrefix}>₹</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    keyboardType="numeric"
-                    placeholder="e.g. 8,50,000"
-                    placeholderTextColor="#94A3B8"
-                    value={sources.salary.grossSalary}
-                    onChangeText={(val) =>
-                      onUpdateSalary({
-                        grossSalary: val.replace(/[^0-9]/g, ""),
-                      })}
-                    maxLength={12}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.inputGroupHalf}>
-                <Text style={styles.inputLabel}>
-                  Exempt Allowances (HRA, LTA)
-                </Text>
-                <View style={styles.inputBox}>
-                  <Text style={styles.currencyPrefix}>₹</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    keyboardType="numeric"
-                    placeholder="e.g. 50,000"
-                    placeholderTextColor="#94A3B8"
-                    value={sources.salary.allowances}
-                    onChangeText={(val) =>
-                      onUpdateSalary({ allowances: val.replace(/[^0-9]/g, "") })}
-                    maxLength={12}
-                  />
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>TDS Deducted by Employer</Text>
-              <View style={styles.inputBox}>
-                <Text style={styles.currencyPrefix}>₹</Text>
-                <TextInput
-                  style={styles.textInput}
-                  keyboardType="numeric"
-                  placeholder="e.g. 45,000"
-                  placeholderTextColor="#94A3B8"
-                  value={sources.salary.tdsDeducted}
-                  onChangeText={(val) =>
-                    onUpdateSalary({ tdsDeducted: val.replace(/[^0-9]/g, "") })}
-                  maxLength={12}
-                />
-              </View>
-            </View>
-          </View>
-        </View>
-      )}
+      <Step2SalaryIncome data={sources.salary} onUpdate={onUpdateSalary} />
 
       {/* 2. House Property Income */}
       {sources.houseProperty.enabled && (

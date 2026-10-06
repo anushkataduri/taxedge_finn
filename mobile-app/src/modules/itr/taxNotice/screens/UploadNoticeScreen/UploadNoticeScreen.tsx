@@ -243,7 +243,7 @@ export const UploadNoticeScreen: React.FC = () => {
                 autoCapitalize="characters"
                 maxLength={10}
                 value={formData.pan}
-                onChangeText={(text) => handleFieldChange("pan", text.toUpperCase())}
+                onChangeText={(text) => handleFieldChange("pan", text.replace(/[^A-Za-z0-9]/g, "").toUpperCase())}
               />
               {errors.pan ? <Text style={styles.errorText}>{errors.pan}</Text> : null}
             </View>
@@ -294,7 +294,8 @@ export const UploadNoticeScreen: React.FC = () => {
                 placeholderTextColor="#94A3B8"
                 autoCapitalize="characters"
                 value={formData.noticeNumber}
-                onChangeText={(text) => handleFieldChange("noticeNumber", text)}
+                maxLength={50}
+                  onChangeText={(text) => handleFieldChange("noticeNumber", text.replace(/[^A-Za-z0-9/\\-]/g, "").toUpperCase())}
               />
               <Text style={styles.inputHint}>
                 Document Identification Number (DIN) or CPC Communication number
@@ -330,7 +331,8 @@ export const UploadNoticeScreen: React.FC = () => {
                 placeholder="Describe your case, income sources, reason for discrepancy, or if you already paid taxes..."
                 placeholderTextColor="#94A3B8"
                 value={formData.customerExplanation}
-                onChangeText={(text) => handleFieldChange("customerExplanation", text)}
+                maxLength={1000}
+                  onChangeText={(text) => handleFieldChange("customerExplanation", text)}
               />
               {errors.customerExplanation ? (
                 <Text style={styles.errorText}>{errors.customerExplanation}</Text>

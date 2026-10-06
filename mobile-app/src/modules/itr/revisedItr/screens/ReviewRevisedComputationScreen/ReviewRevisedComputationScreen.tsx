@@ -87,6 +87,12 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
   const handleEditOriginal = () => {
     router.push({
       pathname: "/service/revised-itr" as any,
+      params: {
+        acknowledgementNumber: ackNo,
+        assessmentYear,
+        revisionReason: params.revisionReason,
+        revisedDetails: params.revisedDetails,
+      },
     });
   };
 
@@ -97,6 +103,7 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
         acknowledgementNumber: ackNo,
         assessmentYear,
         revisionReason: params.revisionReason,
+        revisedDetails: params.revisedDetails,
       },
     });
   };
@@ -108,6 +115,7 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
         acknowledgementNumber: ackNo,
         assessmentYear,
         revisionReason: params.revisionReason,
+        revisedDetails: params.revisedDetails,
       },
     });
   };
@@ -157,7 +165,7 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
       <FocusAwareStatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Screen Header */}
-      <RevisedItrHeader subtitle="Review Revised ITR" />
+      <RevisedItrHeader subtitle="Review Revised ITR" hideBackButton />
 
       {/* Main Content */}
       <ScrollView

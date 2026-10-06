@@ -13,7 +13,6 @@ export interface WorkingCapitalFinancialsStepProps {
   errors?: Record<string, string>;
 }
 
-
 const WC_PURPOSES: readonly string[] = [
   "Working Capital",
   "Inventory / Stock",

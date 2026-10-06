@@ -92,7 +92,7 @@ export const PersonalLoanReviewStep: React.FC<PersonalLoanReviewStepProps> = ({
             <Ionicons
               name="create-outline"
               size={14}
-              color={BrandColors.PRIMARY_BLUE}
+              color={BrandColors.PRIMARY_ORANGE}
             />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
@@ -141,7 +141,7 @@ export const PersonalLoanReviewStep: React.FC<PersonalLoanReviewStepProps> = ({
             <Ionicons
               name="create-outline"
               size={14}
-              color={BrandColors.PRIMARY_BLUE}
+              color={BrandColors.PRIMARY_ORANGE}
             />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
@@ -174,7 +174,7 @@ export const PersonalLoanReviewStep: React.FC<PersonalLoanReviewStepProps> = ({
             <Ionicons
               name="create-outline"
               size={14}
-              color={BrandColors.PRIMARY_BLUE}
+              color={BrandColors.PRIMARY_ORANGE}
             />
             <Text style={styles.editText}>Manage</Text>
           </TouchableOpacity>
@@ -183,7 +183,7 @@ export const PersonalLoanReviewStep: React.FC<PersonalLoanReviewStepProps> = ({
         <View style={styles.docsGrid}>
           {uploadedDocs.map((doc) => (
             <View key={doc.id} style={styles.docBadge}>
-              <Ionicons name="document-text" size={12} color={BrandColors.PRIMARY_BLUE} />
+              <Ionicons name="document-text" size={12} color={BrandColors.PRIMARY_ORANGE} />
               <Text style={styles.docBadgeText}>{doc.name}</Text>
             </View>
           ))}

@@ -150,5 +150,7 @@ export async function submitAmendmentService(params: {
     appId,
     sectionTitle: selectedSection.title,
     isCore,
+    gstin: targetGstId,
+    estCompletion: isCore ? "15 Working Days" : "Immediate / 1 Working Day",
   };
 }

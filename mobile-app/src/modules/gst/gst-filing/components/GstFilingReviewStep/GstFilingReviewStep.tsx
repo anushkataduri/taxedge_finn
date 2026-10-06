@@ -356,7 +356,7 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
                 keyboardType="numeric"
                 value={formatIndianNumberInput(editTurnoverStr)}
                 onChangeText={(val) => setEditTurnoverStr(toRawNumericString(val))}
-                placeholder="e.g. 4,25,000"
+                placeholder="Enter turnover amount"
                 placeholderTextColor="#94A3B8"
               />
             </View>
@@ -368,7 +368,7 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
                 keyboardType="numeric"
                 value={formatIndianNumberInput(editItcStr)}
                 onChangeText={(val) => setEditItcStr(toRawNumericString(val))}
-                placeholder="e.g. 22,500"
+                placeholder="Enter eligible ITC amount"
                 placeholderTextColor="#94A3B8"
               />
             </View>

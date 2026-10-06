@@ -8,8 +8,8 @@ import { View, Text, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
 import { GstBusinessFormData } from "@/modules/gst/gst-registration/components/GstBusinessStep/GstBusinessStep";
-import { DocumentItem } from "@/modules/gst/gst-registration/components/GstUnifiedDocumentStep/GstUnifiedDocumentStep";
-import { DocumentPreviewModal } from "@/modules/gst/gst-registration/components/GstUnifiedDocumentStep/GstDocumentModals";
+import { DocumentItem } from "@/modules/gst/gst-registration/components/GstUnifiedDocumentStep/GstUnifiedDocumentStep.types";
+import { GstViewDocumentModal } from "@/modules/gst/components/GstDocumentCard";
 import { styles, getDocProgressFillStyle } from "./GstReviewStep.styles";
 
 interface GstReviewStepProps {
@@ -235,14 +235,13 @@ export const GstReviewStep: React.FC<GstReviewStepProps> = ({
       </TouchableOpacity>
 
       {/* Full-Screen Document Preview Modal */}
-      <DocumentPreviewModal
-        previewDoc={previewDoc}
+      <GstViewDocumentModal
+        visible={Boolean(previewDoc)}
+        title={previewDoc?.name || "Document Preview"}
+        fileUri={previewDoc?.fileUri}
+        fileName={previewDoc?.fileName}
+        fileSize={previewDoc?.fileSize}
         onClose={() => setPreviewDoc(null)}
-        onReplace={() => {
-          setPreviewDoc(null);
-          onEditStep(1, "documents");
-        }}
-        isUploading={false}
       />
     </View>
   );

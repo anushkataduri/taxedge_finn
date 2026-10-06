@@ -5,7 +5,7 @@ import { GstFilingPeriodData } from "@/modules/gst/gst-filing/components/GstFili
 import {
   INITIAL_FILING_DOCS,
   FilingDocItem,
-} from "@/modules/gst/gst-filing/components/GstFilingDocumentsStep/GstFilingDocumentsStep";
+} from "@/modules/gst/gst-filing/config/gstFilingDocumentsConfig";
 import { useApplicationStore } from "@/store/applicationStore";
 import { applicationService } from "@/modules/applications/services/applicationService";
 
