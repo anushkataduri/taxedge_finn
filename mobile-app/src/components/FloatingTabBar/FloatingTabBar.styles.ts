@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import type { IconName } from "../../types/domain";
+import type { IconName } from "@/types/domain";
 
 export const FLOATING_TAB_HEIGHT = 60;
 export const FLOATING_TAB_GAP = 12;

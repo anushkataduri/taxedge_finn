@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { useTheme } from "../../hooks/use-theme";
+import { useTheme } from "@/hooks/use-theme";
 import { FloatingTabBar } from "@/components";
 
 /**

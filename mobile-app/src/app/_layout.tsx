@@ -2,12 +2,12 @@ import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { ThemeProvider } from "../design-system/theme";
+import { ThemeProvider } from "@/design-system/theme";
 import { AnimatedSplashOverlay } from "@/components";
-import { CompleteProfileModal } from "../shared/components/CompleteProfileModal";
-import { ErrorBoundary } from "../core/error-handling/ErrorBoundary";
-import { RootStatusBar } from "../shared/components/FocusAwareStatusBar";
-import { AppBootstrap } from "./bootstrap/AppBootstrap";
+import { CompleteProfileModal } from "@/shared/components/CompleteProfileModal";
+import { ErrorBoundary } from "@/core/error-handling/ErrorBoundary";
+import { RootStatusBar } from "@/shared/components/FocusAwareStatusBar";
+import { AppBootstrap } from "@/app/bootstrap/AppBootstrap";
 
 SplashScreen.preventAutoHideAsync();
 

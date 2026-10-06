@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet, Platform, Image } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { BrandColors } from "../../../design-system/colors";
-import { ScalePressable } from "../ScalePressable/ScalePressable";
+import { BrandColors } from "@/design-system/colors";
+import { ScalePressable } from "@/shared/components/ScalePressable/ScalePressable";
 
 export interface ServiceCardData {
   id: string;
@@ -10,13 +10,13 @@ export interface ServiceCardData {
   description: string;
   iconName?: string;
   iconType?:
-  | "registration"
-  | "filing"
-  | "compliance"
-  | "amendment"
-  | "cancellation"
-  | "certificate"
-  | string;
+    | "registration"
+    | "filing"
+    | "compliance"
+    | "amendment"
+    | "cancellation"
+    | "certificate"
+    | string;
   iconColor?: string;
   iconBg?: string;
   route: string;
@@ -56,25 +56,12 @@ const ITR_3D_ICONS: Record<string, any> = {
   "tax-notice-assistance": require("../../../../assets/images/services/itr/tax_notice_assistance.png"),
 };
 
-const LOAN_3D_ICONS: Record<string, any> = {
-  "business-loan": require("../../../../assets/images/services/loans/business-loan.png"),
-  "personal-loan": require("../../../../assets/images/services/loans/personal-loan.png"),
-  "home-loan": require("../../../../assets/images/services/loans/home-loan.png"),
-  "property-loan": require("../../../../assets/images/services/loans/property-loan.png"),
-  "vehicle-loan": require("../../../../assets/images/services/loans/vehicle-loan.png"),
-  "working-capital": require("../../../../assets/images/services/loans/working-capital.png"),
-  "machinery-loan": require("../../../../assets/images/services/loans/machinery-loan.png"),
-  "project-finance": require("../../../../assets/images/services/loans/project-finance.png"),
-  "msme-loan": require("../../../../assets/images/services/loans/msme-loan.png"),
-};
-
 const renderCardIcon = (item: ServiceCardData) => {
   const bg = item.iconBg || "#EDF9F3";
   const icon3D =
     item.iconImage ||
     GST_3D_ICONS[item.id] ||
     ITR_3D_ICONS[item.id] ||
-    LOAN_3D_ICONS[item.id] ||
     (item.iconType ? GST_3D_ICONS[item.iconType] : undefined);
 
   if (icon3D) {
@@ -113,7 +100,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ item, onPress }) => {
           </Text>
         </View>
 
-        {item.badgeText ? (
+        {item.badgeText || item.rateText ? (
           <View style={styles.rightCol}>
             {item.badgeText && (
               <View
@@ -131,6 +118,10 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ item, onPress }) => {
                   {item.badgeText}
                 </Text>
               </View>
+            )}
+
+            {item.rateText && (
+              <Text style={styles.rateText}>{item.rateText}</Text>
             )}
 
             <Ionicons

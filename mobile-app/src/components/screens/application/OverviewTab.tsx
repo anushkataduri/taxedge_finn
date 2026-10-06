@@ -41,20 +41,24 @@ export function OverviewTab({
   onReviewEdit,
   onSupportTicket,
 }: OverviewTabProps) {
-  let parsedCurrent: Record<string, any> = {};
-  let parsedRequested: Record<string, any> = {};
+  let parsedCurrent: Record<string, unknown> = {};
+  let parsedRequested: Record<string, unknown> = {};
   try {
     parsedCurrent =
       typeof formData.currentValues === "string"
         ? JSON.parse(formData.currentValues || "{}")
-        : formData.currentValues || {};
-  } catch {}
+        : (formData.currentValues as Record<string, unknown>) || {};
+  } catch (err) {
+    if (__DEV__) console.warn("Failed to parse currentValues:", err);
+  }
   try {
     parsedRequested =
       typeof formData.requestedValues === "string"
         ? JSON.parse(formData.requestedValues || "{}")
-        : formData.requestedValues || {};
-  } catch {}
+        : (formData.requestedValues as Record<string, unknown>) || {};
+  } catch (err) {
+    if (__DEV__) console.warn("Failed to parse requestedValues:", err);
+  }
   const hasRequested = Object.keys(parsedRequested).length > 0;
 
   return (

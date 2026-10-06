@@ -11,10 +11,10 @@ import {
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
-import { useTheme } from "../../hooks/use-theme";
-import { PrimaryButton } from "../PrimaryButton/PrimaryButton";
-import { SecondaryButton } from "../SecondaryButton";
-import type { ApplicationDocument, IconName } from "../../types/domain";
+import { useTheme } from "@/hooks/use-theme";
+import { PrimaryButton } from "@/components/PrimaryButton/PrimaryButton";
+import { SecondaryButton } from "@/components/SecondaryButton";
+import type { ApplicationDocument, IconName } from "@/types/domain";
 import {
   CATEGORIES,
   GST_KEYWORDS,

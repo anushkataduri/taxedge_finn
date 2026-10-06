@@ -81,6 +81,8 @@ export interface TimelineStep {
   date?: string;
 }
 
+export type ApplicationTimelineStep = TimelineStep;
+
 export type ChatSender = "user" | "staff";
 
 export interface ChatMessage {
@@ -196,4 +198,6 @@ export interface Customer extends CustomerProfile {
   customerId: string;
   /** Local profile photo, stored as the picker's file URI on this device. */
   avatarUri?: string | null;
+  profileCompleted?: boolean;
+  hasPasscode?: boolean;
 }

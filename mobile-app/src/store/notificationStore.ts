@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import { localStorage } from "../core/storage/localStorage";
-import { authStorage } from "../modules/authentication/services/authStorage";
-import type { AppNotification, NotificationType } from "../types/domain";
+import { localStorage } from "@/core/storage/localStorage";
+import { authStorage } from "@/modules/authentication/services/authStorage";
+import type { AppNotification, NotificationType } from "@/types/domain";
 
 const getNotificationsStorageKey = (): string => {
   const activeMobile = String(authStorage.getSession()?.activeMobile || "").replace(/\D/g, "");

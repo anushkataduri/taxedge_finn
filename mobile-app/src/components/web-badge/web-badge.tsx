@@ -3,8 +3,8 @@ import { version } from "expo/package.json";
 import { Image } from "expo-image";
 import { useColorScheme } from "react-native";
 
-import { ThemedText } from "../themed-text/themed-text";
-import { ThemedView } from "../themed-view";
+import { ThemedText } from "@/components/themed-text/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import { styles } from "./web-badge.styles";
 
 export function WebBadge() {

@@ -8,9 +8,9 @@ import {
   type NativeSyntheticEvent,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useTheme } from "../../hooks/use-theme";
-import { CATEGORIES } from "../../data/services";
-import type { ServiceCategory, ServiceCategoryId } from "../../types/domain";
+import { useTheme } from "@/hooks/use-theme";
+import { CATEGORIES } from "@/data/services";
+import type { ServiceCategory, ServiceCategoryId } from "@/types/domain";
 import {
   SUB_SERVICES_MAP,
   SUBTITLE_TEXT_MAP,

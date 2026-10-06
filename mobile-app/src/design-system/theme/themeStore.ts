@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { localStorage } from "../../core/storage/localStorage";
+import { localStorage } from "@/core/storage/localStorage";
 
 export type ThemeMode = "light" | "dark";
 

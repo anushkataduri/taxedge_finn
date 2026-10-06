@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, FlatList } from "react-native";
 import { useRouter } from "expo-router";
-import { useTheme } from "../hooks/use-theme";
-import { useNotificationStore } from "../store/notificationStore";
+import { useTheme } from "@/hooks/use-theme";
+import { useNotificationStore } from "@/store/notificationStore";
 import { AppHeader } from "@/components";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { styles, getThemedStyles } from "../styles/app/notifications.styles";
-import type { IconName, NotificationType } from "../types/domain";
-import { formatRelativeTime, parseTimestamp } from "../shared/formatters/dateFormatter";
+import { styles, getThemedStyles } from "@/styles/app/notifications.styles";
+import type { IconName, NotificationType } from "@/types/domain";
+import { formatRelativeTime, parseTimestamp } from "@/shared/formatters/dateFormatter";
 
 export default function NotificationsScreen() {
   const colors = useTheme();

@@ -10,14 +10,14 @@ import {
   type ViewProps,
 } from "react-native";
 
-import { ExternalLink } from "../external-link";
-import { ThemedText } from "../themed-text/themed-text";
-import { ThemedView } from "../themed-view";
+import { ExternalLink } from "@/components/external-link";
+import { ThemedText } from "@/components/themed-text/themed-text";
+import { ThemedView } from "@/components/themed-view";
 
 import {
   Colors,
   type ThemeName,
-} from "../../constants/theme";
+} from "@/constants/theme";
 import { styles } from "./app-tabs.web.styles";
 
 export default function AppTabs() {

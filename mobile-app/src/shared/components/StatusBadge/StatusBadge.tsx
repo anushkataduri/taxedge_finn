@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
-import { Colors } from "../../../design-system/colors";
+import { Colors } from "@/design-system/colors";
 
 export type StatusVariant =
   | "success"

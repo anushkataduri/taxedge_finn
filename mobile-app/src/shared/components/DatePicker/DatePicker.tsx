@@ -8,7 +8,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors } from "../../../design-system/colors";
+import { Colors } from "@/design-system/colors";
 
 export interface DatePickerProps {
   label?: string;

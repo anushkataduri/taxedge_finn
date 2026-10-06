@@ -1,4 +1,4 @@
-import { BrandColors, Colors } from "../../shared/theme";
+import { BrandColors, Colors } from "@/shared/theme";
 
 /**
  * Common color palette re-exported from shared theme tokens.

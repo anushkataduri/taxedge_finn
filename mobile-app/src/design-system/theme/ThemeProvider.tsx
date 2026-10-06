@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useEffect, useMemo } from "react";
-import { Colors } from "../colors";
-import { Typography } from "../typography";
-import { Spacing } from "../spacing";
-import { Shadows } from "../shadows";
-import { BorderRadius, BorderWidth } from "../borders";
+import { Colors } from "@/design-system/colors";
+import { Typography } from "@/design-system/typography";
+import { Spacing } from "@/design-system/spacing";
+import { Shadows } from "@/design-system/shadows";
+import { BorderRadius, BorderWidth } from "@/design-system/borders";
 import { useThemeStore, type ThemeMode } from "./themeStore";
 
 export interface Theme {

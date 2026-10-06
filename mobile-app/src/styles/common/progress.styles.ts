@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { BrandColors, BorderRadius } from "../../shared/theme";
+import { BrandColors, BorderRadius } from "@/shared/theme";
 
 export const progressStyles = StyleSheet.create({
   progressBarTrack: {

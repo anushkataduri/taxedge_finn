@@ -9,7 +9,7 @@ import {
   type ViewStyle,
   type TextStyle,
 } from "react-native";
-import { Colors } from "../../../design-system/colors";
+import { Colors } from "@/design-system/colors";
 
 export interface FormInputProps {
   label: string;

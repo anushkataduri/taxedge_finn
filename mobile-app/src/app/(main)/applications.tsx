@@ -12,14 +12,14 @@ import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useTheme } from "../../hooks/use-theme";
-import { useColorScheme } from "../../hooks/use-color-scheme";
-import { useResponsive } from "../../hooks/use-responsive";
-import { useApplicationStore } from "../../store/applicationStore";
-import { useNotificationStore } from "../../store/notificationStore";
-import { SCREEN_BOTTOM_PADDING } from "../../components/ScreenLayout";
-import type { Application, ServiceCategoryId } from "../../types/domain";
-import { styles } from "../../styles/app/(main)/applications.styles";
+import { useTheme } from "@/hooks/use-theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsive } from "@/hooks/use-responsive";
+import { useApplicationStore } from "@/store/applicationStore";
+import { useNotificationStore } from "@/store/notificationStore";
+import { SCREEN_BOTTOM_PADDING } from "@/components/ScreenLayout";
+import type { Application, ServiceCategoryId } from "@/types/domain";
+import { styles } from "@/styles/app/(main)/applications.styles";
 import { ApplicationCardItem } from "@/components/screens/applications/ApplicationCardItem";
 import { OverviewCard, type StatusFilterType, type OverviewItem } from "@/components/screens/applications/OverviewCard";
 
@@ -65,12 +65,13 @@ const STATUS_FILTER_MATCHERS: Record<StatusFilterType, (status: string) => boole
   UNDER_VERIFICATION: (s) => s.includes("verification") || s.includes("review"),
 };
 
-function getResumeRoute(app: Application): any {
-  return app.formData?.resumeRoute
-    ? app.formData.resumeRoute
-    : app.serviceId === "tds-refund"
+function getResumeRoute(app: Application): string {
+  return (
+    (app.formData?.resumeRoute as string) ||
+    (app.serviceId === "tds-refund"
       ? "/service/tds-form"
-      : `/service/${app.serviceId || "itr"}`;
+      : `/service/${app.serviceId || "itr"}`)
+  );
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -94,15 +95,32 @@ export default function ApplicationsScreen() {
   const [showCategoryFilterModal, setShowCategoryFilterModal] = useState(false);
 
   const fetchApplications = useCallback(async () => {
-    try { await loadApplications(); } catch {}
+    try {
+      await loadApplications();
+    } catch (err) {
+      if (__DEV__) console.warn("Failed to fetch applications:", err);
+    }
   }, [loadApplications]);
 
-  useEffect(() => { fetchApplications(); }, [fetchApplications]);
-  useFocusEffect(useCallback(() => { fetchApplications(); }, [fetchApplications]));
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchApplications();
+    }, [fetchApplications])
+  );
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    try { await loadApplications(); } catch {} finally { setRefreshing(false); }
+    try {
+      await loadApplications();
+    } catch (err) {
+      if (__DEV__) console.warn("Failed to refresh applications:", err);
+    } finally {
+      setRefreshing(false);
+    }
   }, [loadApplications]);
 
   // ── Derived counts ──────────────────────────────────────────────────────────
@@ -140,7 +158,7 @@ export default function ApplicationsScreen() {
   const handleApplicationPress = useCallback((item: Application) => {
     const isDraft = item.status === "Draft" || Boolean(item.formData?.isDraft);
     isDraft
-      ? router.push(getResumeRoute(item))
+      ? router.push(getResumeRoute(item) as any)
       : (useApplicationStore.getState().setSelectedApplicationId(item.id),
          router.push(`/application/${item.id}`));
   }, [router]);

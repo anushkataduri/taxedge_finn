@@ -1,5 +1,5 @@
 import { StyleSheet, Platform } from "react-native";
-import { BrandColors, Spacing } from "../../shared/theme";
+import { BrandColors, Spacing } from "@/shared/theme";
 
 export const layoutStyles = StyleSheet.create({
   safeAreaScreen: {

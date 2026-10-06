@@ -1,7 +1,7 @@
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useColorScheme } from "react-native";
 
-import { Colors, type ThemeName } from "../../constants/theme";
+import { Colors, type ThemeName } from "@/constants/theme";
 import { getLabelStyle } from "./app-tabs.styles";
 
 export default function AppTabs() {

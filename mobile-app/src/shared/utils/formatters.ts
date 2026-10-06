@@ -1,2 +1,2 @@
-export { formatCurrencyINR, formatNumberINR } from "../formatters/currencyFormatter";
-export { formatDate, formatDateTime } from "../formatters/dateFormatter";
+export { formatCurrencyINR, formatNumberINR } from "@/shared/formatters/currencyFormatter";
+export { formatDate, formatDateTime } from "@/shared/formatters/dateFormatter";

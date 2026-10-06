@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import type { IconName } from "../../types/domain";
+import type { IconName } from "@/types/domain";
 
 export const CYCLE_ICONS: IconName[] = [
   "receipt",

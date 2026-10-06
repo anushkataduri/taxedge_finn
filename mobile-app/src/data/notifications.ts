@@ -1,4 +1,4 @@
-import type { AppNotification } from "../types/domain";
+import type { AppNotification } from "@/types/domain";
 
 export const mockNotifications: AppNotification[] = [];
 

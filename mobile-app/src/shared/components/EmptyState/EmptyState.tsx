@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors } from "../../../design-system/colors";
-import { PrimaryButton } from "../Button/PrimaryButton";
+import { Colors } from "@/design-system/colors";
+import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 
 export interface EmptyStateProps {
   icon?: keyof typeof Ionicons.glyphMap;

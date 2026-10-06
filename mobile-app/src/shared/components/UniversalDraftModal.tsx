@@ -8,7 +8,7 @@ import {
   Platform,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { BrandColors } from "../theme";
+import { BrandColors } from "@/shared/theme";
 
 export interface UniversalDraftModalProps {
   visible: boolean;

@@ -1,8 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ApiError } from "./apiError";
 import { InterceptorManager } from "./interceptors";
-import { tokenManager } from "../authentication/tokenManager";
-import { tokenRefreshManager } from "../authentication/tokenRefreshManager";
+import { tokenManager } from "@/core/authentication/tokenManager";
+import { tokenRefreshManager } from "@/core/authentication/tokenRefreshManager";
 import {
   getDefaultBaseUrl,
   SERVER_IP,
@@ -44,7 +44,9 @@ export class ApiClient {
   constructor(baseUrl: string = getDefaultBaseUrl()) {
     this.baseUrl = baseUrl || getDefaultBaseUrl();
     this.interceptors = new InterceptorManager();
-    this.loadCustomBaseUrl().catch(() => { });
+    this.loadCustomBaseUrl().catch((err) => {
+      if (__DEV__) console.warn("Failed to load custom baseUrl from storage:", err);
+    });
   }
 
   getBaseUrl(): string {
@@ -83,6 +85,14 @@ export class ApiClient {
 
   async loadCustomBaseUrl(): Promise<string> {
     try {
+      const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+      if (envUrl) {
+        this.setBaseUrl(envUrl);
+        this.baseUrlLoaded = true;
+        await AsyncStorage.setItem(STORAGE_KEY_SERVER_URL, this.baseUrl);
+        return this.baseUrl;
+      }
+
       const saved = await AsyncStorage.getItem(STORAGE_KEY_SERVER_URL);
       if (saved && saved.trim()) {
         let clean = saved.trim();
@@ -91,18 +101,10 @@ export class ApiClient {
           await AsyncStorage.setItem(STORAGE_KEY_SERVER_URL, clean);
         }
         this.setBaseUrl(clean);
-        this.baseUrlLoaded = true;
-        return this.baseUrl;
       }
-
-      const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
-      if (envUrl) {
-        this.setBaseUrl(envUrl);
-        this.baseUrlLoaded = true;
-        await AsyncStorage.setItem(STORAGE_KEY_SERVER_URL, this.baseUrl);
-        return this.baseUrl;
-      }
-    } catch { }
+    } catch (loadErr) {
+      if (__DEV__) console.warn("Failed to load custom baseUrl from storage:", loadErr);
+    }
     this.baseUrlLoaded = true;
     return this.baseUrl;
   }
@@ -227,7 +229,9 @@ export class ApiClient {
           if (token) {
             initialHeaders["Authorization"] = `Bearer ${token}`;
           }
-        } catch {}
+        } catch (tokenErr) {
+          if (__DEV__) console.warn("Failed to retrieve access token:", tokenErr);
+        }
       }
 
       const interceptedConfig = await this.interceptors.runRequestInterceptors({
@@ -278,7 +282,8 @@ export class ApiClient {
           } catch {
             errorData = { message: errText || response.statusText };
           }
-        } catch {
+        } catch (err) {
+          if (__DEV__) console.warn("Failed to read response error text:", err);
           errorData = { message: response.statusText };
         }
         const message =

@@ -6,7 +6,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from "react-native";
-import { useTheme } from "../hooks/use-theme";
+import { useTheme } from "@/hooks/use-theme";
 import { styles } from "./SecondaryButton.styles";
 
 export interface SecondaryButtonProps {

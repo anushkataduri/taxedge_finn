@@ -11,7 +11,7 @@ import {
   BorderWidth,
   Spacing,
   Typography,
-} from "../../../shared/theme";
+} from "@/shared/theme";
 
 export const styles = StyleSheet.create({
   container: {
@@ -187,25 +187,27 @@ export const getScrollContentStyle = (bottomPadding: number) => ({
 });
 
 /** Dynamic styles for cards */
-export const getThemedCardStyle = (colors: any) => ({
-  backgroundColor: colors.backgroundElement as string,
-  borderColor: colors.border as string,
+export type ThemeTokens = Record<string, any>;
+
+export const getThemedCardStyle = (colors: ThemeTokens) => ({
+  backgroundColor: String(colors.backgroundElement),
+  borderColor: String(colors.border),
 });
 
 /** Dynamic styles for tabs */
-export const getTabItemThemedStyle = (isSelected: boolean, colors: any) => ({
-  borderBottomColor: isSelected ? (colors.primary as string) : "transparent",
+export const getTabItemThemedStyle = (isSelected: boolean, colors: ThemeTokens) => ({
+  borderBottomColor: isSelected ? String(colors.primary) : "transparent",
 });
 
-export const getTabTextThemedStyle = (isSelected: boolean, colors: any) => ({
-  color: isSelected ? (colors.primary as string) : (colors.textSecondary as string),
+export const getTabTextThemedStyle = (isSelected: boolean, colors: ThemeTokens) => ({
+  color: isSelected ? String(colors.primary) : String(colors.textSecondary),
   fontWeight: (isSelected ? "700" : "500") as "700" | "500",
 });
 
 /** Dynamic styles for bottom action bar */
-export const getBottomBarThemedStyle = (colors: any, bottomInset: number) => ({
-  backgroundColor: colors.backgroundElement as string,
-  borderTopColor: colors.border as string,
+export const getBottomBarThemedStyle = (colors: ThemeTokens, bottomInset: number) => ({
+  backgroundColor: String(colors.backgroundElement),
+  borderTopColor: String(colors.border),
   paddingBottom: Math.max(bottomInset, Spacing.md),
 });
 

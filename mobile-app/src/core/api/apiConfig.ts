@@ -2,7 +2,7 @@ import Constants from "expo-constants";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export const SERVER_IP = "192.168.88.25";
+export const SERVER_IP = "192.168.88.4";
 export const SERVER_PORT = 8086;
 export const STORAGE_KEY_SERVER_URL = "@taxedge_server_url";
 
@@ -21,20 +21,33 @@ export function getDefaultBaseUrl(): string {
   }
 
   try {
+    const manifest = (Constants as unknown as Record<string, unknown>).manifest as Record<string, unknown> | undefined;
+    const manifest2 = (Constants as unknown as Record<string, unknown>).manifest2 as Record<string, unknown> | undefined;
+    const expoGo = manifest2?.extra && typeof manifest2.extra === "object" ? (manifest2.extra as Record<string, unknown>).expoGo as Record<string, unknown> | undefined : undefined;
+    
     const hostUri =
       Constants.expoConfig?.hostUri ||
-      (Constants as any).manifest?.debuggerHost ||
-      (Constants as any).manifest2?.extra?.expoGo?.debuggerHost;
+      (typeof manifest?.debuggerHost === "string" ? manifest.debuggerHost : "") ||
+      (typeof expoGo?.debuggerHost === "string" ? expoGo.debuggerHost : "");
     const ip = hostUri?.split(":")[0];
     if (ip && /^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) {
       return `http://${ip}:${SERVER_PORT}`;
     }
-  } catch {}
+  } catch (error) {
+    if (__DEV__) {
+      console.warn("Failed to resolve dynamic hostUri from Constants:", error);
+    }
+  }
 
   return `http://${SERVER_IP}:${SERVER_PORT}`;
 }
 
 export async function getActiveBaseUrl(): Promise<string> {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+  if (envUrl) {
+    return envUrl.replace(/\/$/, "");
+  }
+
   try {
     const saved = await AsyncStorage.getItem(STORAGE_KEY_SERVER_URL);
     if (saved && saved.trim()) {
@@ -44,11 +57,10 @@ export async function getActiveBaseUrl(): Promise<string> {
       }
       return clean;
     }
-  } catch {}
-
-  const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
-  if (envUrl) {
-    return envUrl.replace(/\/$/, "");
+  } catch (error) {
+    if (__DEV__) {
+      console.warn("Failed to read server URL from storage:", error);
+    }
   }
 
   return getDefaultBaseUrl().replace(/\/$/, "");

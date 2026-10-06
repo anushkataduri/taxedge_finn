@@ -8,7 +8,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from "react-native";
-import { Colors } from "../../../design-system/colors";
+import { Colors } from "@/design-system/colors";
 
 export interface SecondaryButtonProps {
   title: string;

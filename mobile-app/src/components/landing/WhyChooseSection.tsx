@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text } from "react-native";
 import Svg, { Path } from "react-native-svg";
+import { landingStyles } from "./landing.styles";
 
 function ShieldIcon({ size = 20, color = "#0052FF" }) {
   return (
@@ -88,22 +89,22 @@ const BENEFITS = [
 
 export function WhyChooseSection() {
   return (
-    <View style={styles.container}>
+    <View style={landingStyles.whyChooseContainer}>
       {/* Header Divider */}
-      <View style={styles.dividerRow}>
-        <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>• WHY CHOOSE TAXEDGE? •</Text>
-        <View style={styles.dividerLine} />
+      <View style={landingStyles.dividerRow}>
+        <View style={landingStyles.dividerLine} />
+        <Text style={landingStyles.dividerText}>• WHY CHOOSE TAXEDGE? •</Text>
+        <View style={landingStyles.dividerLine} />
       </View>
 
       {/* 3 Benefit Cards */}
-      <View style={styles.benefitsRow}>
+      <View style={landingStyles.benefitsRow}>
         {BENEFITS.map(({ id, Icon, line1, line2 }) => (
-          <View key={id} style={styles.benefitCard}>
+          <View key={id} style={landingStyles.benefitCard}>
             <Icon size={19} color="#0052FF" />
-            <View style={styles.textWrapper}>
-              <Text style={styles.benefitText}>{line1}</Text>
-              <Text style={styles.benefitText}>{line2}</Text>
+            <View style={landingStyles.benefitTextWrapper}>
+              <Text style={landingStyles.benefitText}>{line1}</Text>
+              <Text style={landingStyles.benefitText}>{line2}</Text>
             </View>
           </View>
         ))}
@@ -112,51 +113,4 @@ export function WhyChooseSection() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    marginTop: 14,
-  },
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#D0E3FA",
-  },
-  dividerText: {
-    color: "#0052FF",
-    fontSize: 10.5,
-    fontWeight: "700",
-    letterSpacing: 1.1,
-    marginHorizontal: 8,
-  },
-  benefitsRow: {
-    flexDirection: "row",
-    gap: 6,
-    marginTop: 10,
-    width: "100%",
-  },
-  benefitCard: {
-    flex: 1,
-    backgroundColor: "#EEF6FE",
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  textWrapper: {
-    flexShrink: 1,
-  },
-  benefitText: {
-    color: "#0052FF",
-    fontSize: 10.5,
-    fontWeight: "700",
-    lineHeight: 13.5,
-  },
-});
+export default WhyChooseSection;

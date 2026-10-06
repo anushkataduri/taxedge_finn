@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { BrandColors, BorderRadius, Typography } from "../../shared/theme";
+import { BrandColors, BorderRadius, Typography } from "@/shared/theme";
 
 export const badgeStyles = StyleSheet.create({
   pillBase: {

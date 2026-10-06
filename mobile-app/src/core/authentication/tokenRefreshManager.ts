@@ -1,10 +1,10 @@
-import { tokenManager } from "../authentication/tokenManager";
+import { tokenManager } from "@/core/authentication/tokenManager";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   getActiveBaseUrl,
   SERVER_PORT,
   STORAGE_KEY_SERVER_URL,
-} from "../api/apiConfig";
+} from "@/core/api/apiConfig";
 
 /**
  * Backend response shape from POST /auth/refresh

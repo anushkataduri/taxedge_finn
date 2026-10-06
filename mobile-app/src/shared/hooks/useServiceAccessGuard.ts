@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { useRouter, usePathname } from "expo-router";
-import { useAuthStore } from "../../modules/authentication/store/authStore";
+import { useAuthStore } from "@/modules/authentication/store/authStore";
 
 export function useServiceAccessGuard() {
   const router = useRouter();

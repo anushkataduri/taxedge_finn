@@ -2,8 +2,8 @@ import React from "react";
 import { Modal, View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { BrandColors } from "../../theme";
-import { useAuthStore } from "../../../modules/authentication/store/authStore";
+import { BrandColors } from "@/shared/theme";
+import { useAuthStore } from "@/modules/authentication/store/authStore";
 import { styles } from "./CompleteProfileModal.styles";
 
 export interface CompleteProfileModalProps {

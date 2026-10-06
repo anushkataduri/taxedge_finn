@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Colors } from "../../../design-system/colors";
+import { Colors } from "@/design-system/colors";
 
 export interface ProgressStepperProps {
   steps: string[];

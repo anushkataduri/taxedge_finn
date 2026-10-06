@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleProp, ViewStyle } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { BrandColors } from "../../theme";
+import { BrandColors } from "@/shared/theme";
 import { styles } from "./LoanNavigation.styles";
 
 export interface LoanNavigationProps {

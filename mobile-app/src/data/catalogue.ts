@@ -1,4 +1,4 @@
-import type { CatalogueSection } from "../types/domain";
+import type { CatalogueSection } from "@/types/domain";
 
 /**
  * Service catalogue shown in the "Explore Services" sheet.

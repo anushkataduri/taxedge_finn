@@ -1,6 +1,7 @@
 import React from "react";
-import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
+import { TouchableOpacity, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
+import { landingStyles } from "./landing.styles";
 
 interface GetStartedButtonProps {
   onPress: () => void;
@@ -11,10 +12,12 @@ export function GetStartedButton({ onPress }: GetStartedButtonProps) {
     <TouchableOpacity
       activeOpacity={0.85}
       onPress={onPress}
-      style={styles.button}
+      style={landingStyles.getStartedButton}
+      accessibilityRole="button"
+      accessibilityLabel="Get Started"
     >
-      <Text style={styles.buttonText}>Get Started</Text>
-      <View style={styles.arrowContainer}>
+      <Text style={landingStyles.getStartedButtonText}>Get Started</Text>
+      <View style={landingStyles.arrowContainer}>
         <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
           <Path
             d="M5 12h14M12 5l7 7-7 7"
@@ -29,30 +32,4 @@ export function GetStartedButton({ onPress }: GetStartedButtonProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    backgroundColor: "#F97316",
-    height: 50,
-    borderRadius: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-    position: "relative",
-    shadowColor: "#F97316",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: -0.2,
-  },
-  arrowContainer: {
-    position: "absolute",
-    right: 18,
-  },
-});
+export default GetStartedButton;

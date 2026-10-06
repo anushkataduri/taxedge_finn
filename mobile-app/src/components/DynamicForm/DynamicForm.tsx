@@ -8,11 +8,11 @@ import {
   Alert,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useTheme } from "../../hooks/use-theme";
-import { FormInput } from "../FormInput/FormInput";
-import { PrimaryButton } from "../PrimaryButton/PrimaryButton";
-import { Result } from "../../utils/functional";
-import type { ApplicationFormData, FormField } from "../../types/domain";
+import { useTheme } from "@/hooks/use-theme";
+import { FormInput } from "@/components/FormInput/FormInput";
+import { PrimaryButton } from "@/components/PrimaryButton/PrimaryButton";
+import { Result } from "@/utils/functional";
+import type { ApplicationFormData, FormField } from "@/types/domain";
 import { styles } from "./DynamicForm.styles";
 
 /** Validation messages, keyed by `FormField.name`. */
