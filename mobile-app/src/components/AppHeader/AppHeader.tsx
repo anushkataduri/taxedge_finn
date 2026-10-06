@@ -2,10 +2,10 @@ import React from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useTheme } from "../../hooks/use-theme";
-import { useNotificationStore } from "../../store/notificationStore";
+import { useTheme } from "@/hooks/use-theme";
+import { useNotificationStore } from "@/store/notificationStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { FocusAwareStatusBar } from "../../shared/components/FocusAwareStatusBar";
+import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { styles } from "./AppHeader.styles";
 
 export interface AppHeaderProps {

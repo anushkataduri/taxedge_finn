@@ -9,8 +9,8 @@ import {
   Alert,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { apiClient } from "../../../core/api/apiClient";
-import { BrandColors } from "../../theme";
+import { apiClient } from "@/core/api/apiClient";
+import { BrandColors } from "@/shared/theme";
 import {
   styles,
   getResultBadgeStyle,
@@ -46,9 +46,7 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
       setUrl(target);
     }
     if (!target.startsWith("http://") && !target.startsWith("https://")) {
-      // Default local IPs to http:// to match backend, external domains to https://
-      const isLocal = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|localhost|127\.0\.0\.1)/.test(target) || target.includes(":8086");
-      target = isLocal ? `http://${target}` : `https://${target}`;
+      target = `https://${target}`;
     }
     if (target.endsWith("/")) {
       target = target.slice(0, -1);
@@ -59,21 +57,10 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
 
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 8000);
-      
-      // Probe /actuator/info first (instant 10ms response, does not trigger slow SMTP check)
-      let res: Response;
-      try {
-        res = await fetch(`${target}/actuator/info`, {
-          signal: controller.signal,
-        });
-      } catch (probeErr: any) {
-        if (probeErr?.name === "AbortError") throw probeErr;
-        // Fallback to /actuator/health
-        res = await fetch(`${target}/actuator/health`, {
-          signal: controller.signal,
-        });
-      }
+      const timer = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(`${target}/actuator/health`, {
+        signal: controller.signal,
+      });
       clearTimeout(timer);
 
       if (res.ok || res.status === 200 || res.status === 401 || res.status === 403) {
@@ -82,12 +69,9 @@ export const ServerConfigModal: React.FC<ServerConfigModalProps> = ({
         setTestResult({ success: false, message: `Server returned status ${res.status}` });
       }
     } catch (err: any) {
-      const isTimeout = err?.name === "AbortError";
       setTestResult({
         success: false,
-        message: isTimeout
-          ? "Connection timed out after 8s. Check server load."
-          : `Cannot reach server (${err?.message || "Check IP and Wi-Fi"}).`,
+        message: "Cannot reach server. Verify IP and Wi-Fi connection.",
       });
     } finally {
       setIsTesting(false);

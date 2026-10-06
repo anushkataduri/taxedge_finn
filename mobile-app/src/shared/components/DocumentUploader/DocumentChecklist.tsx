@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   Modal,
   Image,
@@ -12,16 +11,23 @@ import {
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
-import { Colors } from "../../../design-system/colors";
-import { PrimaryButton } from "../Button/PrimaryButton";
-import { SecondaryButton } from "../Button/SecondaryButton";
-import type { ApplicationDocument, IconName } from "../../types/domain";
+import { Colors } from "@/design-system/colors";
+import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
+import { SecondaryButton } from "@/shared/components/Button/SecondaryButton";
+import type { ApplicationDocument, IconName } from "@/shared/types/domain";
+import { styles } from "./DocumentChecklist.styles";
 
 export interface DocumentChecklistProps {
   documents: ApplicationDocument[];
   onUpload: (docName: string, fileUri: string) => void;
   grouped?: boolean;
 }
+
+const CATEGORIES = [
+  "KYC Documents",
+  "GST Documents",
+  "Financial Documents",
+] as const;
 
 export function DocumentChecklist({
   documents,
@@ -34,12 +40,12 @@ export function DocumentChecklist({
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleUploadPress = (docName: string) => {
+  const handleUploadPress = useCallback((docName: string) => {
     setSelectedDoc(docName);
     setShowSourceModal(true);
-  };
+  }, []);
 
-  const handlePickDocument = async () => {
+  const handlePickDocument = useCallback(async () => {
     setShowSourceModal(false);
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -51,12 +57,13 @@ export function DocumentChecklist({
         setPreviewUri(result.assets[0].uri);
         setShowPreviewModal(true);
       }
-    } catch {
+    } catch (error) {
+      console.error("Document pick error:", error);
       Alert.alert("Error", "Failed to pick document");
     }
-  };
+  }, []);
 
-  const handlePickImage = async (useCamera: boolean) => {
+  const handlePickImage = useCallback(async (useCamera: boolean) => {
     setShowSourceModal(false);
     try {
       let result: ImagePicker.ImagePickerResult;
@@ -91,24 +98,31 @@ export function DocumentChecklist({
         setPreviewUri(result.assets[0].uri);
         setShowPreviewModal(true);
       }
-    } catch {
+    } catch (error) {
+      console.error("Image pick error:", error);
       Alert.alert("Error", "Failed to capture image");
     }
-  };
+  }, []);
 
-  const handleConfirmUpload = () => {
+  const handleConfirmUpload = useCallback(() => {
     if (!selectedDoc || !previewUri) return;
 
     setIsUploading(true);
-    setTimeout(() => {
-      onUpload(selectedDoc, previewUri);
+    try {
+      setTimeout(() => {
+        onUpload(selectedDoc, previewUri);
+        setIsUploading(false);
+        setShowPreviewModal(false);
+        setPreviewUri(null);
+        setSelectedDoc(null);
+        Alert.alert("Success", "Document uploaded successfully");
+      }, 1500);
+    } catch (error) {
       setIsUploading(false);
-      setShowPreviewModal(false);
-      setPreviewUri(null);
-      setSelectedDoc(null);
-      Alert.alert("Success", "Document uploaded successfully");
-    }, 1500);
-  };
+      console.error("Upload confirmation error:", error);
+      Alert.alert("Error", "Failed to confirm upload");
+    }
+  }, [selectedDoc, previewUri, onUpload]);
 
   const getDocumentCategory = (name: string): string => {
     const lowerName = name.toLowerCase();
@@ -130,12 +144,6 @@ export function DocumentChecklist({
     }
     return "Financial Documents";
   };
-
-  const categories = [
-    "KYC Documents",
-    "GST Documents",
-    "Financial Documents",
-  ];
 
   const renderDocItem = (doc: ApplicationDocument, idx: number) => {
     const isUploaded = doc.status === "Uploaded";
@@ -184,6 +192,8 @@ export function DocumentChecklist({
                 backgroundColor: Colors.orangeLight,
               },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel={`Upload ${doc.name}`}
           >
             <Text style={[styles.uploadBtnText, { color: Colors.orange }]}>
               Upload
@@ -210,7 +220,7 @@ export function DocumentChecklist({
       )}
 
       {grouped &&
-        categories.map((category) => {
+        CATEGORIES.map((category) => {
           const categoryDocs = documents.filter(
             (doc) => getDocumentCategory(doc.name) === category
           );
@@ -253,6 +263,8 @@ export function DocumentChecklist({
               activeOpacity={0.8}
               onPress={() => handlePickImage(true)}
               style={[styles.sourceBtn, { borderColor: Colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Open Camera"
             >
               <Ionicons
                 name="camera-outline"
@@ -268,6 +280,8 @@ export function DocumentChecklist({
               activeOpacity={0.8}
               onPress={() => handlePickImage(false)}
               style={[styles.sourceBtn, { borderColor: Colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Open Gallery"
             >
               <Ionicons
                 name="image-outline"
@@ -283,6 +297,8 @@ export function DocumentChecklist({
               activeOpacity={0.8}
               onPress={handlePickDocument}
               style={[styles.sourceBtn, { borderColor: Colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Choose File"
             >
               <Ionicons
                 name="document-outline"
@@ -348,11 +364,8 @@ export function DocumentChecklist({
                     Document File Selected
                   </Text>
                   <Text
-                    style={[
-                      styles.fileUri,
-                      { color: Colors.textSecondary },
-                    ]}
-                    numberOfLines={2}
+                    style={[styles.fileUri, { color: Colors.textSecondary }]}
+                    numberOfLines={1}
                   >
                     {previewUri}
                   </Text>
@@ -366,16 +379,16 @@ export function DocumentChecklist({
                 <Text
                   style={[styles.uploadingText, { color: Colors.text }]}
                 >
-                  Uploading to TaxEdge...
+                  Uploading document...
                 </Text>
               </View>
             ) : (
               <View style={styles.btnRow}>
                 <SecondaryButton
-                  title="Cancel"
+                  title="Retake"
                   onPress={() => {
                     setShowPreviewModal(false);
-                    setPreviewUri(null);
+                    setShowSourceModal(true);
                   }}
                   style={{ flex: 1 }}
                 />
@@ -392,144 +405,5 @@ export function DocumentChecklist({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginVertical: 4,
-    gap: 16,
-  },
-  categorySection: {
-    gap: 8,
-  },
-  categoryTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-  },
-  docsList: {
-    gap: 8,
-  },
-  docCard: {
-    borderRadius: 12,
-    borderWidth: 1.5,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  docInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  textContainer: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  docName: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  uploadBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
-    gap: 4,
-  },
-  uploadBtnText: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  sourceModalContainer: {
-    width: "100%",
-    maxWidth: 340,
-    borderRadius: 16,
-    padding: 20,
-    gap: 12,
-  },
-  previewModalContainer: {
-    width: "100%",
-    maxWidth: 360,
-    borderRadius: 16,
-    padding: 20,
-    gap: 16,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  modalSub: {
-    fontSize: 14,
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  sourceBtn: {
-    height: 50,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  sourceBtnText: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  previewBox: {
-    height: 200,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    overflow: "hidden",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#00000005",
-  },
-  previewImage: {
-    width: "100%",
-    height: "100%",
-  },
-  filePlaceholder: {
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  fileText: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginTop: 8,
-  },
-  fileUri: {
-    fontSize: 11,
-    marginTop: 4,
-    textAlign: "center",
-  },
-  btnRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  uploadingState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    gap: 12,
-  },
-  uploadingText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-});
 
 export default DocumentChecklist;

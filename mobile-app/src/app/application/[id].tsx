@@ -11,11 +11,11 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as DocumentPicker from "expo-document-picker";
-import { useApplicationStore } from "../../store/applicationStore";
-import { useAuthStore } from "../../store/authStore";
-import { applicationService } from "../../modules/applications/services/applicationService";
-import type { Application, TimelineStep } from "../../types/domain";
-import { styles } from "../../styles/app/application/[id].styles";
+import { useApplicationStore } from "@/store/applicationStore";
+import { useAuthStore } from "@/store/authStore";
+import { applicationService } from "@/modules/applications/services/applicationService";
+import type { Application, TimelineStep } from "@/types/domain";
+import { styles } from "@/styles/app/application/[id].styles";
 
 import {
   ApplicationHeader,

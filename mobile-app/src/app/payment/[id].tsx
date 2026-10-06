@@ -4,12 +4,12 @@ import { useLocalSearchParams } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useTheme } from "../../hooks/use-theme";
-import { useApplicationStore } from "../../store/applicationStore";
-import { useAuthStore } from "../../store/authStore";
-import { paymentService } from "../../modules/payments/services/paymentService";
+import { useTheme } from "@/hooks/use-theme";
+import { useApplicationStore } from "@/store/applicationStore";
+import { useAuthStore } from "@/store/authStore";
+import { paymentService } from "@/modules/payments/services/paymentService";
 import { AppHeader } from "@/components";
-import { styles } from "../../styles/app/payment/[id].styles";
+import { styles } from "@/styles/app/payment/[id].styles";
 
 import { OrderSummaryCard } from "@/components/screens/payment/OrderSummaryCard";
 import {

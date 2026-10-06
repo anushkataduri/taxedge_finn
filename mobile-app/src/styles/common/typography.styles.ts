@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { BrandColors, Typography } from "../../shared/theme";
+import { BrandColors, Typography } from "@/shared/theme";
 
 export const typographyStyles = StyleSheet.create({
   heroHeading: {

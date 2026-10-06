@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useTheme } from "../../hooks/use-theme";
-import { getServiceById } from "../../data/services";
-import { useApplicationStore } from "../../store/applicationStore";
-import { useNotificationStore } from "../../store/notificationStore";
+import { useTheme } from "@/hooks/use-theme";
+import { getServiceById } from "@/data/services";
+import { useApplicationStore } from "@/store/applicationStore";
+import { useNotificationStore } from "@/store/notificationStore";
 import { AppHeader, DynamicForm, PrimaryButton } from "@/components";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,8 +16,8 @@ import {
   getTabItemThemedStyle,
   getTabTextThemedStyle,
   getBottomBarThemedStyle,
-} from "../../styles/app/service/[id].styles";
-import type { ApplicationFormData, NotificationType } from "../../types/domain";
+} from "@/styles/app/service/[id].styles";
+import type { ApplicationFormData, NotificationType } from "@/types/domain";
 
 type ServiceTab = "Overview" | "Documents" | "Benefits";
 

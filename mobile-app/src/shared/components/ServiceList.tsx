@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, FlatList, ViewStyle, StyleProp } from "react-native";
-import { Spacing } from "../theme";
+import { Spacing } from "@/shared/theme";
 import { ServiceCard, ServiceCardData } from "./ServiceCard";
 
 interface ServiceListProps {

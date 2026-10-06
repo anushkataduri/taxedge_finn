@@ -1,5 +1,5 @@
-import { Colors } from "../constants/theme";
-import { useThemeStore } from "../../design-system/theme/themeStore";
+import { Colors } from "@/shared/constants/theme";
+import { useThemeStore } from "@/design-system/theme/themeStore";
 
 export function useTheme() {
   const scheme = useThemeStore((state) => state.theme);

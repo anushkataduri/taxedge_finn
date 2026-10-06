@@ -1,5 +1,5 @@
 import { StyleSheet, Dimensions } from "react-native";
-import type { ServiceCategoryId } from "../../types/domain";
+import type { ServiceCategoryId } from "@/types/domain";
 
 export const { width: WINDOW_WIDTH } = Dimensions.get("window");
 export const CARD_WIDTH = WINDOW_WIDTH - 40;

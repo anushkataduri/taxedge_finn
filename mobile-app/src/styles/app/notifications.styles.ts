@@ -5,13 +5,13 @@
  */
 
 import { StyleSheet } from "react-native";
-import type { ThemeColors } from "../../constants/theme";
+import type { ThemeColors } from "@/constants/theme";
 import {
   BorderRadius,
   BorderWidth,
   Spacing,
   Typography,
-} from "../../shared/theme";
+} from "@/shared/theme";
 
 export const getThemedStyles = (
   colors: ThemeColors,

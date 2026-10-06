@@ -1,4 +1,4 @@
-import type { Application } from "../types/domain";
+import type { Application } from "@/types/domain";
 
 /**
  * Initial applications list.

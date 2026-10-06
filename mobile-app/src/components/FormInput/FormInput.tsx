@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, type KeyboardTypeOptions } from "react-native";
-import { useTheme } from "../../hooks/use-theme";
+import { useTheme } from "@/hooks/use-theme";
 import { styles } from "./FormInput.styles";
 
 export interface FormInputProps {

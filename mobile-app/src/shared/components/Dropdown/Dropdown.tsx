@@ -10,8 +10,8 @@ import {
   type ViewStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors } from "../../../design-system/colors";
-import { dismissKeyboardThen } from "../KeyboardAwareFormLayout";
+import { Colors } from "@/design-system/colors";
+import { dismissKeyboardThen } from "@/shared/components/KeyboardAwareFormLayout";
 
 export interface DropdownOption {
   label: string;

@@ -8,15 +8,15 @@ import {
   ScrollView,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useTheme } from "../hooks/use-theme";
-import { BrandColors } from "../shared/theme";
-import { SERVICES, CATEGORIES } from "../data/services";
-import { ScreenLayout } from "../components/ScreenLayout";
+import { useTheme } from "@/hooks/use-theme";
+import { BrandColors } from "@/shared/theme";
+import { SERVICES, CATEGORIES } from "@/data/services";
+import { ScreenLayout } from "@/components/ScreenLayout";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useServiceAccessGuard } from "../shared/hooks/useServiceAccessGuard";
-import { CompleteProfileModal } from "../shared/components/CompleteProfileModal";
-import { styles } from "../styles/app/services.styles";
+import { useServiceAccessGuard } from "@/shared/hooks/useServiceAccessGuard";
+import { CompleteProfileModal } from "@/shared/components/CompleteProfileModal";
+import { styles } from "@/styles/app/services.styles";
 
 export default function ServicesScreen() {
   const colors = useTheme();

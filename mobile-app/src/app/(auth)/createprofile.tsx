@@ -7,11 +7,12 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Svg, { Path } from "react-native-svg";
-import { BrandColors, Colors, Spacing } from "../../shared/theme";
-import { BiometricPromptModal } from "../../shared/components/BiometricPromptModal";
-import { styles } from "../../styles/app/(auth)/create-profile.styles";
+import { BrandColors, Colors, Spacing } from "@/shared/theme";
+import { BiometricPromptModal } from "@/shared/components/BiometricPromptModal";
+import { UniversalDatePicker } from "@/shared/components/UniversalDatePicker";
+import { styles } from "@/styles/app/(auth)/create-profile.styles";
 import { useCreateProfile } from "@/components/screens/create-profile/useCreateProfile";
-import { FormField, GenderPickerModal, DobPickerModal, StatePickerModal } from "@/components/screens/create-profile/CreateProfileModals";
+import { FormField, GenderPickerModal, StatePickerModal } from "@/components/screens/create-profile/CreateProfileModals";
 import { CUSTOMER_TYPE_OPTIONS } from "@/components/screens/create-profile/types";
 
 export default function CreateProfileScreen() {
@@ -26,11 +27,10 @@ export default function CreateProfileScreen() {
     showAddressLine2, setShowAddressLine2, keyboardHeight, setFieldOffset,
     handleFieldFocus, scrollRef, nameRef, emailRef, dobRef, fatherSpouseRef,
     panRef, aadhaarRef, address1Ref, address2Ref, cityRef, pinRef,
-    passcodeRef, confirmPasscodeRef, showDatePicker, setShowDatePicker,
+    passcodeRef, confirmPasscodeRef,
     showGenderModal, setShowGenderModal, showStateModal, setShowStateModal,
     stateSearchQuery, setStateSearchQuery, showBiometricModal, biometricType,
-    handleEnableBiometric, handleNotNowBiometric, pickerYear, setPickerYear,
-    pickerMonth, setPickerMonth, pickerDay, setPickerDay, openCalendarModal, confirmCalendarDate,
+    handleEnableBiometric, handleNotNowBiometric,
   } = useCreateProfile(currentStep, setCurrentStep);
 
   useEffect(() => {
@@ -145,11 +145,22 @@ export default function CreateProfileScreen() {
               {profileErrors.gender ? <Text style={styles.errorText}>{profileErrors.gender}</Text> : null}
             </View>
 
-            <FormField fieldRef={dobRef} {...yo("dob")} label="Date of Birth" leftIcon="calendar-outline"
-              value={form.dob} onChange={handleDobChange} onFocus={() => handleFieldFocus("dob")}
-              placeholder="DD-MM-YYYY" keyboardType="number-pad" maxLength={10}
-              rightIcon="calendar-outline" onRightIcon={openCalendarModal}
-              error={profileErrors.dob} returnKeyType="next" onSubmit={() => fatherSpouseRef.current?.focus()} />
+            <View {...yo("dob")}>
+              <UniversalDatePicker
+                label="Date of Birth"
+                value={form.dob}
+                onChange={(d) => {
+                  handleDobChange(d);
+                  setTimeout(() => fatherSpouseRef.current?.focus(), 150);
+                }}
+                error={profileErrors.dob}
+                valueFormat="DD-MM-YYYY"
+                placeholder="DD-MM-YYYY"
+                maximumDate={new Date()}
+                initialPickerDate={new Date(2000, 0, 1)}
+                iconColor={BrandColors.PRIMARY_ORANGE}
+              />
+            </View>
 
             <FormField fieldRef={fatherSpouseRef} {...yo("fatherSpouseName")} label="Father's / Spouse Name" leftIcon="people-outline"
               value={form.fatherSpouseName} onChange={(t) => updateForm("fatherSpouseName", t)} {...ff("fatherSpouseName")}
@@ -247,12 +258,8 @@ export default function CreateProfileScreen() {
         )}
       </ScrollView>
 
-      <DobPickerModal visible={showDatePicker} pickerYear={pickerYear} pickerMonth={pickerMonth} pickerDay={pickerDay}
-        onYearChange={setPickerYear} onMonthChange={setPickerMonth} onDaySelect={setPickerDay}
-        onConfirm={confirmCalendarDate} onClose={() => setShowDatePicker(false)} />
-
       <GenderPickerModal visible={showGenderModal} selectedGender={form.gender}
-        onSelect={(g) => { updateForm("gender", g); setShowGenderModal(false); setTimeout(() => dobRef.current?.focus(), 150); }}
+        onSelect={(g) => { updateForm("gender", g); setShowGenderModal(false); }}
         onClose={() => setShowGenderModal(false)} />
 
       <StatePickerModal visible={showStateModal} selectedState={form.state}

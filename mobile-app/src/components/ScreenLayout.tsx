@@ -1,7 +1,7 @@
 import React, { type ReactNode } from "react";
 import { View, type StyleProp, type ViewStyle } from "react-native";
 import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
-import { useTheme } from "../hooks/use-theme";
+import { useTheme } from "@/hooks/use-theme";
 import { AppHeader } from "./AppHeader/AppHeader";
 import { styles } from "./ScreenLayout.styles";
 

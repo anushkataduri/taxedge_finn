@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Colors } from "../../../design-system/colors";
-import type { IconName, TimelineStep } from "../../types/domain";
+import { Colors } from "@/design-system/colors";
+import type { IconName, TimelineStep } from "@/shared/types/domain";
 
 export interface StatusTimelineProps {
   steps: TimelineStep[];

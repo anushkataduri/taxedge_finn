@@ -1,5 +1,5 @@
 import { StyleSheet, Platform } from "react-native";
-import { BrandColors, BorderRadius, Spacing, Typography } from "../../shared/theme";
+import { BrandColors, BorderRadius, Spacing, Typography } from "@/shared/theme";
 
 export const inputStyles = StyleSheet.create({
   textInput: {

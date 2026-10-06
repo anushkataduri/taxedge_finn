@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { MaxContentWidth, Spacing } from "../../constants/theme";
+import { MaxContentWidth, Spacing } from "@/constants/theme";
 
 export const styles = StyleSheet.create({
   tabSlot: {

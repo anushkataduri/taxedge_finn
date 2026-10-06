@@ -13,6 +13,7 @@ import {
   sanitizePanInput,
   formatDobInput,
   validateField,
+  validateRealTimeField,
   checkFormValidity,
 } from "./createProfileValidation";
 import type { SignupForm, SignupErrors } from "./types";
@@ -48,7 +49,23 @@ export function useCreateProfile(
   const [profileErrors, setProfileErrors] = useState<SignupErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToTerms, setAgreedToTermsState] = useState(false);
+  const setAgreedToTerms: React.Dispatch<React.SetStateAction<boolean>> = (
+    valOrFn
+  ) => {
+    setAgreedToTermsState((prev) => {
+      const next = typeof valOrFn === "function" ? valOrFn(prev) : valOrFn;
+      if (next) {
+        setProfileErrors((p) => {
+          if (!p.terms) return p;
+          const c = { ...p };
+          delete c.terms;
+          return c;
+        });
+      }
+      return next;
+    });
+  };
 
   // ─── Keyboard-aware scroll ───────────────────────────────────────────────────
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -88,7 +105,6 @@ export function useCreateProfile(
   };
 
   // ─── Modal State ─────────────────────────────────────────────────────────────
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGenderModal, setShowGenderModal] = useState(false);
   const [showStateModal, setShowStateModal] = useState(false);
   const [stateSearchQuery, setStateSearchQuery] = useState("");
@@ -98,11 +114,6 @@ export function useCreateProfile(
   const [biometricType, setBiometricType] = useState("Fingerprint");
   const [pendingPostRegistrationRoute, setPendingPostRegistrationRoute] =
     useState<string | null>(null);
-
-  // ─── Calendar State ──────────────────────────────────────────────────────────
-  const [pickerYear, setPickerYear] = useState(2000);
-  const [pickerMonth, setPickerMonth] = useState(0);
-  const [pickerDay, setPickerDay] = useState(1);
 
   // ─── Form State ──────────────────────────────────────────────────────────────
   const autoMobile = storeMobileNumber || "";
@@ -147,49 +158,41 @@ export function useCreateProfile(
     updateForm("pan", sanitizePanInput(text, form.pan));
   };
 
-  // ─── Form Update with Inline Validation ──────────────────────────────────────
+  // ─── Form Update with Real-Time Validation ──────────────────────────────────
   const updateForm = (key: keyof SignupForm, val: string) => {
     setForm((p) => ({ ...p, [key]: val }));
-    profileErrors[key] && setProfileErrors((p) => ({ ...p, [key]: "" }));
 
-    const updateMap: Partial<Record<keyof SignupForm, () => void>> = {
-      pan: () => {
-        const clean = val.trim().toUpperCase();
-        clean.length === 10 &&
-          setProfileErrors((p) => ({
-            ...p,
-            pan: /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(clean) ? "" : "Invalid PAN",
-          }));
-      },
-      aadhaar: () => {
-        const clean = val.replace(/\D/g, "");
-        clean.length === 12 &&
-          setProfileErrors((p) => ({
-            ...p,
-            aadhaar: /^[2-9]{1}[0-9]{11}$/.test(clean) ? "" : "Invalid Aadhaar",
-          }));
-      },
-      pincode: () => {
-        const clean = val.replace(/\D/g, "");
-        clean.length === 6 && setProfileErrors((p) => ({ ...p, pincode: "" }));
-      },
-      password: () => {
-        form.confirmPassword &&
-          setProfileErrors((p) => ({
-            ...p,
-            confirmPassword: val === form.confirmPassword ? "" : "Passcodes do not match",
-          }));
-      },
-      confirmPassword: () => {
-        form.password &&
-          setProfileErrors((p) => ({
-            ...p,
-            confirmPassword: val === form.password ? "" : "Passcodes do not match",
-          }));
-      },
-    };
+    const updatedForm = { ...form, [key]: val };
+    const err = validateRealTimeField(
+      key,
+      val,
+      updatedForm,
+      updatedForm.mobileNumber || storeMobileNumber
+    );
 
-    updateMap[key]?.();
+    setProfileErrors((prev) => {
+      const next = { ...prev };
+      if (err) {
+        next[key] = err;
+      } else {
+        delete next[key];
+      }
+      // Passcode match real-time synchronization
+      if (key === "password" && updatedForm.confirmPassword) {
+        if (val === updatedForm.confirmPassword) {
+          delete next.confirmPassword;
+        } else if (updatedForm.confirmPassword.length === 6) {
+          next.confirmPassword = "Passcodes do not match";
+        }
+      } else if (key === "confirmPassword" && updatedForm.password) {
+        if (val === updatedForm.password) {
+          delete next.confirmPassword;
+        } else if (val.length === 6) {
+          next.confirmPassword = "Passcodes do not match";
+        }
+      }
+      return next;
+    });
   };
 
   const handleBlur = (key: keyof SignupForm) => {
@@ -205,33 +208,9 @@ export function useCreateProfile(
     }
   };
 
-  // ─── DOB Handlers ────────────────────────────────────────────────────────────
+  // ─── DOB Handler ─────────────────────────────────────────────────────────────
   const handleDobChange = (text: string) => {
-    updateForm("dob", formatDobInput(text));
-  };
-
-  const openCalendarModal = () => {
-    Boolean(form.dob) &&
-      (() => {
-        const parts = form.dob.split("-");
-        parts.length === 3 &&
-          (() => {
-            const d = parseInt(parts[0], 10);
-            const m = parseInt(parts[1], 10) - 1;
-            const y = parseInt(parts[2], 10);
-            !isNaN(d) && !isNaN(m) && !isNaN(y) && y >= 1930 && y <= 2030 &&
-              (setPickerDay(d), setPickerMonth(m), setPickerYear(y));
-          })();
-      })();
-    setShowDatePicker(true);
-  };
-
-  const confirmCalendarDate = () => {
-    const dayStr = String(pickerDay).padStart(2, "0");
-    const monthStr = String(pickerMonth + 1).padStart(2, "0");
-    updateForm("dob", `${dayStr}-${monthStr}-${String(pickerYear)}`);
-    setShowDatePicker(false);
-    setTimeout(() => fatherSpouseRef.current?.focus(), 150);
+    updateForm("dob", text);
   };
 
   // ─── Form Validity (memoized) ────────────────────────────────────────────────
@@ -313,7 +292,9 @@ export function useCreateProfile(
                   })()
                 : router.replace(destination as any);
               return;
-            } catch {}
+            } catch (bioCheckErr) {
+              if (__DEV__) console.warn("Biometric check error during registration:", bioCheckErr);
+            }
             router.replace(destination as any);
           })()
         : Alert.alert("Registration Error", res.error || "Failed to create account. Please try again.");
@@ -388,7 +369,9 @@ export function useCreateProfile(
     try {
       const authRes = await biometricService.authenticate();
       authRes.success && (await useAuthStore.getState().setBiometricEnabled(true));
-    } catch {}
+    } catch (bioAuthErr) {
+      if (__DEV__) console.warn("Biometric authentication error:", bioAuthErr);
+    }
     router.replace((pendingPostRegistrationRoute || "/(main)/home") as any);
   };
 
@@ -440,8 +423,6 @@ export function useCreateProfile(
     pinRef,
     passcodeRef,
     confirmPasscodeRef,
-    showDatePicker,
-    setShowDatePicker,
     showGenderModal,
     setShowGenderModal,
     showStateModal,
@@ -452,13 +433,5 @@ export function useCreateProfile(
     biometricType,
     handleEnableBiometric,
     handleNotNowBiometric,
-    pickerYear,
-    setPickerYear,
-    pickerMonth,
-    setPickerMonth,
-    pickerDay,
-    setPickerDay,
-    openCalendarModal,
-    confirmCalendarDate,
   };
 }

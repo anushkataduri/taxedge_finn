@@ -26,7 +26,10 @@ export interface UseServiceDraftOptions<T> {
 /**
  * Universal helper that checks if even ONE field has user-entered data
  */
-export function hasEnteredAnyField(obj: any, emptyObj?: any): boolean {
+export function hasEnteredAnyField(
+  obj: Record<string, unknown> | null | undefined,
+  emptyObj?: Record<string, unknown> | null
+): boolean {
   if (!obj || typeof obj !== "object") return false;
 
   for (const key of Object.keys(obj)) {
@@ -52,19 +55,28 @@ export function hasEnteredAnyField(obj: any, emptyObj?: any): boolean {
     } else if (Array.isArray(val)) {
       const emptyArrLength = Array.isArray(emptyVal) ? emptyVal.length : 0;
       if (val.length > emptyArrLength) {
-        // Check if any element has fileUri or name or content
         const hasContent = val.some((item) => {
           if (!item) return false;
           if (typeof item === "string" && item.trim()) return true;
           if (typeof item === "object") {
-            return Boolean(item.fileUri || item.fileName || item.status === "Uploaded" || item.status === "uploaded");
+            const doc = item as Record<string, unknown>;
+            return Boolean(
+              doc.fileUri ||
+                doc.fileName ||
+                String(doc.status || "").toLowerCase() === "uploaded"
+            );
           }
           return false;
         });
         if (hasContent) return true;
       }
     } else if (typeof val === "object") {
-      if (hasEnteredAnyField(val, emptyVal)) {
+      if (
+        hasEnteredAnyField(
+          val as Record<string, unknown>,
+          emptyVal as Record<string, unknown> | undefined
+        )
+      ) {
         return true;
       }
     }
@@ -73,7 +85,7 @@ export function hasEnteredAnyField(obj: any, emptyObj?: any): boolean {
   return false;
 }
 
-export async function addDraftToIndex(cleanMobile: string, serviceKey: string) {
+export async function addDraftToIndex(cleanMobile: string, serviceKey: string): Promise<void> {
   try {
     const raw = await AsyncStorage.getItem(`@taxedge_draft_index_${cleanMobile}`);
     const index: string[] = raw ? JSON.parse(raw) : [];
@@ -81,10 +93,12 @@ export async function addDraftToIndex(cleanMobile: string, serviceKey: string) {
       index.push(serviceKey);
       await AsyncStorage.setItem(`@taxedge_draft_index_${cleanMobile}`, JSON.stringify(index));
     }
-  } catch {}
+  } catch (error) {
+    if (__DEV__) console.warn("Failed to add draft to index:", error);
+  }
 }
 
-export async function removeDraftFromIndex(cleanMobile: string, serviceKey: string) {
+export async function removeDraftFromIndex(cleanMobile: string, serviceKey: string): Promise<void> {
   try {
     const raw = await AsyncStorage.getItem(`@taxedge_draft_index_${cleanMobile}`);
     if (raw) {
@@ -92,31 +106,38 @@ export async function removeDraftFromIndex(cleanMobile: string, serviceKey: stri
       const nextIndex = index.filter((k) => k !== serviceKey);
       await AsyncStorage.setItem(`@taxedge_draft_index_${cleanMobile}`, JSON.stringify(nextIndex));
     }
-  } catch {}
+  } catch (error) {
+    if (__DEV__) console.warn("Failed to remove draft from index:", error);
+  }
 }
 
-export async function getCustomerDrafts(cleanMobile: string): Promise<any[]> {
+export async function getCustomerDrafts(cleanMobile: string): Promise<Record<string, unknown>[]> {
   try {
     const raw = await AsyncStorage.getItem(`@taxedge_draft_index_${cleanMobile}`);
     if (!raw) return [];
     const index: string[] = JSON.parse(raw);
-    const drafts: any[] = [];
+    const drafts: Record<string, unknown>[] = [];
     for (const key of index) {
-      const draftRaw = await AsyncStorage.getItem(`@taxedge_draft_${cleanMobile}_${key}`);
-      if (draftRaw) {
-        try {
+      try {
+        const draftRaw = await AsyncStorage.getItem(`@taxedge_draft_${cleanMobile}_${key}`);
+        if (draftRaw) {
           const parsed = JSON.parse(draftRaw);
-          drafts.push({ serviceKey: key, ...parsed });
-        } catch {}
+          if (parsed && typeof parsed === "object") {
+            drafts.push({ serviceKey: key, ...parsed });
+          }
+        }
+      } catch (innerErr) {
+        if (__DEV__) console.warn(`Failed to read draft key ${key}:`, innerErr);
       }
     }
     return drafts;
-  } catch {
+  } catch (error) {
+    if (__DEV__) console.warn("Failed to read customer drafts index:", error);
     return [];
   }
 }
 
-export function useServiceDraft<T extends Record<string, any>>({
+export function useServiceDraft<T extends Record<string, unknown>>({
   serviceKey,
   formData,
   emptyState,
@@ -153,7 +174,7 @@ export function useServiceDraft<T extends Record<string, any>>({
         if (saved && isMounted) {
           const parsed = JSON.parse(saved);
           if (parsed && typeof parsed === "object" && onRestore) {
-            onRestore(parsed);
+            onRestore(parsed as T);
           }
         }
       } catch (e) {
@@ -164,7 +185,7 @@ export function useServiceDraft<T extends Record<string, any>>({
     return () => {
       isMounted = false;
     };
-  }, [storageKey, serviceKey]);
+  }, [storageKey, serviceKey, onRestore]);
 
   // Determine if form currently has user-entered data
   const checkIsDirty = useCallback(() => {

@@ -1,5 +1,5 @@
 import { StyleSheet, Platform } from "react-native";
-import { BrandColors } from "../../theme";
+import { BrandColors } from "@/shared/theme";
 
 export const styles = StyleSheet.create({
   backdrop: {

@@ -1,28 +1,17 @@
 import React from "react";
-import { View, Image, StyleSheet } from "react-native";
+import { View, Image } from "react-native";
+import { landingStyles } from "./landing.styles";
 
 export function HeroSection() {
   return (
-    <View style={styles.container}>
+    <View style={landingStyles.heroContainer}>
       <Image
         source={require("../../../assets/images/taxedge-hero.png")}
-        style={styles.heroImage}
+        style={landingStyles.heroImage}
         resizeMode="cover"
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "transparent",
-  },
-  heroImage: {
-    width: "100%",
-    aspectRatio: 473 / 410,
-  },
-});
+export default HeroSection;

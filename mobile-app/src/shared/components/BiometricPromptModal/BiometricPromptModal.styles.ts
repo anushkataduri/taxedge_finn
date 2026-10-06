@@ -1,5 +1,5 @@
 import { StyleSheet, Platform } from "react-native";
-import type { ThemeColors } from "../../../constants/theme";
+import type { ThemeColors } from "@/constants/theme";
 
 export const styles = StyleSheet.create({
   backdrop: {

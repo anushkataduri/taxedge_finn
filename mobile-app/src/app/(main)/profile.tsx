@@ -10,15 +10,15 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useTheme } from "../../hooks/use-theme";
-import { useApplicationStore } from "../../store/applicationStore";
+import { useTheme } from "@/hooks/use-theme";
+import { useApplicationStore } from "@/store/applicationStore";
 import {
   ScreenLayout,
   SCREEN_BOTTOM_PADDING,
-} from "../../components/ScreenLayout";
-import { styles, getProfileScrollStyle, getKycPillStyle } from "../../styles/app/(main)/profile.styles";
+} from "@/components/ScreenLayout";
+import { styles, getProfileScrollStyle, getKycPillStyle } from "@/styles/app/(main)/profile.styles";
 
-import type { IconName } from "../../types/domain";
+import type { IconName } from "@/types/domain";
 import { useProfileManager } from "@/components/screens/profile/useProfileManager";
 import { PersonalDetailsModal } from "@/components/screens/profile/PersonalDetailsModal";
 import { KycDetailsModal } from "@/components/screens/profile/KycDetailsModal";

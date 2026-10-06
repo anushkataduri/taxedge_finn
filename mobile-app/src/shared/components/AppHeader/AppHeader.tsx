@@ -9,9 +9,9 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Colors } from "../../../design-system/colors";
+import { Colors } from "@/design-system/colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { FocusAwareStatusBar } from "../FocusAwareStatusBar";
+import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 
 export interface AppHeaderProps {
   title: string;

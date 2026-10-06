@@ -1,10 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { secureStorage } from "../storage/secureStorage";
+import { secureStorage } from "@/core/storage/secureStorage";
 import {
   getActiveBaseUrl,
   SERVER_PORT,
   STORAGE_KEY_SERVER_URL,
-} from "../api/apiConfig";
+} from "@/core/api/apiConfig";
 
 export interface AuthTokens {
   accessToken: string;

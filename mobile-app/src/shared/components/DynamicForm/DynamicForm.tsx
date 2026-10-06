@@ -9,11 +9,11 @@ import {
   Alert,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Colors } from "../../../design-system/colors";
-import { FormInput } from "../Input/FormInput";
-import { PrimaryButton } from "../Button/PrimaryButton";
-import { Result } from "../../utils/functional";
-import type { ApplicationFormData, FormField } from "../../types/domain";
+import { Colors } from "@/design-system/colors";
+import { FormInput } from "@/shared/components/Input/FormInput";
+import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
+import { Result } from "@/shared/utils/functional";
+import type { ApplicationFormData, FormField } from "@/shared/types/domain";
 
 export type FormErrors = Record<string, string>;
 

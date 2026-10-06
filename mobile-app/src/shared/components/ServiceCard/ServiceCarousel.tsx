@@ -10,8 +10,8 @@ import {
   type NativeSyntheticEvent,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Colors } from "../../../design-system/colors";
-import type { ServiceCategory, ServiceCategoryId } from "../../types/domain";
+import { Colors } from "@/design-system/colors";
+import type { ServiceCategory, ServiceCategoryId } from "@/shared/types/domain";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width - 40;

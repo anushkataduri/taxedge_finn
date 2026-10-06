@@ -1,7 +1,7 @@
 import React from "react";
 import { Modal, View, Text, TouchableOpacity, Platform } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useTheme } from "../../../hooks/use-theme";
+import { useTheme } from "@/hooks/use-theme";
 import { styles, getThemedStyles } from "./BiometricPromptModal.styles";
 
 export interface BiometricPromptModalProps {

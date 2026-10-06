@@ -1,12 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { useAuthStore } from "../store/authStore";
-import { LandingScreen } from "../components/landing/LandingScreen";
-import { biometricService } from "../modules/authentication/services/biometricService";
-import { passcodeService } from "../modules/authentication/services/passcodeService";
-import { authStorage } from "../modules/authentication/services/authStorage";
-import { styles } from "../styles/app/index.styles";
+import { useAuthStore } from "@/store/authStore";
+import { LandingScreen } from "@/components/landing/LandingScreen";
+import { biometricService } from "@/modules/authentication/services/biometricService";
+import { passcodeService } from "@/modules/authentication/services/passcodeService";
+import { authStorage } from "@/modules/authentication/services/authStorage";
+import { styles } from "@/styles/app/index.styles";
 
 export default function Index() {
   const router = useRouter();

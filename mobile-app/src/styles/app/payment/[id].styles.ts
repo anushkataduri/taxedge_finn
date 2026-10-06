@@ -214,45 +214,47 @@ export const styles = StyleSheet.create({
   },
 });
 
+export type ThemeTokens = Record<string, any>;
+
 /** Dynamic styles for payment method card */
 export const getMethodCardThemedStyle = (
   selected: boolean,
-  colors: any
+  colors: ThemeTokens
 ) => ({
-  backgroundColor: selected ? "#EEF4FB" : colors.backgroundElement,
-  borderColor: selected ? colors.primary : colors.border,
+  backgroundColor: selected ? "#EEF4FB" : String(colors.backgroundElement),
+  borderColor: selected ? String(colors.primary) : String(colors.border),
   borderWidth: selected ? 1.6 : 1,
 });
 
 /** Dynamic styles for text input */
-export const getInputThemedStyle = (colors: any) => ({
-  color: colors.text as string,
-  borderColor: colors.border as string,
-  backgroundColor: colors.background as string,
+export const getInputThemedStyle = (colors: ThemeTokens) => ({
+  color: String(colors.text),
+  borderColor: String(colors.border),
+  backgroundColor: String(colors.background),
 });
 
 /** Dynamic styles for detail card container */
-export const getThemedCardStyle = (colors: any) => ({
-  backgroundColor: colors.backgroundElement as string,
-  borderColor: colors.border as string,
+export const getThemedCardStyle = (colors: ThemeTokens) => ({
+  backgroundColor: String(colors.backgroundElement),
+  borderColor: String(colors.border),
 });
 
 /** Dynamic styles for total row */
-export const getTotalRowThemedStyle = (colors: any) => ({
+export const getTotalRowThemedStyle = (colors: ThemeTokens) => ({
   backgroundColor: "#E8EFF7",
-  color: colors.primary as string,
+  color: String(colors.primary),
 });
 
 /** Dynamic styles for UPI quick chips */
-export const getUpiChipThemedStyle = (colors: any) => ({
-  backgroundColor: colors.background as string,
-  borderColor: colors.border as string,
-  color: colors.primary as string,
+export const getUpiChipThemedStyle = (colors: ThemeTokens) => ({
+  backgroundColor: String(colors.background),
+  borderColor: String(colors.border),
+  color: String(colors.primary),
 });
 
 /** Dynamic styles for sticky pay bar */
-export const getPayBarThemedStyle = (colors: any, bottomInset: number) => ({
-  backgroundColor: colors.backgroundElement as string,
-  borderTopColor: colors.border as string,
+export const getPayBarThemedStyle = (colors: ThemeTokens, bottomInset: number) => ({
+  backgroundColor: String(colors.backgroundElement),
+  borderTopColor: String(colors.border),
   paddingBottom: bottomInset + 12,
 });

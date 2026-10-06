@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import type { ChatMessage } from "../types/domain";
+import type { ChatMessage } from "@/types/domain";
 
 const stamp = (): string =>
   new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });

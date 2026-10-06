@@ -6,8 +6,8 @@ import {
   type ViewStyle,
 } from "react-native";
 import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
-import { Colors } from "../../../design-system/colors";
-import { AppHeader } from "../AppHeader/AppHeader";
+import { Colors } from "@/design-system/colors";
+import { AppHeader } from "@/shared/components/AppHeader/AppHeader";
 
 export const FLOATING_TAB_HEIGHT = 64;
 export const FLOATING_TAB_GAP = 12;

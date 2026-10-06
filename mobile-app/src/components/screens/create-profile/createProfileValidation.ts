@@ -83,6 +83,84 @@ export const validateField = (
   return validators[key]?.() ?? "";
 };
 
+export const validateRealTimeField = (
+  key: keyof SignupForm,
+  val: string,
+  form: SignupForm,
+  mobileNumber?: string
+): string => {
+  switch (key) {
+    case "name": {
+      if (!val) return "";
+      if (/[0-9]/.test(val)) return "Name cannot contain numbers";
+      if (val.trim().length >= 2 && !validateFullName(val)) {
+        return "Enter a valid full name";
+      }
+      return "";
+    }
+    case "email": {
+      if (!val) return "";
+      if (val.includes("@") && val.indexOf(".") > val.indexOf("@") + 1) {
+        return validateEmail(val.trim()) ? "" : "Invalid email address";
+      }
+      return "";
+    }
+    case "dob": {
+      if (!val) return "";
+      if (val.length === 10) {
+        return validateDateOfBirth(val) ? "" : "Please enter a valid date of birth.";
+      }
+      return "";
+    }
+    case "fatherSpouseName": {
+      if (!val) return "";
+      if (/[0-9]/.test(val)) return "Name cannot contain numbers";
+      return "";
+    }
+    case "pan": {
+      const clean = val.trim().toUpperCase();
+      if (!clean) return "";
+      if (clean.length === 10) {
+        return /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(clean) ? "" : "Invalid PAN format";
+      }
+      return "";
+    }
+    case "aadhaar": {
+      const clean = val.replace(/\D/g, "");
+      if (!clean) return "";
+      if (clean.length === 12) {
+        return /^[2-9]{1}[0-9]{11}$/.test(clean) ? "" : "Invalid Aadhaar (must start with 2-9)";
+      }
+      return "";
+    }
+    case "pincode": {
+      const clean = val.replace(/\D/g, "");
+      if (!clean) return "";
+      if (clean.length === 6) {
+        return /^[1-9]{1}[0-9]{5}$/.test(clean) ? "" : "PIN Code cannot start with 0";
+      }
+      return "";
+    }
+    case "password": {
+      if (!val) return "";
+      if (val.length === 6) {
+        const res = validatePasscode(val, mobileNumber || form.mobileNumber);
+        return res.valid ? "" : (res.error || "Invalid passcode");
+      }
+      return "";
+    }
+    case "confirmPassword": {
+      if (!val) return "";
+      if (val.length === 6) {
+        return val === form.password ? "" : "Passcodes do not match";
+      }
+      return "";
+    }
+    default:
+      return "";
+  }
+};
+
 export const checkFormValidity = (
   form: SignupForm,
   agreedToTerms: boolean,

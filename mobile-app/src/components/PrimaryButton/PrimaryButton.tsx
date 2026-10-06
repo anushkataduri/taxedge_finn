@@ -7,7 +7,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from "react-native";
-import { useTheme } from "../../hooks/use-theme";
+import { useTheme } from "@/hooks/use-theme";
 import { styles } from "./PrimaryButton.styles";
 
 export type ButtonColorType = "primary" | "orange";

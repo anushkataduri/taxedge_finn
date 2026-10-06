@@ -1,4 +1,4 @@
-import type { Service, ServiceCategory, ServiceCategoryId } from "../types/domain";
+import type { Service, ServiceCategory, ServiceCategoryId } from "@/types/domain";
 
 export const CATEGORIES: ServiceCategory[] = [
   {

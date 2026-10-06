@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { BrandColors, Spacing, Typography } from "../../shared/theme";
+import { BrandColors, Spacing, Typography } from "@/shared/theme";
 
 export const formStyles = StyleSheet.create({
   formGroup: {

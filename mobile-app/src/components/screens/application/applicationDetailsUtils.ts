@@ -1,33 +1,34 @@
 import type { Application, TimelineStep } from "@/types/domain";
 
+const MONTH_NAMES = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+] as const;
+
 export function formatDisplayDate(dateStr?: string): string {
   if (!dateStr) return "Today";
-  const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ];
-  if (months.some((m) => dateStr.includes(m))) return dateStr;
+  if (MONTH_NAMES.some((m) => dateStr.includes(m))) return dateStr;
   try {
     const d = new Date(dateStr);
     if (!isNaN(d.getTime())) {
-      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+      return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
     }
-  } catch {}
+  } catch (error) {
+    if (__DEV__) console.warn("Failed to format date string:", dateStr, error);
+  }
   return dateStr;
 }
 
 export function calculateExpectedDate(dateStr?: string): string {
-  const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ];
   try {
     const d = dateStr ? new Date(dateStr) : new Date();
     if (!isNaN(d.getTime())) {
       d.setDate(d.getDate() + 2);
-      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+      return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
     }
-  } catch {}
+  } catch (error) {
+    if (__DEV__) console.warn("Failed to calculate expected date:", dateStr, error);
+  }
   return "1–2 Business Days";
 }
 

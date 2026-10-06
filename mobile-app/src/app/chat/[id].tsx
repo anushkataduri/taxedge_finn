@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TextInput,
   TouchableOpacity,
@@ -12,12 +11,13 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
-import { useTheme } from "../../hooks/use-theme";
-import { useApplicationStore } from "../../store/applicationStore";
+import { useTheme } from "@/hooks/use-theme";
+import { useApplicationStore } from "@/store/applicationStore";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { chatStyles as styles } from "@/styles/app/chat/chat.styles";
 
 export default function ChatScreen() {
   const colors = useTheme();
@@ -34,10 +34,25 @@ export default function ChatScreen() {
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    try {
+      const timer = setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+      return () => clearTimeout(timer);
+    } catch (err) {
+      console.warn("Scroll to end error:", err);
+    }
   }, [app?.chatHistory]);
+
+  const handleSend = useCallback(() => {
+    if (!app || !inputMessage.trim()) return;
+    try {
+      addChatMessage(app.id, "user", inputMessage.trim());
+      setInputMessage("");
+    } catch (err) {
+      console.error("Failed to send chat message:", err);
+    }
+  }, [app, inputMessage, addChatMessage]);
 
   if (!app) {
     return (
@@ -47,6 +62,8 @@ export default function ChatScreen() {
             <TouchableOpacity
               onPress={() => router.back()}
               style={styles.backBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
             >
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </TouchableOpacity>
@@ -59,12 +76,6 @@ export default function ChatScreen() {
       </View>
     );
   }
-
-  const handleSend = () => {
-    if (!inputMessage.trim()) return;
-    addChatMessage(app.id, "user", inputMessage.trim());
-    setInputMessage("");
-  };
 
   return (
     <KeyboardAvoidingView
@@ -79,11 +90,13 @@ export default function ChatScreen() {
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.backBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
           >
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>{app.assignedExecutive}</Text>
+            <Text style={styles.headerTitle}>{app.assignedExecutive || "Executive"}</Text>
             <Text style={styles.headerSubtitle}>
               {app.serviceName} representative
             </Text>
@@ -115,7 +128,7 @@ export default function ChatScreen() {
           </Text>
         </View>
 
-        {app.chatHistory.map((message) => {
+        {(app.chatHistory || []).map((message) => {
           const isUser = message.sender === "user";
           return (
             <View
@@ -199,6 +212,8 @@ export default function ChatScreen() {
                 : colors.backgroundSelected,
             },
           ]}
+          accessibilityRole="button"
+          accessibilityLabel="Send message"
         >
           <Ionicons
             name="send"
@@ -210,121 +225,3 @@ export default function ChatScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  headerWrap: {
-    width: "100%",
-  },
-  header: {
-    height: 56,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-  },
-  backBtn: {
-    padding: 4,
-  },
-  headerTextContainer: {
-    marginLeft: 16,
-    flex: 1,
-  },
-  headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  headerSubtitle: {
-    color: "#E2E8F0",
-    fontSize: 11,
-    fontWeight: "500",
-    marginTop: 2,
-  },
-  statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#16A34A",
-    marginRight: 4,
-  },
-  messagesContainer: {
-    padding: 16,
-    gap: 16,
-  },
-  systemAlert: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    gap: 8,
-    marginBottom: 8,
-  },
-  systemAlertText: {
-    fontSize: 11,
-    fontWeight: "500",
-    flex: 1,
-  },
-  messageBubbleContainer: {
-    flexDirection: "row",
-    width: "100%",
-  },
-  userBubbleContainer: {
-    justifyContent: "flex-end",
-  },
-  staffBubbleContainer: {
-    justifyContent: "flex-start",
-  },
-  messageBubble: {
-    maxWidth: "80%",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 14,
-  },
-  messageText: {
-    fontSize: 14,
-    fontWeight: "500",
-    lineHeight: 20,
-  },
-  messageTime: {
-    fontSize: 9,
-    fontWeight: "500",
-    alignSelf: "flex-end",
-    marginTop: 4,
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderTopWidth: 1.5,
-    gap: 10,
-  },
-  textInput: {
-    flex: 1,
-    minHeight: 40,
-    maxHeight: 100,
-    borderWidth: 1.5,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 14,
-  },
-  sendBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyText: {
-    fontSize: 14,
-  },
-});
