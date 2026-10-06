@@ -158,8 +158,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   iconBg: {
-    width: 60,
-    height: 60,
+    width: 80,
+    height: 80,
     borderRadius: 30,
     backgroundColor: "#FFFFFF",
     justifyContent: "center",
