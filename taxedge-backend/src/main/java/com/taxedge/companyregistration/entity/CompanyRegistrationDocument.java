@@ -1,6 +1,7 @@
 package com.taxedge.companyregistration.entity;
 
 import com.taxedge.customer.entity.Customer;
+import com.taxedge.companyregistration.enums.CompanyRegistrationDocumentType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.Getter;

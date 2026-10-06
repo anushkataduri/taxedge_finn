@@ -76,17 +76,15 @@ export function validateComplianceForm(data: ComplianceFormData): {
       if (!isFileSizeValid(data.purchaseDoc.size)) {
         errors.purchaseDoc = "Purchase Register exceeds maximum 20 MB size limit";
       } else if (!isFileTypeAllowed(data.purchaseDoc.name, RECONCILIATION_ALLOWED_EXTENSIONS)) {
-        errors.purchaseDoc = "Purchase Register must be PDF, XLS, XLSX or CSV";
+        errors.purchaseDoc = "Purchase Register must be PDF, Excel or Image (JPG, PNG)";
       }
     }
 
-    if (!data.salesDoc) {
-      errors.salesDoc = "Upload Sales Register";
-    } else {
+    if (data.salesDoc) {
       if (!isFileSizeValid(data.salesDoc.size)) {
         errors.salesDoc = "Sales Register exceeds maximum 20 MB size limit";
       } else if (!isFileTypeAllowed(data.salesDoc.name, RECONCILIATION_ALLOWED_EXTENSIONS)) {
-        errors.salesDoc = "Sales Register must be PDF, XLS, XLSX or CSV";
+        errors.salesDoc = "Sales Register must be PDF, Excel or Image (JPG, PNG)";
       }
     }
   }

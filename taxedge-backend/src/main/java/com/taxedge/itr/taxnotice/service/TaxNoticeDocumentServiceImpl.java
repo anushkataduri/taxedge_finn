@@ -1,212 +1,213 @@
 package com.taxedge.itr.taxnotice.service;
 
 import java.io.IOException;
-import java.util.Base64;
+import java.util.UUID;
 
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taxedge.gst.validator.GstFileUploadValidator;
 import com.taxedge.itr.Exception.ResourceNotFoundException;
 import com.taxedge.itr.taxnotice.dto.TaxNoticeDocumentDto;
 import com.taxedge.itr.taxnotice.entity.TaxNoticeAssistance;
 import com.taxedge.itr.taxnotice.entity.TaxNoticeDocument;
-import com.taxedge.itr.taxnotice.helper.TaxNoticeRandomNumberGenerator;
+import com.taxedge.itr.taxnotice.enums.TaxNoticeDocumentType;
+import com.taxedge.itr.taxnotice.mapper.TaxNoticeDocumentMapper;
 import com.taxedge.itr.taxnotice.repository.TaxNoticeAssistanceRepository;
 import com.taxedge.itr.taxnotice.repository.TaxNoticeDocumentRepository;
 
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class TaxNoticeDocumentServiceImpl implements TaxNoticeDocumentService {
 
-	
 	private final TaxNoticeDocumentRepository taxNoticeDocumentRepository;
 
-	
 	private final TaxNoticeAssistanceRepository taxNoticeAssistanceRepository;
 
-	@Autowired
-	@Qualifier("itrModelMapper")
-	private ModelMapper modelMapper;
+	private final TaxNoticeDocumentMapper taxNoticeDocumentMapper;
 
-	@Autowired
-	private ObjectMapper objectMapper;
+	private final GstFileUploadValidator fileUploadValidator;
 
 	@Override
-	public String registerDocuments(String noticeId, String data, MultipartFile taxNotice, MultipartFile previousItr,
-			MultipartFile itrAcknowledgement, MultipartFile form1616a, MultipartFile aisAy, MultipartFile tis,
-			MultipartFile bankStatement, MultipartFile supportingIncomeDocuments,
+	public String registerDocuments(String noticeId, TaxNoticeDocumentDto dto, MultipartFile taxNotice,
+			MultipartFile previousItr, MultipartFile itrAcknowledgement, MultipartFile form1616a, MultipartFile aisAy,
+			MultipartFile tis, MultipartFile bankStatement, MultipartFile supportingIncomeDocuments,
 			MultipartFile supportingExpenseDocuments, MultipartFile previousTaxResponses,
 			MultipartFile otherNoticeSpecificDocuments) throws IOException {
 
 		TaxNoticeAssistance taxNoticeAssistance = taxNoticeAssistanceRepository.findById(noticeId)
-				.orElseThrow(() -> new ResourceNotFoundException("Tax Notice not found with ID: " + noticeId));
+				.orElseThrow(() -> new ResourceNotFoundException("Tax notice not found with noticeId: " + noticeId));
+
+		validateAtLeastOneDocument(taxNotice, previousItr, itrAcknowledgement, form1616a, aisAy, tis, bankStatement,
+				supportingIncomeDocuments, supportingExpenseDocuments, previousTaxResponses,
+				otherNoticeSpecificDocuments);
 
 		if (taxNoticeDocumentRepository.findByTaxNoticeAssistanceNoticeId(noticeId).isPresent()) {
 
-			throw new IllegalArgumentException("Documents already registered for notice ID: " + noticeId);
+			throw new IllegalArgumentException("Documents already exist for notice ID: " + noticeId);
 		}
 
-		TaxNoticeDocument document = new TaxNoticeDocument();
+		TaxNoticeDocumentDto documentDto = TaxNoticeDocumentDto.builder().noticeId(noticeId)
+				.taxNotice(storeFile(taxNotice, TaxNoticeDocumentType.TAX_NOTICE))
+				.previousItr(storeFile(previousItr, TaxNoticeDocumentType.PREVIOUS_ITR))
+				.itrAcknowledgement(storeFile(itrAcknowledgement, TaxNoticeDocumentType.ITR_ACKNOWLEDGEMENT))
+				.form1616a(storeFile(form1616a, TaxNoticeDocumentType.FORM_16_16A))
+				.aisAy(storeFile(aisAy, TaxNoticeDocumentType.AIS_AY)).tis(storeFile(tis, TaxNoticeDocumentType.TIS))
+				.bankStatement(storeFile(bankStatement, TaxNoticeDocumentType.BANK_STATEMENT))
+				.supportingIncomeDocuments(
+						storeFile(supportingIncomeDocuments, TaxNoticeDocumentType.SUPPORTING_INCOME_DOCUMENTS))
+				.supportingExpenseDocuments(
+						storeFile(supportingExpenseDocuments, TaxNoticeDocumentType.SUPPORTING_EXPENSE_DOCUMENTS))
+				.previousTaxResponses(storeFile(previousTaxResponses, TaxNoticeDocumentType.PREVIOUS_TAX_RESPONSES))
+				.otherNoticeSpecificDocuments(
+						storeFile(otherNoticeSpecificDocuments, TaxNoticeDocumentType.OTHER_NOTICE_SPECIFIC_DOCUMENTS))
+				.message(dto.getMessage()).build();
 
-		document.setDocumentId(TaxNoticeRandomNumberGenerator.generateTaxNoticeDocumentId());
+		TaxNoticeDocument document = taxNoticeDocumentMapper.toEntity(documentDto);
+
+		document.setDocumentId("TND" + UUID.randomUUID().toString().replace("-", ""));
 
 		document.setTaxNoticeAssistance(taxNoticeAssistance);
 
-		TaxNoticeDocumentDto dto = null;
-
-		if (data != null && !data.isEmpty()) {
-			dto = objectMapper.readValue(data, TaxNoticeDocumentDto.class);
-		}
-
-		if (dto != null && dto.getMessage() != null && !dto.getMessage().isEmpty()) {
-
-			document.setMessage(dto.getMessage());
-		}
-
-		if (taxNotice != null && !taxNotice.isEmpty()) {
-			document.setTaxNotice(convertFile(taxNotice));
-		}
-
-		if (previousItr != null && !previousItr.isEmpty()) {
-			document.setPreviousItr(convertFile(previousItr));
-		}
-
-		if (itrAcknowledgement != null && !itrAcknowledgement.isEmpty()) {
-			document.setItrAcknowledgement(convertFile(itrAcknowledgement));
-		}
-
-		if (form1616a != null && !form1616a.isEmpty()) {
-			document.setForm1616a(convertFile(form1616a));
-		}
-
-		if (aisAy != null && !aisAy.isEmpty()) {
-			document.setAisAy(convertFile(aisAy));
-		}
-
-		if (tis != null && !tis.isEmpty()) {
-			document.setTis(convertFile(tis));
-		}
-
-		if (bankStatement != null && !bankStatement.isEmpty()) {
-			document.setBankStatement(convertFile(bankStatement));
-		}
-
-		if (supportingIncomeDocuments != null && !supportingIncomeDocuments.isEmpty()) {
-
-			document.setSupportingIncomeDocuments(convertFile(supportingIncomeDocuments));
-		}
-
-		if (supportingExpenseDocuments != null && !supportingExpenseDocuments.isEmpty()) {
-
-			document.setSupportingExpenseDocuments(convertFile(supportingExpenseDocuments));
-		}
-
-		if (previousTaxResponses != null && !previousTaxResponses.isEmpty()) {
-
-			document.setPreviousTaxResponses(convertFile(previousTaxResponses));
-		}
-
-		if (otherNoticeSpecificDocuments != null && !otherNoticeSpecificDocuments.isEmpty()) {
-
-			document.setOtherNoticeSpecificDocuments(convertFile(otherNoticeSpecificDocuments));
-		}
-
 		taxNoticeDocumentRepository.save(document);
 
-		return "Tax Notice documents uploaded successfully. Document ID: " + document.getDocumentId();
+		return "Tax notice documents registered successfully. Document ID: " + document.getDocumentId();
 	}
 
 	@Override
-	public String updateDocuments(String documentId, String data, MultipartFile taxNotice, MultipartFile previousItr,
-			MultipartFile itrAcknowledgement, MultipartFile form1616a, MultipartFile aisAy, MultipartFile tis,
-			MultipartFile bankStatement, MultipartFile supportingIncomeDocuments,
+	@Transactional(readOnly = true)
+	public TaxNoticeDocumentDto getDocuments(String documentId) {
+
+		TaxNoticeDocument document = taxNoticeDocumentRepository.findById(documentId).orElseThrow(
+				() -> new ResourceNotFoundException("Tax notice documents not found with document ID: " + documentId));
+
+		return taxNoticeDocumentMapper.toDto(document);
+	}
+
+	@Override
+	public String updateDocuments(String documentId, TaxNoticeDocumentDto dto, MultipartFile taxNotice,
+			MultipartFile previousItr, MultipartFile itrAcknowledgement, MultipartFile form1616a, MultipartFile aisAy,
+			MultipartFile tis, MultipartFile bankStatement, MultipartFile supportingIncomeDocuments,
 			MultipartFile supportingExpenseDocuments, MultipartFile previousTaxResponses,
 			MultipartFile otherNoticeSpecificDocuments) throws IOException {
 
-		TaxNoticeDocument document = taxNoticeDocumentRepository.findById(documentId)
-				.orElseThrow(() -> new ResourceNotFoundException("Documents not found with ID: " + documentId));
+		TaxNoticeDocument document = taxNoticeDocumentRepository.findById(documentId).orElseThrow(
+				() -> new ResourceNotFoundException("Tax notice documents not found with document ID: " + documentId));
 
-		TaxNoticeDocumentDto dto = null;
+		validateAtLeastOneDocument(taxNotice, previousItr, itrAcknowledgement, form1616a, aisAy, tis, bankStatement,
+				supportingIncomeDocuments, supportingExpenseDocuments, previousTaxResponses,
+				otherNoticeSpecificDocuments);
 
-		if (data != null && !data.isEmpty()) {
-			dto = objectMapper.readValue(data, TaxNoticeDocumentDto.class);
-		}
+		updateFile(document, taxNotice, TaxNoticeDocumentType.TAX_NOTICE);
 
-		if (dto != null && dto.getMessage() != null && !dto.getMessage().isEmpty()) {
+		updateFile(document, previousItr, TaxNoticeDocumentType.PREVIOUS_ITR);
 
+		updateFile(document, itrAcknowledgement, TaxNoticeDocumentType.ITR_ACKNOWLEDGEMENT);
+
+		updateFile(document, form1616a, TaxNoticeDocumentType.FORM_16_16A);
+
+		updateFile(document, aisAy, TaxNoticeDocumentType.AIS_AY);
+
+		updateFile(document, tis, TaxNoticeDocumentType.TIS);
+
+		updateFile(document, bankStatement, TaxNoticeDocumentType.BANK_STATEMENT);
+
+		updateFile(document, supportingIncomeDocuments, TaxNoticeDocumentType.SUPPORTING_INCOME_DOCUMENTS);
+
+		updateFile(document, supportingExpenseDocuments, TaxNoticeDocumentType.SUPPORTING_EXPENSE_DOCUMENTS);
+
+		updateFile(document, previousTaxResponses, TaxNoticeDocumentType.PREVIOUS_TAX_RESPONSES);
+
+		updateFile(document, otherNoticeSpecificDocuments, TaxNoticeDocumentType.OTHER_NOTICE_SPECIFIC_DOCUMENTS);
+
+		if (dto != null) {
 			document.setMessage(dto.getMessage());
-		}
-
-		if (taxNotice != null && !taxNotice.isEmpty()) {
-			document.setTaxNotice(convertFile(taxNotice));
-		}
-
-		if (previousItr != null && !previousItr.isEmpty()) {
-			document.setPreviousItr(convertFile(previousItr));
-		}
-
-		if (itrAcknowledgement != null && !itrAcknowledgement.isEmpty()) {
-			document.setItrAcknowledgement(convertFile(itrAcknowledgement));
-		}
-
-		if (form1616a != null && !form1616a.isEmpty()) {
-			document.setForm1616a(convertFile(form1616a));
-		}
-
-		if (aisAy != null && !aisAy.isEmpty()) {
-			document.setAisAy(convertFile(aisAy));
-		}
-
-		if (tis != null && !tis.isEmpty()) {
-			document.setTis(convertFile(tis));
-		}
-
-		if (bankStatement != null && !bankStatement.isEmpty()) {
-			document.setBankStatement(convertFile(bankStatement));
-		}
-
-		if (supportingIncomeDocuments != null && !supportingIncomeDocuments.isEmpty()) {
-
-			document.setSupportingIncomeDocuments(convertFile(supportingIncomeDocuments));
-		}
-
-		if (supportingExpenseDocuments != null && !supportingExpenseDocuments.isEmpty()) {
-
-			document.setSupportingExpenseDocuments(convertFile(supportingExpenseDocuments));
-		}
-
-		if (previousTaxResponses != null && !previousTaxResponses.isEmpty()) {
-
-			document.setPreviousTaxResponses(convertFile(previousTaxResponses));
-		}
-
-		if (otherNoticeSpecificDocuments != null && !otherNoticeSpecificDocuments.isEmpty()) {
-
-			document.setOtherNoticeSpecificDocuments(convertFile(otherNoticeSpecificDocuments));
 		}
 
 		taxNoticeDocumentRepository.save(document);
 
-		return "Tax Notice documents updated successfully. Document ID: " + document.getDocumentId();
+		return "Tax notice documents updated successfully. Document ID: " + document.getDocumentId();
 	}
 
 	@Override
-	public TaxNoticeDocumentDto getDocuments(String documentId) {
+	public String deleteDocuments(String documentId) {
 
-		TaxNoticeDocument document = taxNoticeDocumentRepository.findById(documentId)
-				.orElseThrow(() -> new ResourceNotFoundException("Documents not found with ID: " + documentId));
+		TaxNoticeDocument document = taxNoticeDocumentRepository.findById(documentId).orElseThrow(
+				() -> new ResourceNotFoundException("Tax notice documents not found with documentId: " + documentId));
 
-		return modelMapper.map(document, TaxNoticeDocumentDto.class);
+		taxNoticeDocumentRepository.delete(document);
+
+		return "Tax notice documents deleted successfully";
 	}
 
-	private String convertFile(MultipartFile file) throws IOException {
+	private byte[] storeFile(MultipartFile file, TaxNoticeDocumentType documentType) throws IOException {
 
-		return Base64.getEncoder().encodeToString(file.getBytes());
+		if (file == null || file.isEmpty()) {
+			return null;
+		}
+
+		fileUploadValidator.validate(file, documentType.name());
+
+		return file.getBytes();
+	}
+
+	private void updateFile(TaxNoticeDocument document, MultipartFile file, TaxNoticeDocumentType documentType)
+			throws IOException {
+
+		if (file == null || file.isEmpty()) {
+			return;
+		}
+
+		fileUploadValidator.validate(file, documentType.name());
+
+		byte[] data = file.getBytes();
+
+		switch (documentType) {
+
+		case TAX_NOTICE -> document.setTaxNotice(data);
+
+		case PREVIOUS_ITR -> document.setPreviousItr(data);
+
+		case ITR_ACKNOWLEDGEMENT -> document.setItrAcknowledgement(data);
+
+		case FORM_16_16A -> document.setForm1616a(data);
+
+		case AIS_AY -> document.setAisAy(data);
+
+		case TIS -> document.setTis(data);
+
+		case BANK_STATEMENT -> document.setBankStatement(data);
+
+		case SUPPORTING_INCOME_DOCUMENTS -> document.setSupportingIncomeDocuments(data);
+
+		case SUPPORTING_EXPENSE_DOCUMENTS -> document.setSupportingExpenseDocuments(data);
+
+		case PREVIOUS_TAX_RESPONSES -> document.setPreviousTaxResponses(data);
+
+		case OTHER_NOTICE_SPECIFIC_DOCUMENTS -> document.setOtherNoticeSpecificDocuments(data);
+		}
+	}
+
+	private void validateAtLeastOneDocument(MultipartFile taxNotice, MultipartFile previousItr,
+			MultipartFile itrAcknowledgement, MultipartFile form1616a, MultipartFile aisAy, MultipartFile tis,
+			MultipartFile bankStatement, MultipartFile supportingIncomeDocuments,
+			MultipartFile supportingExpenseDocuments, MultipartFile previousTaxResponses,
+			MultipartFile otherNoticeSpecificDocuments) {
+
+		if (isEmpty(taxNotice) && isEmpty(previousItr) && isEmpty(itrAcknowledgement) && isEmpty(form1616a)
+				&& isEmpty(aisAy) && isEmpty(tis) && isEmpty(bankStatement) && isEmpty(supportingIncomeDocuments)
+				&& isEmpty(supportingExpenseDocuments) && isEmpty(previousTaxResponses)
+				&& isEmpty(otherNoticeSpecificDocuments)) {
+
+			throw new IllegalArgumentException("At least one document is required");
+		}
+	}
+
+	private boolean isEmpty(MultipartFile file) {
+		return file == null || file.isEmpty();
 	}
 }

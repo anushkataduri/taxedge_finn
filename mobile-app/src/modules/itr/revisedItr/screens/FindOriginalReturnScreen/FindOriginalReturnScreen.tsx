@@ -6,8 +6,11 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
+import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
+import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
 import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRevisedProgressStore } from "../../store/revisedProgressStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { RevisedItrHeader } from "../../components/common";
@@ -23,6 +26,8 @@ import {
 
 export const FindOriginalReturnScreen: React.FC = () => {
   const router = useRouter();
+  const params = useLocalSearchParams<{ acknowledgementNumber?: string; assessmentYear?: string }>();
+  const maxStepReached = useRevisedProgressStore((s) => s.maxStepReached);
   const insets = useSafeAreaInsets();
   const applications = useApplicationStore((state) => state.applications);
 
@@ -30,15 +35,31 @@ export const FindOriginalReturnScreen: React.FC = () => {
     (a) => a.serviceId === "itr-filing" || a.category === "ITR"
   );
 
-  const [ackNumber, setAckNumber] = useState<string>(
-    (existingItr?.formData as any)?.previousAckNumber || ""
-  );
-  const [assessmentYear, setAssessmentYear] = useState<string>("AY 2025–26");
+  const [ackNumber, setAckNumber] = useState<string>(params.acknowledgementNumber || (existingItr?.formData as any)?.previousAckNumber || "");
+  const [assessmentYear, setAssessmentYear] = useState<string>("AY 2025-26");
   const [showAyDropdown, setShowAyDropdown] = useState<boolean>(false);
   const [foundReturn, setFoundReturn] = useState<OriginalReturnDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const {
+    showDraftModal,
+    openDraftModal,
+    handleSaveAndExit,
+    handleDiscardAndExit,
+    handleCancel,
+  } = useUniversalDraftGuard({
+    saveDestination: "/service/itr",
+    discardDestination: "/service/itr",
+    isDirty: () => true,
+    onSaveDraft: () => {
+      useApplicationStore.getState().saveRevisedItrDraft({ step: 0 });
+    },
+    onDiscardDraft: () => {
+      useApplicationStore.getState().clearRevisedItrDraft();
+    },
+    isSubmitted: () => false,
+  });
 
-  const ayOptions = ["AY 2025–26", "AY 2024–25", "AY 2023–24"];
+  const ayOptions = ["AY 2025-26", "AY 2024-25", "AY 2023-24"];
 
   useEffect(() => {
     const draft = useApplicationStore.getState().revisedItrDraft;
@@ -218,7 +239,7 @@ export const FindOriginalReturnScreen: React.FC = () => {
           onPress={foundReturn ? handleContinue : handleFindReturn}
           style={styles.ctaButton}
         >
-          <Text style={styles.ctaButtonText}>Continue</Text>
+          <Text style={styles.ctaButtonText}>{maxStepReached >= 3 ? "Update and Continue" : "Continue"}</Text>
           <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
@@ -227,3 +248,6 @@ export const FindOriginalReturnScreen: React.FC = () => {
 };
 
 export default FindOriginalReturnScreen;
+
+
+

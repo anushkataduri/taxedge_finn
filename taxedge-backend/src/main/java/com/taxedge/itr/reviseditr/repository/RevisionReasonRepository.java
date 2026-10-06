@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 import com.taxedge.itr.reviseditr.entity.RevisionReasonEntity;
 
 @Repository
-public interface RevisionReasonRepository
-        extends JpaRepository<RevisionReasonEntity, String> {
+public interface RevisionReasonRepository extends JpaRepository<RevisionReasonEntity, String> {
 
 }

@@ -79,11 +79,11 @@ export const RequestTypeSection: React.FC<RequestTypeSectionProps> = ({
           onClearError={() => onClearError("purchaseDoc")}
         />
 
-        {/* 2. Sales Register (Required - Image 1 Card) */}
+        {/* 2. Sales Register (Optional - Image 1 Card) */}
         <FileUploadCard
           title="Sales Register"
-          description="Upload sales register or outward supplies statement"
-          required
+          description="Upload sales register or outward supplies statement (Optional)"
+          required={false}
           allowedExtensions={RECONCILIATION_ALLOWED_EXTENSIONS}
           uploadedDoc={formData.salesDoc}
           onDocChange={(doc: UploadedDocInfo | null) => {

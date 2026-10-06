@@ -1,6 +1,6 @@
 package com.taxedge.itr.tdsrefund.dto;
 
-import com.taxedge.gst.enums.AccountType;
+import com.taxedge.itr.tdsrefund.enums.AccountType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

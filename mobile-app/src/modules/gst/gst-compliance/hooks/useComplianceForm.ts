@@ -15,6 +15,7 @@ import {
   submitComplianceRequest,
   SubmissionResult,
 } from "@/modules/gst/services/gstComplianceService";
+import { gstComplianceApi } from "@/modules/gst/services/gstComplianceApi";
 import { useAuthStore } from "@/store/authStore";
 import { addDraftToIndex, removeDraftFromIndex } from "@/shared/hooks/useServiceDraft";
 import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
@@ -55,8 +56,12 @@ export function useComplianceForm() {
   const [formData, setFormData] = useState<ComplianceFormData>(initialFormData);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [complianceId, setComplianceId] = useState<string | null>(null);
+  const [dbReviewData, setDbReviewData] = useState<any>(null);
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
   const [hasCheckedDraft, setHasCheckedDraft] = useState<boolean>(false);
+  const [isSubmittedSuccess, setIsSubmittedSuccess] = useState<boolean>(false);
 
   // Check if draft exists on mount and silently restore without popup
   useEffect(() => {
@@ -91,6 +96,7 @@ export function useComplianceForm() {
 
   // Universal Draft Guard Integration
   const isDirty = useCallback((): boolean => {
+    if (isSubmittedSuccess) return false;
     return Boolean(
       formData.gstin ||
       formData.financialYear ||
@@ -100,7 +106,7 @@ export function useComplianceForm() {
       formData.noticeDoc ||
       formData.noticeNumber
     );
-  }, [formData]);
+  }, [formData, isSubmittedSuccess]);
 
   const saveCurrentDraft = useCallback(async () => {
     const mobile = getCleanMobile();
@@ -136,7 +142,7 @@ export function useComplianceForm() {
     isDirty,
     onSaveDraft: saveCurrentDraft,
     onDiscardDraft: clearCurrentDraft,
-    isSubmitted: () => false,
+    isSubmitted: () => isSubmittedSuccess,
   });
 
   const updateField = useCallback(
@@ -183,29 +189,77 @@ export function useComplianceForm() {
     setCurrentStep(0);
   }, []);
 
-  // Continue or Save & Review action
-  const handleContinue = useCallback(() => {
+  // Continue or Save & Review action: Saves to DB (POST or PUT) and fetches back from DB
+  const handleContinue = useCallback(async () => {
     if (currentStep === 0) {
       const { isValid, errors: validationErrors } = validateComplianceForm(formData);
       if (!isValid) {
         setErrors(validationErrors);
+        const errorList = Object.values(validationErrors).filter(Boolean);
         Alert.alert(
           "Required Fields Missing",
-          "Please fill in all required fields highlighted in red."
+          errorList.length > 0
+            ? errorList.map((err) => `• ${err}`).join("\n")
+            : "Please fill in all required fields highlighted in red."
         );
         return;
       }
 
-      if (isEditMode) {
-        Alert.alert("Changes Saved", "Your details have been updated.");
-        setIsEditMode(false);
-      }
+      setIsSaving(true);
+      try {
+        let activeId = complianceId;
 
-      setCurrentStep(1);
+        if (activeId) {
+          // 1. PUT update to existing database record
+          console.log(`💾 [Compliance Review] Updating record in DB: ${formData.gstin} / ${activeId}`);
+          await gstComplianceApi.updateCompliance(formData.gstin, activeId, formData);
+        } else {
+          // 1. POST create new record in database
+          console.log("💾 [Compliance Review] Saving new compliance record in DB...");
+          const res: any = await gstComplianceApi.createCompliance(formData);
+          console.log("💾 [Compliance Review] Create response:", res);
+
+          let parsedId = null;
+          try {
+            const parsed = typeof res === "string" ? JSON.parse(res) : res;
+            parsedId = parsed?.complianceId;
+          } catch {
+            const match = String(res).match(/Compliance ID:\s*([A-Za-z0-9_-]+)/i);
+            parsedId = match ? match[1] : null;
+          }
+
+          if (parsedId) {
+            activeId = parsedId;
+            setComplianceId(parsedId);
+          }
+        }
+
+        // 2. GET retrieve record from DB by ID to populate Review section
+        if (activeId) {
+          console.log(`📥 [Compliance Review] Fetching record from DB: ${formData.gstin} / ${activeId}`);
+          const fetchedDto = await gstComplianceApi.getCompliance(formData.gstin, activeId);
+          console.log("📥 [Compliance Review] Retrieved from DB:", fetchedDto);
+          setDbReviewData(fetchedDto);
+        }
+
+        if (isEditMode) {
+          setIsEditMode(false);
+        }
+
+        setCurrentStep(1);
+      } catch (err: any) {
+        console.error("Error saving/fetching compliance record:", err);
+        Alert.alert(
+          "Save Failed",
+          err?.message || "Failed to save details to database. Please check your inputs and try again."
+        );
+      } finally {
+        setIsSaving(false);
+      }
     } else {
       setShowConfirmModal(true);
     }
-  }, [currentStep, isEditMode, formData]);
+  }, [currentStep, isEditMode, formData, complianceId]);
 
   const handleBack = useCallback(() => {
     if (currentStep === 1) {
@@ -221,9 +275,12 @@ export function useComplianceForm() {
     setIsSubmitting(true);
 
     try {
-      const result: SubmissionResult = await submitComplianceRequest(formData);
+      const result: SubmissionResult = await submitComplianceRequest(formData, complianceId);
 
       if (result.success) {
+        setIsSubmittedSuccess(true);
+        draftGuard.markSubmitted();
+
         const mobile = getCleanMobile();
         if (mobile) {
           removeDraftFromIndex(mobile, "gst-compliance");
@@ -262,7 +319,7 @@ export function useComplianceForm() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, router]);
+  }, [formData, complianceId, router, draftGuard]);
 
   const getButtonText = useCallback((): string => {
     if (isEditMode && currentStep === 0) {
@@ -281,6 +338,9 @@ export function useComplianceForm() {
     formData,
     errors,
     isSubmitting,
+    isSaving,
+    complianceId,
+    dbReviewData,
     showConfirmModal,
     setShowConfirmModal,
     draftGuard,

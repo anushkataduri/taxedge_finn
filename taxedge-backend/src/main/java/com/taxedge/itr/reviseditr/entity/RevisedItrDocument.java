@@ -1,17 +1,24 @@
 package com.taxedge.itr.reviseditr.entity;
 
+import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "revised_itr_document")
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class RevisedItrDocument {
 
 	@Id
@@ -22,27 +29,27 @@ public class RevisedItrDocument {
 	@JoinColumn(name = "revised_itr_id", nullable = false)
 	private RevisedItr revisedItr;
 
-	@Lob
-	@Column(name = "pan_card", columnDefinition = "LONGTEXT")
-	private String panCard;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "pan_card", columnDefinition = "bytea")
+	private byte[] panCard;
 
-	@Lob
-	@Column(name = "aadhaar_card", columnDefinition = "LONGTEXT")
-	private String aadhaarCard;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "aadhaar_card", columnDefinition = "bytea")
+	private byte[] aadhaarCard;
 
-	@Lob
-	@Column(name = "form_16_form_16a", columnDefinition = "LONGTEXT")
-	private String form16Form16A;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "form_16_form_16a", columnDefinition = "bytea")
+	private byte[] form16Form16A;
 
-	@Lob
-	@Column(name = "ais_tis_statement", columnDefinition = "LONGTEXT")
-	private String aisTisStatement;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "ais_tis_statement", columnDefinition = "bytea")
+	private byte[] aisTisStatement;
 
-	@Lob
-	@Column(name = "bank_statements", columnDefinition = "LONGTEXT")
-	private String bankStatements;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "bank_statements", columnDefinition = "bytea")
+	private byte[] bankStatements;
 
-	@Lob
-	@Column(name = "investment_proofs", columnDefinition = "LONGTEXT")
-	private String investmentProofs;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "investment_proofs", columnDefinition = "bytea")
+	private byte[] investmentProofs;
 }

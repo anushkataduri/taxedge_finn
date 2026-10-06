@@ -1,33 +1,28 @@
 package com.taxedge.itr.filing.service;
 
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
 import com.taxedge.itr.Exception.ResourceNotFoundException;
 import com.taxedge.itr.filing.dto.SalaryIncomeDto;
 import com.taxedge.itr.filing.entity.ItrFiling;
 import com.taxedge.itr.filing.entity.SalaryIncome;
-import com.taxedge.itr.filing.helper.FilingRandomNumberGenerator;
+import com.taxedge.itr.filing.mapper.SalaryIncomeMapper;
 import com.taxedge.itr.filing.repository.ItrFilingRepository;
 import com.taxedge.itr.filing.repository.SalaryIncomeRepository;
 
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class SalaryIncomeServiceImpl implements SalaryIncomeService {
 
-	
-	private final  SalaryIncomeRepository salaryIncomeRepository;
+	private final SalaryIncomeRepository salaryIncomeRepository;
 
-	
 	private final ItrFilingRepository itrFilingRepository;
 
-	@Autowired
-	@Qualifier("itrModelMapper")
-	private ModelMapper modelMapper;
+	private final SalaryIncomeMapper salaryIncomeMapper;
 
 	@Override
 	public String registerSalaryIncome(String itrId, SalaryIncomeDto salaryIncomeDto) {
@@ -37,17 +32,27 @@ public class SalaryIncomeServiceImpl implements SalaryIncomeService {
 
 		validateIncome(salaryIncomeDto);
 
-		SalaryIncome salaryIncome = modelMapper.map(salaryIncomeDto, SalaryIncome.class);
-
-		salaryIncome.setItrFiling(itrFiling);
-
-		String incomeId = FilingRandomNumberGenerator.generateIncomeId();
-
-		salaryIncome.setIncomeId(incomeId);
+		SalaryIncome salaryIncome = SalaryIncome.builder()
+				.incomeId("FIL" + UUID.randomUUID().toString().replace("-", ""))
+				.incomeSource(salaryIncomeDto.getIncomeSource())
+				.employerLegalName(salaryIncomeDto.getEmployerLegalName()).grossSalary(salaryIncomeDto.getGrossSalary())
+				.exemptAllowances(salaryIncomeDto.getExemptAllowances())
+				.tdsDeductedByEmployer(salaryIncomeDto.getTdsDeductedByEmployer())
+				.propertyClassification(salaryIncomeDto.getPropertyClassification())
+				.homeLoanInterestPaid(salaryIncomeDto.getHomeLoanInterestPaid())
+				.annualRentReceived(salaryIncomeDto.getAnnualRentReceived())
+				.municipalTaxesPaid(salaryIncomeDto.getMunicipalTaxesPaid())
+				.howDoYouReportThisBusiness(salaryIncomeDto.getHowDoYouReportThisBusiness())
+				.grossTurnover(salaryIncomeDto.getGrossTurnover())
+				.declaredNetProfit(salaryIncomeDto.getDeclaredNetProfit()).assetType(salaryIncomeDto.getAssetType())
+				.shortTermGains(salaryIncomeDto.getShortTermGains()).longTermGains(salaryIncomeDto.getLongTermGains())
+				.savingsInterest(salaryIncomeDto.getSavingsInterest())
+				.fdTermInterest(salaryIncomeDto.getFdTermInterest()).dividendIncome(salaryIncomeDto.getDividendIncome())
+				.otherMiscellaneous(salaryIncomeDto.getOtherMiscellaneous()).itrFiling(itrFiling).build();
 
 		salaryIncomeRepository.save(salaryIncome);
 
-		return "Income details registered successfully. Income ID: " + incomeId;
+		return "Income details registered successfully. Income ID: " + salaryIncome.getIncomeId();
 	}
 
 	@Override
@@ -56,29 +61,22 @@ public class SalaryIncomeServiceImpl implements SalaryIncomeService {
 		SalaryIncome salaryIncome = salaryIncomeRepository.findById(incomeId)
 				.orElseThrow(() -> new ResourceNotFoundException("Salary income not found with incomeId: " + incomeId));
 
-		return modelMapper.map(salaryIncome, SalaryIncomeDto.class);
+		return salaryIncomeMapper.toDto(salaryIncome);
 	}
 
 	@Override
 	public String updateSalaryIncome(String incomeId, SalaryIncomeDto salaryIncomeDto) {
 
-	    SalaryIncome salaryIncome = salaryIncomeRepository.findById(incomeId)
-	            .orElseThrow(() -> new ResourceNotFoundException(
-	                    "Salary income not found with incomeId: " + incomeId));
+		SalaryIncome salaryIncome = salaryIncomeRepository.findById(incomeId)
+				.orElseThrow(() -> new ResourceNotFoundException("Salary income not found with incomeId: " + incomeId));
 
-	    validateIncome(salaryIncomeDto);
+		validateIncome(salaryIncomeDto);
 
-	    modelMapper.typeMap(SalaryIncomeDto.class, SalaryIncome.class)
-	            .addMappings(mapper -> {
-	                mapper.skip(SalaryIncome::setIncomeId);
-	                mapper.skip(SalaryIncome::setItrFiling);
-	            });
+		salaryIncomeMapper.updateEntity(salaryIncomeDto, salaryIncome);
 
-	    modelMapper.map(salaryIncomeDto, salaryIncome);
+		salaryIncomeRepository.save(salaryIncome);
 
-	    salaryIncomeRepository.save(salaryIncome);
-
-	    return "Income details updated successfully";
+		return "Income details updated successfully. Income ID: " + salaryIncome.getIncomeId();
 	}
 
 	@Override
@@ -99,8 +97,6 @@ public class SalaryIncomeServiceImpl implements SalaryIncomeService {
 			throw new IllegalArgumentException("Income source is required");
 		}
 
-		// Salary / Pension
-
 		if (dto.getIncomeSource().equalsIgnoreCase("Salary / Pension")) {
 
 			if (dto.getEmployerLegalName() == null || dto.getEmployerLegalName().trim().isEmpty()
@@ -112,8 +108,6 @@ public class SalaryIncomeServiceImpl implements SalaryIncomeService {
 						"Employer legal name, gross salary, exempt allowances and TDS deducted by employer are required");
 			}
 		}
-
-		// House Property
 
 		else if (dto.getIncomeSource().equalsIgnoreCase("House Property")) {
 
@@ -142,8 +136,6 @@ public class SalaryIncomeServiceImpl implements SalaryIncomeService {
 			}
 		}
 
-		// Business / Profession
-
 		else if (dto.getIncomeSource().equalsIgnoreCase("Business / Profession")) {
 
 			if (dto.getHowDoYouReportThisBusiness() == null || dto.getHowDoYouReportThisBusiness().trim().isEmpty()
@@ -155,8 +147,6 @@ public class SalaryIncomeServiceImpl implements SalaryIncomeService {
 			}
 		}
 
-		// Capital Gains
-
 		else if (dto.getIncomeSource().equalsIgnoreCase("Capital Gains")) {
 
 			if (dto.getAssetType() == null || dto.getShortTermGains() == null
@@ -166,8 +156,6 @@ public class SalaryIncomeServiceImpl implements SalaryIncomeService {
 				throw new IllegalArgumentException("Asset type, short term gains and long term gains are required");
 			}
 		}
-
-		// Other Sources
 
 		else if (dto.getIncomeSource().equalsIgnoreCase("Other Sources")) {
 

@@ -24,6 +24,7 @@ import {
   submitReviewStep,
   promptPayLaterSubmission,
 } from "@/modules/gst/gst-filing/hooks/gstFilingStepHandlers";
+import { GstFilingPeriodData } from "@/modules/gst/gst-filing/components/GstFilingPeriodStep/GstFilingPeriodStep";
 
 export function useGstFiling() {
   const router = useRouter();
@@ -53,6 +54,7 @@ export function useGstFiling() {
     documents,
     setDocuments,
     validatePeriodStep,
+    validateDocumentsStep,
     handleUpdateDocuments,
     requiredDocs,
     missingDocsCount,
@@ -143,46 +145,21 @@ export function useGstFiling() {
 
   const getTargetFilingId = useCallback(
     (explicitId?: string): string => {
-      const applications = useApplicationStore.getState().applications;
-      const currentGstin = periodDataRef.current?.gstin;
-      return resolveTargetFilingId(
-        [
-          explicitId,
-          filingIdRef.current,
-          (gstFilingDraft as any)?.createdFilingId,
-          (periodDataRef.current as any)?.filingId,
-          (periodDataRef.current as any)?.gstfilingId,
-          params.filingId,
-          params.id,
-          params.appId?.startsWith("FIL") ? params.appId : undefined,
-        ],
-        applications,
-        currentGstin,
-      );
+      return resolveTargetFilingId([
+        explicitId,
+        filingIdRef.current,
+        params.filingId,
+        params.id,
+        params.appId?.startsWith("FIL") ? params.appId : undefined,
+      ]);
     },
-    [gstFilingDraft, params.appId, params.filingId, params.id],
+    [params.appId, params.filingId, params.id],
   );
 
   // Fetch persisted filing data from backend
   const fetchFilingDetails = useCallback(
     async (idToFetch?: string) => {
-      let targetId = getTargetFilingId(idToFetch);
-
-      if (!targetId && periodDataRef.current.gstin) {
-        try {
-          const filings = await gstApi.fetchFilings(periodDataRef.current.gstin);
-          if (filings && filings.length > 0) {
-            const sorted = [...filings].sort(
-              (a, b) =>
-                new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-            );
-            const latest = sorted[sorted.length - 1];
-            targetId = latest.gstfilingId || latest.id || "";
-          }
-        } catch (fetchErr) {
-          console.debug("[FilingDetails] Could not fetch filings by GSTIN:", fetchErr);
-        }
-      }
+      const targetId = getTargetFilingId(idToFetch);
 
       if (!targetId) return;
 
@@ -191,11 +168,18 @@ export function useGstFiling() {
         const dbFiling = await gstApi.getFilingById(targetId);
         if (dbFiling) {
           const mapped = mapDtoToPeriodData(dbFiling);
-          setPeriodData((prev) => ({
-            ...prev,
-            ...mapped,
-            filingId: targetId,
-          }));
+          setPeriodData((prev) => {
+            const next: GstFilingPeriodData = {
+              ...prev,
+              filingId: targetId,
+            };
+            for (const [k, v] of Object.entries(mapped)) {
+              if (v !== undefined && v !== null && v !== "") {
+                (next as any)[k] = v;
+              }
+            }
+            return next;
+          });
           setFilingId(targetId);
         }
       } catch (err: any) {
@@ -300,63 +284,71 @@ export function useGstFiling() {
   }, [currentStep, router, isEditMode]);
 
   const handleContinue = useCallback(async () => {
-    if (currentStep === 0) {
-      if (!validatePeriodStep()) return;
-      await submitPeriodStep({
-        periodData,
-        targetFilingId: getTargetFilingId(),
-        isEditMode,
-        setFilingId,
-        setCurrentStep,
-        setIsEditMode,
-        setIsSubmitting,
-      });
-      return;
-    }
+    switch (currentStep) {
+      case 0: {
+        if (!validatePeriodStep()) return;
+        await submitPeriodStep({
+          periodData,
+          targetFilingId: getTargetFilingId(),
+          isEditMode,
+          setFilingId,
+          setCurrentStep,
+          setIsEditMode,
+          setIsSubmitting,
+        });
+        break;
+      }
 
-    if (currentStep === 1) {
-      await submitDocumentsStep({
-        targetFilingId: getTargetFilingId(),
-        periodData,
-        documents,
-        isEditMode,
-        setFilingId,
-        setDocuments,
-        setCurrentStep,
-        setIsEditMode,
-        setIsSubmitting,
-      });
-      return;
-    }
+      case 1: {
+        if (!validateDocumentsStep()) return;
+        await submitDocumentsStep({
+          targetFilingId: getTargetFilingId(),
+          periodData,
+          documents,
+          isEditMode,
+          setFilingId,
+          setDocuments,
+          setCurrentStep,
+          setIsEditMode,
+          setIsSubmitting,
+        });
+        break;
+      }
 
-    if (currentStep === 2) {
-      await submitReviewStep({
-        missingDocsCount,
-        filingId,
-        periodData,
-        setCurrentStep,
-        setIsSubmitting,
-      });
-      return;
-    }
+      case 2: {
+        await submitReviewStep({
+          missingDocsCount,
+          filingId,
+          periodData,
+          setCurrentStep,
+          setIsSubmitting,
+        });
+        break;
+      }
 
-    if (currentStep === 3) {
-      if (!validatePaymentStep()) return;
-      setIsSubmitting(true);
-      promptPayLaterSubmission({
-        periodData,
-        selectedMethod,
-        filingId,
-        documents,
-        setCreatedAppId,
-        clearGstFilingDraft,
-        setIsSubmitting,
-        setCurrentStep,
-      });
+      case 3: {
+        if (!validatePaymentStep()) return;
+        setIsSubmitting(true);
+        promptPayLaterSubmission({
+          periodData,
+          selectedMethod,
+          filingId,
+          documents,
+          setCreatedAppId,
+          clearGstFilingDraft,
+          setIsSubmitting,
+          setCurrentStep,
+        });
+        break;
+      }
+
+      default:
+        break;
     }
   }, [
     currentStep,
     validatePeriodStep,
+    validateDocumentsStep,
     validatePaymentStep,
     periodData,
     filingId,
@@ -365,8 +357,8 @@ export function useGstFiling() {
     selectedMethod,
     setDocuments,
     clearGstFilingDraft,
-    isEditMode,
     getTargetFilingId,
+    isEditMode,
   ]);
 
   return {
@@ -398,6 +390,7 @@ export function useGstFiling() {
     requiredDocs,
     missingDocsCount,
     uploadedDocsCount,
+    validateDocumentsStep,
     isEditMode,
     handleEditStep,
     isFetchingReview,

@@ -223,6 +223,8 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.2, shadowRadius: 6, elevation: 2,
   },
   primaryBtnText: { fontSize: 15, fontWeight: "700", color: white },
+  primaryBtnDisabled: { opacity: 0.65 },
+  loadingRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
   secondaryBtn: { ...pill, backgroundColor: "#F1F5F9" },
   secondaryBtnText: { fontSize: 15, fontWeight: "700", color: "#083B75" },
   bottomBar: {

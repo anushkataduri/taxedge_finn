@@ -1,6 +1,8 @@
 package com.taxedge.companyregistration.exception;
 
 import java.util.Map;
+import java.util.List;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -9,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @Slf4j
@@ -24,6 +27,20 @@ public class CompanyRegistrationExceptionHandler {
     public ResponseEntity<Map<String, Object>> validation(CompanyRegistrationValidationException exception) {
         return response(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
+
+        @ExceptionHandler(MethodArgumentNotValidException.class)
+        public ResponseEntity<Map<String, Object>> invalidRequest(MethodArgumentNotValidException exception) {
+        List<Map<String, String>> errors = exception.getBindingResult().getFieldErrors().stream()
+            .map(error -> Map.of(
+                "field", error.getField(),
+                "message", Objects.toString(error.getDefaultMessage(), "Invalid value")))
+            .toList();
+        Map<String, Object> body = Map.of(
+            "status", HttpStatus.BAD_REQUEST.value(),
+            "message", "Request validation failed",
+            "errors", errors);
+        return ResponseEntity.badRequest().body(body);
+        }
 
     @ExceptionHandler(CompanyRegistrationConflictException.class)
     public ResponseEntity<Map<String, Object>> registrationConflict(CompanyRegistrationConflictException exception) {

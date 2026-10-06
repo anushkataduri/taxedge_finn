@@ -17,6 +17,8 @@ import { styles } from "@/modules/gst/gst-compliance/components/GstComplianceRev
 
 export interface GstComplianceReviewStepProps {
   formData: ComplianceFormData;
+  dbData?: any;
+  complianceId?: string | null;
   onEditStep: (section?: string) => void;
 }
 
@@ -53,12 +55,20 @@ const ReviewRow: React.FC<ReviewRowProps> = ({
 
 export const GstComplianceReviewStep: React.FC<GstComplianceReviewStepProps> = ({
   formData,
+  dbData,
+  complianceId,
   onEditStep,
 }) => {
   const { isDark } = useTheme();
   const [previewDoc, setPreviewDoc] = useState<UploadedDocInfo | null>(null);
 
-  const isRecon = formData.requestType === "Reconciliation Support";
+  const displayRequestType = dbData?.requestType
+    ? dbData.requestType === "RECONCILIATION_SUPPORT"
+      ? "Reconciliation Support"
+      : "Notice Response"
+    : formData.requestType;
+
+  const isRecon = displayRequestType === "Reconciliation Support";
 
   const renderEditButton = (section?: string) => (
     <TouchableOpacity
@@ -173,17 +183,17 @@ export const GstComplianceReviewStep: React.FC<GstComplianceReviewStepProps> = (
 
         <ReviewRow
           label="GSTIN"
-          value={formData.gstin}
+          value={dbData?.gstin ?? formData.gstin}
           isDark={isDark}
         />
         <ReviewRow
           label="Financial Year"
-          value={formData.financialYear}
+          value={dbData?.financialYear ?? formData.financialYear}
           isDark={isDark}
         />
         <ReviewRow
           label="Request Type"
-          value={formData.requestType}
+          value={displayRequestType}
           isDark={isDark}
         />
       </View>
@@ -202,12 +212,12 @@ export const GstComplianceReviewStep: React.FC<GstComplianceReviewStepProps> = (
           <>
             <ReviewRow
               label="GSTR-2B Ref / Period"
-              value={formData.gstr2bRef || "Not specified"}
+              value={dbData?.gstr2bNumber ?? formData.gstr2bRef ?? "Not specified"}
               isDark={isDark}
             />
             <ReviewRow
               label="Remarks"
-              value={formData.reconciliationRemarks || "None"}
+              value={dbData?.message ?? formData.reconciliationRemarks ?? "None"}
               isDark={isDark}
               multiline
             />
@@ -216,22 +226,22 @@ export const GstComplianceReviewStep: React.FC<GstComplianceReviewStepProps> = (
           <>
             <ReviewRow
               label="Notice / Order No."
-              value={formData.noticeNumber}
+              value={dbData?.noticeNumber ?? formData.noticeNumber}
               isDark={isDark}
             />
             <ReviewRow
               label="Notice Issue Date"
-              value={formData.noticeIssueDate}
+              value={dbData?.noticeIssueDate ?? formData.noticeIssueDate}
               isDark={isDark}
             />
             <ReviewRow
               label="Reply Due Date"
-              value={formData.replyDueDate}
+              value={dbData?.replyDueDate ?? formData.replyDueDate}
               isDark={isDark}
             />
             <ReviewRow
               label="Remarks / Grounds"
-              value={formData.noticeRemarks || "None"}
+              value={dbData?.message ?? formData.noticeRemarks ?? "None"}
               isDark={isDark}
               multiline
             />
@@ -252,7 +262,7 @@ export const GstComplianceReviewStep: React.FC<GstComplianceReviewStepProps> = (
         {isRecon ? (
           <>
             {renderDocRow("Purchase Register", formData.purchaseDoc, true)}
-            {renderDocRow("Sales Register", formData.salesDoc, true)}
+            {renderDocRow("Sales Register", formData.salesDoc, false)}
           </>
         ) : (
           renderDocRow("Notice Copy", formData.noticeDoc, true)

@@ -46,21 +46,9 @@ export const extractGstId = (res: unknown): string => {
 
 export const resolveTargetGstId = (
   candidates: Array<string | undefined | null>,
-  applications?: any[],
 ): string => {
   for (const c of candidates) {
     if (isBackendGstId(c)) return c!.trim();
-  }
-  if (applications && applications.length > 0) {
-    const existing = applications.find(
-      (a) =>
-        (a.serviceId === "gst-registration" || a.category === "GST") &&
-        (isBackendGstId(a.formData?.gstId) || isBackendGstId(a.formData?.createdGstId) || isBackendGstId(a.id)),
-    );
-    if (existing) {
-      const appId = existing.formData?.gstId || existing.formData?.createdGstId || existing.id;
-      if (isBackendGstId(appId)) return appId.trim();
-    }
   }
   return "";
 };
@@ -343,13 +331,16 @@ export const useGstRegistrationFlow = (scrollViewRef: React.RefObject<any>) => {
     if (!validateBusinessDetails()) return;
     const custId = await getResolvedCustomerId();
     const applications = useApplicationStore.getState().applications;
-    const targetGstId = resolveTargetGstId(
-      [
-        createdGstId, businessData.gstId, params.gstId, params.id, params.appId,
-        (gstDraft as any)?.createdGstId, (gstDraft as any)?.gstId, (gstDraft?.businessData as any)?.gstId,
-      ],
-      applications,
-    );
+    const targetGstId = resolveTargetGstId([
+      createdGstId,
+      businessData.gstId,
+      params.gstId,
+      params.id,
+      params.appId,
+      (gstDraft as any)?.createdGstId,
+      (gstDraft as any)?.gstId,
+      (gstDraft?.businessData as any)?.gstId,
+    ]);
 
     const payload = mapGstRegistrationPayload(businessData, custId, targetGstId);
     const nextStep = isEditMode ? 2 : 1;
@@ -440,10 +431,14 @@ export const useGstRegistrationFlow = (scrollViewRef: React.RefObject<any>) => {
     try {
       const applications = useApplicationStore.getState().applications;
       const targetGstId =
-        resolveTargetGstId(
-          [createdGstId, businessData.gstId, (gstDraft as any)?.createdGstId, (gstDraft as any)?.businessData?.gstId, params.gstId, params.id],
-          applications,
-        ) || createdGstId || businessData.gstId || "";
+        resolveTargetGstId([
+          createdGstId,
+          businessData.gstId,
+          (gstDraft as any)?.createdGstId,
+          (gstDraft as any)?.businessData?.gstId,
+          params.gstId,
+          params.id,
+        ]) || createdGstId || businessData.gstId || "";
 
       const appId = createApplication(
         "gst-registration", "GST Registration", "GST",

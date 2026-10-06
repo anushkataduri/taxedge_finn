@@ -1,7 +1,6 @@
 package com.taxedge.itr.filing.helper;
 
 import java.util.Random;
-import static com.taxedge.gst.helper.GstRandomNumberGenerator.generateDocumentId;
 
 public class FilingRandomNumberGenerator {
 
@@ -18,6 +17,7 @@ public class FilingRandomNumberGenerator {
     }
 
     public static String generateDocumentId() {
-        return com.taxedge.gst.helper.GstRandomNumberGenerator.generateDocumentId();
+        int number = random.nextInt(1_000_000);
+        return String.format("DOC%06d", number);
     }
 }

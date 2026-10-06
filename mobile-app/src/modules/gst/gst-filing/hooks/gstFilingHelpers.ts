@@ -137,8 +137,17 @@ export function buildFilingPayload(
     rawReturn.includes("3B") || rawReturn.includes("3_B") ? "GSTR_3B" : "GSTR_1";
 
   const isNil = periodData.filingNature === "Nil Return";
+  const hasEstimateFigures = Boolean(
+    (periodData.taxableSales && String(periodData.taxableSales).trim() !== "" && String(periodData.taxableSales).trim() !== "0") ||
+    (periodData.turnover && String(periodData.turnover).trim() !== "" && String(periodData.turnover).trim() !== "0") ||
+    (periodData.taxablePurchases && String(periodData.taxablePurchases).trim() !== "" && String(periodData.taxablePurchases).trim() !== "0") ||
+    (periodData.eligibleItc && String(periodData.eligibleItc).trim() !== "" && String(periodData.eligibleItc).trim() !== "0")
+  );
   const isEstimates =
-    isManualEstimatesOnly || periodData.calculationMethod === "manual_estimates";
+    !isNil &&
+    (isManualEstimatesOnly ||
+      periodData.calculationMethod === "manual_estimates" ||
+      hasEstimateFigures);
 
   const financialYear = (periodData.financialYear || "2025-26").replace(/^FY\s*/i, "").trim();
   const filingPeriod = periodData.filingPeriod || periodData.filingMonth || "Q3 (Oct-Dec 2025)";
@@ -200,10 +209,13 @@ export function mapDtoToPeriodData(
   const filNature =
     dto.filingType === "NIL_RETURN" ? "Nil Return" : "Regular Return";
 
-  const calcMethod =
-    dto.taxCalculationMethod === "ESTIMATION_FIGURES"
-      ? "manual_estimates"
-      : "ca_assisted";
+  const hasEstimates =
+    dto.taxCalculationMethod === "ESTIMATION_FIGURES" ||
+    dto.estimatedTaxableSales != null ||
+    dto.estimatedTaxablePurchases != null ||
+    dto.estimatedEligibleItc != null;
+
+  const calcMethod = hasEstimates ? "manual_estimates" : "ca_assisted";
 
   const fy = dto.financialYear
     ? String(dto.financialYear).startsWith("FY")
@@ -211,7 +223,7 @@ export function mapDtoToPeriodData(
       : `FY ${dto.financialYear}`
     : undefined;
 
-  return {
+  const result: Partial<GstFilingPeriodData> = {
     gstin: dto.gstin || undefined,
     financialYear: fy,
     filingPeriod: dto.filingPeriod || undefined,
@@ -220,23 +232,22 @@ export function mapDtoToPeriodData(
     filingType: retType,
     filingNature: filNature as "Regular Return" | "Nil Return",
     calculationMethod: calcMethod as "ca_assisted" | "manual_estimates",
-    taxableSales:
-      dto.estimatedTaxableSales !== null && dto.estimatedTaxableSales !== undefined
-        ? String(dto.estimatedTaxableSales)
-        : undefined,
-    turnover:
-      dto.estimatedTaxableSales !== null && dto.estimatedTaxableSales !== undefined
-        ? String(dto.estimatedTaxableSales)
-        : undefined,
-    taxablePurchases:
-      dto.estimatedTaxablePurchases !== null && dto.estimatedTaxablePurchases !== undefined
-        ? String(dto.estimatedTaxablePurchases)
-        : undefined,
-    eligibleItc:
-      dto.estimatedEligibleItc !== null && dto.estimatedEligibleItc !== undefined
-        ? String(dto.estimatedEligibleItc)
-        : undefined,
   };
+
+  if (dto.estimatedTaxableSales !== null && dto.estimatedTaxableSales !== undefined) {
+    result.taxableSales = String(dto.estimatedTaxableSales);
+    result.turnover = String(dto.estimatedTaxableSales);
+  }
+
+  if (dto.estimatedTaxablePurchases !== null && dto.estimatedTaxablePurchases !== undefined) {
+    result.taxablePurchases = String(dto.estimatedTaxablePurchases);
+  }
+
+  if (dto.estimatedEligibleItc !== null && dto.estimatedEligibleItc !== undefined) {
+    result.eligibleItc = String(dto.estimatedEligibleItc);
+  }
+
+  return result;
 }
 
 /**
@@ -263,12 +274,15 @@ export function mapDtoToFilingDocuments(
     purchaseInvoices: dto.purchaseInvoices,
     "gstr-2b": dto.gstr2bItcStatement,
     gstr2bItcStatement: dto.gstr2bItcStatement,
+    "expense-bills": dto.expenseInvoicesAndVouchers,
     "expense-vouchers": dto.expenseInvoicesAndVouchers,
     expenseInvoicesAndVouchers: dto.expenseInvoicesAndVouchers,
     "bank-statement": dto.bankStatement,
     bankStatement: dto.bankStatement,
+    "prev-gst-returns": dto.previousGstReturns,
     "previous-returns": dto.previousGstReturns,
     previousGstReturns: dto.previousGstReturns,
+    "prev-gst-ack": dto.previousFilingAcknowledgement,
     "filing-ack": dto.previousFilingAcknowledgement,
     previousFilingAcknowledgement: dto.previousFilingAcknowledgement,
     "other-docs": dto.otherSupportingDocuments,
@@ -298,28 +312,10 @@ export function mapDtoToFilingDocuments(
  */
 export function resolveTargetFilingId(
   candidates: (string | null | undefined)[],
-  applications?: readonly { serviceId?: string; id?: string; formData?: Record<string, unknown> }[],
-  currentGstin?: string,
 ): string {
   for (const c of candidates) {
     if (c && typeof c === "string" && c.trim() && c.trim() !== "undefined") {
       return c.trim();
-    }
-  }
-
-  if (applications && applications.length > 0 && currentGstin && currentGstin.trim()) {
-    const cleanGstin = currentGstin.trim().toUpperCase();
-    const existingApp = applications.find(
-      (a) =>
-        a.serviceId === "gst-filing" &&
-        ((a.formData?.gstin && String(a.formData.gstin).trim().toUpperCase() === cleanGstin) ||
-         (a.formData?.businessGstin && String(a.formData.businessGstin).trim().toUpperCase() === cleanGstin)) &&
-        (Boolean(a.formData?.filingId) || (Boolean(a.id) && String(a.id).startsWith("FIL"))),
-    );
-    if (existingApp) {
-      const idFromForm = existingApp.formData?.filingId as string | undefined;
-      if (idFromForm && idFromForm.trim() && idFromForm.trim() !== "undefined") return idFromForm.trim();
-      if (existingApp.id && existingApp.id.startsWith("FIL")) return existingApp.id;
     }
   }
 

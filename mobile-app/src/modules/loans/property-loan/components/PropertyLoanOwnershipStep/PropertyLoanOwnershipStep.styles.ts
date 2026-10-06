@@ -18,6 +18,31 @@ export const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  iconBox: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    backgroundColor: "#FEF0E6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardTitle: {
+    fontSize: Typography.fontSize.xs + 1,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
   sectionTitle: {
     fontSize: Typography.fontSize.base,
     fontWeight: "700",

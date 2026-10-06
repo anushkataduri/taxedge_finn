@@ -157,6 +157,26 @@ export async function submitDocumentsStep({
     return;
   }
 
+  const isNilReturn = periodData.filingNature === "Nil Return";
+  switch (isNilReturn ? "NIL" : "REGULAR") {
+    case "REGULAR": {
+      const missingMandatory = documents.filter((d) => d.required && !d.fileUri);
+      if (missingMandatory.length > 0) {
+        const missingNames = missingMandatory.map((d) => d.name).join("\n• ");
+        Alert.alert(
+          "Required Documents Missing",
+          `Please upload all required documents before proceeding:\n\n• ${missingNames}`,
+          [{ text: "OK" }],
+        );
+        return;
+      }
+      break;
+    }
+    case "NIL":
+    default:
+      break;
+  }
+
   setIsSubmitting(true);
   try {
     const docsToUpload = documents.filter((d) => d.fileUri);
@@ -197,19 +217,36 @@ export async function submitReviewStep({
   setCurrentStep: (step: number) => void;
   setIsSubmitting: (val: boolean) => void;
 }): Promise<void> {
-  if (missingDocsCount > 0) {
-    Alert.alert(
-      "Documents Missing",
-      `You have ${missingDocsCount} missing required document(s). Please upload all required documents before submitting your return.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Upload Now", onPress: () => setCurrentStep(1) },
-      ],
-    );
-    return;
+  const isNilReturn = periodData.filingNature === "Nil Return";
+  switch (isNilReturn ? "NIL" : "REGULAR") {
+    case "REGULAR": {
+      if (missingDocsCount > 0) {
+        Alert.alert(
+          "Documents Missing",
+          `You have ${missingDocsCount} missing required document(s). Please upload all required documents before submitting your return.`,
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Upload Now", onPress: () => setCurrentStep(1) },
+          ],
+        );
+        return;
+      }
+      break;
+    }
+    case "NIL":
+    default:
+      break;
   }
 
-  if (filingId && periodData.calculationMethod === "manual_estimates") {
+  const hasEstimates =
+    periodData.calculationMethod === "manual_estimates" ||
+    Boolean(
+      (periodData.taxableSales && String(periodData.taxableSales).trim() !== "" && String(periodData.taxableSales).trim() !== "0") ||
+      (periodData.taxablePurchases && String(periodData.taxablePurchases).trim() !== "" && String(periodData.taxablePurchases).trim() !== "0") ||
+      (periodData.eligibleItc && String(periodData.eligibleItc).trim() !== "" && String(periodData.eligibleItc).trim() !== "0")
+    );
+
+  if (filingId && hasEstimates) {
     setIsSubmitting(true);
     try {
       const custId = await getResolvedCustomerId();
@@ -259,6 +296,13 @@ export function promptPayLaterSubmission({
             periodData.filingPeriod ||
             periodData.filingMonth ||
             "Current Period";
+          const hasEstimates =
+            periodData.calculationMethod === "manual_estimates" ||
+            Boolean(
+              (periodData.taxableSales && String(periodData.taxableSales).trim() !== "" && String(periodData.taxableSales).trim() !== "0") ||
+              (periodData.taxablePurchases && String(periodData.taxablePurchases).trim() !== "" && String(periodData.taxablePurchases).trim() !== "0") ||
+              (periodData.eligibleItc && String(periodData.eligibleItc).trim() !== "" && String(periodData.eligibleItc).trim() !== "0")
+            );
           const newAppId = useApplicationStore.getState().createApplication(
             "gst-filing",
             `GST Filing (${periodLabel})`,
@@ -276,8 +320,12 @@ export function promptPayLaterSubmission({
               paymentStatus: "Payment Pending",
               paymentMethod: selectedMethod.toUpperCase(),
               filingId: filingId || undefined,
-              taxableSales: periodData.taxableSales || "0",
+              taxableSales: periodData.taxableSales || periodData.turnover || "0",
+              taxablePurchases: periodData.taxablePurchases || "0",
               eligibleItc: periodData.eligibleItc || "0",
+              calculationMethod:
+                periodData.calculationMethod ||
+                (hasEstimates ? "manual_estimates" : "ca_assisted"),
             },
             extractUploadedDocumentNames(documents),
             0,

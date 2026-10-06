@@ -2,7 +2,8 @@ import { apiClient } from "../../../core/api/apiClient";
 import { getActiveBaseUrl } from "../../../core/api/apiConfig";
 import { tokenManager } from "../../../core/authentication/tokenManager";
 import { tokenRefreshManager } from "../../../core/authentication/tokenRefreshManager";
-import type { CancellationFormData, CancellationDto } from "../gst-cancellation/types/gstCancellationTypes";
+import { getResolvedCustomerId } from "@/modules/gst/gst-filing/hooks/gstFilingHelpers";
+import type { CancellationFormData } from "../gst-cancellation/types/gstCancellationTypes";
 
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -25,6 +26,15 @@ function parseDateToISO(dateStr: string): string | null {
   return null;
 }
 
+const getMimeType = (filename?: string, fallback = "application/pdf"): string => {
+  if (!filename) return fallback;
+  const lower = filename.toLowerCase();
+  if (lower.endsWith(".pdf")) return "application/pdf";
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  return fallback;
+};
+
 export class GstCancellationError extends Error {
   constructor(message: string, public readonly statusCode?: number) {
     super(message);
@@ -33,18 +43,19 @@ export class GstCancellationError extends Error {
 }
 
 export const gstCancellationApi = {
-  createCancellation: async (data: CancellationFormData): Promise<string> => {
+  createCancellation: async (data: CancellationFormData): Promise<any> => {
     const formData = new FormData();
+    const custId = await getResolvedCustomerId();
 
-    // Build DTO matching backend GstCancellationDto
-    const dto: CancellationDto = {
-      gstin: data.gstin || "29AAAAA0000A1Z5",
+    const dto = {
+      customerId: custId || (data as any).customerId || "",
+      gstin: data.gstin ? data.gstin.trim() : "29AAAAA0000A1Z5",
       reasonForCancellation:
         data.reason === "Other Valid Reason" ? data.otherReason : data.reason,
       dateCancellationIsSought: parseDateToISO(data.cancellationDate),
-      closingStockAndInputTaxReversal: data.closingStock,
+      closingStockAndInputTaxReversal: data.closingStock || "0",
       pendingDuesLiabilities: data.pendingLiabilities || "Nil",
-      lastGstr3bFiledArnPeriod: data.lastGstr3b,
+      lastGstr3bFiledArnPeriod: data.lastGstr3b || "",
     };
 
     formData.append("data", JSON.stringify(dto));
@@ -53,9 +64,7 @@ export const gstCancellationApi = {
       formData.append("supportingProofDocument", {
         uri: data.supportingDoc.uri,
         name: data.supportingDoc.name || "supporting_proof.pdf",
-        type: data.supportingDoc.name?.toLowerCase().endsWith(".pdf")
-          ? "application/pdf"
-          : "image/jpeg",
+        type: data.supportingDoc.mimeType || getMimeType(data.supportingDoc.name),
       } as any);
     }
 
@@ -65,7 +74,7 @@ export const gstCancellationApi = {
         "Backend URL is not configured. Set the API URL before submitting GST cancellation data."
       );
     }
-    const url = `${baseUrl.replace(/\/$/, "")}/api/v1/gst/cancellation`;
+    const url = `${baseUrl.replace(/\/$/, "")}/api/v1/gst/cancellation/register`;
 
     let token = await tokenManager.getAccessToken();
     if (!token || !(await tokenManager.hasValidToken())) {
@@ -75,7 +84,7 @@ export const gstCancellationApi = {
       }
     }
 
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<any>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", url);
 
@@ -85,11 +94,21 @@ export const gstCancellationApi = {
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(xhr.responseText);
+          try {
+            const parsed = JSON.parse(xhr.responseText);
+            resolve(parsed);
+          } catch {
+            resolve(xhr.responseText);
+          }
         } else {
+          let errText = xhr.responseText;
+          try {
+            const parsed = JSON.parse(xhr.responseText);
+            errText = parsed.message || parsed.error || xhr.responseText;
+          } catch {}
           reject(
             new GstCancellationError(
-              `Cancellation submission failed (${xhr.status}): ${xhr.responseText}`,
+              errText || `Cancellation submission failed (${xhr.status})`,
               xhr.status
             )
           );
@@ -102,6 +121,48 @@ export const gstCancellationApi = {
 
       xhr.send(formData);
     });
+  },
+
+  updateCancellation: async (
+    _cancellationId: string,
+    data: CancellationFormData
+  ): Promise<any> => {
+    // Backend registers and updates (upserts) cancellation details via POST /api/v1/gst/cancellation/register
+    return gstCancellationApi.createCancellation(data);
+  },
+
+  getCancellation: async (cancellationId: string): Promise<any> => {
+    const baseUrl = apiClient.getBaseUrl() || (await getActiveBaseUrl());
+    if (!baseUrl) {
+      throw new GstCancellationError("Backend URL is not configured.");
+    }
+    const url = `${baseUrl.replace(/\/$/, "")}/api/v1/gst/cancellation/${cancellationId}`;
+
+    let token = await tokenManager.getAccessToken();
+    if (!token || !(await tokenManager.hasValidToken())) {
+      const refreshed = await tokenRefreshManager.attemptRefresh();
+      if (refreshed) {
+        token = await tokenManager.getAccessToken();
+      }
+    }
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        Accept: "application/json",
+      },
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new GstCancellationError(
+        `Failed to fetch cancellation details: ${err}`,
+        res.status
+      );
+    }
+
+    return await res.json();
   },
 };
 

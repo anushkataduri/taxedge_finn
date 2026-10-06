@@ -9,8 +9,24 @@ export const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z
 
 export const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
 
-export const RECONCILIATION_ALLOWED_EXTENSIONS = [".pdf", ".xls", ".xlsx", ".csv"];
-export const NOTICE_ALLOWED_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png"];
+export const RECONCILIATION_ALLOWED_EXTENSIONS = [
+  ".pdf",
+  ".xls",
+  ".xlsx",
+  ".csv",
+  ".jpg",
+  ".jpeg",
+  ".png",
+];
+export const NOTICE_ALLOWED_EXTENSIONS = [
+  ".pdf",
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".xls",
+  ".xlsx",
+  ".csv",
+];
 
 export function isValidGstin(gstin: string): boolean {
   if (!gstin) return false;

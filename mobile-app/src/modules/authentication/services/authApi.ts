@@ -247,10 +247,10 @@ export const authApi = {
       console.log("✅ Backend Registration Response:", response);
 
       if (response.accessToken) {
-        tokenManager.setAccessToken(response.accessToken).catch(() => {});
+        await tokenManager.setAccessToken(response.accessToken);
       }
       if (response.refreshToken) {
-        tokenManager.setRefreshToken(response.refreshToken).catch(() => {});
+        await tokenManager.setRefreshToken(response.refreshToken);
       }
 
       return {
@@ -302,10 +302,10 @@ export const authApi = {
       console.log("✅ Backend Login Response:", response);
 
       if (response.accessToken) {
-        tokenManager.setAccessToken(response.accessToken).catch(() => {});
+        await tokenManager.setAccessToken(response.accessToken);
       }
       if (response.refreshToken) {
-        tokenManager.setRefreshToken(response.refreshToken).catch(() => {});
+        await tokenManager.setRefreshToken(response.refreshToken);
       }
 
       return {

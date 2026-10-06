@@ -53,9 +53,9 @@ export const NoticeDocumentsScreen: React.FC = () => {
   // Pure functional initial state: restore from draft or start clean
   const [docs, setDocs] = useState<TaxNoticeSupportingDoc[]>(() => {
     const savedDocs = taxNoticeDraft?.documents;
-    const noticeFile = taxNoticeDraft?.formData?.noticeFileName;
-    const noticeUri = taxNoticeDraft?.formData?.noticeFileUri;
-    const noticeSize = taxNoticeDraft?.formData?.noticeFileSize;
+    const noticeFile = taxNoticeDraft?.formData?.noticeFileName ? String(taxNoticeDraft.formData.noticeFileName) : undefined;
+    const noticeUri = taxNoticeDraft?.formData?.noticeFileUri ? String(taxNoticeDraft.formData.noticeFileUri) : undefined;
+    const noticeSize = taxNoticeDraft?.formData?.noticeFileSize ? String(taxNoticeDraft.formData.noticeFileSize) : undefined;
 
     const savedMap = new Map((savedDocs || []).map((d) => [d.id, d]));
 
@@ -110,6 +110,7 @@ export const NoticeDocumentsScreen: React.FC = () => {
     handleDiscardAndExit,
     handleCancel,
   } = useUniversalDraftGuard({
+    discardDestination: "/service/itr",
     isDirty: () =>
       docs.some((d) => Boolean(d.fileUri || d.status === "uploaded")) ||
       Boolean(remarks.trim()),
@@ -249,12 +250,12 @@ export const NoticeDocumentsScreen: React.FC = () => {
       router.push({
         pathname: "/service/tax-notice-preview" as any,
         params: {
-          noticeId,
-          pan: params.pan || taxNoticeDraft?.formData?.pan,
-          noticeNumber: params.noticeNumber || taxNoticeDraft?.formData?.noticeNumber,
-          noticeDate: params.noticeDate || taxNoticeDraft?.formData?.noticeDate,
-          assessmentYear: assessmentYear,
-          noticeType: params.noticeType || taxNoticeDraft?.formData?.noticeType,
+          noticeId: String(noticeId),
+          pan: String(params.pan || (taxNoticeDraft?.formData as any)?.pan || ""),
+          noticeNumber: String(params.noticeNumber || (taxNoticeDraft?.formData as any)?.noticeNumber || ""),
+          noticeDate: String(params.noticeDate || (taxNoticeDraft?.formData as any)?.noticeDate || ""),
+          assessmentYear: String(assessmentYear || ""),
+          noticeType: String(params.noticeType || (taxNoticeDraft?.formData as any)?.noticeType || ""),
         },
       });
     } catch (err: any) {
@@ -370,7 +371,7 @@ export const NoticeDocumentsScreen: React.FC = () => {
           {isSubmitting ? (
             <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
-            <Text style={styles.submitButtonText}>Submit Documents & Review Response</Text>
+            <Text style={styles.submitButtonText}>{taxNoticeDraft?.step === "REVIEW" ? "Update & Continue" : "Submit Documents & Review Response"}</Text>
           )}
         </TouchableOpacity>
       </View>

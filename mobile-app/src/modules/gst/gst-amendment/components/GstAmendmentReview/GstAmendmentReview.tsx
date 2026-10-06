@@ -19,7 +19,10 @@ import {
   SupportingDoc,
   RegisteredDetails,
 } from "../../types/gstAmendmentTypes";
-import { buildComparisonSummaries } from "../../utils/gstAmendmentHelpers";
+import {
+  buildComparisonSummaries,
+  buildDbReviewSummaries,
+} from "../../utils/gstAmendmentHelpers";
 
 interface GstAmendmentReviewProps {
   gstin: string;
@@ -34,6 +37,8 @@ interface GstAmendmentReviewProps {
   scrollViewRef: React.RefObject<ScrollView | null>;
   onEdit: () => void;
   onSubmit: () => void;
+  amendmentId?: number | null;
+  dbReviewData?: any;
 }
 
 export const GstAmendmentReview: React.FC<GstAmendmentReviewProps> = ({
@@ -49,13 +54,28 @@ export const GstAmendmentReview: React.FC<GstAmendmentReviewProps> = ({
   scrollViewRef,
   onEdit,
   onSubmit,
+  amendmentId,
+  dbReviewData,
 }) => {
   const sectionId = selectedSection.id;
-  const { requestedValDict } = buildComparisonSummaries(
-    sectionId,
-    registeredDetails,
-    formData
-  );
+  let requestedValDict: Record<string, string> = {};
+  switch (Boolean(dbReviewData)) {
+    case true:
+      requestedValDict = buildDbReviewSummaries(
+        sectionId,
+        registeredDetails,
+        dbReviewData,
+        formData
+      );
+      break;
+    case false:
+      requestedValDict = buildComparisonSummaries(
+        sectionId,
+        registeredDetails,
+        formData
+      ).requestedValDict;
+      break;
+  }
 
   return (
     <View style={styles.root}>

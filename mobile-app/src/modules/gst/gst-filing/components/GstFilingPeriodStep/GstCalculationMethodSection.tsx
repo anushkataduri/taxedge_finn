@@ -28,8 +28,13 @@ export const GstCalculationMethodSection: React.FC<GstCalculationMethodSectionPr
   eligibleItc,
   onChange,
 }) => {
-  const isCaAssisted = !calculationMethod || calculationMethod === "ca_assisted";
-  const isManual = calculationMethod === "manual_estimates";
+  const hasFigures = Boolean(
+    (taxableSales && String(taxableSales).trim() !== "" && String(taxableSales).trim() !== "0") ||
+    (taxablePurchases && String(taxablePurchases).trim() !== "" && String(taxablePurchases).trim() !== "0") ||
+    (eligibleItc && String(eligibleItc).trim() !== "" && String(eligibleItc).trim() !== "0")
+  );
+  const isManual = calculationMethod === "manual_estimates" || (!calculationMethod && hasFigures);
+  const isCaAssisted = !isManual;
 
   return (
     <View style={styles.fieldGroup}>
@@ -92,7 +97,10 @@ export const GstCalculationMethodSection: React.FC<GstCalculationMethodSectionPr
               keyboardType="numeric"
               value={formatIndianNumberInput(taxableSales)}
               onChangeText={(val) =>
-                onChange({ taxableSales: toRawNumericString(val) })
+                onChange({
+                  taxableSales: toRawNumericString(val),
+                  calculationMethod: "manual_estimates",
+                })
               }
             />
           </View>
@@ -108,7 +116,10 @@ export const GstCalculationMethodSection: React.FC<GstCalculationMethodSectionPr
               keyboardType="numeric"
               value={formatIndianNumberInput(taxablePurchases)}
               onChangeText={(val) =>
-                onChange({ taxablePurchases: toRawNumericString(val) })
+                onChange({
+                  taxablePurchases: toRawNumericString(val),
+                  calculationMethod: "manual_estimates",
+                })
               }
             />
           </View>
@@ -124,7 +135,10 @@ export const GstCalculationMethodSection: React.FC<GstCalculationMethodSectionPr
               keyboardType="numeric"
               value={formatIndianNumberInput(eligibleItc)}
               onChangeText={(val) =>
-                onChange({ eligibleItc: toRawNumericString(val) })
+                onChange({
+                  eligibleItc: toRawNumericString(val),
+                  calculationMethod: "manual_estimates",
+                })
               }
             />
           </View>

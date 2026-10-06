@@ -10,7 +10,9 @@ import lombok.Setter;
 @Table(name = "company_capital")
 @Getter @Setter @NoArgsConstructor
 public class CompanyCapital extends AuditedEntity {
+    
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
+
     @OneToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "company_registration_id", nullable = false, unique = true) private CompanyRegistration registration;
     @Column(name = "authorized_capital", nullable = false, precision = 19, scale = 2) private BigDecimal authorizedCapital;
     @Column(name = "paid_up_capital", nullable = false, precision = 19, scale = 2) private BigDecimal paidUpCapital;

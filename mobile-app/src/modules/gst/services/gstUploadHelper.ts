@@ -38,7 +38,7 @@ export async function executeXhrUpload(
     xhr.onload = async () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(xhr.responseText);
-      } else if ((xhr.status === 404 || xhr.status === 500) && onFallback) {
+      } else if ((xhr.status === 404 || xhr.status === 500 || xhr.status === 400) && onFallback) {
         try {
           const fallbackResult = await onFallback();
           resolve(fallbackResult);

@@ -41,6 +41,18 @@ function parseDateToISO(dateStr: string): string | null {
   return null;
 }
 
+const getMimeType = (filename?: string, fallback = "image/jpeg"): string => {
+  if (!filename) return fallback;
+  const lower = filename.toLowerCase();
+  if (lower.endsWith(".pdf")) return "application/pdf";
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".xlsx")) return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  if (lower.endsWith(".xls")) return "application/vnd.ms-excel";
+  if (lower.endsWith(".csv")) return "text/csv";
+  return fallback;
+};
+
 export const gstComplianceApi = {
   createCompliance: async (data: any) => {
     const formData = new FormData();
@@ -69,30 +81,24 @@ export const gstComplianceApi = {
     if (data.purchaseDoc?.uri) {
       formData.append("reconciliationFile1", {
         uri: data.purchaseDoc.uri,
-        name: data.purchaseDoc.name || "recon1.pdf",
-        type: data.purchaseDoc.name?.toLowerCase().endsWith(".pdf")
-          ? "application/pdf"
-          : "image/jpeg",
+        name: data.purchaseDoc.name || "recon1.jpg",
+        type: data.purchaseDoc.mimeType || getMimeType(data.purchaseDoc.name),
       } as any);
     }
 
     if (data.salesDoc?.uri) {
       formData.append("reconciliationFile2", {
         uri: data.salesDoc.uri,
-        name: data.salesDoc.name || "recon2.pdf",
-        type: data.salesDoc.name?.toLowerCase().endsWith(".pdf")
-          ? "application/pdf"
-          : "image/jpeg",
+        name: data.salesDoc.name || "recon2.jpg",
+        type: data.salesDoc.mimeType || getMimeType(data.salesDoc.name),
       } as any);
     }
 
     if (data.noticeDoc?.uri) {
       formData.append("noticeFile", {
         uri: data.noticeDoc.uri,
-        name: data.noticeDoc.name || "notice.pdf",
-        type: data.noticeDoc.name?.toLowerCase().endsWith(".pdf")
-          ? "application/pdf"
-          : "image/jpeg",
+        name: data.noticeDoc.name || "notice.jpg",
+        type: data.noticeDoc.mimeType || getMimeType(data.noticeDoc.name),
       } as any);
     }
 
@@ -122,7 +128,12 @@ export const gstComplianceApi = {
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(xhr.responseText);
+          try {
+            const parsed = JSON.parse(xhr.responseText);
+            resolve(parsed);
+          } catch {
+            resolve(xhr.responseText as any);
+          }
         } else {
           let errText = xhr.responseText;
           try {
@@ -168,30 +179,24 @@ export const gstComplianceApi = {
     if (data.purchaseDoc?.uri) {
       formData.append("reconciliationFile1", {
         uri: data.purchaseDoc.uri,
-        name: data.purchaseDoc.name || "recon1.pdf",
-        type: data.purchaseDoc.name?.toLowerCase().endsWith(".pdf")
-          ? "application/pdf"
-          : "image/jpeg",
+        name: data.purchaseDoc.name || "recon1.jpg",
+        type: data.purchaseDoc.mimeType || getMimeType(data.purchaseDoc.name),
       } as any);
     }
 
     if (data.salesDoc?.uri) {
       formData.append("reconciliationFile2", {
         uri: data.salesDoc.uri,
-        name: data.salesDoc.name || "recon2.pdf",
-        type: data.salesDoc.name?.toLowerCase().endsWith(".pdf")
-          ? "application/pdf"
-          : "image/jpeg",
+        name: data.salesDoc.name || "recon2.jpg",
+        type: data.salesDoc.mimeType || getMimeType(data.salesDoc.name),
       } as any);
     }
 
     if (data.noticeDoc?.uri) {
       formData.append("noticeFile", {
         uri: data.noticeDoc.uri,
-        name: data.noticeDoc.name || "notice.pdf",
-        type: data.noticeDoc.name?.toLowerCase().endsWith(".pdf")
-          ? "application/pdf"
-          : "image/jpeg",
+        name: data.noticeDoc.name || "notice.jpg",
+        type: data.noticeDoc.mimeType || getMimeType(data.noticeDoc.name),
       } as any);
     }
 
@@ -206,7 +211,12 @@ export const gstComplianceApi = {
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(xhr.responseText);
+          try {
+            const parsed = JSON.parse(xhr.responseText);
+            resolve(parsed);
+          } catch {
+            resolve(xhr.responseText as any);
+          }
         } else {
           let errText = xhr.responseText;
           try {

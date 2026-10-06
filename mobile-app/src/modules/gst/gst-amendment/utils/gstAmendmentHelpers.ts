@@ -141,3 +141,76 @@ export function buildComparisonSummaries(
     requestedValDict,
   };
 }
+
+export function buildDbReviewSummaries(
+  sectionId: string,
+  registeredDetails: RegisteredDetails,
+  dbData: any,
+  fallbackFormData: AmendmentFormData
+): Record<string, string> {
+  let requestedValDict: Record<string, string> = {};
+
+  switch (sectionId) {
+    case "legal-name": {
+      const legalName = dbData?.newLegalName ?? fallbackFormData.newLegalBusinessName;
+      requestedValDict = { "Legal Business Name": legalName };
+      break;
+    }
+    case "principal-place": {
+      requestedValDict = {
+        "Business Address": dbData?.newBusinessAddress ?? fallbackFormData.newPrincipalAddress,
+        City: dbData?.newCity ?? fallbackFormData.newPrincipalCity,
+        District: dbData?.newDistrict ?? fallbackFormData.newPrincipalDistrict,
+        "State / UT": dbData?.newState ?? fallbackFormData.newPrincipalState,
+        "PIN Code": dbData?.newPinCode ?? fallbackFormData.newPrincipalPincode,
+        "Nature of Premises": dbData?.natureOfPremises ?? fallbackFormData.newPrincipalNatureOfPremises,
+      };
+      break;
+    }
+    case "additional-place": {
+      requestedValDict = {
+        "Additional Place Address": dbData?.address ?? fallbackFormData.newAdditionalAddress,
+        City: dbData?.city ?? fallbackFormData.newAdditionalCity,
+        "PIN Code": dbData?.pinCode ?? fallbackFormData.newAdditionalPincode,
+        "Nature of Premises": dbData?.natureOfPremises ?? fallbackFormData.newAdditionalNatureOfPremises,
+      };
+      break;
+    }
+    case "bank-accounts": {
+      const rawAcct = dbData?.newBankAccountNumber ?? fallbackFormData.newBankAccountNumber;
+      const maskedAcct = rawAcct && rawAcct.length > 4 
+        ? "XXXX" + rawAcct.slice(-4) 
+        : rawAcct || "";
+      requestedValDict = {
+        "Bank Name": dbData?.newBankName ?? fallbackFormData.newBankName,
+        "Account Number": maskedAcct,
+        "IFSC Code": dbData?.newIfscCode ?? fallbackFormData.newIfscCode,
+        "Account Type": dbData?.newAccountType ?? fallbackFormData.newAccountType,
+      };
+      break;
+    }
+    case "contact-details": {
+      requestedValDict = {
+        "Mobile Number": dbData?.newMobileNumber ?? fallbackFormData.newContactMobile,
+        "Email Address": dbData?.newEmail ?? fallbackFormData.newContactEmail,
+      };
+      break;
+    }
+    case "authorised-signatories": {
+      requestedValDict = {
+        "Signatory Name": dbData?.newSignatoryName ?? fallbackFormData.newSignatoryName,
+        "Signatory PAN": dbData?.newSignatoryPan ?? fallbackFormData.newSignatoryPan,
+        "Date of Birth": dbData?.newSignatoryDob ?? fallbackFormData.newSignatoryDob,
+        Designation: dbData?.newDesignation ?? dbData?.newSignatoryDesignation ?? fallbackFormData.newSignatoryDesignation,
+        "Signatory Mobile": dbData?.newSignatoryMobile ?? fallbackFormData.newSignatoryMobile,
+        "Signatory Email": dbData?.newSignatoryEmail ?? fallbackFormData.newSignatoryEmail,
+      };
+      break;
+    }
+    default:
+      break;
+  }
+
+  return requestedValDict;
+}
+

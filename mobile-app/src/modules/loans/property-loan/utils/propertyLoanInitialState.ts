@@ -3,7 +3,7 @@ import {
   LoanApplicantFormData,
   LoanPropertyFormData,
   LoanOwnershipFormData,
-} from "../../../types/loans.types";
+} from "../../types/loans.types";
 
 export const initialLoanDetails: LoanDetailsFormData = {
   loanType: "Property Loan",

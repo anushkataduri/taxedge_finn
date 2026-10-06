@@ -59,6 +59,9 @@ export function GstComplianceScreen() {
     formData,
     errors,
     isSubmitting,
+    isSaving,
+    complianceId,
+    dbReviewData,
     showConfirmModal,
     setShowConfirmModal,
     draftGuard,
@@ -309,6 +312,8 @@ export function GstComplianceScreen() {
           {currentStep === 1 && (
             <GstComplianceReviewStep
               formData={formData}
+              dbData={dbReviewData}
+              complianceId={complianceId}
               onEditStep={handleEditStep}
             />
           )}
@@ -318,16 +323,18 @@ export function GstComplianceScreen() {
             <TouchableOpacity
               style={[
                 styles.submitBtn,
-                isSubmitting && styles.submitBtnDisabled,
+                (isSubmitting || isSaving) && styles.submitBtnDisabled,
               ]}
               activeOpacity={0.85}
               onPress={handleContinue}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isSaving}
             >
-              {isSubmitting ? (
+              {isSubmitting || isSaving ? (
                 <View style={styles.loadingRow}>
                   <ActivityIndicator size="small" color="#FFFFFF" />
-                  <Text style={styles.submitBtnText}>Submitting Request...</Text>
+                  <Text style={styles.submitBtnText}>
+                    {isSubmitting ? "Submitting Request..." : "Please wait..."}
+                  </Text>
                 </View>
               ) : (
                 <Text style={styles.submitBtnText}>{getButtonText()}</Text>

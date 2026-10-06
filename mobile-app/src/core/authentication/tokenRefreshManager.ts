@@ -83,8 +83,11 @@ class TokenRefreshManager {
     const refreshToken = await tokenManager.getRefreshToken();
 
     if (!refreshToken) {
-      console.warn("[TokenRefresh] No refresh token in storage — session expired");
-      this.handleSessionExpired();
+      console.warn("[TokenRefresh] No refresh token in storage");
+      const hasValidAccess = await tokenManager.hasValidToken().catch(() => false);
+      if (!hasValidAccess) {
+        this.handleSessionExpired();
+      }
       return false;
     }
 

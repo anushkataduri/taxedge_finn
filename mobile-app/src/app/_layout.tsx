@@ -1,6 +1,11 @@
 import { useEffect } from "react";
+import { LogBox } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { Stack } from "expo-router";
+
+LogBox.ignoreLogs([
+  "Can't perform a React state update on a component that hasn't mounted yet",
+]);
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ThemeProvider } from "@/design-system/theme";
 import { AnimatedSplashOverlay } from "@/components";

@@ -70,7 +70,7 @@ export const GstDocumentCard: React.FC<GstDocumentCardProps> = ({
 
   const isUploaded = Boolean(item.fileUri);
   const isBusy = item.status === "uploading";
-  const hasError = !isUploaded && Boolean(item.errorMessage);
+  const hasError = Boolean(item.errorMessage);
 
   const formatFileSize = (bytes?: number): string => {
     if (!bytes) return "0.01 MB";

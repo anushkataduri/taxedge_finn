@@ -73,8 +73,14 @@ export function useGstFilingRestore({
             filingType: fData.filingType || prev.filingType,
             filingFrequency: fData.filingFrequency || prev.periodType,
             periodType: fData.filingFrequency || prev.periodType,
-            taxableSales: fData.turnover || prev.taxableSales,
-            turnover: fData.turnover || prev.turnover,
+            calculationMethod:
+              fData.calculationMethod ||
+              (fData.taxablePurchases || fData.taxableSales || fData.turnover || fData.eligibleItc
+                ? "manual_estimates"
+                : prev.calculationMethod),
+            taxableSales: fData.taxableSales || fData.turnover || prev.taxableSales,
+            turnover: fData.turnover || fData.taxableSales || prev.turnover,
+            taxablePurchases: fData.taxablePurchases || prev.taxablePurchases,
             eligibleItc: fData.eligibleItc || prev.eligibleItc,
           }));
 

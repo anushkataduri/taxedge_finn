@@ -1,21 +1,27 @@
 package com.taxedge.itr.reviseditr.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class RevisedItrDocumentDto {
 
-	private String revisedItrId;
+    private String revisedItrId;
 
-	private String panCard;
+    private byte[] panCard;
 
-	private String aadhaarCard;
+    private byte[] aadhaarCard;
 
-	private String form16Form16A;
+    private byte[] form16Form16A;
 
-	private String aisTisStatement;
+    private byte[] aisTisStatement;
 
-	private String bankStatements;
+    private byte[] bankStatements;
 
-	private String investmentProofs;
+    private byte[] investmentProofs;
 }

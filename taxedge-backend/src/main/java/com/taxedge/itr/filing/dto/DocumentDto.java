@@ -1,17 +1,23 @@
 package com.taxedge.itr.filing.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class DocumentDto {
 
-    private String form16PartAPartB;
+	private byte[] form16PartAPartB;
 
-    private String form26as;
+	private byte[] form26as;
 
-    private String aisTis;
+	private byte[] aisTis;
 
-    private String bankAccountStatement;
+	private byte[] bankAccountStatement;
 
-    private String salaryPayslips;
+	private byte[] salaryPayslips;
 }

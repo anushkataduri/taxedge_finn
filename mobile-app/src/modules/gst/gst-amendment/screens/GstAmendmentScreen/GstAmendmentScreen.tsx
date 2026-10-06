@@ -51,6 +51,7 @@ export function GstAmendmentScreen() {
           onToggleExpandProofs={() => workflow.setIsProofsExpanded((prev) => !prev)}
           onReviewChanges={workflow.handleReviewChanges}
           isEditMode={workflow.isEditMode}
+          isSaving={workflow.isSavingRecord}
         />
       )}
 
@@ -74,6 +75,7 @@ export function GstAmendmentScreen() {
           onToggleExpandProofs={() => workflow.setIsProofsExpanded((prev) => !prev)}
           onReviewChanges={workflow.handleReviewChanges}
           isEditMode={workflow.isEditMode}
+          isSaving={workflow.isSavingRecord}
         />
       )}
 
@@ -91,6 +93,8 @@ export function GstAmendmentScreen() {
           scrollViewRef={workflow.scrollViewRef}
           onEdit={workflow.handleEditFromReview}
           onSubmit={workflow.handleSubmitAmendment}
+          amendmentId={workflow.amendmentId}
+          dbReviewData={workflow.dbReviewData}
         />
       )}
 

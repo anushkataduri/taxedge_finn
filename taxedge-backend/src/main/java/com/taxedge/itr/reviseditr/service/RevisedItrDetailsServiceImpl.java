@@ -1,33 +1,26 @@
 package com.taxedge.itr.reviseditr.service;
 
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
 import com.taxedge.itr.Exception.ResourceNotFoundException;
 import com.taxedge.itr.reviseditr.dto.RevisedItrDetailsDto;
 import com.taxedge.itr.reviseditr.entity.RevisedItr;
 import com.taxedge.itr.reviseditr.entity.RevisedItrDetails;
-import com.taxedge.itr.reviseditr.helper.RevisedItrRandomNumberGenerator;
+import com.taxedge.itr.reviseditr.mapper.RevisedItrDetailsMapper;
 import com.taxedge.itr.reviseditr.repository.RevisedItrDetailsRepository;
 import com.taxedge.itr.reviseditr.repository.RevisedItrRepository;
 
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class RevisedItrDetailsServiceImpl implements RevisedItrDetailsService {
 
-	
-	private final  RevisedItrDetailsRepository revisedItrDetailsRepository;
-
-	
+	private final RevisedItrDetailsRepository revisedItrDetailsRepository;
 	private final RevisedItrRepository revisedItrRepository;
-
-	@Autowired
-	@Qualifier("itrModelMapper")
-	private ModelMapper modelMapper;
+	private final RevisedItrDetailsMapper revisedItrDetailsMapper;
 
 	@Override
 	public String createRevisedItrDetails(RevisedItrDetailsDto dto) {
@@ -36,37 +29,30 @@ public class RevisedItrDetailsServiceImpl implements RevisedItrDetailsService {
 				.orElseThrow(() -> new ResourceNotFoundException(
 						"Revised ITR not found with revisedItrId: " + dto.getRevisedItrId()));
 
-		RevisedItrDetails details = modelMapper.map(dto, RevisedItrDetails.class);
-
-		details.setRevisedItr(revisedItr);
-
-		String detailsId = RevisedItrRandomNumberGenerator.generateRevisedItrDetailsId();
-
-		details.setDetailsId(detailsId);
+		RevisedItrDetails details = RevisedItrDetails.builder()
+				.detailsId("RITR" + UUID.randomUUID().toString().replace("-", ""))
+				.salaryBusinessIncome(dto.getSalaryBusinessIncome()).otherIncome(dto.getOtherIncome())
+				.deduction80C(dto.getDeduction80C()).deduction80D(dto.getDeduction80D())
+				.homeLoanInterest(dto.getHomeLoanInterest()).taxableIncome(dto.getTaxableIncome())
+				.bankAccountForRefund(dto.getBankAccountForRefund()).ifscCode(dto.getIfscCode()).revisedItr(revisedItr)
+				.build();
 
 		revisedItrDetailsRepository.save(details);
 
-		return "Revised ITR details registered successfully. Details ID: " + detailsId;
+		return "Revised ITR details registered successfully. Details ID: " + details.getDetailsId();
 	}
 
 	@Override
 	public String updateRevisedItrDetails(String detailsId, RevisedItrDetailsDto dto) {
 
-	    RevisedItrDetails details = revisedItrDetailsRepository.findById(detailsId)
-	            .orElseThrow(() -> new ResourceNotFoundException(
-	                    "Revised ITR details not found with detailsId: " + detailsId));
+		RevisedItrDetails details = revisedItrDetailsRepository.findById(detailsId).orElseThrow(
+				() -> new ResourceNotFoundException("Revised ITR details not found with detailsId: " + detailsId));
 
-	    modelMapper.typeMap(RevisedItrDetailsDto.class, RevisedItrDetails.class)
-	            .addMappings(mapper -> {
-	                mapper.skip(RevisedItrDetails::setDetailsId);
-	                mapper.skip(RevisedItrDetails::setRevisedItr);
-	            });
+		revisedItrDetailsMapper.updateEntity(dto, details);
 
-	    modelMapper.map(dto, details);
+		revisedItrDetailsRepository.save(details);
 
-	    revisedItrDetailsRepository.save(details);
-
-	    return "Revised ITR details updated successfully";
+		return "Revised ITR details updated successfully. Details ID: " + details.getDetailsId();
 	}
 
 	@Override
@@ -75,10 +61,6 @@ public class RevisedItrDetailsServiceImpl implements RevisedItrDetailsService {
 		RevisedItrDetails details = revisedItrDetailsRepository.findById(detailsId).orElseThrow(
 				() -> new ResourceNotFoundException("Revised ITR details not found with detailsId: " + detailsId));
 
-		RevisedItrDetailsDto dto = modelMapper.map(details, RevisedItrDetailsDto.class);
-
-		dto.setRevisedItrId(details.getRevisedItr().getRevisedItrId());
-
-		return dto;
+		return revisedItrDetailsMapper.toDto(details);
 	}
 }

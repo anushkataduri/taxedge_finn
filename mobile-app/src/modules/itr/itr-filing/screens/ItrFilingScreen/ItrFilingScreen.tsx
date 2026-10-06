@@ -69,6 +69,8 @@ export const ItrFilingScreen: React.FC = () => {
     handleDiscardAndExit,
     handleCancel,
   } = useUniversalDraftGuard({
+    saveDestination: "/service/itr",
+    discardDestination: "/service/itr",
     isDirty: () => {
       const hasIncome = formData.calculation.grossTotalIncome > 0;
       const hasDocs = formData.documents.some((d) => Boolean(d.fileUri));
@@ -275,6 +277,7 @@ export const ItrFilingScreen: React.FC = () => {
         onSettings={() =>
           Alert.alert("TaxEdge Support", "Need help with your ITR? Contact support@taxedge.in")
         }
+        onSaveDraft={openDraftModal}
       />
 
       {/* Main Content Area */}

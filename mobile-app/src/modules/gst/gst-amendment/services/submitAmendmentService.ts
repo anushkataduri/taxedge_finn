@@ -18,6 +18,7 @@ export async function submitAmendmentService(params: {
   createApplication: Function;
   addNotification: Function;
   markSubmitted: Function;
+  amendmentId?: number | null;
 }): Promise<SubmissionResult> {
   const {
     selectedSectionId,
@@ -29,17 +30,23 @@ export async function submitAmendmentService(params: {
     createApplication,
     addNotification,
     markSubmitted,
+    amendmentId,
   } = params;
 
   try {
-    switch (selectedSectionId) {
-      case "legal-name":
-        await gstAmendmentApi.submitLegalNameAmendment(
-          targetGstId,
-          formData.newLegalBusinessName,
-          supportingDoc
-        );
+    switch (Boolean(amendmentId)) {
+      case true:
+        // Already persisted in database with ID during Review step
         break;
+      case false:
+        switch (selectedSectionId) {
+          case "legal-name":
+            await gstAmendmentApi.submitLegalNameAmendment(
+              targetGstId,
+              formData.newLegalBusinessName,
+              supportingDoc
+            );
+            break;
 
       case "principal-place":
         await gstAmendmentApi.submitPrincipalPlaceAmendment(
@@ -97,6 +104,7 @@ export async function submitAmendmentService(params: {
           formData.newSignatoryEmail
         );
         break;
+      }
     }
   } catch (apiError: any) {
     console.warn("[submitAmendmentService] API call error captured, proceeding with application creation fallback:", apiError);

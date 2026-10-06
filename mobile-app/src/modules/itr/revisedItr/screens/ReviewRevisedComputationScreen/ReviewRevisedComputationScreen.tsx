@@ -5,6 +5,8 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
+import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
+import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
 import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRevisedProgressStore } from "../../store/revisedProgressStore";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -44,6 +46,24 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
     totalDocsCount?: string;
   }>();
 
+  const {
+    showDraftModal,
+    openDraftModal,
+    handleSaveAndExit,
+    handleDiscardAndExit,
+    handleCancel,
+  } = useUniversalDraftGuard({
+    saveDestination: "/service/itr",
+    discardDestination: "/service/itr",
+    isDirty: () => true,
+    onSaveDraft: () => {
+      useApplicationStore.getState().saveRevisedItrDraft({ step: 3 });
+    },
+    onDiscardDraft: () => {
+      useApplicationStore.getState().clearRevisedItrDraft();
+    },
+    isSubmitted: () => false,
+  });
   const assessmentYear = params.assessmentYear || "AY 2025–26";
   const ackNo = params.acknowledgementNumber || "284419250714208";
   const uploadedDocs = params.uploadedDocsCount || "2";
@@ -165,7 +185,7 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
       <FocusAwareStatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Screen Header */}
-      <RevisedItrHeader subtitle="Review Revised ITR" hideBackButton />
+      <RevisedItrHeader subtitle="Review Revised ITR" hideBackButton showDraftIcon={true} onSaveDraft={openDraftModal} />
 
       {/* Main Content */}
       <ScrollView
@@ -346,8 +366,17 @@ export const ReviewRevisedComputationScreen: React.FC = () => {
           <Text style={styles.proceedButtonText}>Proceed to Payment →</Text>
         </TouchableOpacity>
       </View>
+      <UniversalDraftModal
+        visible={showDraftModal}
+        onSaveAndExit={handleSaveAndExit}
+        onDiscard={handleDiscardAndExit}
+        onKeepEditing={handleCancel}
+      />
     </View>
   );
 };
 
 export default ReviewRevisedComputationScreen;
+
+
+

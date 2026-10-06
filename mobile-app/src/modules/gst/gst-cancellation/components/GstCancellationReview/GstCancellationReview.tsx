@@ -10,6 +10,7 @@ import { CancellationFormData } from "../../types/gstCancellationTypes";
 
 interface GstCancellationReviewProps {
   formData: CancellationFormData;
+  dbReviewData?: any;
   isReviewDeclared: boolean;
   setIsReviewDeclared: (val: boolean) => void;
   isSubmitting: boolean;
@@ -20,6 +21,7 @@ interface GstCancellationReviewProps {
 
 export function GstCancellationReview({
   formData,
+  dbReviewData,
   isReviewDeclared,
   setIsReviewDeclared,
   isSubmitting,
@@ -28,23 +30,36 @@ export function GstCancellationReview({
   onEdit,
 }: GstCancellationReviewProps) {
   const insets = useSafeAreaInsets();
-  const {
-    gstin,
-    reason,
-    otherReason,
-    cancellationDate,
-    closingStock,
-    pendingLiabilities,
-    lastGstr3b,
-    supportingDoc,
-  } = formData;
+
+  const gstin = dbReviewData?.gstin || formData.gstin;
+  const reason =
+    dbReviewData?.reasonForCancellation ||
+    (formData.reason === "Other Valid Reason"
+      ? formData.otherReason
+      : formData.reason);
+  const cancellationDate =
+    dbReviewData?.dateCancellationIsSought || formData.cancellationDate;
+  const closingStock =
+    dbReviewData?.closingStockAndInputTaxReversal !== undefined
+      ? String(dbReviewData.closingStockAndInputTaxReversal)
+      : formData.closingStock;
+  const pendingLiabilities =
+    dbReviewData?.pendingDuesLiabilities !== undefined
+      ? String(dbReviewData.pendingDuesLiabilities)
+      : formData.pendingLiabilities;
+  const lastGstr3b =
+    dbReviewData?.lastGstr3bFiledArnPeriod || formData.lastGstr3b;
+  const supportingDoc = formData.supportingDoc;
 
   const reviewRows = [
     { k: "Form", v: "REG-16 (Cancellation)" },
+    ...(dbReviewData?.cancellationId
+      ? [{ k: "Reference ID", v: dbReviewData.cancellationId, isBlue: true }]
+      : []),
     { k: "GSTIN", v: gstin, isBlue: true },
     {
       k: "Reason",
-      v: reason === "Other Valid Reason" ? otherReason : reason,
+      v: reason,
     },
     { k: "Effective Date", v: cancellationDate },
     { k: "Closing Stock & ITC", v: closingStock },
@@ -52,7 +67,11 @@ export function GstCancellationReview({
     { k: "Last GSTR-3B Filed", v: lastGstr3b },
     {
       k: "Supporting Document",
-      v: supportingDoc?.name || "None (Optional)",
+      v:
+        supportingDoc?.name ||
+        (dbReviewData?.supportingProofDocument
+          ? "Attached Document"
+          : "None (Optional)"),
     },
   ];
 

@@ -8,17 +8,19 @@ import com.taxedge.itr.taxnotice.dto.TaxNoticeDocumentDto;
 
 public interface TaxNoticeDocumentService {
 
-	String registerDocuments(String noticeId, String data, MultipartFile taxNotice, MultipartFile previousItr,
-			MultipartFile itrAcknowledgement, MultipartFile form1616a, MultipartFile aisAy, MultipartFile tis,
-			MultipartFile bankStatement, MultipartFile supportingIncomeDocuments,
-			MultipartFile supportingExpenseDocuments, MultipartFile previousTaxResponses,
-			MultipartFile otherNoticeSpecificDocuments) throws IOException;
-
-	String updateDocuments(String documentId, String data, MultipartFile taxNotice, MultipartFile previousItr,
-			MultipartFile itrAcknowledgement, MultipartFile form1616a, MultipartFile aisAy, MultipartFile tis,
-			MultipartFile bankStatement, MultipartFile supportingIncomeDocuments,
+	String registerDocuments(String noticeId, TaxNoticeDocumentDto dto, MultipartFile taxNotice,
+			MultipartFile previousItr, MultipartFile itrAcknowledgement, MultipartFile form1616a, MultipartFile aisAy,
+			MultipartFile tis, MultipartFile bankStatement, MultipartFile supportingIncomeDocuments,
 			MultipartFile supportingExpenseDocuments, MultipartFile previousTaxResponses,
 			MultipartFile otherNoticeSpecificDocuments) throws IOException;
 
 	TaxNoticeDocumentDto getDocuments(String documentId);
+
+	String updateDocuments(String documentId, TaxNoticeDocumentDto dto, MultipartFile taxNotice,
+			MultipartFile previousItr, MultipartFile itrAcknowledgement, MultipartFile form1616a, MultipartFile aisAy,
+			MultipartFile tis, MultipartFile bankStatement, MultipartFile supportingIncomeDocuments,
+			MultipartFile supportingExpenseDocuments, MultipartFile previousTaxResponses,
+			MultipartFile otherNoticeSpecificDocuments) throws IOException;
+
+	String deleteDocuments(String documentId);
 }

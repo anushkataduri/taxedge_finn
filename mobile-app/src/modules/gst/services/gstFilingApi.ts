@@ -105,8 +105,11 @@ export const gstFilingApi = {
 
     if (!hasFiles) return "No documents selected for upload";
 
-    const url = `${resolveApiBaseUrl()}/api/v1/gst/filing/documents/${filingId}/upload`;
-    return executeXhrUpload(url, "POST", formData);
+    const cleanFilingId = String(filingId || "").trim();
+    const url = `${resolveApiBaseUrl()}/api/v1/gst/filing/documents/${cleanFilingId}/upload`;
+    return executeXhrUpload(url, "POST", formData, () =>
+      gstFilingApi.updateAllFilingDocuments(cleanFilingId, documents)
+    );
   },
 
   updateAllFilingDocuments: async (

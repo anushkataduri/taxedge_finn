@@ -11,11 +11,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "salary_income")
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class SalaryIncome {
 
 	@Id
@@ -29,8 +35,6 @@ public class SalaryIncome {
 	@Column(name = "income_source", nullable = false)
 	private String incomeSource;
 
-	// Salary / Pension
-
 	@Column(name = "employer_legal_name")
 	private String employerLegalName;
 
@@ -42,8 +46,6 @@ public class SalaryIncome {
 
 	@Column(name = "tds_deducted_by_employer")
 	private String tdsDeductedByEmployer;
-
-	// House Property
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "property_classification")
@@ -58,8 +60,6 @@ public class SalaryIncome {
 	@Column(name = "municipal_taxes_paid")
 	private String municipalTaxesPaid;
 
-	// Business / Profession
-
 	@Column(name = "how_do_you_report_this_business")
 	private String howDoYouReportThisBusiness;
 
@@ -68,8 +68,6 @@ public class SalaryIncome {
 
 	@Column(name = "declared_net_profit")
 	private String declaredNetProfit;
-
-	// Capital Gains
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "asset_type")
@@ -80,8 +78,6 @@ public class SalaryIncome {
 
 	@Column(name = "long_term_gains")
 	private String longTermGains;
-
-	// Other Sources
 
 	@Column(name = "savings_interest")
 	private String savingsInterest;

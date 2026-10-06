@@ -1,31 +1,41 @@
 package com.taxedge.itr.taxnotice.dto;
 
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TaxNoticeDocumentDto {
 
-    private String taxNotice;
+	private String noticeId;
 
-    private String previousItr;
+	private byte[] taxNotice;
 
-    private String itrAcknowledgement;
+	private byte[] previousItr;
 
-    private String form1616a;
+	private byte[] itrAcknowledgement;
 
-    private String aisAy;
+	private byte[] form1616a;
 
-    private String tis;
+	private byte[] aisAy;
 
-    private String bankStatement;
+	private byte[] tis;
 
-    private String supportingIncomeDocuments;
+	private byte[] bankStatement;
 
-    private String supportingExpenseDocuments;
+	private byte[] supportingIncomeDocuments;
 
-    private String previousTaxResponses;
+	private byte[] supportingExpenseDocuments;
 
-    private String otherNoticeSpecificDocuments;
+	private byte[] previousTaxResponses;
 
-    private String message;
+	private byte[] otherNoticeSpecificDocuments;
+
+	@Size(max = 1000, message = "Message cannot exceed 1000 characters")
+	private String message;
 }

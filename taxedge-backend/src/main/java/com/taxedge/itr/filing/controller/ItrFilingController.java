@@ -2,11 +2,8 @@ package com.taxedge.itr.filing.controller;
 
 import java.io.IOException;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,6 +14,9 @@ import com.taxedge.itr.filing.entity.ItrFiling;
 import com.taxedge.itr.filing.service.ItrDocumentService;
 import com.taxedge.itr.filing.service.ItrFilingService;
 import com.taxedge.itr.filing.service.SalaryIncomeService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/itr")
@@ -42,7 +42,7 @@ public class ItrFilingController {
 	}
 
 	@PostMapping("/filing/register")
-	public ResponseEntity<String> registerItrFiling(@RequestBody ItrFilingPostDto dto) {
+	public ResponseEntity<String> registerItrFiling(@Valid @RequestBody ItrFilingPostDto dto) {
 
 		String result = itrFilingService.createItrFiling(dto);
 
@@ -50,7 +50,8 @@ public class ItrFilingController {
 	}
 
 	@PutMapping("/filing/update/{itrId}")
-	public ResponseEntity<String> updateItrFiling(@PathVariable String itrId, @RequestBody ItrFilingPostDto dto) {
+	public ResponseEntity<String> updateItrFiling(@PathVariable String itrId,
+			@Valid @RequestBody ItrFilingPostDto dto) {
 
 		String result = itrFilingService.updateItrFiling(itrId, dto);
 
@@ -64,13 +65,9 @@ public class ItrFilingController {
 	@PostMapping("/{itrId}/documents/register")
 	public ResponseEntity<String> registerDocuments(@PathVariable String itrId,
 			@RequestParam(value = "form16PartAPartB", required = false) MultipartFile form16PartAPartB,
-
 			@RequestParam(value = "form26as", required = false) MultipartFile form26as,
-
 			@RequestParam(value = "aisTis", required = false) MultipartFile aisTis,
-
 			@RequestParam(value = "bankAccountStatement", required = false) MultipartFile bankAccountStatement,
-
 			@RequestParam(value = "salaryPayslips", required = false) MultipartFile salaryPayslips) throws IOException {
 
 		String result = itrDocumentService.registerDocuments(itrId, form16PartAPartB, form26as, aisTis,
@@ -89,15 +86,10 @@ public class ItrFilingController {
 
 	@PutMapping("/documents/update/{documentId}")
 	public ResponseEntity<String> updateDocuments(@PathVariable String documentId,
-
 			@RequestParam(value = "form16PartAPartB", required = false) MultipartFile form16PartAPartB,
-
 			@RequestParam(value = "form26as", required = false) MultipartFile form26as,
-
 			@RequestParam(value = "aisTis", required = false) MultipartFile aisTis,
-
 			@RequestParam(value = "bankAccountStatement", required = false) MultipartFile bankAccountStatement,
-
 			@RequestParam(value = "salaryPayslips", required = false) MultipartFile salaryPayslips) throws IOException {
 
 		String result = itrDocumentService.updateDocuments(documentId, form16PartAPartB, form26as, aisTis,
@@ -120,7 +112,7 @@ public class ItrFilingController {
 
 	@PostMapping("/{itrId}/salary-income/register")
 	public ResponseEntity<String> registerSalaryIncome(@PathVariable String itrId,
-			@RequestBody SalaryIncomeDto salaryIncomeDto) {
+			@Valid @RequestBody SalaryIncomeDto salaryIncomeDto) {
 
 		String result = salaryIncomeService.registerSalaryIncome(itrId, salaryIncomeDto);
 
@@ -137,7 +129,7 @@ public class ItrFilingController {
 
 	@PutMapping("/salary-income/update/{incomeId}")
 	public ResponseEntity<String> updateSalaryIncome(@PathVariable String incomeId,
-			@RequestBody SalaryIncomeDto salaryIncomeDto) {
+			@Valid @RequestBody SalaryIncomeDto salaryIncomeDto) {
 
 		String result = salaryIncomeService.updateSalaryIncome(incomeId, salaryIncomeDto);
 

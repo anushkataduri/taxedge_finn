@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
+import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
 import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -32,6 +34,25 @@ export const TdsRefundEstimateScreen: React.FC = () => {
   const [documents, setDocuments] = useState<TdsChecklistItem[]>([]);
   const [calculation, setCalculation] = useState<TaxCalculationBreakdown | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    showDraftModal,
+    openDraftModal,
+    handleSaveAndExit,
+    handleDiscardAndExit,
+    handleCancel,
+  } = useUniversalDraftGuard({
+    saveDestination: "/service/itr",
+    discardDestination: "/service/itr",
+    isDirty: () => true,
+    onSaveDraft: () => {
+      useApplicationStore.getState().saveTdsDraft({ step: "ESTIMATE" });
+    },
+    onDiscardDraft: () => {
+      tdsDraftService.clearDraft();
+      useApplicationStore.getState().clearTdsDraft();
+    },
+    isSubmitted: () => isSubmitting,
+  });
 
   useEffect(() => {
     useTdsProgressStore.getState().setMaxStepReached(3);
@@ -150,7 +171,23 @@ export const TdsRefundEstimateScreen: React.FC = () => {
           <Text style={styles.headerSubtitle}>Step 3 of 5: Review & Estimate</Text>
         </View>
 
-        <View style={styles.headerRightSpacer} />
+                <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={openDraftModal}
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 19,
+            backgroundColor: "#F8FAFC",
+            borderWidth: 1,
+            borderColor: "#E2E8F0",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          accessibilityLabel="Save Draft"
+        >
+          <Ionicons name="save-outline" size={20} color="#64748B" />
+        </TouchableOpacity>
       </View>
 
       {/* Progress Track */}
@@ -475,8 +512,16 @@ export const TdsRefundEstimateScreen: React.FC = () => {
           )}
         </TouchableOpacity>
       </View>
+      <UniversalDraftModal
+        visible={showDraftModal}
+        onSaveAndExit={handleSaveAndExit}
+        onDiscard={handleDiscardAndExit}
+        onKeepEditing={handleCancel}
+      />
     </View>
   );
 };
 
 export default TdsRefundEstimateScreen;
+
+

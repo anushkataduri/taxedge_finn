@@ -14,6 +14,8 @@ import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useApplicationStore } from "@/store/applicationStore";
 import { TaxNoticeHeader } from "../../components/common";
+import { UniversalDraftModal } from "@/shared/components/UniversalDraftModal";
+import { useUniversalDraftGuard } from "@/shared/hooks/useUniversalDraftGuard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from "./NoticePreviewScreen.styles";
 
@@ -29,13 +31,30 @@ const NoticePreviewScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const taxNoticeDraft = useApplicationStore((state) => state.taxNoticeDraft);
 
-  const formData = taxNoticeDraft?.formData || {};
+  const formData = (taxNoticeDraft?.formData || {}) as Record<string, any>;
   const documents: NoticeDocument[] = taxNoticeDraft?.documents || [];
   const uploadedDocs = documents.filter(
     (d) => d.status === "uploaded" || d.fileUri,
   );
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const {
+    showDraftModal,
+    openDraftModal,
+    handleSaveAndExit,
+    handleDiscardAndExit,
+    handleCancel,
+  } = useUniversalDraftGuard({
+    discardDestination: "/service/itr",
+    isDirty: () => true,
+    onSaveDraft: () => {
+      // already saved in draft state during progression
+    },
+    onDiscardDraft: () => {
+      useApplicationStore.getState().clearTaxNoticeDraft();
+    },
+    isSubmitted: () => false,
+  });
 
   const handleEditDetails = () => {
     try {
@@ -47,9 +66,7 @@ const NoticePreviewScreen: React.FC = () => {
 
   const handleEditDocuments = () => {
     try {
-      if (router.canGoBack()) {
-        router.back();
-      }
+      router.push("/service/tax-notice-documents");
     } catch (error) {
       console.error("Navigation Error:", error);
     }
@@ -60,13 +77,13 @@ const NoticePreviewScreen: React.FC = () => {
       router.push({
         pathname: "/service/tax-notice-review",
         params: {
-          noticeId: formData.noticeId,
-          pan: formData.pan,
-          noticeNumber: formData.noticeNumber,
-          noticeDate: formData.noticeDate,
-          responseDueDate: formData.responseDueDate,
-          noticeType: formData.noticeType,
-          assessmentYear: formData.assessmentYear,
+          noticeId: String(formData.noticeId || ""),
+          pan: String(formData.pan || ""),
+          noticeNumber: String(formData.noticeNumber || ""),
+          noticeDate: String(formData.noticeDate || ""),
+          responseDueDate: String(formData.responseDueDate || ""),
+          noticeType: String(formData.noticeType || ""),
+          assessmentYear: String(formData.assessmentYear || ""),
         },
       });
     } catch (error) {
@@ -76,7 +93,7 @@ const NoticePreviewScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <TaxNoticeHeader subtitle="Review Submission" />
+      <TaxNoticeHeader subtitle="Review Submission" hideBackButton onSaveDraft={openDraftModal} />
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
@@ -239,8 +256,18 @@ const NoticePreviewScreen: React.FC = () => {
           )}
         </View>
       </Modal>
+      <UniversalDraftModal
+        visible={showDraftModal}
+        title="Save Notice Draft?"
+        message="You have a pending tax notice submission. Save as draft to continue later."
+        onSaveAndExit={handleSaveAndExit}
+        onDiscardAndExit={handleDiscardAndExit}
+        onCancel={handleCancel}
+      />
     </View>
   );
 };
 
 export default NoticePreviewScreen;
+
+

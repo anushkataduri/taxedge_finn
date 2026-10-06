@@ -1,5 +1,6 @@
 package com.taxedge.companyregistration.dto.request;
 
-import com.taxedge.companyregistration.entity.CompanyRegistrationDocumentType;
+import com.taxedge.companyregistration.enums.CompanyRegistrationDocumentType;
+import jakarta.validation.constraints.NotNull;
 
-public record DocumentRequest(CompanyRegistrationDocumentType documentType) {}
+public record DocumentRequest(@NotNull CompanyRegistrationDocumentType documentType) {}

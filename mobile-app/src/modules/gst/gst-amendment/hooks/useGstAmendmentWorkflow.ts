@@ -26,6 +26,7 @@ import {
 import { resolveTargetGstId } from "../utils/gstAmendmentHelpers";
 import { useGstAmendmentDetails } from "./useGstAmendmentDetails";
 import { submitAmendmentService } from "../services/submitAmendmentService";
+import { gstAmendmentApi } from "@/modules/gst/services/gstAmendmentApi";
 
 export function useGstAmendmentWorkflow() {
   const router = useRouter();
@@ -52,6 +53,11 @@ export function useGstAmendmentWorkflow() {
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [isProofsExpanded, setIsProofsExpanded] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+
+  // ID and DB state for amendment record
+  const [amendmentId, setAmendmentId] = useState<number | null>(null);
+  const [dbReviewData, setDbReviewData] = useState<any>(null);
+  const [isSavingRecord, setIsSavingRecord] = useState(false);
 
   const [pickerModal, setPickerModal] = useState<PickerModalState>({
     isOpen: false,
@@ -171,7 +177,7 @@ export function useGstAmendmentWorkflow() {
     setPickerModal((prev) => ({ ...prev, isOpen: false }));
   }, []);
 
-  const handleReviewChanges = useCallback(() => {
+  const handleReviewChanges = useCallback(async () => {
     const { isValid, errors: validationErrs } = validateSectionForm(
       selectedSectionId,
       formData,
@@ -188,17 +194,106 @@ export function useGstAmendmentWorkflow() {
     }
 
     setErrors({});
+    setIsSavingRecord(true);
 
-    if (isEditMode) {
-      setIsEditMode(false);
-      setCurrentStep("REVIEW");
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-      return;
+    try {
+      switch (isEditMode) {
+        case true: {
+          // Review Updated Changes: PUT fetch to update record by id only
+          switch (amendmentId !== null && amendmentId !== undefined) {
+            case true: {
+              await gstAmendmentApi.updateAmendmentRecord(
+                selectedSectionId,
+                amendmentId!,
+                formData,
+                supportingDoc
+              );
+              console.log("🔄 [Review] Updated record in DB by ID:", amendmentId);
+              // Retrieve updated details from database by ID only
+              const fetched = await gstAmendmentApi.getAmendmentRecordById(
+                selectedSectionId,
+                amendmentId!
+              );
+              console.log("📥 [Review] Retrieved updated record from DB:", fetched);
+              setDbReviewData(fetched);
+              break;
+            }
+            case false: {
+              const saved = await gstAmendmentApi.saveAmendmentRecord(
+                selectedSectionId,
+                targetGstId,
+                formData,
+                supportingDoc
+              );
+              const newId = saved?.id ?? null;
+              setAmendmentId(newId);
+              console.log("💾 [Review] Saved new record in DB, ID:", newId);
+              switch (newId !== null) {
+                case true: {
+                  const fetched = await gstAmendmentApi.getAmendmentRecordById(
+                    selectedSectionId,
+                    newId!
+                  );
+                  console.log("📥 [Review] Retrieved record from DB:", fetched);
+                  setDbReviewData(fetched);
+                  break;
+                }
+                case false:
+                  break;
+              }
+              break;
+            }
+          }
+          setIsEditMode(false);
+          setCurrentStep("REVIEW");
+          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+          break;
+        }
+
+        case false: {
+          // Review Changes: POST fetch to save data in database
+          const saved = await gstAmendmentApi.saveAmendmentRecord(
+            selectedSectionId,
+            targetGstId,
+            formData,
+            supportingDoc
+          );
+          const newId = saved?.id ?? null;
+          setAmendmentId(newId);
+          console.log("💾 [Review] Saved amendment in DB, ID:", newId);
+
+          // Retrieve from database in review section by ID only
+          switch (newId !== null) {
+            case true: {
+              const fetched = await gstAmendmentApi.getAmendmentRecordById(
+                selectedSectionId,
+                newId!
+              );
+              console.log("📥 [Review] Retrieved record from DB by ID:", fetched);
+              setDbReviewData(fetched);
+              break;
+            }
+            case false: {
+              setDbReviewData(saved);
+              break;
+            }
+          }
+
+          setCurrentStep("REVIEW");
+          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+          break;
+        }
+      }
+    } catch (err: any) {
+      console.error("Error saving/updating amendment record:", err);
+      Alert.alert(
+        "Save Failed",
+        err?.message || "Failed to save amendment record. Please try again."
+      );
+    } finally {
+      setIsSavingRecord(false);
     }
-
-    setCurrentStep("REVIEW");
-    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-  }, [formData, isEditMode, selectedSectionId, supportingDoc]);
+  }, [amendmentId, formData, isEditMode, selectedSectionId, supportingDoc, targetGstId]);
 
   const handleEditFromReview = useCallback(() => {
     setIsEditMode(true);
@@ -247,6 +342,7 @@ export function useGstAmendmentWorkflow() {
         createApplication,
         addNotification,
         markSubmitted: draftGuard.markSubmitted,
+        amendmentId,
       });
 
       setSubmissionResult(result);
@@ -260,7 +356,7 @@ export function useGstAmendmentWorkflow() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [addNotification, createApplication, declared, draftGuard.markSubmitted, formData, registeredDetails, selectedSection, selectedSectionId, supportingDoc, targetGstId]);
+  }, [addNotification, amendmentId, createApplication, declared, draftGuard.markSubmitted, formData, registeredDetails, selectedSection, selectedSectionId, supportingDoc, targetGstId]);
 
   return {
     router,
@@ -281,6 +377,9 @@ export function useGstAmendmentWorkflow() {
     isProofsExpanded,
     setIsProofsExpanded,
     isEditMode,
+    amendmentId,
+    dbReviewData,
+    isSavingRecord,
     pickerModal,
     registeredDetails,
     draftGuard,

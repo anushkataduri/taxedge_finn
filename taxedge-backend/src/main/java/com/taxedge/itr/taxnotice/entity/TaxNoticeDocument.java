@@ -1,71 +1,78 @@
 package com.taxedge.itr.taxnotice.entity;
 
+import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "tax_notice_document")
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TaxNoticeDocument {
 
-    @Id
-    @Column(name = "document_id", nullable = false, unique = true)
-    private String documentId;
+	@Id
+	@Column(name = "document_id", nullable = false, unique = true)
+	private String documentId;
 
-    @OneToOne
-    @JoinColumn(name = "notice_id", nullable = false)
-    private TaxNoticeAssistance taxNoticeAssistance;
+	@OneToOne
+	@JoinColumn(name = "notice_id", nullable = false)
+	private TaxNoticeAssistance taxNoticeAssistance;
 
-    @Lob
-    @Column(name = "tax_notice", columnDefinition = "LONGTEXT")
-    private String taxNotice;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "tax_notice", columnDefinition = "bytea")
+	private byte[] taxNotice;
 
-    @Lob
-    @Column(name = "previous_itr", columnDefinition = "LONGTEXT")
-    private String previousItr;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "previous_itr", columnDefinition = "bytea")
+	private byte[] previousItr;
 
-    @Lob
-    @Column(name = "itr_acknowledgement", columnDefinition = "LONGTEXT")
-    private String itrAcknowledgement;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "itr_acknowledgement", columnDefinition = "bytea")
+	private byte[] itrAcknowledgement;
 
-    @Lob
-    @Column(name = "form_16_16a", columnDefinition = "LONGTEXT")
-    private String form1616a;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "form_16_16a", columnDefinition = "bytea")
+	private byte[] form1616a;
 
-    @Lob
-    @Column(name = "ais_ay", columnDefinition = "LONGTEXT")
-    private String aisAy;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "ais_ay", columnDefinition = "bytea")
+	private byte[] aisAy;
 
-    @Lob
-    @Column(name = "tis", columnDefinition = "LONGTEXT")
-    private String tis;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "tis", columnDefinition = "bytea")
+	private byte[] tis;
 
-    @Lob
-    @Column(name = "bank_statement", columnDefinition = "LONGTEXT")
-    private String bankStatement;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "bank_statement", columnDefinition = "bytea")
+	private byte[] bankStatement;
 
-    @Lob
-    @Column(name = "supporting_income_documents", columnDefinition = "LONGTEXT")
-    private String supportingIncomeDocuments;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "supporting_income_documents", columnDefinition = "bytea")
+	private byte[] supportingIncomeDocuments;
 
-    @Lob
-    @Column(name = "supporting_expense_documents", columnDefinition = "LONGTEXT")
-    private String supportingExpenseDocuments;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "supporting_expense_documents", columnDefinition = "bytea")
+	private byte[] supportingExpenseDocuments;
 
-    @Lob
-    @Column(name = "previous_tax_responses", columnDefinition = "LONGTEXT")
-    private String previousTaxResponses;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "previous_tax_responses", columnDefinition = "bytea")
+	private byte[] previousTaxResponses;
 
-    @Lob
-    @Column(name = "other_notice_specific_documents", columnDefinition = "LONGTEXT")
-    private String otherNoticeSpecificDocuments;
+	@Basic(fetch = FetchType.LAZY)
+	@Column(name = "other_notice_specific_documents", columnDefinition = "bytea")
+	private byte[] otherNoticeSpecificDocuments;
 
-    @Column(name = "message")
-    private String message;
+	@Column(name = "message")
+	private String message;
 }

@@ -54,7 +54,7 @@ public class TdsDocumentsServiceImpl implements TdsDocumentsService {
                     .accountHolderName("TDS Applicant")
                     .accountNumber("N/A")
                     .ifscCode("N/A")
-                    .accountType(com.taxedge.gst.enums.AccountType.SAVINGS)
+                    .accountType(com.taxedge.itr.tdsrefund.enums.AccountType.SAVINGS)
                     .createdAt(java.time.LocalDateTime.now())
                     .build();
             bankAccount = bankAccountRepository.save(bankAccount);

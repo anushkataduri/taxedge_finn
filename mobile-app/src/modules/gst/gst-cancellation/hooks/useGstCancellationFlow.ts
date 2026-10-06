@@ -30,6 +30,10 @@ export function useGstCancellationFlow() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<CancellationSubmissionResult | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [cancellationId, setCancellationId] = useState<string | null>(null);
+  const [dbReviewData, setDbReviewData] = useState<any>(null);
+  const [isSubmittedSuccess, setIsSubmittedSuccess] = useState(false);
 
   const { saveGstCancellationDraft, clearGstCancellationDraft, createApplication } = useApplicationStore();
   const addNotification = useNotificationStore((state) => state.addNotification);
@@ -52,14 +56,16 @@ export function useGstCancellationFlow() {
 
   const draftGuard = useUniversalDraftGuard({
     isDirty: () =>
-      Boolean(
-        form.gstin ||
-        form.reason ||
-        form.cancellationDate ||
-        form.closingStock ||
-        form.lastGstr3b ||
-        form.supportingDoc
-      ),
+      isSubmittedSuccess
+        ? false
+        : Boolean(
+            form.gstin ||
+            form.reason ||
+            form.cancellationDate ||
+            form.closingStock ||
+            form.lastGstr3b ||
+            form.supportingDoc
+          ),
     onSaveDraft: () =>
       saveGstCancellationDraft({
         formData: {
@@ -75,7 +81,7 @@ export function useGstCancellationFlow() {
         updatedAt: new Date().toISOString().split("T")[0],
       }),
     onDiscardDraft: clearGstCancellationDraft,
-    isSubmitted: () => step === "SUCCESS",
+    isSubmitted: () => step === "SUCCESS" || isSubmittedSuccess,
   });
 
   const pickDoc = useCallback(async () => {
@@ -162,15 +168,54 @@ export function useGstCancellationFlow() {
     return Object.keys(errs).length === 0;
   }, [form]);
 
-  const handleProceedToReview = useCallback(() => {
+  const handleProceedToReview = useCallback(async () => {
     if (!validate()) return;
-    if (isEditMode) {
-      setIsEditMode(false);
+
+    setIsSaving(true);
+    try {
+      let activeId = cancellationId;
+
+      // 1. POST save or update record in backend
+      console.log("💾 [Cancellation Review] Saving/updating cancellation in DB via POST...");
+      const res: any = await gstCancellationApi.createCancellation(form);
+      console.log("💾 [Cancellation Review] Save response:", res);
+
+      let parsedId = null;
+      try {
+        const parsed = typeof res === "string" ? JSON.parse(res) : res;
+        parsedId = parsed?.cancellationId;
+      } catch {
+        const match = String(res).match(/cancellationId["':\s]+([A-Za-z0-9_-]+)/i);
+        parsedId = match ? match[1] : null;
+      }
+
+      if (parsedId) {
+        activeId = parsedId;
+        setCancellationId(parsedId);
+      }
+
+      // 2. GET retrieve record from DB to populate Review section
+      if (activeId) {
+        console.log(`📥 [Cancellation Review] Fetching record from DB: ${activeId}`);
+        const fetchedDto = await gstCancellationApi.getCancellation(activeId);
+        console.log("📥 [Cancellation Review] Retrieved from DB:", fetchedDto);
+        setDbReviewData(fetchedDto);
+      }
+
+      if (isEditMode) {
+        setIsEditMode(false);
+      }
       setStep("REVIEW");
-      return;
+    } catch (err: any) {
+      console.error("Error saving/fetching cancellation record:", err);
+      Alert.alert(
+        "Save Failed",
+        err?.message || "Failed to save cancellation details to database. Please check your inputs and try again."
+      );
+    } finally {
+      setIsSaving(false);
     }
-    setStep("REVIEW");
-  }, [isEditMode, validate]);
+  }, [cancellationId, form, isEditMode, validate]);
 
   const handleEditFromReview = useCallback(() => {
     setIsEditMode(true);
@@ -185,16 +230,20 @@ export function useGstCancellationFlow() {
 
     setSubmitting(true);
     try {
-      let createdArn = `ARN${Date.now().toString().slice(-8)}`;
-      let appId = `APP-${Date.now().toString().slice(-6)}`;
+      let createdArn = cancellationId || `ARN${Date.now().toString().slice(-8)}`;
+      let appId = cancellationId || `APP-${Date.now().toString().slice(-6)}`;
 
-      try {
-        const resp = await gstCancellationApi.createCancellation(form);
-        const parsed = JSON.parse(resp);
-        if (parsed.arn) createdArn = parsed.arn;
-        if (parsed.applicationId) appId = parsed.applicationId;
-      } catch {
-        // Fallback to local reference
+      if (!cancellationId) {
+        try {
+          const resp = await gstCancellationApi.createCancellation(form);
+          const parsed = typeof resp === "string" ? JSON.parse(resp) : resp;
+          if (parsed?.cancellationId) {
+            createdArn = parsed.cancellationId;
+            appId = parsed.cancellationId;
+          }
+        } catch {
+          // Fallback to local reference
+        }
       }
 
       const submissionDate = new Date().toLocaleDateString("en-IN", {
@@ -234,6 +283,7 @@ export function useGstCancellationFlow() {
         );
       } catch {}
 
+      setIsSubmittedSuccess(true);
       draftGuard.markSubmitted();
       setResult(submissionRes);
       setStep("SUCCESS");
@@ -242,7 +292,7 @@ export function useGstCancellationFlow() {
     } finally {
       setSubmitting(false);
     }
-  }, [addNotification, createApplication, draftGuard, form, reviewDeclared]);
+  }, [addNotification, cancellationId, createApplication, draftGuard, form, reviewDeclared]);
 
   return {
     router,
@@ -261,6 +311,9 @@ export function useGstCancellationFlow() {
     submitting,
     result,
     isEditMode,
+    isSaving,
+    cancellationId,
+    dbReviewData,
     draftGuard,
     setFormField,
     clearError,

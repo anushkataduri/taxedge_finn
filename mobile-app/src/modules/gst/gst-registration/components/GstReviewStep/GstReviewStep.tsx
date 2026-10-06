@@ -41,6 +41,13 @@ const ReviewRow = ({
   </View>
 );
 
+const maskBankAccountNumber = (accountNumber?: string): string => {
+  if (!accountNumber) return "-";
+  const clean = accountNumber.trim();
+  if (clean.length <= 4) return clean;
+  return `XXXX${clean.slice(-4)}`;
+};
+
 export const GstReviewStep: React.FC<GstReviewStepProps> = ({
   businessData,
   documents,
@@ -131,7 +138,7 @@ export const GstReviewStep: React.FC<GstReviewStepProps> = ({
         />
         <ReviewRow
           label="Account Number"
-          value={businessData.bankAccountNumber}
+          value={maskBankAccountNumber(businessData.bankAccountNumber)}
         />
         <ReviewRow label="IFSC Code" value={businessData.ifscCode} />
         <ReviewRow

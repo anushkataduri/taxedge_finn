@@ -42,10 +42,12 @@ export interface CancellationSubmissionResult {
 }
 
 export interface CancellationDto {
+  customerId?: string;
   gstin: string;
   reasonForCancellation: string;
   dateCancellationIsSought: string | null;
   closingStockAndInputTaxReversal: string;
   pendingDuesLiabilities: string;
   lastGstr3bFiledArnPeriod: string;
+  supportingProofDocument?: any;
 }

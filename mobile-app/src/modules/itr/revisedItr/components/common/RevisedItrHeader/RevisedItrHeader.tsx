@@ -9,6 +9,7 @@ interface RevisedItrHeaderProps {
   onBack?: () => void;
   hideBackButton?: boolean;
   onSaveDraft?: () => void;
+  showDraftIcon?: boolean;
 }
 
 export const RevisedItrHeader: React.FC<RevisedItrHeaderProps> = ({
@@ -16,22 +17,19 @@ export const RevisedItrHeader: React.FC<RevisedItrHeaderProps> = ({
   onBack,
   hideBackButton = false,
   onSaveDraft,
+  showDraftIcon = false,
 }) => {
   const router = useRouter();
-
-  const handleSaveDraftDefault = () => {
-    import("react-native").then(({ Alert }) => {
-      Alert.alert("Draft Saved", "Your revised ITR progress has been saved.", [
-        { text: "OK", onPress: () => router.replace("/" as any) }
-      ]);
-    });
-  };
 
   const handleBack = () => {
     if (onBack) {
       onBack();
     } else {
-      router.back();
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/");
+      }
     }
   };
 
@@ -54,17 +52,26 @@ export const RevisedItrHeader: React.FC<RevisedItrHeaderProps> = ({
         <Text style={styles.subtitle}>{subtitle}</Text>
       </View>
 
-      {true ? (
+      {showDraftIcon ? (
         <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={onSaveDraft || handleSaveDraftDefault}
-          style={styles.draftButton}
+          activeOpacity={0.7}
+          onPress={onSaveDraft}
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 19,
+            backgroundColor: "#F8FAFC",
+            borderWidth: 1,
+            borderColor: "#E2E8F0",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          accessibilityLabel="Save Draft"
         >
-          <Ionicons name="bookmark-outline" size={14} color="#EA580C" />
-          <Text style={styles.draftButtonText}>Draft</Text>
+          <Ionicons name="save-outline" size={20} color="#64748B" />
         </TouchableOpacity>
       ) : (
-        <View style={styles.rightSpacer} />
+        <View style={{ width: 38, height: 38 }} />
       )}
     </View>
   );

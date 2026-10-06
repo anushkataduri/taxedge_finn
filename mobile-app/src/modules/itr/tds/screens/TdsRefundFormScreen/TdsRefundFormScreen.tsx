@@ -178,7 +178,7 @@ export const TdsRefundFormScreen: React.FC = () => {
           onPress={handleContinue}
           style={styles.ctaButton}
         >
-          <Text style={styles.ctaButtonText}>Continue to Documents</Text>
+          <Text style={styles.ctaButtonText}>{maxStepReached >= 3 ? "Update & Continue" : "Continue to Documents"}</Text>
           <Ionicons name="arrow-forward" size={18} color={BrandColors.WHITE} />
         </TouchableOpacity>
       </View>
@@ -200,4 +200,5 @@ export const TdsRefundFormScreen: React.FC = () => {
 };
 
 export default TdsRefundFormScreen;
+
 

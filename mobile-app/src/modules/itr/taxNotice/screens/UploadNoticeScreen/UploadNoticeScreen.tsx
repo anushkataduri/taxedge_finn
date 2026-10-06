@@ -83,6 +83,7 @@ export const UploadNoticeScreen: React.FC = () => {
     handleDiscardAndExit,
     handleCancel,
   } = useUniversalDraftGuard({
+    discardDestination: "/service/itr",
     isDirty: () =>
       Boolean(
         (formData.pan && formData.pan !== profilePan) ||
@@ -94,7 +95,7 @@ export const UploadNoticeScreen: React.FC = () => {
       ),
     onSaveDraft: () => {
       saveTaxNoticeDraft({
-        formData,
+        formData: formData as any,
         step: currentStep === 1 ? "DETAILS" : "UPLOAD",
         updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       });
@@ -144,7 +145,7 @@ export const UploadNoticeScreen: React.FC = () => {
     try {
       setIsSubmitting(true);
       
-      let noticeId = taxNoticeDraft?.formData?.noticeId;
+      let noticeId = (taxNoticeDraft?.formData as any)?.noticeId ? String((taxNoticeDraft?.formData as any).noticeId) : "";
       const payload = {
         pan: formData.pan,
         assessmentYear: formData.assessmentYear,
@@ -153,8 +154,8 @@ export const UploadNoticeScreen: React.FC = () => {
         noticeNumber: formData.noticeNumber,
         responseDueDate: formData.responseDueDate,
         customerExplanation: formData.customerExplanation,
-        noticeFileUri: "",
-        noticeFileName: "",
+        noticeFileUri: formData.noticeFileUri || "",
+        noticeFileName: formData.noticeFileName || "",
         noticeFileType: "application/pdf"
       };
 
@@ -165,15 +166,18 @@ export const UploadNoticeScreen: React.FC = () => {
       }
 
       saveTaxNoticeDraft({
-        formData,
-        step: "DOCUMENTS",
+        formData: {
+          ...formData,
+          noticeId,
+        },
+        step: taxNoticeDraft?.step === "REVIEW" ? "REVIEW" : "DOCUMENTS",
         updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       });
 
       router.push({
-        pathname: "/service/tax-notice-documents" as any,
+        pathname: (taxNoticeDraft?.step === "REVIEW" ? "/service/tax-notice-preview" : "/service/tax-notice-documents") as any,
         params: {
-          noticeId,
+          noticeId: String(noticeId),
           pan: formData.pan,
           noticeNumber: formData.noticeNumber,
           noticeDate: formData.noticeDate,
@@ -362,7 +366,7 @@ export const UploadNoticeScreen: React.FC = () => {
           {isSubmitting ? (
             <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
-            <Text style={styles.continueButtonText}>Continue to Supporting Documents</Text>
+            <Text style={styles.continueButtonText}>{taxNoticeDraft?.step === "REVIEW" ? "Update & Continue" : "Continue to Supporting Documents"}</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -381,4 +385,5 @@ export const UploadNoticeScreen: React.FC = () => {
 };
 
 export default UploadNoticeScreen;
+
 

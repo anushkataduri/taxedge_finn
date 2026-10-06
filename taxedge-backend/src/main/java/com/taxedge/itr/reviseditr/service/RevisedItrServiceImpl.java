@@ -1,8 +1,7 @@
 package com.taxedge.itr.reviseditr.service;
 
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
 import com.taxedge.customer.entity.Customer;
@@ -10,24 +9,18 @@ import com.taxedge.customer.repository.CustomerRepository;
 import com.taxedge.itr.Exception.ResourceNotFoundException;
 import com.taxedge.itr.reviseditr.dto.RevisedItrDto;
 import com.taxedge.itr.reviseditr.entity.RevisedItr;
-import com.taxedge.itr.reviseditr.helper.RevisedItrRandomNumberGenerator;
+import com.taxedge.itr.reviseditr.mapper.RevisedItrMapper;
 import com.taxedge.itr.reviseditr.repository.RevisedItrRepository;
 
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class RevisedItrServiceImpl implements RevisedItrService {
 
-	
 	private final RevisedItrRepository revisedItrRepository;
-
-	
-	private final  CustomerRepository customerRepository;
-
-	@Autowired
-	@Qualifier("itrModelMapper")
-	private ModelMapper modelMapper;
+	private final CustomerRepository customerRepository;
+	private final RevisedItrMapper revisedItrMapper;
 
 	@Override
 	public String createRevisedItr(RevisedItrDto dto) {
@@ -35,17 +28,14 @@ public class RevisedItrServiceImpl implements RevisedItrService {
 		Customer customer = customerRepository.findById(dto.getCustomerId())
 				.orElseThrow(() -> new ResourceNotFoundException("Customer not found with ID: " + dto.getCustomerId()));
 
-		RevisedItr revisedItr = modelMapper.map(dto, RevisedItr.class);
-
-		revisedItr.setCustomer(customer);
-
-		String revisedItrId = RevisedItrRandomNumberGenerator.generateRevisedItrId();
-
-		revisedItr.setRevisedItrId(revisedItrId);
+		RevisedItr revisedItr = RevisedItr.builder()
+				.revisedItrId("RITR" + UUID.randomUUID().toString().replace("-", ""))
+				.itrAcknowledgementNumber(dto.getItrAcknowledgementNumber()).assessmentYear(dto.getAssessmentYear())
+				.customer(customer).build();
 
 		revisedItrRepository.save(revisedItr);
 
-		return "Revised ITR details registered successfully. Revised ITR ID: " + revisedItrId;
+		return "Revised ITR details registered successfully. Revised ITR ID: " + revisedItr.getRevisedItrId();
 	}
 
 	@Override
@@ -54,9 +44,9 @@ public class RevisedItrServiceImpl implements RevisedItrService {
 		RevisedItr revisedItr = revisedItrRepository.findById(revisedItrId)
 				.orElseThrow(() -> new ResourceNotFoundException("Revised ITR not found with ID: " + revisedItrId));
 
-		RevisedItrDto dto = modelMapper.map(revisedItr, RevisedItrDto.class);
-
-		dto.setCustomerId(revisedItr.getCustomer().getCustId());
+		RevisedItrDto dto = RevisedItrDto.builder().customerId(revisedItr.getCustomer().getCustId())
+				.itrAcknowledgementNumber(revisedItr.getItrAcknowledgementNumber())
+				.assessmentYear(revisedItr.getAssessmentYear()).build();
 
 		return dto;
 	}
@@ -64,20 +54,14 @@ public class RevisedItrServiceImpl implements RevisedItrService {
 	@Override
 	public String updateRevisedItr(String revisedItrId, RevisedItrDto dto) {
 
-	    RevisedItr revisedItr = revisedItrRepository.findById(revisedItrId)
-	            .orElseThrow(() -> new ResourceNotFoundException(
-	                    "Revised ITR not found with ID: " + revisedItrId));
+		RevisedItr revisedItr = revisedItrRepository.findById(revisedItrId)
+				.orElseThrow(() -> new ResourceNotFoundException("Revised ITR not found with ID: " + revisedItrId));
 
-	    modelMapper.typeMap(RevisedItrDto.class, RevisedItr.class)
-	            .addMappings(mapper -> {
-	                mapper.skip(RevisedItr::setRevisedItrId);
-	                mapper.skip(RevisedItr::setCustomer);
-	            });
+		revisedItrMapper.updateEntity(dto, revisedItr);
 
-	    modelMapper.map(dto, revisedItr);
+		revisedItrRepository.save(revisedItr);
 
-	    revisedItrRepository.save(revisedItr);
-
-	    return "Revised ITR details updated successfully";
+		return "Revised ITR details updated successfully. Revised ITR ID: "
+        + revisedItr.getRevisedItrId();
 	}
 }

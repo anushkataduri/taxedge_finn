@@ -6,6 +6,5 @@ import org.springframework.stereotype.Repository;
 import com.taxedge.itr.taxnotice.entity.TaxNoticeAssistance;
 
 @Repository
-public interface TaxNoticeAssistanceRepository
-        extends JpaRepository<TaxNoticeAssistance, String> {
+public interface TaxNoticeAssistanceRepository extends JpaRepository<TaxNoticeAssistance, String> {
 }

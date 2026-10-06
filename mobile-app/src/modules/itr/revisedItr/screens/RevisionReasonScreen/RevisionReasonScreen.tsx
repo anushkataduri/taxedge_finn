@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { FocusAwareStatusBar } from "@/shared/components/FocusAwareStatusBar";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRevisedProgressStore } from "../../store/revisedProgressStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { RevisedItrHeader } from "../../components/common";
@@ -24,6 +25,7 @@ import {
 export const RevisionReasonScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const maxStepReached = useRevisedProgressStore((s) => s.maxStepReached);
   const params = useLocalSearchParams<{
     acknowledgementNumber?: string;
     assessmentYear?: string;
@@ -130,7 +132,7 @@ export const RevisionReasonScreen: React.FC = () => {
           onPress={handleContinue}
           style={styles.continueButton}
         >
-          <Text style={styles.continueButtonText}>Continue</Text>
+          <Text style={styles.continueButtonText}>{maxStepReached >= 3 ? "Update and Continue" : "Continue"}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -138,3 +140,4 @@ export const RevisionReasonScreen: React.FC = () => {
 };
 
 export default RevisionReasonScreen;
+

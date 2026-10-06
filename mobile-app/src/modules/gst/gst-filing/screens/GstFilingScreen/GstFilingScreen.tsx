@@ -16,6 +16,7 @@ import { useApplicationStore } from "@/store/applicationStore";
 import { applicationService } from "@/modules/applications/services/applicationService";
 import { gstApi } from "@/modules/gst/services/gstApi";
 import { useGstFiling } from "@/modules/gst/gst-filing/hooks/useGstFiling";
+import { buildFilingPayload } from "@/modules/gst/gst-filing/hooks/gstFilingHelpers";
 import { GstStepHeader } from "@/modules/gst/components/GstStepHeader";
 import {
   styles,
@@ -73,25 +74,22 @@ export const GstFilingScreen: React.FC = () => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   }, [currentStep]);
 
-  const handleComputationChange = (turnover: number, itc: number) => {
-    setPeriodData((prev) => ({
-      ...prev,
+  const handleComputationChange = (turnover: number, itc: number, purchases?: number) => {
+    const updatedPeriod = {
+      ...periodData,
       taxableSales: String(turnover),
       turnover: String(turnover),
+      taxablePurchases: purchases !== undefined ? String(purchases) : (periodData.taxablePurchases || "0"),
       eligibleItc: String(itc),
-    }));
+      calculationMethod: "manual_estimates" as const,
+    };
+    setPeriodData(updatedPeriod);
+
     if (filingId) {
-      gstApi
-        .updateFiling(filingId, {
-          gstin: periodData.gstin,
-          financialYear: (periodData.financialYear || "2025-26").replace(/^FY\s*/i, "").trim(),
-          filingPeriod: periodData.filingPeriod || periodData.filingMonth || "Current Period",
-          returnType: (periodData.filingType || "").includes("3B") ? "GSTR_3B" : "GSTR_1",
-          taxCalculationMethod: "ESTIMATION_FIGURES",
-          estimatedTaxableSales: turnover,
-          estimatedEligibleItc: itc,
-        })
-        .catch(() => {});
+      const payload = buildFilingPayload(updatedPeriod, undefined, true);
+      gstApi.updateFiling(filingId, payload).catch((err) => {
+        console.warn("[GstFilingScreen] Failed to update computation:", err);
+      });
     }
     if (createdAppId) {
       const existing = useApplicationStore
@@ -103,8 +101,11 @@ export const GstFilingScreen: React.FC = () => {
             ...existing,
             formData: {
               ...existing.formData,
+              taxableSales: String(turnover),
               turnover: String(turnover),
+              taxablePurchases: purchases !== undefined ? String(purchases) : (existing.formData?.taxablePurchases || "0"),
               eligibleItc: String(itc),
+              calculationMethod: "manual_estimates",
             },
           })
           .catch(() => {});
@@ -200,7 +201,7 @@ export const GstFilingScreen: React.FC = () => {
 
         {currentStep === 2 && (
           <GstFilingReviewStep
-            key={`${periodData.taxableSales || periodData.turnover || "0"}-${periodData.eligibleItc || "0"}`}
+            key={`${periodData.taxableSales || periodData.turnover || "0"}-${periodData.taxablePurchases || "0"}-${periodData.eligibleItc || "0"}`}
             gstin={periodData.gstin}
             businessName={businessDisplayName}
             taxpayerScheme={periodData.taxpayerScheme || "Regular Scheme"}
@@ -215,6 +216,7 @@ export const GstFilingScreen: React.FC = () => {
             grossTaxableTurnover={
               periodData.taxableSales || periodData.turnover || 0
             }
+            taxablePurchases={periodData.taxablePurchases || 0}
             eligibleItc={periodData.eligibleItc || 0}
             isFetching={isFetchingReview}
             onEditFilingDetails={() => handleEditStep(0)}

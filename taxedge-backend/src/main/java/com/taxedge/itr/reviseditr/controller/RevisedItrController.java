@@ -1,6 +1,5 @@
 package com.taxedge.itr.reviseditr.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,21 +22,18 @@ import com.taxedge.itr.reviseditr.service.RevisedItrDocumentService;
 import com.taxedge.itr.reviseditr.service.RevisedItrService;
 import com.taxedge.itr.reviseditr.service.RevisionReasonService;
 
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
 @RestController
 @RequestMapping("/api/v1/itr/revised")
+@RequiredArgsConstructor
 public class RevisedItrController {
 
-	@Autowired
-	private RevisedItrService revisedItrService;
-
-	@Autowired
-	private RevisedItrDetailsService revisedItrDetailsService;
-
-	@Autowired
-	private RevisedItrDocumentService revisedItrDocumentService;
-
-	@Autowired
-	private RevisionReasonService revisionReasonService;
+	private final RevisedItrService revisedItrService;
+	private final RevisedItrDetailsService revisedItrDetailsService;
+	private final RevisedItrDocumentService revisedItrDocumentService;
+	private final RevisionReasonService revisionReasonService;
 
 	// =========================
 	// Revised ITR
@@ -52,7 +48,7 @@ public class RevisedItrController {
 	}
 
 	@PostMapping("/register")
-	public ResponseEntity<String> registerRevisedItr(@RequestBody RevisedItrDto dto) {
+	public ResponseEntity<String> registerRevisedItr(@Valid @RequestBody RevisedItrDto dto) {
 
 		String result = revisedItrService.createRevisedItr(dto);
 
@@ -60,7 +56,8 @@ public class RevisedItrController {
 	}
 
 	@PutMapping("/update/{revisedItrId}")
-	public ResponseEntity<String> updateRevisedItr(@PathVariable String revisedItrId, @RequestBody RevisedItrDto dto) {
+	public ResponseEntity<String> updateRevisedItr(@PathVariable String revisedItrId,
+			@Valid @RequestBody RevisedItrDto dto) {
 
 		String result = revisedItrService.updateRevisedItr(revisedItrId, dto);
 
@@ -80,7 +77,7 @@ public class RevisedItrController {
 	}
 
 	@PostMapping("/reason/register")
-	public ResponseEntity<String> registerRevisionReason(@RequestBody RevisionReasonDto dto) {
+	public ResponseEntity<String> registerRevisionReason(@Valid @RequestBody RevisionReasonDto dto) {
 
 		String result = revisionReasonService.createRevisionReason(dto);
 
@@ -89,7 +86,7 @@ public class RevisedItrController {
 
 	@PutMapping("/reason/update/{revisionReasonId}")
 	public ResponseEntity<String> updateRevisionReason(@PathVariable String revisionReasonId,
-			@RequestBody RevisionReasonDto dto) {
+			@Valid @RequestBody RevisionReasonDto dto) {
 
 		String result = revisionReasonService.updateRevisionReason(revisionReasonId, dto);
 
@@ -109,7 +106,7 @@ public class RevisedItrController {
 	}
 
 	@PostMapping("/details/register")
-	public ResponseEntity<String> registerRevisedItrDetails(@RequestBody RevisedItrDetailsDto dto) {
+	public ResponseEntity<String> registerRevisedItrDetails(@Valid @RequestBody RevisedItrDetailsDto dto) {
 
 		String result = revisedItrDetailsService.createRevisedItrDetails(dto);
 
@@ -118,7 +115,7 @@ public class RevisedItrController {
 
 	@PutMapping("/details/update/{detailsId}")
 	public ResponseEntity<String> updateRevisedItrDetails(@PathVariable String detailsId,
-			@RequestBody RevisedItrDetailsDto dto) {
+			@Valid @RequestBody RevisedItrDetailsDto dto) {
 
 		String result = revisedItrDetailsService.updateRevisedItrDetails(detailsId, dto);
 

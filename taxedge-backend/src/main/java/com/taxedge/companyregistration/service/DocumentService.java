@@ -1,7 +1,7 @@
 package com.taxedge.companyregistration.service;
 
 import com.taxedge.companyregistration.dto.response.DocumentResponse;
-import com.taxedge.companyregistration.entity.CompanyRegistrationDocumentType;
+import com.taxedge.companyregistration.enums.CompanyRegistrationDocumentType;
 import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 

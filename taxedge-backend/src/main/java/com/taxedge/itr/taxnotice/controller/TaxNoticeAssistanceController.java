@@ -2,9 +2,10 @@ package com.taxedge.itr.taxnotice.controller;
 
 import java.io.IOException;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,22 +21,21 @@ import com.taxedge.itr.taxnotice.dto.TaxNoticeDocumentDto;
 import com.taxedge.itr.taxnotice.service.TaxNoticeAssistanceService;
 import com.taxedge.itr.taxnotice.service.TaxNoticeDocumentService;
 
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
 @RestController
 @RequestMapping("/api/v1/itr/tax-notice")
+@RequiredArgsConstructor
 public class TaxNoticeAssistanceController {
 
-	@Autowired
-	private TaxNoticeAssistanceService taxNoticeAssistanceService;
+	private final TaxNoticeAssistanceService taxNoticeAssistanceService;
+	private final TaxNoticeDocumentService taxNoticeDocumentService;
+	private final ObjectMapper objectMapper;
 
-	@Autowired
-	private TaxNoticeDocumentService taxNoticeDocumentService;
-
-	@Autowired
-	private ObjectMapper objectMapper;
-
-	@PostMapping("/register")
+	@PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<String> createTaxNotice(@RequestPart("data") String data,
-			@RequestPart("file") MultipartFile file) throws IOException {
+			@RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
 
 		TaxNoticeAssistanceDto dto = objectMapper.readValue(data, TaxNoticeAssistanceDto.class);
 
@@ -52,9 +52,9 @@ public class TaxNoticeAssistanceController {
 		return ResponseEntity.ok(taxNotice);
 	}
 
-	@PutMapping("/update/{noticeId}")
+	@PutMapping(value = "/update/{noticeId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<String> updateTaxNotice(@PathVariable String noticeId, @RequestPart("data") String data,
-			@RequestPart("file") MultipartFile file) throws IOException {
+			@RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
 
 		TaxNoticeAssistanceDto dto = objectMapper.readValue(data, TaxNoticeAssistanceDto.class);
 
@@ -63,9 +63,8 @@ public class TaxNoticeAssistanceController {
 		return ResponseEntity.ok(result);
 	}
 
-	@PostMapping("/{noticeId}/document/register")
-	public ResponseEntity<String> registerDocuments(@PathVariable String noticeId,
-			@RequestPart(value = "data", required = false) String data,
+	@PostMapping(value = "/{noticeId}/document/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<String> registerDocuments(@PathVariable String noticeId, @RequestPart("data") String data,
 			@RequestPart(value = "taxNotice", required = false) MultipartFile taxNotice,
 			@RequestPart(value = "previousItr", required = false) MultipartFile previousItr,
 			@RequestPart(value = "itrAcknowledgement", required = false) MultipartFile itrAcknowledgement,
@@ -79,7 +78,9 @@ public class TaxNoticeAssistanceController {
 			@RequestPart(value = "otherNoticeSpecificDocuments", required = false) MultipartFile otherNoticeSpecificDocuments)
 			throws IOException {
 
-		String result = taxNoticeDocumentService.registerDocuments(noticeId, data, taxNotice, previousItr,
+		TaxNoticeDocumentDto dto = objectMapper.readValue(data, TaxNoticeDocumentDto.class);
+
+		String result = taxNoticeDocumentService.registerDocuments(noticeId, dto, taxNotice, previousItr,
 				itrAcknowledgement, form1616a, aisAy, tis, bankStatement, supportingIncomeDocuments,
 				supportingExpenseDocuments, previousTaxResponses, otherNoticeSpecificDocuments);
 
@@ -94,10 +95,8 @@ public class TaxNoticeAssistanceController {
 		return ResponseEntity.ok(documents);
 	}
 
-	@PutMapping("/{documentId}/documents/update")
-	public ResponseEntity<String> updateDocuments(@PathVariable String documentId,
-			
-			@RequestPart(value = "data", required = false) String data,
+	@PutMapping(value = "/{documentId}/documents/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<String> updateDocuments(@PathVariable String documentId, @RequestPart("data") String data,
 			@RequestPart(value = "taxNotice", required = false) MultipartFile taxNotice,
 			@RequestPart(value = "previousItr", required = false) MultipartFile previousItr,
 			@RequestPart(value = "itrAcknowledgement", required = false) MultipartFile itrAcknowledgement,
@@ -111,9 +110,19 @@ public class TaxNoticeAssistanceController {
 			@RequestPart(value = "otherNoticeSpecificDocuments", required = false) MultipartFile otherNoticeSpecificDocuments)
 			throws IOException {
 
-		String result = taxNoticeDocumentService.updateDocuments(documentId, data, taxNotice, previousItr,
+		TaxNoticeDocumentDto dto = objectMapper.readValue(data, TaxNoticeDocumentDto.class);
+
+		String result = taxNoticeDocumentService.updateDocuments(documentId, dto, taxNotice, previousItr,
 				itrAcknowledgement, form1616a, aisAy, tis, bankStatement, supportingIncomeDocuments,
 				supportingExpenseDocuments, previousTaxResponses, otherNoticeSpecificDocuments);
+
+		return ResponseEntity.ok(result);
+	}
+
+	@DeleteMapping("/{documentId}/documents/delete")
+	public ResponseEntity<String> deleteDocuments(@PathVariable String documentId) {
+
+		String result = taxNoticeDocumentService.deleteDocuments(documentId);
 
 		return ResponseEntity.ok(result);
 	}

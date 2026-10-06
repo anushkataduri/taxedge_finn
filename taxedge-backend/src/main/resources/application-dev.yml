@@ -1,7 +1,7 @@
 spring:
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/taxedge_db}
-    username: ${DB_USERNAME:mysql}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
   jpa:

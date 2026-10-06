@@ -27,6 +27,9 @@ public class CompanyRegistration extends AuditedEntity {
     @Column(name = "company_type", nullable = false, length = 100)
     private String companyType;
 
+    @Column(name = "constitution_type", length = 100)
+    private String constitutionType;
+
     @Column(nullable = false, length = 40)
     private String status;
 

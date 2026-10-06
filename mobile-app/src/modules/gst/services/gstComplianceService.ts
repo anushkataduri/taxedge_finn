@@ -99,6 +99,7 @@ export function buildCompliancePayload(
  */
 export async function submitComplianceRequest(
   data: ComplianceFormData,
+  existingComplianceId?: string | null,
 ): Promise<SubmissionResult> {
   const referenceId = generateComplianceRefId();
   const submittedAt = getTodayFormatted();
@@ -106,14 +107,23 @@ export async function submitComplianceRequest(
 
   try {
     const payload = buildCompliancePayload(data, referenceId);
+    let resolvedId = existingComplianceId || null;
 
-    // 1. Call Spring Boot backend API to store in database
-    const backendResponse = await gstComplianceApi.createCompliance(data);
-    console.log("[GST] Compliance API Response:", backendResponse);
+    if (!resolvedId) {
+      // 1. Call Spring Boot backend API to store in database if not already saved
+      const backendResponse: any = await gstComplianceApi.createCompliance(data);
+      console.log("[GST] Compliance API Response:", backendResponse);
 
-    // Extract created ID from response if available (e.g., "Compliance ID: GSTC...")
-    const match = String(backendResponse).match(/Compliance ID:\s*([A-Za-z0-9_-]+)/i);
-    const resolvedId = match ? match[1] : referenceId;
+      let parsedId = null;
+      try {
+        const parsed = typeof backendResponse === "string" ? JSON.parse(backendResponse) : backendResponse;
+        parsedId = parsed?.complianceId;
+      } catch {
+        const match = String(backendResponse).match(/Compliance ID:\s*([A-Za-z0-9_-]+)/i);
+        parsedId = match ? match[1] : null;
+      }
+      resolvedId = parsedId || referenceId;
+    }
 
     // 2. Save to centralized application store
     useApplicationStore.getState().createApplication(
@@ -151,7 +161,7 @@ export async function submitComplianceRequest(
 
     return {
       success: true,
-      referenceId: resolvedId,
+      referenceId: resolvedId || referenceId,
       submittedAt,
       estimatedResponse,
     };

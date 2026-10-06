@@ -116,10 +116,32 @@ export function useGstFilingForm(createdAppId: string) {
     [createdAppId],
   );
 
-  const requiredDocs = documents.filter((d) => d.required);
+  const isNilReturn = periodData.filingNature === "Nil Return";
+  const requiredDocs = isNilReturn ? [] : documents.filter((d) => d.required);
   const missingDocs = requiredDocs.filter((d) => !d.fileUri);
   const missingDocsCount = missingDocs.length;
   const uploadedDocsCount = documents.filter((d) => Boolean(d.fileUri)).length;
+
+  const validateDocumentsStep = useCallback((): boolean => {
+    switch (periodData.filingNature) {
+      case "Nil Return":
+        return true;
+      case "Regular Return":
+      default: {
+        const mandatoryMissing = documents.filter((d) => d.required && !d.fileUri);
+        if (mandatoryMissing.length > 0) {
+          const missingNames = mandatoryMissing.map((d) => d.name).join("\n• ");
+          Alert.alert(
+            "Required Documents Missing",
+            `Please upload all required documents before proceeding:\n\n• ${missingNames}`,
+            [{ text: "OK" }],
+          );
+          return false;
+        }
+        return true;
+      }
+    }
+  }, [periodData.filingNature, documents]);
 
   return {
     periodData,
@@ -129,6 +151,7 @@ export function useGstFilingForm(createdAppId: string) {
     documents,
     setDocuments,
     validatePeriodStep,
+    validateDocumentsStep,
     handleUpdateDocuments,
     requiredDocs,
     missingDocsCount,

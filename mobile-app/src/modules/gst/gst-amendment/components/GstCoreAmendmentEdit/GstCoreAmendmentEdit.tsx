@@ -46,6 +46,7 @@ interface GstCoreAmendmentEditProps {
   onToggleExpandProofs: () => void;
   onReviewChanges: () => void;
   isEditMode?: boolean;
+  isSaving?: boolean;
 }
 
 export const GstCoreAmendmentEdit: React.FC<GstCoreAmendmentEditProps> = ({
@@ -67,6 +68,7 @@ export const GstCoreAmendmentEdit: React.FC<GstCoreAmendmentEditProps> = ({
   onToggleExpandProofs,
   onReviewChanges,
   isEditMode = false,
+  isSaving = false,
 }) => {
   const sectionId = selectedSection.id;
   const acceptedProofConfig = CORE_ACCEPTED_PROOFS[sectionId];
@@ -304,12 +306,15 @@ export const GstCoreAmendmentEdit: React.FC<GstCoreAmendmentEditProps> = ({
       {/* Bottom Bar */}
       <View style={[styles.bottomBar, getBottomBarStyle(insets.bottom)]}>
         <TouchableOpacity
-          style={styles.primaryBtn}
+          style={[styles.primaryBtn, isSaving && { opacity: 0.65 }]}
           activeOpacity={0.8}
           onPress={onReviewChanges}
+          disabled={isSaving}
         >
           <Text style={styles.primaryBtnText}>
-            {isEditMode ? "Review Updated Changes" : "Review Changes"}
+            {isSaving
+              ? (isEditMode ? "Updating Changes..." : "Saving Changes...")
+              : (isEditMode ? "Review Updated Changes" : "Review Changes")}
           </Text>
         </TouchableOpacity>
       </View>

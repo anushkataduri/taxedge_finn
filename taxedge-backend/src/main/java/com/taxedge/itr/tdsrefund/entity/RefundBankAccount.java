@@ -3,7 +3,7 @@ package com.taxedge.itr.tdsrefund.entity;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.EnumType;
-import com.taxedge.gst.enums.AccountType;
+import com.taxedge.itr.tdsrefund.enums.AccountType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

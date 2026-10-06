@@ -9,6 +9,7 @@ interface ItrStepIndicatorProps {
   stepTitle: string;
   onBack: () => void;
   onSettings?: () => void;
+  onSaveDraft?: () => void;
 }
 
 const STEP_LABELS = [
@@ -25,6 +26,7 @@ export const ItrStepIndicator: React.FC<ItrStepIndicatorProps> = ({
   stepTitle,
   onBack,
   onSettings,
+  onSaveDraft,
 }) => {
   const displayStepNumber = currentStep + 1;
   const progressPercent = Math.min(100, Math.max(0, (displayStepNumber / totalSteps) * 100));
@@ -34,14 +36,18 @@ export const ItrStepIndicator: React.FC<ItrStepIndicatorProps> = ({
     <View style={styles.container}>
       {/* Top Bar */}
       <View style={styles.topRow}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={onBack}
-          style={styles.circleBtn}
-          accessibilityLabel="Back"
-        >
-          <Ionicons name="chevron-back" size={20} color="#0B1F3A" />
-        </TouchableOpacity>
+        {currentStep === 4 ? (
+          <View style={styles.rightSpacer} /> // Replaces back button with empty spacer for balance
+        ) : (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={onBack}
+            style={styles.circleBtn}
+            accessibilityLabel="Back"
+          >
+            <Ionicons name="chevron-back" size={20} color="#0B1F3A" />
+          </TouchableOpacity>
+        )}
 
         <View style={styles.titleCenter}>
           <Text style={styles.mainTitle}>ITR Filing</Text>
@@ -50,15 +56,19 @@ export const ItrStepIndicator: React.FC<ItrStepIndicatorProps> = ({
           </Text>
         </View>
 
-        {onSettings ? (
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={onSettings}
-            style={styles.circleBtn}
-            accessibilityLabel="Settings"
-          >
-            <Ionicons name="settings-outline" size={20} color="#64748B" />
-          </TouchableOpacity>
+        {currentStep === 4 ? (
+          onSaveDraft ? (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={onSaveDraft}
+              style={styles.circleBtn}
+              accessibilityLabel="Save Draft"
+            >
+              <Ionicons name="save-outline" size={20} color="#64748B" />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.rightSpacer} />
+          )
         ) : (
           <View style={styles.rightSpacer} />
         )}
@@ -71,3 +81,4 @@ export const ItrStepIndicator: React.FC<ItrStepIndicatorProps> = ({
     </View>
   );
 };
+

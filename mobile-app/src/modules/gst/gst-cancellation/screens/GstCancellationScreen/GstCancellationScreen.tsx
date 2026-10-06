@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, TextInput } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { BrandColors } from "@/shared/theme";
 import { GstServiceBanner, GstSelectModal, GstDatePickerModal } from "@/modules/gst/components/common";
@@ -343,13 +343,21 @@ export function GstCancellationScreen() {
 
             {/* Review Button */}
             <TouchableOpacity
-              style={styles.primaryBtn}
+              style={[styles.primaryBtn, flow.isSaving && styles.primaryBtnDisabled]}
               activeOpacity={0.8}
               onPress={flow.handleProceedToReview}
+              disabled={flow.isSaving}
             >
-              <Text style={styles.primaryBtnText}>
-                {flow.isEditMode ? "Review Updated Details" : "Review Cancellation Application"}
-              </Text>
+              {flow.isSaving ? (
+                <View style={styles.loadingRow}>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text style={styles.primaryBtnText}>Please wait...</Text>
+                </View>
+              ) : (
+                <Text style={styles.primaryBtnText}>
+                  {flow.isEditMode ? "Review Updated Details" : "Review Cancellation Application"}
+                </Text>
+              )}
             </TouchableOpacity>
           </ScrollView>
 
@@ -384,6 +392,7 @@ export function GstCancellationScreen() {
       {flow.step === "REVIEW" && (
         <GstCancellationReview
           formData={flow.form}
+          dbReviewData={flow.dbReviewData}
           isReviewDeclared={flow.reviewDeclared}
           setIsReviewDeclared={flow.setReviewDeclared}
           isSubmitting={flow.submitting}

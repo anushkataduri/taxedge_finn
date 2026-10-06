@@ -32,6 +32,7 @@ export interface GstFilingReviewStepProps {
   totalRequiredDocsCount?: number;
   missingDocsCount?: number;
   grossTaxableTurnover?: number | string;
+  taxablePurchases?: number | string;
   eligibleItc?: number | string;
   caFee?: number;
   platformGst?: number;
@@ -43,7 +44,7 @@ export interface GstFilingReviewStepProps {
   onEditFilingFee?: () => void;
   onEditDocuments?: () => void;
   onReuploadDocuments?: () => void;
-  onUpdateComputation?: (turnover: number, itc: number) => void;
+  onUpdateComputation?: (turnover: number, itc: number, purchases?: number) => void;
 }
 
 // Display only; values passed to callbacks/API stay numeric.
@@ -72,6 +73,7 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
   totalRequiredDocsCount = 0,
   missingDocsCount = 0,
   grossTaxableTurnover = 0,
+  taxablePurchases = 0,
   eligibleItc = 0,
   caFee = 1986,
   platformGst = 358,
@@ -88,15 +90,21 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
 }) => {
   // Numeric computation state
   const baseTurnover = parseNumeric(grossTaxableTurnover, 0);
+  const basePurchases = parseNumeric(taxablePurchases, 0);
   const baseItc = parseNumeric(eligibleItc, 0);
 
   const [currentTurnover, setCurrentTurnover] = useState(baseTurnover);
+  const [currentPurchases, setCurrentPurchases] = useState(basePurchases);
   const [currentItc, setCurrentItc] = useState(baseItc);
 
   // Automatically update computation state when values are retrieved from database
   useEffect(() => {
     setCurrentTurnover(baseTurnover);
   }, [baseTurnover]);
+
+  useEffect(() => {
+    setCurrentPurchases(basePurchases);
+  }, [basePurchases]);
 
   useEffect(() => {
     setCurrentItc(baseItc);
@@ -109,21 +117,25 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
   // Edit computation modal state
   const [isEditingComputation, setIsEditingComputation] = useState(false);
   const [editTurnoverStr, setEditTurnoverStr] = useState(String(currentTurnover));
+  const [editPurchasesStr, setEditPurchasesStr] = useState(String(currentPurchases));
   const [editItcStr, setEditItcStr] = useState(String(currentItc));
 
   const handleOpenComputationModal = () => {
     setEditTurnoverStr(String(currentTurnover));
+    setEditPurchasesStr(String(currentPurchases));
     setEditItcStr(String(currentItc));
     setIsEditingComputation(true);
   };
 
   const handleSaveComputation = () => {
     const newTurnover = parseNumeric(editTurnoverStr, currentTurnover);
+    const newPurchases = parseNumeric(editPurchasesStr, currentPurchases);
     const newItc = parseNumeric(editItcStr, currentItc);
     setCurrentTurnover(newTurnover);
+    setCurrentPurchases(newPurchases);
     setCurrentItc(newItc);
     setIsEditingComputation(false);
-    onUpdateComputation?.(newTurnover, newItc);
+    onUpdateComputation?.(newTurnover, newItc, newPurchases);
   };
 
   const returnFormName = filingType ? filingType.split(" ")[0] : "GSTR-1";
@@ -236,6 +248,11 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
         <View style={styles.row}>
           <Text style={styles.label}>Gross Taxable Turnover</Text>
           <Text style={styles.value}>{formatInr(currentTurnover)}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Estimated Taxable Purchases</Text>
+          <Text style={styles.value}>{formatInr(currentPurchases)}</Text>
         </View>
 
         <View style={styles.row}>
@@ -357,6 +374,18 @@ export const GstFilingReviewStep: React.FC<GstFilingReviewStepProps> = ({
                 value={formatIndianNumberInput(editTurnoverStr)}
                 onChangeText={(val) => setEditTurnoverStr(toRawNumericString(val))}
                 placeholder="Enter turnover amount"
+                placeholderTextColor="#94A3B8"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Estimated Taxable Purchases (₹)</Text>
+              <TextInput
+                style={styles.modalInput}
+                keyboardType="numeric"
+                value={formatIndianNumberInput(editPurchasesStr)}
+                onChangeText={(val) => setEditPurchasesStr(toRawNumericString(val))}
+                placeholder="Enter taxable purchases amount"
                 placeholderTextColor="#94A3B8"
               />
             </View>
