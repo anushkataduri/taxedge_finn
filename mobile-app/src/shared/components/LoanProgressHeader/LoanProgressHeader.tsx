@@ -25,7 +25,7 @@ export const LOAN_PROGRESS_CONFIG = {
   },
   machinery: {
     title: "Machinery Loan",
-    steps: ["Loan Details", "Business Details", "Banking", "Documents", "Review"],
+    steps: ["Loan Details", "Banking", "Documents", "Review"],
   },
   projectFinance: {
     title: "Project Finance",

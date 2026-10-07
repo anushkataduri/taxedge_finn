@@ -1,12 +1,17 @@
 import React from "react";
 import { View, Text, TextInput } from "react-native";
-import { LoanDetailsFormData } from "../../../types/loans.types";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { BrandColors } from "../../../../../shared/theme";
+import { LoanDetailsFormData, LoanBusinessFormData } from "../../../types/loans.types";
 import { Dropdown } from "../../../../../shared/components/Dropdown";
 import { styles } from "./MachineryLoanFinancialsStep.styles";
+import { MachineryBusinessDetailsSection } from "./MachineryBusinessDetailsSection";
 
 export interface MachineryLoanFinancialsStepProps {
   data: LoanDetailsFormData;
   onChange: (field: keyof LoanDetailsFormData, value: any) => void;
+  businessData?: LoanBusinessFormData;
+  onBusinessChange?: (field: keyof LoanBusinessFormData, value: any) => void;
   errors?: Record<string, string>;
 }
 
@@ -42,6 +47,8 @@ export const MACHINERY_TENURE_OPTIONS = [
 export const MachineryLoanFinancialsStep: React.FC<MachineryLoanFinancialsStepProps> = ({
   data,
   onChange,
+  businessData,
+  onBusinessChange,
   errors = {},
 }) => {
   const isOtherEquipment =
@@ -51,83 +58,98 @@ export const MachineryLoanFinancialsStep: React.FC<MachineryLoanFinancialsStepPr
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Machinery Loan Details</Text>
-      <Text style={styles.sectionSubtitle}>
-        Specify required loan amount, machinery category, and repayment tenure.
-      </Text>
-
-      {/* Required Loan Amount */}
-      <View style={styles.fieldGroup}>
-        <Dropdown
-          label="Required Loan Amount"
-          required
-          placeholder="Select Loan Amount"
-          options={MACHINERY_AMOUNT_OPTIONS}
-          value={data.requiredAmount}
-          onSelect={(val) => onChange("requiredAmount", val)}
-          error={errors.requiredAmount}
-        />
-      </View>
-
-      {/* Machinery / Equipment Type */}
-      <View style={styles.fieldGroup}>
-        <Dropdown
-          label="Machinery / Equipment Type"
-          required
-          placeholder="Select Machinery / Equipment Type"
-          options={MACHINERY_EQUIPMENT_OPTIONS}
-          value={isOtherEquipment && data.purpose !== "Other" ? "Other" : data.purpose}
-          onSelect={(val) => {
-            if (val === "Other") {
-              onChange("purpose", "Other");
-            } else {
-              onChange("purpose", val);
-              onChange("customEquipmentType", "");
-            }
-          }}
-          error={errors.purpose}
-        />
-
-        {isOtherEquipment && (
-          <View style={styles.customFieldWrapper}>
-            <Text style={styles.label}>
-              Specify Equipment <Text style={styles.requiredStar}>*</Text>
-            </Text>
-            <TextInput
-              style={[
-                styles.input,
-                errors.customEquipmentType && styles.inputError,
-              ]}
-              placeholder="e.g. Laser Cutting & Engraving System"
-              placeholderTextColor="#94A3B8"
-              value={data.customEquipmentType || (data.purpose !== "Other" ? data.purpose : "")}
-              onChangeText={(text) => {
-                onChange("customEquipmentType", text);
-                onChange("purpose", text || "Other");
-              }}
-            />
-            {errors.customEquipmentType && (
-              <Text style={styles.errorText}>{errors.customEquipmentType}</Text>
-            )}
+      {/* 1. Machinery Loan Details Card */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.headerLeft}>
+            <View style={styles.iconBox}>
+              <Ionicons name="hardware-chip" size={16} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+            </View>
+            <Text style={styles.cardTitle}>Machinery & Equipment Requirement</Text>
           </View>
-        )}
+        </View>
+
+        {/* Required Loan Amount */}
+        <View style={styles.fieldGroup}>
+          <Dropdown
+            label="Required Loan Amount"
+            required
+            placeholder="Select Loan Amount"
+            options={MACHINERY_AMOUNT_OPTIONS}
+            value={data.requiredAmount}
+            onSelect={(val) => onChange("requiredAmount", val)}
+            error={errors.requiredAmount}
+          />
+        </View>
+
+        {/* Machinery / Equipment Type */}
+        <View style={styles.fieldGroup}>
+          <Dropdown
+            label="Machinery / Equipment Type"
+            required
+            placeholder="Select Machinery / Equipment Type"
+            options={MACHINERY_EQUIPMENT_OPTIONS}
+            value={isOtherEquipment && data.purpose !== "Other" ? "Other" : data.purpose}
+            onSelect={(val) => {
+              if (val === "Other") {
+                onChange("purpose", "Other");
+              } else {
+                onChange("purpose", val);
+                onChange("customEquipmentType", "");
+              }
+            }}
+            error={errors.purpose}
+          />
+
+          {isOtherEquipment && (
+            <View style={styles.customFieldWrapper}>
+              <Text style={styles.label}>
+                Specify Equipment <Text style={styles.requiredStar}>*</Text>
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  Boolean(errors.customEquipmentType) && styles.inputError,
+                ]}
+                placeholder="e.g. Laser Cutting & Engraving System"
+                placeholderTextColor="#94A3B8"
+                value={data.customEquipmentType || (data.purpose !== "Other" ? data.purpose : "")}
+                onChangeText={(text) => {
+                  onChange("customEquipmentType", text);
+                  onChange("purpose", text || "Other");
+                }}
+              />
+              {Boolean(errors.customEquipmentType) && (
+                <Text style={styles.errorText}>{errors.customEquipmentType}</Text>
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* Repayment Tenure */}
+        <View style={styles.fieldGroup}>
+          <Dropdown
+            label="Repayment Tenure"
+            required
+            placeholder="Select Repayment Tenure"
+            options={MACHINERY_TENURE_OPTIONS}
+            value={data.preferredTenureMonths}
+            onSelect={(val) => onChange("preferredTenureMonths", val)}
+            error={errors.preferredTenureMonths}
+          />
+        </View>
       </View>
 
-      {/* Repayment Tenure */}
-      <View style={styles.fieldGroup}>
-        <Dropdown
-          label="Repayment Tenure"
-          required
-          placeholder="Select Repayment Tenure"
-          options={MACHINERY_TENURE_OPTIONS}
-          value={data.preferredTenureMonths}
-          onSelect={(val) => onChange("preferredTenureMonths", val)}
-          error={errors.preferredTenureMonths}
+      {/* 2. Business Details Card (Merged Former Step 2) */}
+      {businessData && onBusinessChange && (
+        <MachineryBusinessDetailsSection
+          businessData={businessData}
+          onBusinessChange={onBusinessChange}
+          errors={errors}
         />
-      </View>
+      )}
     </View>
   );
 };
 
 export default MachineryLoanFinancialsStep;
-

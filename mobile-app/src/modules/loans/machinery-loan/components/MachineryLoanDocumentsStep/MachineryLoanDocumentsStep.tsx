@@ -1,5 +1,7 @@
 import React from "react";
 import { View, Text } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { BrandColors } from "../../../../../shared/theme";
 import { DocumentUploadBottomSheet } from "@/shared/components/DocumentUploadBottomSheet";
 import { TdsDocumentCard } from "@/modules/itr/tds/components/upload/TdsDocumentCard/TdsDocumentCard";
 import { TdsChecklistItem } from "@/modules/itr/tds/types/checklist.types";
@@ -49,13 +51,35 @@ export const MachineryLoanDocumentsStep: React.FC<MachineryLoanDocumentsStepProp
     />
   );
 
+  const getCategoryIcon = (cat: string) => {
+    switch (cat) {
+      case "Identity & Address":
+        return "person";
+      case "Income & Banking":
+        return "card";
+      case "Business & Tax":
+        return "briefcase";
+      default:
+        return "document-text";
+    }
+  };
+
   const renderCategorySection = (category: LoanDocumentCategory) => {
     const categoryDocs = documents.filter((d) => d.category === category);
     if (categoryDocs.length === 0) return null;
 
     return (
       <View key={category} style={styles.categoryContainer}>
-        <Text style={styles.categoryHeader}>{category}</Text>
+        <View style={styles.categoryHeaderRow}>
+          <View style={styles.categoryIconBox}>
+            <Ionicons
+              name={getCategoryIcon(category)}
+              size={14}
+              color={BrandColors.PRIMARY_ORANGE || "#FF7A00"}
+            />
+          </View>
+          <Text style={styles.categoryHeader}>{category}</Text>
+        </View>
         {categoryDocs.map(renderDocumentCard)}
       </View>
     );
@@ -73,5 +97,3 @@ export const MachineryLoanDocumentsStep: React.FC<MachineryLoanDocumentsStepProp
 };
 
 export default MachineryLoanDocumentsStep;
-
-

@@ -51,10 +51,15 @@ export const MachineryLoanReviewStep: React.FC<MachineryLoanReviewStepProps> = (
         Review your machinery financing request, business profile, and banking details.
       </Text>
 
-      {/* Loan Details Card */}
+      {/* 1. Loan Details Card */}
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Loan Details</Text>
+          <View style={styles.headerLeft}>
+            <View style={styles.iconBox}>
+              <Ionicons name="hardware-chip" size={14} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+            </View>
+            <Text style={styles.cardTitle}>Loan Requirement</Text>
+          </View>
           <TouchableOpacity
             style={styles.editAction}
             onPress={() => onGoToStep(0)}
@@ -62,7 +67,7 @@ export const MachineryLoanReviewStep: React.FC<MachineryLoanReviewStepProps> = (
             <Ionicons
               name="create-outline"
               size={14}
-              color={BrandColors.PRIMARY_BLUE}
+              color={BrandColors.PRIMARY_ORANGE}
             />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
@@ -83,23 +88,28 @@ export const MachineryLoanReviewStep: React.FC<MachineryLoanReviewStepProps> = (
         <View style={styles.row}>
           <Text style={styles.label}>Tenure</Text>
           <Text style={styles.value}>
-            {loanDetails.preferredTenureMonths} Months
+            {loanDetails.preferredTenureMonths ? `${loanDetails.preferredTenureMonths} Months` : "—"}
           </Text>
         </View>
       </View>
 
-      {/* Business Details Card */}
+      {/* 2. Business Details Card */}
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Business Details</Text>
+          <View style={styles.headerLeft}>
+            <View style={styles.iconBox}>
+              <Ionicons name="briefcase" size={14} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+            </View>
+            <Text style={styles.cardTitle}>Business Profile</Text>
+          </View>
           <TouchableOpacity
             style={styles.editAction}
-            onPress={() => onGoToStep(1)}
+            onPress={() => onGoToStep(0)}
           >
             <Ionicons
               name="create-outline"
               size={14}
-              color={BrandColors.PRIMARY_BLUE}
+              color={BrandColors.PRIMARY_ORANGE}
             />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
@@ -107,24 +117,24 @@ export const MachineryLoanReviewStep: React.FC<MachineryLoanReviewStepProps> = (
 
         <View style={styles.row}>
           <Text style={styles.label}>Business Name</Text>
-          <Text style={styles.value}>{businessDetails.businessName}</Text>
+          <Text style={styles.value}>{businessDetails.businessName || "—"}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Business Type</Text>
           <Text style={styles.value}>
-            {businessDetails.otherBusinessType || businessDetails.businessType}
+            {businessDetails.otherBusinessType || businessDetails.businessType || "—"}
           </Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Business Vintage</Text>
-          <Text style={styles.value}>{businessDetails.businessVintageYears}</Text>
+          <Text style={styles.value}>{businessDetails.businessVintageYears || "—"}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Annual Turnover</Text>
           <Text style={styles.value}>{formatCurrency(businessDetails.annualTurnover)}</Text>
         </View>
         <View style={styles.row}>
-          <Text style={styles.label}>GST status</Text>
+          <Text style={styles.label}>GST Status</Text>
           <Text style={styles.value}>
             {businessDetails.isGstRegistered
               ? `Registered (${businessDetails.gstin || "—"})`
@@ -133,18 +143,23 @@ export const MachineryLoanReviewStep: React.FC<MachineryLoanReviewStepProps> = (
         </View>
       </View>
 
-      {/* Banking Details Card */}
+      {/* 3. Banking Details Card */}
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Banking</Text>
+          <View style={styles.headerLeft}>
+            <View style={styles.iconBox}>
+              <Ionicons name="card" size={14} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+            </View>
+            <Text style={styles.cardTitle}>Banking</Text>
+          </View>
           <TouchableOpacity
             style={styles.editAction}
-            onPress={() => onGoToStep(2)}
+            onPress={() => onGoToStep(1)}
           >
             <Ionicons
               name="create-outline"
               size={14}
-              color={BrandColors.PRIMARY_BLUE}
+              color={BrandColors.PRIMARY_ORANGE}
             />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
@@ -166,18 +181,23 @@ export const MachineryLoanReviewStep: React.FC<MachineryLoanReviewStepProps> = (
         </View>
       </View>
 
-      {/* Uploaded Documents Card */}
+      {/* 4. Uploaded Documents Card */}
       <View style={styles.summaryCard}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Documents Uploaded</Text>
+          <View style={styles.headerLeft}>
+            <View style={styles.iconBox}>
+              <Ionicons name="document-text" size={14} color={BrandColors.PRIMARY_ORANGE || "#FF7A00"} />
+            </View>
+            <Text style={styles.cardTitle}>Documents Uploaded</Text>
+          </View>
           <TouchableOpacity
             style={styles.editAction}
-            onPress={() => onGoToStep(3)}
+            onPress={() => onGoToStep(2)}
           >
             <Ionicons
               name="create-outline"
               size={14}
-              color={BrandColors.PRIMARY_BLUE}
+              color={BrandColors.PRIMARY_ORANGE}
             />
             <Text style={styles.editText}>Manage</Text>
           </TouchableOpacity>
@@ -225,4 +245,3 @@ export const MachineryLoanReviewStep: React.FC<MachineryLoanReviewStepProps> = (
 };
 
 export default MachineryLoanReviewStep;
-

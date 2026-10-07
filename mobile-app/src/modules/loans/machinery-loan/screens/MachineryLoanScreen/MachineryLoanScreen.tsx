@@ -1,9 +1,5 @@
 import React, { useState, useRef, useCallback } from "react";
-import {
-  View,
-  ScrollView,
-  Alert,
-} from "react-native";
+import { View, ScrollView, Alert } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "../../../../authentication/store/authStore";
@@ -16,22 +12,23 @@ import {
   LoanBankingFormData,
   LoanApplicationDraft,
 } from "../../../types/loans.types";
-import {
-  validateGstin,
-} from "../../../../../shared/validators/indianTaxValidators";
 import { useLoanWizard } from "../../../hooks/useLoanWizard";
 import { useLoanDocuments } from "../../../hooks/useLoanDocuments";
-import { getMissingRequiredDocuments } from "../../../documents/loanDocumentEngine";
 import { LoanProgressHeader, LOAN_PROGRESS_CONFIG } from "@/shared/components/LoanProgressHeader";
 import { LoanNavigation } from "@/shared/components/LoanNavigation";
 import { getBottomBarPadding, getSafeAreaTopPadding } from "../../../styles/loanScreenLayout.styles";
 import {
   MachineryLoanFinancialsStep,
-  MachineryLoanBusinessStep,
   MachineryLoanBankingStep,
   MachineryLoanDocumentsStep,
   MachineryLoanReviewStep,
 } from "../../components";
+import {
+  initialLoanDetails,
+  initialBusinessDetails,
+  initialBankingDetails,
+  validateMachineryStep,
+} from "../../utils/machineryLoanValidators";
 import { styles } from "./MachineryLoanScreen.styles";
 
 const STEPS = LOAN_PROGRESS_CONFIG.machinery.steps;
@@ -40,44 +37,16 @@ export const MachineryLoanScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
-
   const customer = useAuthStore((s) => s.customer);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConsentChecked, setIsConsentChecked] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Step 1: Loan Details
-  const [loanDetails, setLoanDetails] = useState<LoanDetailsFormData>({
-    loanType: "Machinery Loan",
-    requiredAmount: "",
-    purpose: "",
-    preferredTenureMonths: "",
-    hasExistingLoans: false,
-    existingEmi: "",
-    monthlyIncomeOrTurnover: "",
-    employmentType: "Business Owner",
-  });
+  const [loanDetails, setLoanDetails] = useState<LoanDetailsFormData>(initialLoanDetails);
+  const [businessDetails, setBusinessDetails] = useState<LoanBusinessFormData>(initialBusinessDetails);
+  const [bankingDetails, setBankingDetails] = useState<LoanBankingFormData>(initialBankingDetails);
 
-  // Step 2: Business Details
-  const [businessDetails, setBusinessDetails] = useState<LoanBusinessFormData>({
-    businessName: "",
-    businessType: "",
-    businessVintageYears: "",
-    annualTurnover: "",
-    isGstRegistered: false,
-    gstin: "",
-    netProfit: "",
-  });
-
-  // Step 3: Banking Details
-  const [bankingDetails, setBankingDetails] = useState<LoanBankingFormData>({
-    primaryBankName: "",
-    accountNumber: "",
-    ifscCode: "",
-  });
-
-  // Step 4: Documents
   const loanDocuments = useLoanDocuments({ template: MACHINERY_DOCUMENTS_TEMPLATE });
   const { documents } = loanDocuments;
 
@@ -118,74 +87,15 @@ export const MachineryLoanScreen: React.FC = () => {
   };
 
   function validateStep(stepIndex: number): boolean {
-    const newErrors: Record<string, string> = {};
-
-    if (stepIndex === 0) {
-      if (!loanDetails.requiredAmount) {
-        newErrors.requiredAmount = "Select required loan amount";
-      }
-      if (!loanDetails.purpose) {
-        newErrors.purpose = "Select equipment type";
-      } else if (
-        loanDetails.purpose === "Other" &&
-        (!loanDetails.customEquipmentType || !loanDetails.customEquipmentType.trim())
-      ) {
-        newErrors.customEquipmentType = "Specify machinery/equipment details";
-      }
-      if (!loanDetails.preferredTenureMonths) {
-        newErrors.preferredTenureMonths = "Select repayment tenure";
-      }
-    }
-
-    if (stepIndex === 1) {
-      if (!businessDetails.businessName || !businessDetails.businessName.trim()) {
-        newErrors.businessName = "Enter business name";
-      }
-      if (!businessDetails.businessType) {
-        newErrors.businessType = "Select business type";
-      }
-      if (!businessDetails.businessVintageYears) {
-        newErrors.businessVintageYears = "Select business vintage";
-      }
-      if (!businessDetails.annualTurnover || !businessDetails.annualTurnover.trim()) {
-        newErrors.annualTurnover = "Enter annual turnover";
-      }
-      if (businessDetails.isGstRegistered) {
-        if (!businessDetails.gstin || !businessDetails.gstin.trim()) {
-          newErrors.gstin = "GSTIN is required for GST registered business";
-        } else if (!validateGstin(businessDetails.gstin.trim())) {
-          newErrors.gstin = "Enter valid 15-character GSTIN";
-        }
-      }
-    }
-
-    if (stepIndex === 2) {
-      if (!bankingDetails.primaryBankName || !bankingDetails.primaryBankName.trim()) {
-        newErrors.primaryBankName = "Enter bank name";
-      }
-      const acc = (bankingDetails.accountNumber || "").trim();
-      if (!acc || !/^\d{9,18}$/.test(acc)) {
-        newErrors.accountNumber = "Enter valid current account number (9-18 digits)";
-      }
-      const ifsc = (bankingDetails.ifscCode || "").trim().toUpperCase();
-      if (!ifsc || !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) {
-        newErrors.ifscCode = "Enter valid 11-character IFSC code";
-      }
-    }
-
-    if (stepIndex === 3) {
-      const missingRequired = getMissingRequiredDocuments(documents);
-      if (missingRequired.length > 0) {
-        Alert.alert(
-          "Required Documents Missing",
-          `Please upload mandatory files:\n\n• ${missingRequired.map((d) => d.name).join("\n• ")}`
-        );
-        return false;
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const result = validateMachineryStep({
+      stepIndex,
+      loanDetails,
+      businessDetails,
+      bankingDetails,
+      documents,
+    });
+    setErrors(result.errors);
+    return result.isValid;
   }
 
   const handleNext = () => {
@@ -222,7 +132,6 @@ export const MachineryLoanScreen: React.FC = () => {
       const response = await loansApi.applyLoan(draftPayload);
       const appId = response.applicationId || `MCH-2026-${Math.floor(10000 + Math.random() * 90000)}`;
 
-      // Create & store application into store so it appears in My Applications
       const appStore = useApplicationStore.getState();
       const amountVal = Number(loanDetails.requiredAmount) || 3000000;
       appStore.createApplication(
@@ -274,18 +183,12 @@ export const MachineryLoanScreen: React.FC = () => {
           <MachineryLoanFinancialsStep
             data={loanDetails}
             onChange={handleDetailsChange}
+            businessData={businessDetails}
+            onBusinessChange={handleBusinessChange}
             errors={errors}
           />
         );
       case 1:
-        return (
-          <MachineryLoanBusinessStep
-            data={businessDetails}
-            onChange={handleBusinessChange}
-            errors={errors}
-          />
-        );
-      case 2:
         return (
           <MachineryLoanBankingStep
             data={bankingDetails}
@@ -294,9 +197,9 @@ export const MachineryLoanScreen: React.FC = () => {
             hasExistingLoans={false}
           />
         );
-      case 3:
+      case 2:
         return <MachineryLoanDocumentsStep loanDocuments={loanDocuments} />;
-      case 4:
+      case 3:
       default:
         return (
           <MachineryLoanReviewStep

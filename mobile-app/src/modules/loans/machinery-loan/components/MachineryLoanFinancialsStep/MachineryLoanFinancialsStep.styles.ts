@@ -3,30 +3,69 @@ import { BrandColors, Typography } from "../../../../../shared/theme";
 
 export const styles = StyleSheet.create({
   container: {
-    paddingBottom: 24,
+    paddingBottom: 20,
+  },
+  card: {
+    backgroundColor: BrandColors.WHITE,
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  iconBox: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    backgroundColor: "#FEF0E6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardTitle: {
+    fontSize: Typography.fontSize.xs + 1,
+    fontWeight: "700",
+    color: "#0F172A",
   },
   sectionTitle: {
-    fontSize: Typography.fontSize.lg,
+    fontSize: Typography.fontSize.base,
     fontWeight: "700",
     color: "#0F172A",
     marginBottom: 4,
   },
   sectionSubtitle: {
-    fontSize: Typography.fontSize.sm,
+    fontSize: Typography.fontSize.xs,
     color: "#64748B",
-    marginBottom: 16,
+    marginBottom: 14,
+    lineHeight: 18,
   },
   fieldGroup: {
-    marginBottom: 18,
+    marginBottom: 12,
   },
   customFieldWrapper: {
-    marginTop: 12,
+    marginTop: 8,
   },
   label: {
-    fontSize: Typography.fontSize.sm,
+    fontSize: Typography.fontSize.xs,
     fontWeight: "600",
     color: "#334155",
-    marginBottom: 8,
+    marginBottom: 5,
   },
   requiredStar: {
     color: "#EF4444",
@@ -37,102 +76,49 @@ export const styles = StyleSheet.create({
     marginTop: 4,
   },
   errorText: {
-    fontSize: Typography.fontSize.xs,
+    fontSize: 11,
     color: "#EF4444",
-    marginTop: 4,
+    marginTop: 3,
   },
   input: {
     backgroundColor: BrandColors.WHITE,
     borderWidth: 1,
     borderColor: "#CBD5E1",
     borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: Typography.fontSize.base,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    fontSize: Typography.fontSize.sm,
     color: "#0F172A",
   },
   inputError: {
     borderColor: "#EF4444",
   },
-  chipRow: {
+  twoBoxRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 8,
+    gap: 10,
+    marginTop: 4,
   },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: "#F1F5F9",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  chipActive: {
-    backgroundColor: "#EFF6FF",
-    borderColor: BrandColors.PRIMARY_BLUE,
-  },
-  chipText: {
-    fontSize: Typography.fontSize.xs,
-    fontWeight: "500",
-    color: "#475569",
-  },
-  chipTextActive: {
-    color: BrandColors.PRIMARY_BLUE,
-    fontWeight: "700",
-  },
-  toggleContainer: {
-    flexDirection: "row",
-    backgroundColor: "#F1F5F9",
-    borderRadius: 8,
-    padding: 4,
-  },
-  toggleButton: {
+  separateBox: {
     flex: 1,
-    paddingVertical: 10,
-    alignItems: "center",
-    borderRadius: 6,
-  },
-  toggleButtonActive: {
-    backgroundColor: BrandColors.WHITE,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  toggleText: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: "500",
-    color: "#64748B",
-  },
-  toggleTextActive: {
-    color: BrandColors.PRIMARY_BLUE,
-    fontWeight: "700",
-  },
-  tenureGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  tenureBox: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: "#F8FAFC",
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: "#E2E8F0",
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  tenureBoxActive: {
-    backgroundColor: "#EFF6FF",
-    borderColor: BrandColors.PRIMARY_BLUE,
+  separateBoxActive: {
+    borderColor: BrandColors.PRIMARY_ORANGE || "#FF7A00",
+    backgroundColor: "#FEF0E6",
   },
-  tenureText: {
-    fontSize: Typography.fontSize.sm,
+  separateBoxText: {
+    fontSize: Typography.fontSize.xs,
+    fontWeight: "700",
     color: "#475569",
   },
-  tenureTextActive: {
-    color: BrandColors.PRIMARY_BLUE,
-    fontWeight: "700",
+  separateBoxTextActive: {
+    color: BrandColors.PRIMARY_ORANGE_DARK || "#EA580C",
+    fontWeight: "800",
   },
 });
